@@ -4,188 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pasajero - Las Catalinas #53</title>
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    
     <style>
-        :root {
-            --naranja: #f47920;
-            --celeste: #0093d0;
-            --rojo: #e61e2b;
-            --fondo-oscuro: #1a1a1a;
-            --gris-calido: #2d2d2d;
-            --blanco: #ffffff;
-        }
-
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--fondo-oscuro); color: var(--blanco); overflow: hidden; }
-
-        /* Contenedor del Mapa */
-        #map { height: 55vh; width: 100%; border-bottom: 4px solid var(--naranja); }
-
-        /* Panel de Interfaz (Globos) */
-        .interface-container {
-            height: 45vh;
-            background: linear-gradient(180deg, var(--gris-calido) 0%, var(--fondo-oscuro) 100%);
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
-            overflow-y: auto;
-        }
-
-        .globo-input {
-            background-color: rgba(244, 121, 32, 0.15);
-            border: 1px solid var(--naranja);
-            border-radius: 15px;
-            padding: 10px 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .globo-input i { color: var(--celeste); font-size: 1.2rem; width: 25px; text-align: center; }
-
-        .globo-input input {
-            background: transparent;
-            border: none;
-            color: var(--blanco);
-            width: 100%;
-            font-size: 1rem;
-            outline: none;
-        }
-
-        .globo-input input::placeholder { color: rgba(255,255,255,0.5); }
-
-        /* Botón de Acción Estilo Racing */
-        .btn-pedir {
-            background-color: var(--rojo);
-            color: var(--blanco);
-            border: none;
-            border-radius: 50px;
-            padding: 18px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(230, 30, 43, 0.4);
-            margin-top: 5px;
-            transition: transform 0.2s;
-        }
-
-        .btn-pedir:active { transform: scale(0.95); background-color: #c41924; }
-
-        /* Encabezado */
-        .header {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: none;
-        }
-
-        .menu-btn {
-            background: var(--naranja);
-            color: white;
-            padding: 10px;
-            border-radius: 10px;
-            pointer-events: auto;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-
-        .logo-tag {
-            background: rgba(0, 0, 0, 0.7);
-            padding: 5px 15px;
-            border-radius: 20px;
-            border: 1px solid var(--celeste);
-            font-weight: bold;
-            color: var(--celeste);
-        }
+        :root { --naranja: #f47920; --celeste: #0093d0; --rojo: #e61e2b; --fondo: #1a1a1a; --blanco: #ffffff; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; background: var(--fondo); color: var(--blanco); overflow: hidden; }
+        #map { height: 60vh; width: 100%; border-bottom: 4px solid var(--naranja); }
+        .interface { height: 40vh; background: #2d2d2d; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .input-group { background: rgba(244, 121, 32, 0.1); border: 1px solid var(--naranja); border-radius: 10px; padding: 10px; display: flex; align-items: center; gap: 10px; }
+        .input-group i { color: var(--celeste); width: 20px; text-align: center; }
+        .input-group input { background: transparent; border: none; color: white; width: 100%; outline: none; font-size: 1rem; }
+        .btn-pedir { background: var(--rojo); color: white; border: none; border-radius: 50px; padding: 15px; font-weight: bold; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 10px rgba(230, 30, 43, 0.3); }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <div class="menu-btn"><i class="fas fa-bars"></i></div>
-        <div class="logo-tag">LAS CATALINAS #53</div>
-    </div>
-
     <div id="map"></div>
-
-    <div class="interface-container">
-        <div class="globo-input">
-            <i class="fas fa-user"></i>
-            <input type="text" id="nombre" placeholder="¿Cuál es tu nombre?">
-        </div>
-
-        <div class="globo-input">
-            <i class="fas fa-map-marker-alt"></i>
-            <input type="text" id="direccion" placeholder="Dirección de salida">
-        </div>
-
-        <div class="globo-input">
-            <i class="fas fa-info-circle"></i>
-            <input type="text" id="referencia" placeholder="Ref: Portón, color de casa, etc.">
-        </div>
-
-        <button class="btn-pedir" onclick="enviarPedido()">
-            <i class="fas fa-paper-plane"></i> Solicitar Móvil
-        </button>
+    <div class="interface">
+        <div class="input-group"><i class="fas fa-user"></i><input type="text" id="nombre" placeholder="¿Cuál es tu nombre?"></div>
+        <div class="input-group"><i class="fas fa-map-marker-alt"></i><input type="text" id="dir" placeholder="Dirección de salida"></div>
+        <div class="input-group"><i class="fas fa-info-circle"></i><input type="text" id="ref" placeholder="Ref: Portón, color de casa, etc."></div>
+        <button class="btn-pedir" onclick="enviarPedido()"><i class="fas fa-paper-plane"></i> SOLICITAR MÓVIL</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script>
-        // Configuración inicial del mapa centrada en la zona
-        const map = L.map('map', { zoomControl: false }).setView([-34.564, -58.770], 15);
+        const SB_URL = "https://efryvjjunfeoxhekvwza.supabase.co";
+        const SB_KEY = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM";
 
-        // Capa de mapa oscura para que pegue con tu estilo
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
+        const map = L.map('map', {zoomControl: false}).setView([-34.564, -58.770], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        let marker = L.marker([-34.564, -58.770], {draggable: true}).addTo(map);
 
-        // Icono personalizado para el marcador (estilo #53)
-        const icon53 = L.divIcon({
-            html: '<i class="fas fa-location-pin" style="color: #e61e2b; font-size: 40px; text-shadow: 0 0 5px white;"></i>',
-            className: 'custom-div-icon',
-            iconSize: [40, 40],
-            iconAnchor: [20, 40]
-        });
-
-        // Marcador movible
-        let marker = L.marker([-34.564, -58.770], {
-            draggable: true,
-            icon: icon53
-        }).addTo(map);
-
-        // Detectar ubicación real
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-                const { latitude, longitude } = pos.coords;
-                map.setView([latitude, longitude], 16);
-                marker.setLatLng([latitude, longitude]);
-            });
-        }
-
-        function enviarPedido() {
+        async function enviarPedido() {
             const nombre = document.getElementById('nombre').value;
-            const dir = document.getElementById('direccion').value;
-            const ref = document.getElementById('referencia').value;
+            const dir = document.getElementById('dir').value;
+            const ref = document.getElementById('ref').value;
             const coords = marker.getLatLng();
 
-            if(!nombre || !dir) {
-                alert("Por favor, completa tu nombre y dirección");
-                return;
-            }
+            if (!nombre || !dir) { alert("Por favor, completá nombre y dirección"); return; }
 
-            // Aquí conectaremos luego con Supabase
-            console.log("Pedido de:", nombre, "en", dir, "Coords:", coords);
-            alert("¡Pedido enviado! Buscando el móvil #53 más cercano.");
+            const res = await fetch(`${SB_URL}/rest/v1/pedidos`, {
+                method: "POST",
+                headers: {
+                    "apikey": SB_KEY,
+                    "Authorization": `Bearer ${SB_KEY}`,
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal"
+                },
+                body: JSON.stringify({
+                    pasajero: nombre,
+                    origen: dir,
+                    referencia: ref,
+                    latitud: coords.lat,
+                    longitud: coords.lng
+                })
+            });
+
+            if (res.ok) {
+                alert("¡Pedido enviado! El móvil #53 está en camino.");
+            } else {
+                alert("Error al enviar. Revisá la conexión.");
+            }
         }
     </script>
 </body>
