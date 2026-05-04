@@ -16,7 +16,6 @@
             --celeste-claro: #4db8e8;
             --rojo: #e61e2b;
             --verde: #28a745;
-            --amarillo: #ffc107;
             --fondo: #fff5eb;
             --panel-bg: linear-gradient(180deg, #fff8f0 0%, #ffecd9 100%);
             --blanco: #ffffff;
@@ -32,14 +31,12 @@
             background: var(--fondo); color: var(--texto); overflow: hidden;
         }
 
-        /* ===== MAPA ===== */
         #map { 
             position: absolute; top: 0; left: 0; 
             height: 100%; width: 100%; z-index: 1;
             background: #e8e8e8;
         }
 
-        /* ===== HEADER CONDUCTOR ===== */
         .header-conductor {
             position: absolute; top: 12px; left: 12px; right: 12px;
             z-index: 1000; display: flex; gap: 10px;
@@ -94,7 +91,6 @@
 
         .toggle-online.activo::after { transform: translateX(24px); }
 
-        /* ===== PANEL INFERIOR - MÁS NARANJA/CELESTE ===== */
         .panel {
             position: absolute; bottom: 0; left: 0; right: 0;
             z-index: 1000; 
@@ -114,7 +110,6 @@
             opacity: 0.5;
         }
 
-        /* Stats - Fondo naranja muy suave */
         .stats-grid {
             display: grid; grid-template-columns: 1fr 1fr 1fr;
             gap: 10px; margin-bottom: 15px;
@@ -138,7 +133,6 @@
             margin-top: 4px;
         }
 
-        /* Estado esperando - Fondo celeste suave */
         .estado-espera {
             text-align: center; padding: 20px;
             background: linear-gradient(135deg, rgba(0,147,208,0.1), rgba(77,184,232,0.1));
@@ -153,7 +147,6 @@
         .estado-espera h3 { margin: 0; font-size: 1.2rem; color: var(--celeste); }
         .estado-espera p { margin: 6px 0 0; color: var(--gris); }
 
-        /* Pedido entrante - Bordes naranja fuerte */
         .pedido-card {
             display: none;
             background: linear-gradient(180deg, #fff8f0 0%, #ffecd9 100%);
@@ -197,7 +190,6 @@
         .pedido-info .fila:last-child { border-bottom: none; }
         .pedido-info i { color: var(--celeste); width: 20px; text-align: center; }
 
-        /* Botones */
         .botones-accion { display: flex; gap: 10px; }
 
         .btn {
@@ -234,7 +226,6 @@
 
         .btn:active { transform: scale(0.97); }
 
-        /* Viaje activo */
         .viaje-activo-panel { display: none; }
         .viaje-activo-panel.activo { display: block; }
 
@@ -246,10 +237,8 @@
 </head>
 <body>
 
-    <!-- Mapa -->
     <div id="map"></div>
 
-    <!-- Header -->
     <div class="header-conductor">
         <div class="header-card">
             <div class="avatar" id="avatar-inicial">?</div>
@@ -261,11 +250,9 @@
         <div class="toggle-online" id="toggle-online" onclick="cambiarEstado()"></div>
     </div>
 
-    <!-- Panel inferior -->
     <div class="panel">
         <div class="panel-handle"></div>
 
-        <!-- Stats + Espera -->
         <div id="panel-stats">
             <div class="stats-grid">
                 <div class="stat-card">
@@ -288,7 +275,6 @@
             </div>
         </div>
 
-        <!-- Pedido entrante -->
         <div class="pedido-card" id="pedido-entrante">
             <div class="pedido-header">
                 <div class="icono"><i class="fas fa-bell"></i></div>
@@ -325,7 +311,6 @@
             </div>
         </div>
 
-        <!-- Viaje activo -->
         <div class="viaje-activo-panel" id="viaje-activo-panel">
             <div class="pedido-info">
                 <div class="fila">
@@ -350,24 +335,19 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
         // ═══════════════════════════════════════════════════
-        // CONFIGURACIÓN - REEMPLAZÁ CON TUS DATOS REALES
+        // CONFIGURACIÓN SUPABASE - DATOS REALES
         // ═══════════════════════════════════════════════════
-        const SUPABASE_URL = 'https://TU-PROJECT.supabase.co';
-        const SUPABASE_KEY = 'TU-ANON-KEY';
+        const SUPABASE_URL = 'https://efryvjjunfeoxhekvwza.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
         
-        // UUID del conductor de prueba (Juan Pérez)
         const CONDUCTOR_ID = 'b2e55e81-b40e-48ad-89d8-0d41d56d5fb8';
         const CONDUCTOR_NOMBRE = 'Juan Pérez';
 
-        // ═══════════════════════════════════════════════════
-        // VARIABLES GLOBALES
-        // ═══════════════════════════════════════════════════
         let supabaseClient = null;
         let map = null;
         let marcadorYo = null;
@@ -380,23 +360,16 @@
         let watchId = null;
         let canalPedidos = null;
 
-        // ═══════════════════════════════════════════════════
-        // INICIALIZACIÓN
-        // ═══════════════════════════════════════════════════
         document.addEventListener('DOMContentLoaded', function() {
             try {
-                // 1. Inicializar Supabase
                 supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 console.log('✅ Supabase inicializado');
 
-                // 2. Inicializar mapa PRIMERO
                 initMapa();
                 
-                // 3. Configurar UI
                 document.getElementById('nombre-conductor').textContent = CONDUCTOR_NOMBRE;
                 document.getElementById('avatar-inicial').textContent = CONDUCTOR_NOMBRE.charAt(0).toUpperCase();
 
-                // 4. Iniciar GPS
                 iniciarGPS();
 
                 console.log('✅ App inicializada');
@@ -406,27 +379,26 @@
             }
         });
 
-        // ═══════════════════════════════════════════════════
-        // MAPA - CORREGIDO
-        // ═══════════════════════════════════════════════════
         function initMapa() {
             try {
-                // IMPORTANTE: Esperar a que el DOM esté listo
                 const mapDiv = document.getElementById('map');
                 if (!mapDiv) {
                     console.error('No se encontró el div del mapa');
                     return;
                 }
 
+                mapDiv.style.height = window.innerHeight + 'px';
+                mapDiv.style.width = window.innerWidth + 'px';
+
                 map = L.map('map', { 
                     zoomControl: false,
                     attributionControl: false 
                 }).setView([-34.564, -58.770], 15);
 
-                // Capa OpenStreetMap con HTTPS (crucial para Vercel)
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
-                    attribution: ''
+                    attribution: '',
+                    crossOrigin: true
                 }).addTo(map);
 
                 console.log('✅ Mapa inicializado');
@@ -436,18 +408,13 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════
-        // GPS
-        // ═══════════════════════════════════════════════════
         function iniciarGPS() {
             if (!navigator.geolocation) {
                 console.log('GPS no disponible');
-                // Mostrar mapa en posición por defecto
                 if (map) map.setView([-34.564, -58.770], 15);
                 return;
             }
 
-            // Posición inicial
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     miPosicion = { 
@@ -458,7 +425,6 @@
                     if (map) {
                         map.setView([miPosicion.lat, miPosicion.lng], 16);
                         
-                        // Icono del taxi
                         const iconoYo = L.divIcon({
                             html: '<div style="background:linear-gradient(135deg,#f47920,#e61e2b);width:40px;height:40px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-taxi" style="color:white;font-size:16px;"></i></div>',
                             iconSize: [44, 44],
@@ -476,7 +442,6 @@
                 { enableHighAccuracy: true, timeout: 10000 }
             );
 
-            // Watch position
             watchId = navigator.geolocation.watchPosition(
                 async (pos) => {
                     miPosicion = { 
@@ -488,7 +453,6 @@
                         marcadorYo.setLatLng([miPosicion.lat, miPosicion.lng]);
                     }
 
-                    // Enviar a Supabase si está online
                     if (online && supabaseClient) {
                         try {
                             await supabaseClient
@@ -499,9 +463,7 @@
                                     ultima_actualizacion: new Date().toISOString()
                                 })
                                 .eq('id', CONDUCTOR_ID);
-                        } catch (e) {
-                            // Silenciar errores de red
-                        }
+                        } catch (e) {}
                     }
 
                     if (viajeActual && marcadorPasajero) {
@@ -513,9 +475,6 @@
             );
         }
 
-        // ═══════════════════════════════════════════════════
-        // CAMBIAR ESTADO ONLINE/OFFLINE
-        // ═══════════════════════════════════════════════════
         async function cambiarEstado() {
             if (!supabaseClient) {
                 alert('Error: Supabase no conectado');
@@ -546,6 +505,7 @@
 
             } catch (error) {
                 console.error('Error cambiando estado:', error);
+                alert('Error de conexión: ' + error.message);
                 online = !online;
             }
         }
@@ -565,9 +525,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════
-        // ESCUCHAR PEDIDOS (Realtime)
-        // ═══════════════════════════════════════════════════
         function escucharPedidos() {
             if (!supabaseClient) return;
 
@@ -598,9 +555,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════
-        // MOSTRAR PEDIDO
-        // ═══════════════════════════════════════════════════
         function mostrarPedido(viaje, distancia) {
             pedidoPendiente = viaje;
 
@@ -634,9 +588,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════
-        // ACEPTAR / RECHAZAR PEDIDO
-        // ═══════════════════════════════════════════════════
         async function aceptarPedido() {
             if (!pedidoPendiente) return;
 
@@ -677,9 +628,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════
-        // ACCIONES DEL VIAJE
-        // ═══════════════════════════════════════════════════
         async function siguienteAccion() {
             const btn = document.getElementById('btn-accion');
 
@@ -758,9 +706,6 @@
             document.getElementById('panel-stats').style.display = 'block';
         }
 
-        // ═══════════════════════════════════════════════════
-        // DIBUJAR RUTA
-        // ═══════════════════════════════════════════════════
         function actualizarRuta() {
             if (rutaLinea) map.removeLayer(rutaLinea);
 
@@ -773,9 +718,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════
-        // UTILIDADES
-        // ═══════════════════════════════════════════════════
         function calcularDistancia(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
