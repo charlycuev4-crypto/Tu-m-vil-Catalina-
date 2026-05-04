@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Conductor - Las Catalinas #53</title>
+    <title>Pasajero - Las Catalinas #53</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -18,6 +18,7 @@
             --blanco: #ffffff;
             --texto: #1a1a1a;
             --gris: #666666;
+            --sombra: 0 2px 12px rgba(0,0,0,0.15);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -32,53 +33,50 @@
         #map { 
             position: absolute; top: 0; left: 0; 
             height: 100%; width: 100%; z-index: 1;
-            background: #ddd;
+            background: #e5e5e5;
         }
 
         /* ===== HEADER ===== */
-        .header-conductor {
+        .header {
             position: absolute; top: 12px; left: 12px; right: 12px;
-            z-index: 1000; display: flex; gap: 10px;
+            z-index: 1000; display: flex; justify-content: space-between; align-items: center;
             pointer-events: none;
         }
 
-        .header-card {
-            flex: 1; background: var(--blanco);
-            border-radius: 16px; padding: 12px 16px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.15); pointer-events: auto;
-            display: flex; align-items: center; gap: 12px;
-        }
-
-        .header-card .avatar {
-            width: 44px; height: 44px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--naranja), var(--rojo));
+        .menu-btn {
+            background: var(--blanco); color: var(--naranja);
+            width: 44px; height: 44px; border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
-            color: white; font-weight: bold; font-size: 1.2rem; flex-shrink: 0;
+            pointer-events: auto; cursor: pointer; border: none;
+            box-shadow: var(--sombra); font-size: 1.2rem;
         }
 
-        .header-card h3 { margin: 0; font-size: 1rem; }
-        .header-card p { margin: 2px 0 0; font-size: 0.8rem; color: var(--gris); }
-
-        .toggle-online {
-            width: 60px; height: 36px;
-            background: #ccc; border-radius: 36px;
-            position: relative; cursor: pointer;
-            transition: background 0.3s; pointer-events: auto;
-            flex-shrink: 0;
+        .logo-tag {
+            background: var(--blanco); padding: 10px 18px;
+            border-radius: 25px; border: 2px solid var(--celeste);
+            font-weight: 800; color: var(--celeste); font-size: 0.85rem;
+            box-shadow: var(--sombra); pointer-events: auto;
         }
 
-        .toggle-online.activo { background: var(--verde); }
-
-        .toggle-online::after {
-            content: ''; position: absolute;
-            width: 28px; height: 28px;
-            background: white; border-radius: 50%;
-            top: 4px; left: 4px;
-            transition: transform 0.3s;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        /* ===== BOTÓN MI UBICACIÓN ===== */
+        .btn-mi-ubicacion {
+            position: absolute; bottom: 340px; right: 15px;
+            z-index: 1000; width: 50px; height: 50px;
+            background: var(--blanco); border: none; border-radius: 50%;
+            box-shadow: var(--sombra); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--celeste); font-size: 1.3rem;
         }
 
-        .toggle-online.activo::after { transform: translateX(24px); }
+        /* ===== MARCADOR CENTRAL ===== */
+        .marcador-centro {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -100%);
+            z-index: 500; pointer-events: none;
+            font-size: 40px; color: var(--rojo);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+        }
 
         /* ===== PANEL INFERIOR ===== */
         .panel {
@@ -86,8 +84,8 @@
             z-index: 1000; background: var(--blanco);
             border-radius: 24px 24px 0 0;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-            padding: 20px; max-height: 50vh;
-            overflow-y: auto;
+            padding: 20px; max-height: 45vh;
+            overflow-y: auto; transition: transform 0.3s ease;
         }
 
         .panel-handle {
@@ -95,130 +93,105 @@
             border-radius: 2px; margin: 0 auto 15px;
         }
 
-        .stats-grid {
-            display: grid; grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px; margin-bottom: 15px;
-        }
-
-        .stat-card {
-            background: var(--fondo); border-radius: 14px;
-            padding: 14px; text-align: center;
-        }
-
-        .stat-card .numero {
-            font-size: 1.6rem; font-weight: 800; color: var(--naranja);
-        }
-
-        .stat-card .label {
-            font-size: 0.75rem; color: var(--gris); margin-top: 4px;
-        }
-
-        .estado-espera {
-            text-align: center; padding: 20px;
-        }
-
-        .estado-espera .icono-grande {
-            font-size: 3rem; margin-bottom: 10px;
-        }
-
-        .estado-espera h3 { margin: 0; font-size: 1.2rem; }
-        .estado-espera p { margin: 6px 0 0; color: var(--gris); }
-
-        .pedido-card {
-            display: none;
-            background: linear-gradient(135deg, #fff8f3, #fff);
-            border: 2px solid var(--naranja);
-            border-radius: 20px; padding: 20px;
-            animation: slideUp 0.4s ease;
-        }
-
-        .pedido-card.activo { display: block; }
-
-        .pedido-header {
+        /* Inputs */
+        .input-row {
             display: flex; align-items: center; gap: 12px;
-            margin-bottom: 16px;
+            padding: 14px 16px; margin-bottom: 10px;
+            background: var(--fondo); border-radius: 14px;
+            border: 2px solid transparent; transition: all 0.2s;
         }
 
-        .pedido-header .icono {
-            width: 50px; height: 50px;
-            background: linear-gradient(135deg, var(--naranja), var(--rojo));
-            border-radius: 14px; display: flex;
-            align-items: center; justify-content: center;
-            color: white; font-size: 1.5rem; flex-shrink: 0;
+        .input-row:focus-within { border-color: var(--naranja); background: #fff8f3; }
+
+        .input-row i { 
+            width: 24px; text-align: center; 
+            font-size: 1.1rem; color: var(--celeste);
         }
 
-        .pedido-header h3 { margin: 0; font-size: 1.2rem; }
-        .pedido-header p { margin: 4px 0 0; color: var(--gris); font-size: 0.85rem; }
-
-        .pedido-info {
-            background: var(--blanco); border-radius: 14px;
-            padding: 14px; margin-bottom: 16px;
+        .input-row input {
+            flex: 1; border: none; background: transparent;
+            font-size: 1rem; outline: none; color: var(--texto);
         }
 
-        .pedido-info .fila {
-            display: flex; align-items: center; gap: 10px;
-            padding: 8px 0; border-bottom: 1px solid #eee;
-        }
+        .input-row input::placeholder { color: #999; }
 
-        .pedido-info .fila:last-child { border-bottom: none; }
-        .pedido-info i { color: var(--celeste); width: 20px; text-align: center; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .dot-verde { background: var(--verde); }
+        .dot-rojo { background: var(--rojo); }
 
-        .botones-accion { display: flex; gap: 10px; }
-
-        .btn {
-            flex: 1; padding: 16px; border: none;
-            border-radius: 16px; font-size: 1rem;
-            font-weight: 700; cursor: pointer;
-            display: flex; align-items: center;
-            justify-content: center; gap: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-aceptar {
-            background: var(--verde); color: white;
-            box-shadow: 0 4px 15px rgba(40,167,69,0.3);
-        }
-
-        .btn-rechazar {
-            background: #eee; color: var(--gris);
-        }
-
-        .btn-llegue {
-            background: var(--celeste); color: white;
-            width: 100%; margin-top: 10px;
-        }
-
-        .btn-completar {
-            background: var(--naranja); color: white;
-            width: 100%; margin-top: 10px;
-        }
-
-        .btn:active { transform: scale(0.97); }
-
-        .viaje-activo-panel { display: none; }
-        .viaje-activo-panel.activo { display: block; }
-
-        /* Toast de error */
-        .toast {
-            position: fixed; top: 80px; left: 50%;
-            transform: translateX(-50%); z-index: 2000;
+        /* Botón principal */
+        .btn-principal {
+            width: 100%; padding: 18px;
             background: var(--rojo); color: white;
-            padding: 12px 24px; border-radius: 12px;
-            font-size: 0.9rem; display: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: none; border-radius: 16px;
+            font-size: 1.1rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            cursor: pointer; box-shadow: 0 6px 20px rgba(230,30,43,0.35);
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            margin-top: 8px; transition: all 0.2s;
         }
 
-        .toast.activo { display: block; animation: slideDown 0.3s ease; }
+        .btn-principal:active { transform: scale(0.97); }
+        .btn-principal:disabled { background: #ccc; box-shadow: none; }
 
-        @keyframes slideUp { 
-            from { opacity: 0; transform: translateY(30px); } 
-            to { opacity: 1; transform: translateY(0); } 
+        /* ===== ESTADOS DEL VIAJE ===== */
+        .estado-viaje { display: none; }
+        .estado-viaje.activo { display: block; animation: slideUp 0.4s ease; }
+
+        .estado-header {
+            text-align: center; padding: 10px 0 20px;
         }
 
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .estado-header .icono-grande {
+            font-size: 3.5rem; margin-bottom: 10px;
         }
+
+        .estado-header h2 { margin: 0; font-size: 1.3rem; color: var(--texto); }
+        .estado-header p { margin: 6px 0 0; color: var(--gris); font-size: 0.95rem; }
+
+        .spinner {
+            width: 50px; height: 50px;
+            border: 4px solid #eee; border-top-color: var(--naranja);
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        .info-conductor {
+            background: var(--fondo); border-radius: 16px;
+            padding: 16px; margin: 15px 0;
+        }
+
+        .info-conductor .fila {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .info-conductor .fila:last-child { margin-bottom: 0; }
+
+        .avatar {
+            width: 50px; height: 50px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--naranja), var(--rojo));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1.5rem; font-weight: bold;
+        }
+
+        .datos-conductor h4 { margin: 0; font-size: 1.1rem; }
+        .datos-conductor p { margin: 2px 0 0; color: var(--gris); font-size: 0.85rem; }
+
+        .btn-secundario {
+            width: 100%; padding: 14px;
+            background: transparent; color: var(--gris);
+            border: 2px solid #ddd; border-radius: 14px;
+            font-size: 1rem; font-weight: 600; cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .btn-llamar {
+            background: var(--verde); color: white; border: none;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -226,111 +199,121 @@
     <!-- Mapa -->
     <div id="map"></div>
 
-    <!-- Toast errores -->
-    <div class="toast" id="toast"></div>
+    <!-- Marcador fijo en el centro -->
+    <div class="marcador-centro">
+        <i class="fas fa-location-dot"></i>
+    </div>
 
     <!-- Header -->
-    <div class="header-conductor">
-        <div class="header-card">
-            <div class="avatar" id="avatar-inicial">?</div>
-            <div>
-                <h3 id="nombre-conductor">Conductor</h3>
-                <p id="estado-texto">Desconectado</p>
-            </div>
-        </div>
-        <div class="toggle-online" id="toggle-online" onclick="cambiarEstado()"></div>
+    <div class="header">
+        <button class="menu-btn"><i class="fas fa-bars"></i></button>
+        <div class="logo-tag">🚕 LAS CATALINAS #53</div>
     </div>
+
+    <!-- Botón mi ubicación -->
+    <button class="btn-mi-ubicacion" onclick="centrarEnMiUbicacion()">
+        <i class="fas fa-crosshairs"></i>
+    </button>
 
     <!-- Panel inferior -->
-    <div class="panel">
+    <div class="panel" id="panel">
         <div class="panel-handle"></div>
 
-        <!-- Stats + Espera -->
-        <div id="panel-stats">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="numero" id="viajes-hoy">0</div>
-                    <div class="label">Viajes hoy</div>
-                </div>
-                <div class="stat-card">
-                    <div class="numero" id="ganancias">$0</div>
-                    <div class="label">Ganancias</div>
-                </div>
-                <div class="stat-card">
-                    <div class="numero" id="calificacion">5.0</div>
-                    <div class="label">Calificación</div>
-                </div>
+        <!-- FORMULARIO -->
+        <div id="formulario-pedido">
+            <div class="input-row">
+                <i class="fas fa-user"></i>
+                <input type="text" id="nombre" placeholder="¿Cómo te llamás?">
             </div>
-            <div class="estado-espera" id="estado-espera">
-                <div class="icono-grande">📍</div>
-                <h3>Esperando pedidos...</h3>
-                <p>Mantenete online para recibir viajes</p>
-            </div>
-        </div>
 
-        <!-- Pedido entrante -->
-        <div class="pedido-card" id="pedido-entrante">
-            <div class="pedido-header">
-                <div class="icono"><i class="fas fa-bell"></i></div>
-                <div>
-                    <h3>¡Nuevo pedido!</h3>
-                    <p id="distancia-pedido">Calculando distancia...</p>
-                </div>
+            <div class="input-row">
+                <i class="fas fa-phone"></i>
+                <input type="tel" id="telefono" placeholder="Teléfono">
             </div>
-            <div class="pedido-info">
-                <div class="fila">
-                    <i class="fas fa-user"></i>
-                    <span id="p-nombre">-</span>
-                </div>
-                <div class="fila">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span id="p-direccion">-</span>
-                </div>
-                <div class="fila">
-                    <i class="fas fa-info-circle"></i>
-                    <span id="p-referencia">-</span>
-                </div>
-                <div class="fila">
-                    <i class="fas fa-phone"></i>
-                    <span id="p-telefono">-</span>
-                </div>
-            </div>
-            <div class="botones-accion">
-                <button class="btn btn-rechazar" onclick="rechazarPedido()">
-                    <i class="fas fa-times"></i> Rechazar
-                </button>
-                <button class="btn btn-aceptar" onclick="aceptarPedido()">
-                    <i class="fas fa-check"></i> Aceptar
-                </button>
-            </div>
-        </div>
 
-        <!-- Viaje activo -->
-        <div class="viaje-activo-panel" id="viaje-activo-panel">
-            <div class="pedido-info">
-                <div class="fila">
-                    <i class="fas fa-user"></i>
-                    <span id="v-nombre">-</span>
-                </div>
-                <div class="fila">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span id="v-direccion">-</span>
-                </div>
-                <div class="fila">
-                    <i class="fas fa-phone"></i>
-                    <span id="v-telefono">-</span>
-                </div>
+            <div class="input-row">
+                <div class="dot dot-verde"></div>
+                <input type="text" id="direccion" placeholder="Dirección de salida">
             </div>
-            <button class="btn btn-llegue" id="btn-accion" onclick="siguienteAccion()">
-                <i class="fas fa-car"></i> Llegué al punto
+
+            <div class="input-row">
+                <div class="dot dot-rojo"></div>
+                <input type="text" id="destino" placeholder="¿A dónde vas?">
+            </div>
+
+            <div class="input-row">
+                <i class="fas fa-info-circle"></i>
+                <input type="text" id="referencia" placeholder="Referencia: portón azul, casa blanca...">
+            </div>
+
+            <button class="btn-principal" onclick="solicitarViaje()">
+                <i class="fas fa-paper-plane"></i> Solicitar Móvil
             </button>
-            <button class="btn btn-rechazar" style="margin-top:10px;" onclick="cancelarViaje()">
-                <i class="fas fa-times"></i> Cancelar viaje
+        </div>
+
+        <!-- ESTADO: BUSCANDO -->
+        <div class="estado-viaje" id="estado-buscando">
+            <div class="estado-header">
+                <div class="spinner"></div>
+                <h2>Buscando conductor...</h2>
+                <p>Estamos buscando el móvil #53 más cercano a tu ubicación</p>
+            </div>
+            <button class="btn-secundario" onclick="cancelarViaje()">
+                <i class="fas fa-times"></i> Cancelar búsqueda
+            </button>
+        </div>
+
+        <!-- ESTADO: CONDUCTOR ASIGNADO -->
+        <div class="estado-viaje" id="estado-aceptado">
+            <div class="estado-header">
+                <div class="icono-grande">🚕</div>
+                <h2>¡Conductor en camino!</h2>
+                <p id="texto-aceptado">Tu móvil está llegando</p>
+            </div>
+            <div class="info-conductor" id="info-conductor">
+                <div class="fila">
+                    <div class="avatar" id="avatar-conductor">?</div>
+                    <div class="datos-conductor">
+                        <h4 id="nombre-conductor">-</h4>
+                        <p id="datos-vehiculo">-</p>
+                    </div>
+                </div>
+                <div class="fila">
+                    <i class="fas fa-clock" style="color:var(--naranja)"></i>
+                    <span id="tiempo-llegada">Calculando...</span>
+                </div>
+            </div>
+            <button class="btn-principal btn-llamar" onclick="llamarConductor()">
+                <i class="fas fa-phone"></i> Llamar al conductor
+            </button>
+            <button class="btn-secundario" onclick="cancelarViaje()">
+                Cancelar viaje
+            </button>
+        </div>
+
+        <!-- ESTADO: EN CAMINO -->
+        <div class="estado-viaje" id="estado-en-camino">
+            <div class="estado-header">
+                <div class="icono-grande">🛣️</div>
+                <h2>¡En camino!</h2>
+                <p>Disfrutá tu viaje con Las Catalinas #53</p>
+            </div>
+        </div>
+
+        <!-- ESTADO: COMPLETADO -->
+        <div class="estado-viaje" id="estado-completado">
+            <div class="estado-header">
+                <div class="icono-grande">⭐</div>
+                <h2>¡Llegamos!</h2>
+                <p>Gracias por viajar con nosotros</p>
+            </div>
+            <button class="btn-principal" onclick="location.reload()">
+                <i class="fas fa-redo"></i> Nuevo viaje
             </button>
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -340,432 +323,213 @@
         // ═══════════════════════════════════════════════════
         const SUPABASE_URL = 'https://TU-PROJECT.supabase.co';
         const SUPABASE_KEY = 'TU-ANON-KEY';
-        
-        // ID del conductor - REEMPLAZÁ con UUID real de tu tabla
-        const CONDUCTOR_ID = '11111111-1111-1111-1111-111111111111';
-        const CONDUCTOR_NOMBRE = 'Juan Pérez';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // ═══════════════════════════════════════════════════
-        // VARIABLES GLOBALES
+        // MAPA - OpenStreetMap (Gratis)
         // ═══════════════════════════════════════════════════
-        let supabaseClient = null;
-        let map = null;
-        let marcadorYo = null;
-        let marcadorPasajero = null;
-        let rutaLinea = null;
-        let online = false;
-        let viajeActual = null;
-        let pedidoPendiente = null;
-        let miPosicion = { lat: -34.564, lng: -58.770 };
-        let watchId = null;
-        let canalPedidos = null;
+        const map = L.map('map', { 
+            zoomControl: false,
+            attributionControl: false 
+        }).setView([-34.564, -58.770], 15);
 
-        // ═══════════════════════════════════════════════════
-        // INICIALIZACIÓN
-        // ═══════════════════════════════════════════════════
-        window.addEventListener('load', async function() {
-            try {
-                console.log('🚀 Iniciando app...');
-                
-                // 1. Inicializar Supabase
-                const { createClient } = supabase;
-                supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-                console.log('✅ Supabase OK');
+        // Capa gratuita de OpenStreetMap (modo día)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
 
-                // 2. Inicializar mapa PRIMERO (antes que todo)
-                initMapa();
-                
-                // 3. Configurar UI
-                document.getElementById('nombre-conductor').textContent = CONDUCTOR_NOMBRE;
-                document.getElementById('avatar-inicial').textContent = CONDUCTOR_NOMBRE.charAt(0).toUpperCase();
-
-                // 4. Verificar conductor en DB
-                await verificarConductor();
-
-                // 5. Iniciar GPS
-                iniciarGPS();
-
-                console.log('✅ Todo listo!');
-
-            } catch (error) {
-                console.error('❌ Error:', error);
-                mostrarError('Error al iniciar: ' + error.message);
-            }
+        // Icono del conductor en el mapa
+        const iconoConductor = L.divIcon({
+            html: '<div style="background:linear-gradient(135deg,#f47920,#e61e2b);width:36px;height:36px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-taxi" style="color:white;font-size:14px;"></i></div>',
+            className: 'conductor-marker',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
         });
 
-        // ═══════════════════════════════════════════════════
-        // MAPA
-        // ═══════════════════════════════════════════════════
-        function initMapa() {
-            try {
-                const mapContainer = document.getElementById('map');
-                if (!mapContainer) {
-                    throw new Error('No se encontró el contenedor del mapa');
-                }
-
-                map = L.map('map', { 
-                    zoomControl: false,
-                    attributionControl: false 
-                }).setView([-34.564, -58.770], 15);
-
-                // Capa gratuita OpenStreetMap
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19
-                }).addTo(map);
-
-                console.log('✅ Mapa OK');
-
-            } catch (error) {
-                console.error('❌ Error mapa:', error);
-                mostrarError('Error al cargar mapa');
-            }
-        }
+        let viajeActual = null;
+        let canalViaje = null;
+        let marcadorConductor = null;
+        let miPosicion = { lat: -34.564, lng: -58.770 };
+        let watchId = null;
 
         // ═══════════════════════════════════════════════════
-        // VERIFICAR CONDUCTOR EN DB
-        // ═══════════════════════════════════════════════════
-        async function verificarConductor() {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('conductores')
-                    .select('*')
-                    .eq('id', CONDUCTOR_ID)
-                    .single();
-
-                if (error && error.code === 'PGRST116') {
-                    // No existe, crearlo
-                    const { error: insertError } = await supabaseClient
-                        .from('conductores')
-                        .insert({
-                            id: CONDUCTOR_ID,
-                            nombre: CONDUCTOR_NOMBRE,
-                            estado: 'offline',
-                            lat: -34.564,
-                            lng: -58.770
-                        });
-
-                    if (insertError) throw insertError;
-                    console.log('✅ Conductor creado');
-                } else if (data) {
-                    console.log('✅ Conductor encontrado:', data.nombre);
-                }
-
-            } catch (error) {
-                console.error('❌ Error DB:', error);
-                // No mostrar error al usuario, seguir funcionando
-            }
-        }
-
-        // ═══════════════════════════════════════════════════
-        // GPS
+        // GPS - Obtener ubicación real
         // ═══════════════════════════════════════════════════
         function iniciarGPS() {
             if (!navigator.geolocation) {
-                mostrarError('Tu navegador no soporta GPS');
+                alert("Tu navegador no soporta geolocalización");
                 return;
             }
 
-            // Posición inicial
+            // Primera posición
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
-                    miPosicion = { 
-                        lat: pos.coords.latitude, 
-                        lng: pos.coords.longitude 
-                    };
-                    
-                    if (map) {
-                        map.setView([miPosicion.lat, miPosicion.lng], 16);
-                        
-                        const iconoYo = L.divIcon({
-                            html: '<div style="background:linear-gradient(135deg,#f47920,#e61e2b);width:40px;height:40px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-taxi" style="color:white;font-size:16px;"></i></div>',
-                            iconSize: [44, 44],
-                            iconAnchor: [22, 22]
-                        });
-
-                        marcadorYo = L.marker([miPosicion.lat, miPosicion.lng], { icon: iconoYo })
-                            .addTo(map);
-                    }
+                    miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    map.setView([miPosicion.lat, miPosicion.lng], 16);
                 },
-                (err) => {
-                    console.log('GPS inicial error:', err);
-                    // Usar posición por defecto
-                    if (map) map.setView([-34.564, -58.770], 15);
-                },
-                { enableHighAccuracy: true, timeout: 10000 }
+                (err) => console.log("GPS error:", err),
+                { enableHighAccuracy: true }
             );
 
-            // Watch position
+            // Seguimiento continuo
             watchId = navigator.geolocation.watchPosition(
-                async (pos) => {
-                    miPosicion = { 
-                        lat: pos.coords.latitude, 
-                        lng: pos.coords.longitude 
-                    };
-                    
-                    if (marcadorYo) {
-                        marcadorYo.setLatLng([miPosicion.lat, miPosicion.lng]);
-                    }
-
-                    // Enviar a Supabase si está online
-                    if (online && supabaseClient) {
-                        try {
-                            await supabaseClient
-                                .from('conductores')
-                                .update({ 
-                                    lat: miPosicion.lat, 
-                                    lng: miPosicion.lng,
-                                    ultima_actualizacion: new Date().toISOString()
-                                })
-                                .eq('id', CONDUCTOR_ID);
-                        } catch (e) {
-                            // Silenciar errores de red
-                        }
-                    }
-
-                    // Actualizar ruta si hay viaje
-                    if (viajeActual && marcadorPasajero) {
-                        actualizarRuta();
-                    }
+                (pos) => {
+                    miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                 },
-                (err) => console.log('GPS watch error:', err),
-                { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+                (err) => console.log("Watch error:", err),
+                { enableHighAccuracy: true, maximumAge: 5000 }
             );
         }
 
+        function centrarEnMiUbicacion() {
+            map.setView([miPosicion.lat, miPosicion.lng], 16);
+        }
+
+        // La dirección de salida se toma del CENTRO del mapa (como Uber)
+        function obtenerDireccionCentro() {
+            const centro = map.getCenter();
+            return { lat: centro.lat, lng: centro.lng };
+        }
+
         // ═══════════════════════════════════════════════════
-        // CAMBIAR ESTADO ONLINE/OFFLINE
+        // SOLICITAR VIAJE
         // ═══════════════════════════════════════════════════
-        async function cambiarEstado() {
-            if (!supabaseClient) {
-                mostrarError('Supabase no conectado');
+        async function solicitarViaje() {
+            const nombre = document.getElementById('nombre').value.trim();
+            const telefono = document.getElementById('telefono').value.trim();
+            const direccion = document.getElementById('direccion').value.trim();
+            const destino = document.getElementById('destino').value.trim();
+            const referencia = document.getElementById('referencia').value.trim();
+
+            if (!nombre || !direccion) {
+                alert("Por favor completá tu nombre y dirección");
                 return;
             }
 
-            online = !online;
-            const nuevoEstado = online ? 'disponible' : 'offline';
+            const coordsSalida = obtenerDireccionCentro();
 
             try {
-                const { error } = await supabaseClient
-                    .from('conductores')
-                    .update({ estado: nuevoEstado })
-                    .eq('id', CONDUCTOR_ID);
+                // Crear pasajero
+                const { data: pasajero, error: errPax } = await supabaseClient
+                    .from('pasajeros')
+                    .insert({ nombre, telefono })
+                    .select()
+                    .single();
 
-                if (error) throw error;
+                if (errPax) throw errPax;
 
-                actualizarUIEstado();
-
-                if (online) {
-                    escucharPedidos();
-                } else {
-                    if (canalPedidos) {
-                        supabaseClient.removeChannel(canalPedidos);
-                        canalPedidos = null;
-                    }
-                }
-
-            } catch (error) {
-                console.error('Error:', error);
-                mostrarError('Error: ' + error.message);
-                online = !online;
-            }
-        }
-
-        function actualizarUIEstado() {
-            const toggle = document.getElementById('toggle-online');
-            const texto = document.getElementById('estado-texto');
-
-            if (online) {
-                toggle.classList.add('activo');
-                texto.textContent = 'En línea • Buscando viajes';
-                texto.style.color = 'var(--verde)';
-            } else {
-                toggle.classList.remove('activo');
-                texto.textContent = 'Desconectado';
-                texto.style.color = 'var(--gris)';
-            }
-        }
-
-        // ═══════════════════════════════════════════════════
-        // ESCUCHAR PEDIDOS (Realtime)
-        // ═══════════════════════════════════════════════════
-        function escucharPedidos() {
-            if (!supabaseClient) return;
-
-            try {
-                canalPedidos = supabaseClient
-                    .channel('pedidos-' + Date.now())
-                    .on('postgres_changes', {
-                        event: 'INSERT',
-                        schema: 'public',
-                        table: 'viajes',
-                        filter: 'estado=eq.pendiente'
-                    }, (payload) => {
-                        const viaje = payload.new;
-                        
-                        const dist = calcularDistancia(
-                            miPosicion.lat, miPosicion.lng,
-                            viaje.lat_salida, viaje.lng_salida
-                        );
-
-                        if (dist < 5 && !viajeActual && !pedidoPendiente) {
-                            mostrarPedido(viaje, dist);
-                        }
-                    })
-                    .subscribe();
-
-            } catch (error) {
-                console.error('Error suscribiendo:', error);
-            }
-        }
-
-        // ═══════════════════════════════════════════════════
-        // MOSTRAR PEDIDO
-        // ═══════════════════════════════════════════════════
-        function mostrarPedido(viaje, distancia) {
-            pedidoPendiente = viaje;
-
-            document.getElementById('panel-stats').style.display = 'none';
-            document.getElementById('pedido-entrante').classList.add('activo');
-
-            document.getElementById('p-nombre').textContent = viaje.nombre_pasajero || 'Sin nombre';
-            document.getElementById('p-direccion').textContent = viaje.direccion_salida || 'Sin dirección';
-            document.getElementById('p-referencia').textContent = viaje.referencia || 'Sin referencia';
-            document.getElementById('p-telefono').textContent = viaje.telefono_pasajero || 'Sin teléfono';
-            document.getElementById('distancia-pedido').textContent = `A ${distancia.toFixed(1)} km`;
-
-            if (marcadorPasajero) map.removeLayer(marcadorPasajero);
-            
-            const iconoPasajero = L.divIcon({
-                html: '<div style="background:#e61e2b;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="color:white;font-size:12px;"></i></div>',
-                iconSize: [36, 36],
-                iconAnchor: [18, 18]
-            });
-            
-            marcadorPasajero = L.marker([viaje.lat_salida, viaje.lng_salida], { icon: iconoPasajero })
-                .addTo(map)
-                .bindPopup(`<b>${viaje.nombre_pasajero}</b><br>${viaje.direccion_salida}`);
-
-            if (map && marcadorYo) {
-                const bounds = L.latLngBounds(
-                    [miPosicion.lat, miPosicion.lng],
-                    [viaje.lat_salida, viaje.lng_salida]
-                );
-                map.fitBounds(bounds, { padding: [80, 80] });
-            }
-        }
-
-        // ═══════════════════════════════════════════════════
-        // ACEPTAR / RECHAZAR
-        // ═══════════════════════════════════════════════════
-        async function aceptarPedido() {
-            if (!pedidoPendiente || !supabaseClient) return;
-
-            viajeActual = pedidoPendiente;
-            pedidoPendiente = null;
-
-            try {
-                await supabaseClient
+                // Crear viaje
+                const { data: viaje, error: errViaje } = await supabaseClient
                     .from('viajes')
-                    .update({ 
-                        estado: 'aceptado',
-                        conductor_id: CONDUCTOR_ID
+                    .insert({
+                        pasajero_id: pasajero.id,
+                        nombre_pasajero: nombre,
+                        telefono_pasajero: telefono,
+                        direccion_salida: direccion,
+                        referencia: referencia,
+                        lat_salida: coordsSalida.lat,
+                        lng_salida: coordsSalida.lng,
+                        estado: 'pendiente'
                     })
-                    .eq('id', viajeActual.id);
+                    .select()
+                    .single();
 
-                await supabaseClient
+                if (errViaje) throw errViaje;
+
+                viajeActual = viaje;
+
+                // Cambiar UI
+                mostrarPanel('estado-buscando');
+                
+                // Escuchar cambios del viaje
+                escucharViaje(viaje.id);
+
+            } catch (error) {
+                console.error("Error creando viaje:", error);
+                alert("Error al crear el viaje: " + error.message);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════
+        // ESCUCHAR ESTADO DEL VIAJE (Realtime)
+        // ═══════════════════════════════════════════════════
+        function escucharViaje(viajeId) {
+            canalViaje = supabaseClient
+                .channel('viaje-' + viajeId)
+                .on('postgres_changes', {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'viajes',
+                    filter: `id=eq.${viajeId}`
+                }, (payload) => {
+                    const v = payload.new;
+                    procesarCambioEstado(v);
+                })
+                .subscribe();
+        }
+
+        async function procesarCambioEstado(viaje) {
+            if (viaje.estado === 'aceptado') {
+                // Obtener datos del conductor
+                const { data: conductor } = await supabaseClient
                     .from('conductores')
-                    .update({ estado: 'ocupado' })
-                    .eq('id', CONDUCTOR_ID);
+                    .select('*')
+                    .eq('id', viaje.conductor_id)
+                    .single();
 
-                viajeActual.estado = 'aceptado';
-
-                document.getElementById('pedido-entrante').classList.remove('activo');
-                document.getElementById('viaje-activo-panel').classList.add('activo');
-
-                document.getElementById('v-nombre').textContent = viajeActual.nombre_pasajero;
-                document.getElementById('v-direccion').textContent = viajeActual.direccion_salida;
-                document.getElementById('v-telefono').textContent = viajeActual.telefono_pasajero || 'Sin teléfono';
-
-                actualizarRuta();
-
-            } catch (error) {
-                console.error('Error:', error);
-                mostrarError('Error al aceptar');
-            }
-        }
-
-        function rechazarPedido() {
-            pedidoPendiente = null;
-            document.getElementById('pedido-entrante').classList.remove('activo');
-            document.getElementById('panel-stats').style.display = 'block';
-            
-            if (marcadorPasajero) {
-                map.removeLayer(marcadorPasajero);
-                marcadorPasajero = null;
-            }
-        }
-
-        // ═══════════════════════════════════════════════════
-        // ACCIONES DEL VIAJE
-        // ═══════════════════════════════════════════════════
-        async function siguienteAccion() {
-            const btn = document.getElementById('btn-accion');
-
-            if (!viajeActual || !supabaseClient) return;
-
-            try {
-                if (viajeActual.estado === 'pendiente' || viajeActual.estado === 'aceptado') {
-                    await supabaseClient
-                        .from('viajes')
-                        .update({ estado: 'en_camino' })
-                        .eq('id', viajeActual.id);
-
-                    viajeActual.estado = 'en_camino';
-                    btn.innerHTML = '<i class="fas fa-flag-checkered"></i> Completar viaje';
-                    btn.className = 'btn btn-completar';
-                }
-                else if (viajeActual.estado === 'en_camino') {
-                    await supabaseClient
-                        .from('viajes')
-                        .update({ estado: 'completado' })
-                        .eq('id', viajeActual.id);
-
-                    await supabaseClient
-                        .from('conductores')
-                        .update({ estado: 'disponible' })
-                        .eq('id', CONDUCTOR_ID);
-
-                    // Reset
-                    viajeActual = null;
+                if (conductor) {
+                    document.getElementById('nombre-conductor').textContent = conductor.nombre;
+                    document.getElementById('datos-vehiculo').textContent = 
+                        `${conductor.vehiculo || 'Móvil #53'} • ${conductor.placa || ''}`;
+                    document.getElementById('avatar-conductor').textContent = conductor.nombre.charAt(0).toUpperCase();
                     
-                    if (marcadorPasajero) {
-                        map.removeLayer(marcadorPasajero);
-                        marcadorPasajero = null;
+                    // Mostrar conductor en el mapa
+                    if (conductor.lat && conductor.lng) {
+                        mostrarConductorEnMapa(conductor.lat, conductor.lng);
                     }
-                    if (rutaLinea) {
-                        map.removeLayer(rutaLinea);
-                        rutaLinea = null;
-                    }
-
-                    document.getElementById('viaje-activo-panel').classList.remove('activo');
-                    document.getElementById('panel-stats').style.display = 'block';
-
-                    const viajes = parseInt(document.getElementById('viajes-hoy').textContent) + 1;
-                    document.getElementById('viajes-hoy').textContent = viajes;
-
-                    btn.innerHTML = '<i class="fas fa-car"></i> Llegué al punto';
-                    btn.className = 'btn btn-llegue';
                 }
 
-            } catch (error) {
-                console.error('Error:', error);
-                mostrarError('Error al actualizar viaje');
+                mostrarPanel('estado-aceptado');
+            }
+            else if (viaje.estado === 'en_camino') {
+                mostrarPanel('estado-en-camino');
+            }
+            else if (viaje.estado === 'completado') {
+                mostrarPanel('estado-completado');
+                if (canalViaje) canalViaje.unsubscribe();
+            }
+            else if (viaje.estado === 'cancelado') {
+                alert("El viaje fue cancelado");
+                location.reload();
             }
         }
 
+        // ═══════════════════════════════════════════════════
+        // MOSTRAR CONDUCTOR EN MAPA
+        // ═══════════════════════════════════════════════════
+        function mostrarConductorEnMapa(lat, lng) {
+            if (marcadorConductor) {
+                marcadorConductor.setLatLng([lat, lng]);
+            } else {
+                marcadorConductor = L.marker([lat, lng], { icon: iconoConductor })
+                    .addTo(map)
+                    .bindPopup('Tu conductor');
+            }
+
+            // Centrar entre pasajero y conductor
+            const bounds = L.latLngBounds(
+                [miPosicion.lat, miPosicion.lng],
+                [lat, lng]
+            );
+            map.fitBounds(bounds, { padding: [60, 60] });
+        }
+
+        // ═══════════════════════════════════════════════════
+        // CANCELAR VIAJE
+        // ═══════════════════════════════════════════════════
         async function cancelarViaje() {
-            if (!viajeActual || !supabaseClient) return;
-            if (!confirm('¿Cancelar este viaje?')) return;
+            if (!viajeActual) return;
+            if (!confirm("¿Cancelar el viaje?")) return;
 
             try {
                 await supabaseClient
@@ -773,47 +537,35 @@
                     .update({ estado: 'cancelado' })
                     .eq('id', viajeActual.id);
 
-                await supabaseClient
-                    .from('conductores')
-                    .update({ estado: 'disponible' })
-                    .eq('id', CONDUCTOR_ID);
-
-                viajeActual = null;
-                
-                if (marcadorPasajero) {
-                    map.removeLayer(marcadorPasajero);
-                    marcadorPasajero = null;
-                }
-                if (rutaLinea) {
-                    map.removeLayer(rutaLinea);
-                    rutaLinea = null;
-                }
-
-                document.getElementById('viaje-activo-panel').classList.remove('activo');
-                document.getElementById('panel-stats').style.display = 'block';
-
-                const btn = document.getElementById('btn-accion');
-                btn.innerHTML = '<i class="fas fa-car"></i> Llegué al punto';
-                btn.className = 'btn btn-llegue';
-
+                if (canalViaje) canalViaje.unsubscribe();
+                location.reload();
             } catch (error) {
-                console.error('Error:', error);
+                console.error("Error cancelando:", error);
             }
         }
 
-        // ═══════════════════════════════════════════════════
-        // RUTA
-        // ═══════════════════════════════════════════════════
-        function actualizarRuta() {
-            if (rutaLinea) map.removeLayer(rutaLinea);
-
-            if (marcadorPasajero) {
-                const destino = marcadorPasajero.getLatLng();
-                rutaLinea = L.polyline(
-                    [[miPosicion.lat, miPosicion.lng], [destino.lat, destino.lng]],
-                    { color: '#f47920', weight: 4, opacity: 0.8, dashArray: '10, 10' }
-                ).addTo(map);
-            }
+        function llamarConductor() {
+            alert("Llamando al conductor...");
         }
 
         // ═══════════════════════════════════════════════════
+        // UTILIDADES UI
+        // ═══════════════════════════════════════════════════
+        function mostrarPanel(id) {
+            // Ocultar todos
+            document.getElementById('formulario-pedido').style.display = 'none';
+            document.querySelectorAll('.estado-viaje').forEach(el => el.classList.remove('activo'));
+            
+            // Mostrar el indicado
+            if (id === 'formulario-pedido') {
+                document.getElementById('formulario-pedido').style.display = 'block';
+            } else {
+                document.getElementById(id).classList.add('activo');
+            }
+        }
+
+        // Iniciar
+        iniciarGPS();
+    </script>
+</body>
+</html>
