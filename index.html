@@ -29,14 +29,12 @@
             background: var(--fondo); color: var(--texto); overflow: hidden;
         }
 
-        /* ===== MAPA ===== */
         #map { 
             position: absolute; top: 0; left: 0; 
             height: 100%; width: 100%; z-index: 1;
             background: #e5e5e5;
         }
 
-        /* ===== HEADER ===== */
         .header {
             position: absolute; top: 12px; left: 12px; right: 12px;
             z-index: 1000; display: flex; justify-content: space-between; align-items: center;
@@ -58,7 +56,6 @@
             box-shadow: var(--sombra); pointer-events: auto;
         }
 
-        /* ===== BOTÓN MI UBICACIÓN ===== */
         .btn-mi-ubicacion {
             position: absolute; bottom: 340px; right: 15px;
             z-index: 1000; width: 50px; height: 50px;
@@ -68,7 +65,6 @@
             color: var(--celeste); font-size: 1.3rem;
         }
 
-        /* ===== MARCADOR CENTRAL ===== */
         .marcador-centro {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -100%);
@@ -78,7 +74,6 @@
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
         }
 
-        /* ===== PANEL INFERIOR ===== */
         .panel {
             position: absolute; bottom: 0; left: 0; right: 0;
             z-index: 1000; background: var(--blanco);
@@ -93,7 +88,6 @@
             border-radius: 2px; margin: 0 auto 15px;
         }
 
-        /* Inputs */
         .input-row {
             display: flex; align-items: center; gap: 12px;
             padding: 14px 16px; margin-bottom: 10px;
@@ -119,7 +113,6 @@
         .dot-verde { background: var(--verde); }
         .dot-rojo { background: var(--rojo); }
 
-        /* Botón principal */
         .btn-principal {
             width: 100%; padding: 18px;
             background: var(--rojo); color: white;
@@ -134,7 +127,6 @@
         .btn-principal:active { transform: scale(0.97); }
         .btn-principal:disabled { background: #ccc; box-shadow: none; }
 
-        /* ===== ESTADOS DEL VIAJE ===== */
         .estado-viaje { display: none; }
         .estado-viaje.activo { display: block; animation: slideUp 0.4s ease; }
 
@@ -196,30 +188,24 @@
 </head>
 <body>
 
-    <!-- Mapa -->
     <div id="map"></div>
 
-    <!-- Marcador fijo en el centro -->
     <div class="marcador-centro">
         <i class="fas fa-location-dot"></i>
     </div>
 
-    <!-- Header -->
     <div class="header">
         <button class="menu-btn"><i class="fas fa-bars"></i></button>
         <div class="logo-tag">🚕 LAS CATALINAS #53</div>
     </div>
 
-    <!-- Botón mi ubicación -->
     <button class="btn-mi-ubicacion" onclick="centrarEnMiUbicacion()">
         <i class="fas fa-crosshairs"></i>
     </button>
 
-    <!-- Panel inferior -->
     <div class="panel" id="panel">
         <div class="panel-handle"></div>
 
-        <!-- FORMULARIO -->
         <div id="formulario-pedido">
             <div class="input-row">
                 <i class="fas fa-user"></i>
@@ -251,7 +237,6 @@
             </button>
         </div>
 
-        <!-- ESTADO: BUSCANDO -->
         <div class="estado-viaje" id="estado-buscando">
             <div class="estado-header">
                 <div class="spinner"></div>
@@ -263,7 +248,6 @@
             </button>
         </div>
 
-        <!-- ESTADO: CONDUCTOR ASIGNADO -->
         <div class="estado-viaje" id="estado-aceptado">
             <div class="estado-header">
                 <div class="icono-grande">🚕</div>
@@ -291,7 +275,6 @@
             </button>
         </div>
 
-        <!-- ESTADO: EN CAMINO -->
         <div class="estado-viaje" id="estado-en-camino">
             <div class="estado-header">
                 <div class="icono-grande">🛣️</div>
@@ -300,7 +283,6 @@
             </div>
         </div>
 
-        <!-- ESTADO: COMPLETADO -->
         <div class="estado-viaje" id="estado-completado">
             <div class="estado-header">
                 <div class="icono-grande">⭐</div>
@@ -313,32 +295,29 @@
         </div>
     </div>
 
-    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
         // ═══════════════════════════════════════════════════
-        // CONFIGURACIÓN - REEMPLAZÁ CON TUS DATOS REALES
+        // CONFIGURACIÓN SUPABASE - DATOS REALES
         // ═══════════════════════════════════════════════════
-        const SUPABASE_URL = 'https://TU-PROJECT.supabase.co';
-        const SUPABASE_KEY = 'TU-ANON-KEY';
+        const SUPABASE_URL = 'https://efryvjjunfeoxhekvwza.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // ═══════════════════════════════════════════════════
-        // MAPA - OpenStreetMap (Gratis)
+        // MAPA
         // ═══════════════════════════════════════════════════
         const map = L.map('map', { 
             zoomControl: false,
             attributionControl: false 
         }).setView([-34.564, -58.770], 15);
 
-        // Capa gratuita de OpenStreetMap (modo día)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19
         }).addTo(map);
 
-        // Icono del conductor en el mapa
         const iconoConductor = L.divIcon({
             html: '<div style="background:linear-gradient(135deg,#f47920,#e61e2b);width:36px;height:36px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-taxi" style="color:white;font-size:14px;"></i></div>',
             className: 'conductor-marker',
@@ -352,16 +331,12 @@
         let miPosicion = { lat: -34.564, lng: -58.770 };
         let watchId = null;
 
-        // ═══════════════════════════════════════════════════
-        // GPS - Obtener ubicación real
-        // ═══════════════════════════════════════════════════
         function iniciarGPS() {
             if (!navigator.geolocation) {
                 alert("Tu navegador no soporta geolocalización");
                 return;
             }
 
-            // Primera posición
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -371,7 +346,6 @@
                 { enableHighAccuracy: true }
             );
 
-            // Seguimiento continuo
             watchId = navigator.geolocation.watchPosition(
                 (pos) => {
                     miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -385,15 +359,11 @@
             map.setView([miPosicion.lat, miPosicion.lng], 16);
         }
 
-        // La dirección de salida se toma del CENTRO del mapa (como Uber)
         function obtenerDireccionCentro() {
             const centro = map.getCenter();
             return { lat: centro.lat, lng: centro.lng };
         }
 
-        // ═══════════════════════════════════════════════════
-        // SOLICITAR VIAJE
-        // ═══════════════════════════════════════════════════
         async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value.trim();
             const telefono = document.getElementById('telefono').value.trim();
@@ -409,7 +379,6 @@
             const coordsSalida = obtenerDireccionCentro();
 
             try {
-                // Crear pasajero
                 const { data: pasajero, error: errPax } = await supabaseClient
                     .from('pasajeros')
                     .insert({ nombre, telefono })
@@ -418,7 +387,6 @@
 
                 if (errPax) throw errPax;
 
-                // Crear viaje
                 const { data: viaje, error: errViaje } = await supabaseClient
                     .from('viajes')
                     .insert({
@@ -437,11 +405,7 @@
                 if (errViaje) throw errViaje;
 
                 viajeActual = viaje;
-
-                // Cambiar UI
                 mostrarPanel('estado-buscando');
-                
-                // Escuchar cambios del viaje
                 escucharViaje(viaje.id);
 
             } catch (error) {
@@ -450,9 +414,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════
-        // ESCUCHAR ESTADO DEL VIAJE (Realtime)
-        // ═══════════════════════════════════════════════════
         function escucharViaje(viajeId) {
             canalViaje = supabaseClient
                 .channel('viaje-' + viajeId)
@@ -470,7 +431,6 @@
 
         async function procesarCambioEstado(viaje) {
             if (viaje.estado === 'aceptado') {
-                // Obtener datos del conductor
                 const { data: conductor } = await supabaseClient
                     .from('conductores')
                     .select('*')
@@ -483,7 +443,6 @@
                         `${conductor.vehiculo || 'Móvil #53'} • ${conductor.placa || ''}`;
                     document.getElementById('avatar-conductor').textContent = conductor.nombre.charAt(0).toUpperCase();
                     
-                    // Mostrar conductor en el mapa
                     if (conductor.lat && conductor.lng) {
                         mostrarConductorEnMapa(conductor.lat, conductor.lng);
                     }
@@ -504,9 +463,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════
-        // MOSTRAR CONDUCTOR EN MAPA
-        // ═══════════════════════════════════════════════════
         function mostrarConductorEnMapa(lat, lng) {
             if (marcadorConductor) {
                 marcadorConductor.setLatLng([lat, lng]);
@@ -516,7 +472,6 @@
                     .bindPopup('Tu conductor');
             }
 
-            // Centrar entre pasajero y conductor
             const bounds = L.latLngBounds(
                 [miPosicion.lat, miPosicion.lng],
                 [lat, lng]
@@ -524,9 +479,6 @@
             map.fitBounds(bounds, { padding: [60, 60] });
         }
 
-        // ═══════════════════════════════════════════════════
-        // CANCELAR VIAJE
-        // ═══════════════════════════════════════════════════
         async function cancelarViaje() {
             if (!viajeActual) return;
             if (!confirm("¿Cancelar el viaje?")) return;
@@ -548,15 +500,10 @@
             alert("Llamando al conductor...");
         }
 
-        // ═══════════════════════════════════════════════════
-        // UTILIDADES UI
-        // ═══════════════════════════════════════════════════
         function mostrarPanel(id) {
-            // Ocultar todos
             document.getElementById('formulario-pedido').style.display = 'none';
             document.querySelectorAll('.estado-viaje').forEach(el => el.classList.remove('activo'));
             
-            // Mostrar el indicado
             if (id === 'formulario-pedido') {
                 document.getElementById('formulario-pedido').style.display = 'block';
             } else {
@@ -564,7 +511,6 @@
             }
         }
 
-        // Iniciar
         iniciarGPS();
     </script>
 </body>
