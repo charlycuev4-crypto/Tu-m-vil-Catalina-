@@ -11,10 +11,14 @@
     <style>
         :root {
             --naranja: #f47920;
+            --naranja-claro: #ff9a44;
             --celeste: #0093d0;
+            --celeste-claro: #4db8e8;
             --rojo: #e61e2b;
             --verde: #28a745;
-            --fondo: #f0f2f5;
+            --amarillo: #ffc107;
+            --fondo: #fff5eb;
+            --panel-bg: linear-gradient(180deg, #fff8f0 0%, #ffecd9 100%);
             --blanco: #ffffff;
             --texto: #1a1a1a;
             --gris: #666666;
@@ -32,10 +36,10 @@
         #map { 
             position: absolute; top: 0; left: 0; 
             height: 100%; width: 100%; z-index: 1;
-            background: #ddd;
+            background: #e8e8e8;
         }
 
-        /* ===== HEADER ===== */
+        /* ===== HEADER CONDUCTOR ===== */
         .header-conductor {
             position: absolute; top: 12px; left: 12px; right: 12px;
             z-index: 1000; display: flex; gap: 10px;
@@ -43,93 +47,120 @@
         }
 
         .header-card {
-            flex: 1; background: var(--blanco);
+            flex: 1; 
+            background: linear-gradient(135deg, var(--naranja), var(--naranja-claro));
             border-radius: 16px; padding: 12px 16px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.15); pointer-events: auto;
+            box-shadow: 0 4px 15px rgba(244,121,32,0.3); 
+            pointer-events: auto;
             display: flex; align-items: center; gap: 12px;
+            border: 2px solid rgba(255,255,255,0.3);
         }
 
         .header-card .avatar {
             width: 44px; height: 44px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--naranja), var(--rojo));
+            background: var(--blanco);
             display: flex; align-items: center; justify-content: center;
-            color: white; font-weight: bold; font-size: 1.2rem; flex-shrink: 0;
+            color: var(--naranja); font-weight: bold; font-size: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
-        .header-card h3 { margin: 0; font-size: 1rem; }
-        .header-card p { margin: 2px 0 0; font-size: 0.8rem; color: var(--gris); }
+        .header-card h3 { margin: 0; font-size: 1rem; color: white; }
+        .header-card p { margin: 2px 0 0; font-size: 0.8rem; color: rgba(255,255,255,0.9); }
 
         .toggle-online {
             width: 60px; height: 36px;
-            background: #ccc; border-radius: 36px;
+            background: rgba(255,255,255,0.3); 
+            border-radius: 36px;
             position: relative; cursor: pointer;
-            transition: background 0.3s; pointer-events: auto;
+            transition: all 0.3s; 
+            pointer-events: auto;
             flex-shrink: 0;
+            border: 2px solid rgba(255,255,255,0.5);
         }
 
-        .toggle-online.activo { background: var(--verde); }
+        .toggle-online.activo { 
+            background: var(--verde); 
+            border-color: var(--verde);
+        }
 
         .toggle-online::after {
             content: ''; position: absolute;
             width: 28px; height: 28px;
             background: white; border-radius: 50%;
-            top: 4px; left: 4px;
+            top: 2px; left: 2px;
             transition: transform 0.3s;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
 
         .toggle-online.activo::after { transform: translateX(24px); }
 
-        /* ===== PANEL INFERIOR ===== */
+        /* ===== PANEL INFERIOR - MÁS NARANJA/CELESTE ===== */
         .panel {
             position: absolute; bottom: 0; left: 0; right: 0;
-            z-index: 1000; background: var(--blanco);
+            z-index: 1000; 
+            background: var(--panel-bg);
             border-radius: 24px 24px 0 0;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-            padding: 20px; max-height: 50vh;
+            box-shadow: 0 -4px 20px rgba(244,121,32,0.2);
+            padding: 20px; 
+            max-height: 50vh;
             overflow-y: auto;
+            border-top: 3px solid var(--naranja);
         }
 
         .panel-handle {
-            width: 40px; height: 4px; background: #ddd;
+            width: 40px; height: 4px; 
+            background: var(--naranja);
             border-radius: 2px; margin: 0 auto 15px;
+            opacity: 0.5;
         }
 
+        /* Stats - Fondo naranja muy suave */
         .stats-grid {
             display: grid; grid-template-columns: 1fr 1fr 1fr;
             gap: 10px; margin-bottom: 15px;
         }
 
         .stat-card {
-            background: var(--fondo); border-radius: 14px;
+            background: linear-gradient(135deg, var(--naranja), var(--naranja-claro));
+            border-radius: 14px;
             padding: 14px; text-align: center;
+            box-shadow: 0 3px 10px rgba(244,121,32,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
         }
 
         .stat-card .numero {
-            font-size: 1.6rem; font-weight: 800; color: var(--naranja);
+            font-size: 1.6rem; font-weight: 800; color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
 
         .stat-card .label {
-            font-size: 0.75rem; color: var(--gris); margin-top: 4px;
+            font-size: 0.75rem; color: rgba(255,255,255,0.9); 
+            margin-top: 4px;
         }
 
+        /* Estado esperando - Fondo celeste suave */
         .estado-espera {
             text-align: center; padding: 20px;
+            background: linear-gradient(135deg, rgba(0,147,208,0.1), rgba(77,184,232,0.1));
+            border-radius: 16px;
+            border: 2px solid var(--celeste);
         }
 
         .estado-espera .icono-grande {
             font-size: 3rem; margin-bottom: 10px;
         }
 
-        .estado-espera h3 { margin: 0; font-size: 1.2rem; }
+        .estado-espera h3 { margin: 0; font-size: 1.2rem; color: var(--celeste); }
         .estado-espera p { margin: 6px 0 0; color: var(--gris); }
 
+        /* Pedido entrante - Bordes naranja fuerte */
         .pedido-card {
             display: none;
-            background: linear-gradient(135deg, #fff8f3, #fff);
-            border: 2px solid var(--naranja);
+            background: linear-gradient(180deg, #fff8f0 0%, #ffecd9 100%);
+            border: 3px solid var(--naranja);
             border-radius: 20px; padding: 20px;
             animation: slideUp 0.4s ease;
+            box-shadow: 0 4px 15px rgba(244,121,32,0.2);
         }
 
         .pedido-card.activo { display: block; }
@@ -144,15 +175,18 @@
             background: linear-gradient(135deg, var(--naranja), var(--rojo));
             border-radius: 14px; display: flex;
             align-items: center; justify-content: center;
-            color: white; font-size: 1.5rem; flex-shrink: 0;
+            color: white; font-size: 1.5rem;
+            box-shadow: 0 3px 10px rgba(244,121,32,0.3);
         }
 
-        .pedido-header h3 { margin: 0; font-size: 1.2rem; }
+        .pedido-header h3 { margin: 0; font-size: 1.2rem; color: var(--naranja); }
         .pedido-header p { margin: 4px 0 0; color: var(--gris); font-size: 0.85rem; }
 
         .pedido-info {
-            background: var(--blanco); border-radius: 14px;
+            background: var(--blanco); 
+            border-radius: 14px;
             padding: 14px; margin-bottom: 16px;
+            border: 2px solid var(--celeste);
         }
 
         .pedido-info .fila {
@@ -163,6 +197,7 @@
         .pedido-info .fila:last-child { border-bottom: none; }
         .pedido-info i { color: var(--celeste); width: 20px; text-align: center; }
 
+        /* Botones */
         .botones-accion { display: flex; gap: 10px; }
 
         .btn {
@@ -175,49 +210,37 @@
         }
 
         .btn-aceptar {
-            background: var(--verde); color: white;
+            background: linear-gradient(135deg, var(--verde), #34ce57);
+            color: white;
             box-shadow: 0 4px 15px rgba(40,167,69,0.3);
         }
 
         .btn-rechazar {
-            background: #eee; color: var(--gris);
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: white;
         }
 
         .btn-llegue {
-            background: var(--celeste); color: white;
-            width: 100%; margin-top: 10px;
+            background: linear-gradient(135deg, var(--celeste), var(--celeste-claro));
+            color: white; width: 100%; margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(0,147,208,0.3);
         }
 
         .btn-completar {
-            background: var(--naranja); color: white;
-            width: 100%; margin-top: 10px;
+            background: linear-gradient(135deg, var(--naranja), var(--naranja-claro));
+            color: white; width: 100%; margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(244,121,32,0.3);
         }
 
         .btn:active { transform: scale(0.97); }
 
+        /* Viaje activo */
         .viaje-activo-panel { display: none; }
         .viaje-activo-panel.activo { display: block; }
-
-        /* Toast de error */
-        .toast {
-            position: fixed; top: 80px; left: 50%;
-            transform: translateX(-50%); z-index: 2000;
-            background: var(--rojo); color: white;
-            padding: 12px 24px; border-radius: 12px;
-            font-size: 0.9rem; display: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-
-        .toast.activo { display: block; animation: slideDown 0.3s ease; }
 
         @keyframes slideUp { 
             from { opacity: 0; transform: translateY(30px); } 
             to { opacity: 1; transform: translateY(0); } 
-        }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-            to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
     </style>
 </head>
@@ -225,9 +248,6 @@
 
     <!-- Mapa -->
     <div id="map"></div>
-
-    <!-- Toast errores -->
-    <div class="toast" id="toast"></div>
 
     <!-- Header -->
     <div class="header-conductor">
@@ -341,8 +361,8 @@
         const SUPABASE_URL = 'https://TU-PROJECT.supabase.co';
         const SUPABASE_KEY = 'TU-ANON-KEY';
         
-        // ID del conductor - REEMPLAZÁ con UUID real de tu tabla
-        const CONDUCTOR_ID = '11111111-1111-1111-1111-111111111111';
+        // UUID del conductor de prueba (Juan Pérez)
+        const CONDUCTOR_ID = 'b2e55e81-b40e-48ad-89d8-0d41d56d5fb8';
         const CONDUCTOR_NOMBRE = 'Juan Pérez';
 
         // ═══════════════════════════════════════════════════
@@ -363,44 +383,39 @@
         // ═══════════════════════════════════════════════════
         // INICIALIZACIÓN
         // ═══════════════════════════════════════════════════
-        window.addEventListener('load', async function() {
+        document.addEventListener('DOMContentLoaded', function() {
             try {
-                console.log('🚀 Iniciando app...');
-                
                 // 1. Inicializar Supabase
-                const { createClient } = supabase;
-                supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-                console.log('✅ Supabase OK');
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('✅ Supabase inicializado');
 
-                // 2. Inicializar mapa PRIMERO (antes que todo)
+                // 2. Inicializar mapa PRIMERO
                 initMapa();
                 
                 // 3. Configurar UI
                 document.getElementById('nombre-conductor').textContent = CONDUCTOR_NOMBRE;
                 document.getElementById('avatar-inicial').textContent = CONDUCTOR_NOMBRE.charAt(0).toUpperCase();
 
-                // 4. Verificar conductor en DB
-                await verificarConductor();
-
-                // 5. Iniciar GPS
+                // 4. Iniciar GPS
                 iniciarGPS();
 
-                console.log('✅ Todo listo!');
+                console.log('✅ App inicializada');
 
             } catch (error) {
-                console.error('❌ Error:', error);
-                mostrarError('Error al iniciar: ' + error.message);
+                console.error('❌ Error inicializando:', error);
             }
         });
 
         // ═══════════════════════════════════════════════════
-        // MAPA
+        // MAPA - CORREGIDO
         // ═══════════════════════════════════════════════════
         function initMapa() {
             try {
-                const mapContainer = document.getElementById('map');
-                if (!mapContainer) {
-                    throw new Error('No se encontró el contenedor del mapa');
+                // IMPORTANTE: Esperar a que el DOM esté listo
+                const mapDiv = document.getElementById('map');
+                if (!mapDiv) {
+                    console.error('No se encontró el div del mapa');
+                    return;
                 }
 
                 map = L.map('map', { 
@@ -408,51 +423,16 @@
                     attributionControl: false 
                 }).setView([-34.564, -58.770], 15);
 
-                // Capa gratuita OpenStreetMap
+                // Capa OpenStreetMap con HTTPS (crucial para Vercel)
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19
+                    maxZoom: 19,
+                    attribution: ''
                 }).addTo(map);
 
-                console.log('✅ Mapa OK');
+                console.log('✅ Mapa inicializado');
 
             } catch (error) {
                 console.error('❌ Error mapa:', error);
-                mostrarError('Error al cargar mapa');
-            }
-        }
-
-        // ═══════════════════════════════════════════════════
-        // VERIFICAR CONDUCTOR EN DB
-        // ═══════════════════════════════════════════════════
-        async function verificarConductor() {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('conductores')
-                    .select('*')
-                    .eq('id', CONDUCTOR_ID)
-                    .single();
-
-                if (error && error.code === 'PGRST116') {
-                    // No existe, crearlo
-                    const { error: insertError } = await supabaseClient
-                        .from('conductores')
-                        .insert({
-                            id: CONDUCTOR_ID,
-                            nombre: CONDUCTOR_NOMBRE,
-                            estado: 'offline',
-                            lat: -34.564,
-                            lng: -58.770
-                        });
-
-                    if (insertError) throw insertError;
-                    console.log('✅ Conductor creado');
-                } else if (data) {
-                    console.log('✅ Conductor encontrado:', data.nombre);
-                }
-
-            } catch (error) {
-                console.error('❌ Error DB:', error);
-                // No mostrar error al usuario, seguir funcionando
             }
         }
 
@@ -461,7 +441,9 @@
         // ═══════════════════════════════════════════════════
         function iniciarGPS() {
             if (!navigator.geolocation) {
-                mostrarError('Tu navegador no soporta GPS');
+                console.log('GPS no disponible');
+                // Mostrar mapa en posición por defecto
+                if (map) map.setView([-34.564, -58.770], 15);
                 return;
             }
 
@@ -476,6 +458,7 @@
                     if (map) {
                         map.setView([miPosicion.lat, miPosicion.lng], 16);
                         
+                        // Icono del taxi
                         const iconoYo = L.divIcon({
                             html: '<div style="background:linear-gradient(135deg,#f47920,#e61e2b);width:40px;height:40px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-taxi" style="color:white;font-size:16px;"></i></div>',
                             iconSize: [44, 44],
@@ -488,7 +471,6 @@
                 },
                 (err) => {
                     console.log('GPS inicial error:', err);
-                    // Usar posición por defecto
                     if (map) map.setView([-34.564, -58.770], 15);
                 },
                 { enableHighAccuracy: true, timeout: 10000 }
@@ -522,7 +504,6 @@
                         }
                     }
 
-                    // Actualizar ruta si hay viaje
                     if (viajeActual && marcadorPasajero) {
                         actualizarRuta();
                     }
@@ -537,7 +518,7 @@
         // ═══════════════════════════════════════════════════
         async function cambiarEstado() {
             if (!supabaseClient) {
-                mostrarError('Supabase no conectado');
+                alert('Error: Supabase no conectado');
                 return;
             }
 
@@ -564,8 +545,7 @@
                 }
 
             } catch (error) {
-                console.error('Error:', error);
-                mostrarError('Error: ' + error.message);
+                console.error('Error cambiando estado:', error);
                 online = !online;
             }
         }
@@ -581,7 +561,7 @@
             } else {
                 toggle.classList.remove('activo');
                 texto.textContent = 'Desconectado';
-                texto.style.color = 'var(--gris)';
+                texto.style.color = 'rgba(255,255,255,0.7)';
             }
         }
 
@@ -593,7 +573,7 @@
 
             try {
                 canalPedidos = supabaseClient
-                    .channel('pedidos-' + Date.now())
+                    .channel('pedidos-nuevos-' + Date.now())
                     .on('postgres_changes', {
                         event: 'INSERT',
                         schema: 'public',
@@ -614,7 +594,7 @@
                     .subscribe();
 
             } catch (error) {
-                console.error('Error suscribiendo:', error);
+                console.error('Error suscribiendo a pedidos:', error);
             }
         }
 
@@ -631,7 +611,7 @@
             document.getElementById('p-direccion').textContent = viaje.direccion_salida || 'Sin dirección';
             document.getElementById('p-referencia').textContent = viaje.referencia || 'Sin referencia';
             document.getElementById('p-telefono').textContent = viaje.telefono_pasajero || 'Sin teléfono';
-            document.getElementById('distancia-pedido').textContent = `A ${distancia.toFixed(1)} km`;
+            document.getElementById('distancia-pedido').textContent = `A ${distancia.toFixed(1)} km de distancia`;
 
             if (marcadorPasajero) map.removeLayer(marcadorPasajero);
             
@@ -655,43 +635,35 @@
         }
 
         // ═══════════════════════════════════════════════════
-        // ACEPTAR / RECHAZAR
+        // ACEPTAR / RECHAZAR PEDIDO
         // ═══════════════════════════════════════════════════
         async function aceptarPedido() {
-            if (!pedidoPendiente || !supabaseClient) return;
+            if (!pedidoPendiente) return;
 
             viajeActual = pedidoPendiente;
             pedidoPendiente = null;
 
-            try {
-                await supabaseClient
-                    .from('viajes')
-                    .update({ 
-                        estado: 'aceptado',
-                        conductor_id: CONDUCTOR_ID
-                    })
-                    .eq('id', viajeActual.id);
+            await supabaseClient
+                .from('viajes')
+                .update({ 
+                    estado: 'aceptado',
+                    conductor_id: CONDUCTOR_ID
+                })
+                .eq('id', viajeActual.id);
 
-                await supabaseClient
-                    .from('conductores')
-                    .update({ estado: 'ocupado' })
-                    .eq('id', CONDUCTOR_ID);
+            await supabaseClient
+                .from('conductores')
+                .update({ estado: 'ocupado' })
+                .eq('id', CONDUCTOR_ID);
 
-                viajeActual.estado = 'aceptado';
+            document.getElementById('pedido-entrante').classList.remove('activo');
+            document.getElementById('viaje-activo-panel').classList.add('activo');
 
-                document.getElementById('pedido-entrante').classList.remove('activo');
-                document.getElementById('viaje-activo-panel').classList.add('activo');
+            document.getElementById('v-nombre').textContent = viajeActual.nombre_pasajero;
+            document.getElementById('v-direccion').textContent = viajeActual.direccion_salida;
+            document.getElementById('v-telefono').textContent = viajeActual.telefono_pasajero || 'Sin teléfono';
 
-                document.getElementById('v-nombre').textContent = viajeActual.nombre_pasajero;
-                document.getElementById('v-direccion').textContent = viajeActual.direccion_salida;
-                document.getElementById('v-telefono').textContent = viajeActual.telefono_pasajero || 'Sin teléfono';
-
-                actualizarRuta();
-
-            } catch (error) {
-                console.error('Error:', error);
-                mostrarError('Error al aceptar');
-            }
+            actualizarRuta();
         }
 
         function rechazarPedido() {
@@ -711,66 +683,23 @@
         async function siguienteAccion() {
             const btn = document.getElementById('btn-accion');
 
-            if (!viajeActual || !supabaseClient) return;
+            if (!viajeActual) return;
 
-            try {
-                if (viajeActual.estado === 'pendiente' || viajeActual.estado === 'aceptado') {
-                    await supabaseClient
-                        .from('viajes')
-                        .update({ estado: 'en_camino' })
-                        .eq('id', viajeActual.id);
-
-                    viajeActual.estado = 'en_camino';
-                    btn.innerHTML = '<i class="fas fa-flag-checkered"></i> Completar viaje';
-                    btn.className = 'btn btn-completar';
-                }
-                else if (viajeActual.estado === 'en_camino') {
-                    await supabaseClient
-                        .from('viajes')
-                        .update({ estado: 'completado' })
-                        .eq('id', viajeActual.id);
-
-                    await supabaseClient
-                        .from('conductores')
-                        .update({ estado: 'disponible' })
-                        .eq('id', CONDUCTOR_ID);
-
-                    // Reset
-                    viajeActual = null;
-                    
-                    if (marcadorPasajero) {
-                        map.removeLayer(marcadorPasajero);
-                        marcadorPasajero = null;
-                    }
-                    if (rutaLinea) {
-                        map.removeLayer(rutaLinea);
-                        rutaLinea = null;
-                    }
-
-                    document.getElementById('viaje-activo-panel').classList.remove('activo');
-                    document.getElementById('panel-stats').style.display = 'block';
-
-                    const viajes = parseInt(document.getElementById('viajes-hoy').textContent) + 1;
-                    document.getElementById('viajes-hoy').textContent = viajes;
-
-                    btn.innerHTML = '<i class="fas fa-car"></i> Llegué al punto';
-                    btn.className = 'btn btn-llegue';
-                }
-
-            } catch (error) {
-                console.error('Error:', error);
-                mostrarError('Error al actualizar viaje');
-            }
-        }
-
-        async function cancelarViaje() {
-            if (!viajeActual || !supabaseClient) return;
-            if (!confirm('¿Cancelar este viaje?')) return;
-
-            try {
+            if (viajeActual.estado === 'pendiente' || !viajeActual.estado) {
                 await supabaseClient
                     .from('viajes')
-                    .update({ estado: 'cancelado' })
+                    .update({ estado: 'en_camino' })
+                    .eq('id', viajeActual.id);
+
+                viajeActual.estado = 'en_camino';
+                
+                btn.innerHTML = '<i class="fas fa-flag-checkered"></i> Completar viaje';
+                btn.className = 'btn btn-completar';
+            }
+            else if (viajeActual.estado === 'en_camino') {
+                await supabaseClient
+                    .from('viajes')
+                    .update({ estado: 'completado' })
                     .eq('id', viajeActual.id);
 
                 await supabaseClient
@@ -792,17 +721,45 @@
                 document.getElementById('viaje-activo-panel').classList.remove('activo');
                 document.getElementById('panel-stats').style.display = 'block';
 
-                const btn = document.getElementById('btn-accion');
+                const viajes = parseInt(document.getElementById('viajes-hoy').textContent) + 1;
+                document.getElementById('viajes-hoy').textContent = viajes;
+
                 btn.innerHTML = '<i class="fas fa-car"></i> Llegué al punto';
                 btn.className = 'btn btn-llegue';
-
-            } catch (error) {
-                console.error('Error:', error);
             }
         }
 
+        async function cancelarViaje() {
+            if (!viajeActual) return;
+            if (!confirm("¿Cancelar este viaje?")) return;
+
+            await supabaseClient
+                .from('viajes')
+                .update({ estado: 'cancelado' })
+                .eq('id', viajeActual.id);
+
+            await supabaseClient
+                .from('conductores')
+                .update({ estado: 'disponible' })
+                .eq('id', CONDUCTOR_ID);
+
+            viajeActual = null;
+            
+            if (marcadorPasajero) {
+                map.removeLayer(marcadorPasajero);
+                marcadorPasajero = null;
+            }
+            if (rutaLinea) {
+                map.removeLayer(rutaLinea);
+                rutaLinea = null;
+            }
+
+            document.getElementById('viaje-activo-panel').classList.remove('activo');
+            document.getElementById('panel-stats').style.display = 'block';
+        }
+
         // ═══════════════════════════════════════════════════
-        // RUTA
+        // DIBUJAR RUTA
         // ═══════════════════════════════════════════════════
         function actualizarRuta() {
             if (rutaLinea) map.removeLayer(rutaLinea);
@@ -817,3 +774,17 @@
         }
 
         // ═══════════════════════════════════════════════════
+        // UTILIDADES
+        // ═══════════════════════════════════════════════════
+        function calcularDistancia(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+    </script>
+</body>
+</html>
