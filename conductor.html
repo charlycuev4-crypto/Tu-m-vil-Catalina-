@@ -18,7 +18,6 @@
             --blanco: #ffffff;
             --texto: #1a1a1a;
             --gris: #666666;
-            --sombra: 0 2px 12px rgba(0,0,0,0.15);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -29,12 +28,14 @@
             background: var(--fondo); color: var(--texto); overflow: hidden;
         }
 
+        /* ===== MAPA ===== */
         #map { 
             position: absolute; top: 0; left: 0; 
             height: 100%; width: 100%; z-index: 1;
+            background: #ddd;
         }
 
-        /* Header conductor */
+        /* ===== HEADER ===== */
         .header-conductor {
             position: absolute; top: 12px; left: 12px; right: 12px;
             z-index: 1000; display: flex; gap: 10px;
@@ -44,7 +45,7 @@
         .header-card {
             flex: 1; background: var(--blanco);
             border-radius: 16px; padding: 12px 16px;
-            box-shadow: var(--sombra); pointer-events: auto;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15); pointer-events: auto;
             display: flex; align-items: center; gap: 12px;
         }
 
@@ -52,18 +53,18 @@
             width: 44px; height: 44px; border-radius: 50%;
             background: linear-gradient(135deg, var(--naranja), var(--rojo));
             display: flex; align-items: center; justify-content: center;
-            color: white; font-weight: bold; font-size: 1.2rem;
+            color: white; font-weight: bold; font-size: 1.2rem; flex-shrink: 0;
         }
 
         .header-card h3 { margin: 0; font-size: 1rem; }
         .header-card p { margin: 2px 0 0; font-size: 0.8rem; color: var(--gris); }
 
-        /* Toggle online */
         .toggle-online {
             width: 60px; height: 36px;
             background: #ccc; border-radius: 36px;
             position: relative; cursor: pointer;
             transition: background 0.3s; pointer-events: auto;
+            flex-shrink: 0;
         }
 
         .toggle-online.activo { background: var(--verde); }
@@ -79,7 +80,7 @@
 
         .toggle-online.activo::after { transform: translateX(24px); }
 
-        /* Panel inferior */
+        /* ===== PANEL INFERIOR ===== */
         .panel {
             position: absolute; bottom: 0; left: 0; right: 0;
             z-index: 1000; background: var(--blanco);
@@ -94,7 +95,6 @@
             border-radius: 2px; margin: 0 auto 15px;
         }
 
-        /* Stats */
         .stats-grid {
             display: grid; grid-template-columns: 1fr 1fr 1fr;
             gap: 10px; margin-bottom: 15px;
@@ -113,7 +113,17 @@
             font-size: 0.75rem; color: var(--gris); margin-top: 4px;
         }
 
-        /* Pedido entrante */
+        .estado-espera {
+            text-align: center; padding: 20px;
+        }
+
+        .estado-espera .icono-grande {
+            font-size: 3rem; margin-bottom: 10px;
+        }
+
+        .estado-espera h3 { margin: 0; font-size: 1.2rem; }
+        .estado-espera p { margin: 6px 0 0; color: var(--gris); }
+
         .pedido-card {
             display: none;
             background: linear-gradient(135deg, #fff8f3, #fff);
@@ -134,7 +144,7 @@
             background: linear-gradient(135deg, var(--naranja), var(--rojo));
             border-radius: 14px; display: flex;
             align-items: center; justify-content: center;
-            color: white; font-size: 1.5rem;
+            color: white; font-size: 1.5rem; flex-shrink: 0;
         }
 
         .pedido-header h3 { margin: 0; font-size: 1.2rem; }
@@ -151,10 +161,8 @@
         }
 
         .pedido-info .fila:last-child { border-bottom: none; }
+        .pedido-info i { color: var(--celeste); width: 20px; text-align: center; }
 
-        .pedido-info i { color: var(--celeste); width: 20px; }
-
-        /* Botones de acción */
         .botones-accion { display: flex; gap: 10px; }
 
         .btn {
@@ -187,28 +195,39 @@
 
         .btn:active { transform: scale(0.97); }
 
-        /* Estado actual */
-        .estado-actual {
-            text-align: center; padding: 20px;
-            display: none;
+        .viaje-activo-panel { display: none; }
+        .viaje-activo-panel.activo { display: block; }
+
+        /* Toast de error */
+        .toast {
+            position: fixed; top: 80px; left: 50%;
+            transform: translateX(-50%); z-index: 2000;
+            background: var(--rojo); color: white;
+            padding: 12px 24px; border-radius: 12px;
+            font-size: 0.9rem; display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
-        .estado-actual.activo { display: block; }
+        .toast.activo { display: block; animation: slideDown 0.3s ease; }
 
-        .estado-actual .icono-grande {
-            font-size: 3rem; margin-bottom: 10px;
+        @keyframes slideUp { 
+            from { opacity: 0; transform: translateY(30px); } 
+            to { opacity: 1; transform: translateY(0); } 
         }
 
-        .estado-actual h3 { margin: 0; font-size: 1.2rem; }
-        .estado-actual p { margin: 6px 0 0; color: var(--gris); }
-
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
     </style>
 </head>
 <body>
 
     <!-- Mapa -->
     <div id="map"></div>
+
+    <!-- Toast errores -->
+    <div class="toast" id="toast"></div>
 
     <!-- Header -->
     <div class="header-conductor">
@@ -226,7 +245,7 @@
     <div class="panel">
         <div class="panel-handle"></div>
 
-        <!-- Stats (sin pedido) -->
+        <!-- Stats + Espera -->
         <div id="panel-stats">
             <div class="stats-grid">
                 <div class="stat-card">
@@ -242,7 +261,7 @@
                     <div class="label">Calificación</div>
                 </div>
             </div>
-            <div class="estado-actual activo">
+            <div class="estado-espera" id="estado-espera">
                 <div class="icono-grande">📍</div>
                 <h3>Esperando pedidos...</h3>
                 <p>Mantenete online para recibir viajes</p>
@@ -255,7 +274,7 @@
                 <div class="icono"><i class="fas fa-bell"></i></div>
                 <div>
                     <h3>¡Nuevo pedido!</h3>
-                    <p id="distancia-pedido">A 1.2 km de distancia</p>
+                    <p id="distancia-pedido">Calculando distancia...</p>
                 </div>
             </div>
             <div class="pedido-info">
@@ -287,7 +306,7 @@
         </div>
 
         <!-- Viaje activo -->
-        <div id="viaje-activo" style="display:none;">
+        <div class="viaje-activo-panel" id="viaje-activo-panel">
             <div class="pedido-info">
                 <div class="fila">
                     <i class="fas fa-user"></i>
@@ -306,7 +325,7 @@
                 <i class="fas fa-car"></i> Llegué al punto
             </button>
             <button class="btn btn-rechazar" style="margin-top:10px;" onclick="cancelarViaje()">
-                <i class="fas fa-times"></i> Cancelar
+                <i class="fas fa-times"></i> Cancelar viaje
             </button>
         </div>
     </div>
@@ -317,49 +336,23 @@
 
     <script>
         // ═══════════════════════════════════════════════════
-        // CONFIGURACIÓN - REEMPLAZÁ CON TUS DATOS
+        // CONFIGURACIÓN - REEMPLAZÁ CON TUS DATOS REALES
         // ═══════════════════════════════════════════════════
         const SUPABASE_URL = 'https://TU-PROJECT.supabase.co';
         const SUPABASE_KEY = 'TU-ANON-KEY';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // ID del conductor (en producción viene del login)
-        // Para probar: creá un conductor en Supabase y poné su UUID acá
-        const CONDUCTOR_ID = 'ID-DEL-CONDUCTOR-AQUÍ';
+        
+        // ID del conductor - REEMPLAZÁ con UUID real de tu tabla
+        const CONDUCTOR_ID = '11111111-1111-1111-1111-111111111111';
         const CONDUCTOR_NOMBRE = 'Juan Pérez';
 
         // ═══════════════════════════════════════════════════
-        // MAPA
+        // VARIABLES GLOBALES
         // ═══════════════════════════════════════════════════
-        const map = L.map('map', { 
-            zoomControl: false,
-            attributionControl: false 
-        }).setView([-34.564, -58.770], 15);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
-        }).addTo(map);
-
-        // Iconos
-        const iconoYo = L.divIcon({
-            html: '<div style="background:linear-gradient(135deg,#f47920,#e61e2b);width:40px;height:40px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-taxi" style="color:white;font-size:16px;"></i></div>',
-            iconSize: [44, 44],
-            iconAnchor: [22, 22]
-        });
-
-        const iconoPasajero = L.divIcon({
-            html: '<div style="background:#e61e2b;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="color:white;font-size:12px;"></i></div>',
-            iconSize: [36, 36],
-            iconAnchor: [18, 18]
-        });
-
+        let supabaseClient = null;
+        let map = null;
         let marcadorYo = null;
         let marcadorPasajero = null;
         let rutaLinea = null;
-
-        // ═══════════════════════════════════════════════════
-        // VARIABLES DE ESTADO
-        // ═══════════════════════════════════════════════════
         let online = false;
         let viajeActual = null;
         let pedidoPendiente = null;
@@ -368,74 +361,174 @@
         let canalPedidos = null;
 
         // ═══════════════════════════════════════════════════
-        // INICIALIZAR
+        // INICIALIZACIÓN
         // ═══════════════════════════════════════════════════
-        async function init() {
-            document.getElementById('nombre-conductor').textContent = CONDUCTOR_NOMBRE;
-            document.getElementById('avatar-inicial').textContent = CONDUCTOR_NOMBRE.charAt(0).toUpperCase();
+        window.addEventListener('load', async function() {
+            try {
+                console.log('🚀 Iniciando app...');
+                
+                // 1. Inicializar Supabase
+                const { createClient } = supabase;
+                supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('✅ Supabase OK');
 
-            // Verificar si el conductor existe en DB
-            const { data } = await supabase
-                .from('conductores')
-                .select('*')
-                .eq('id', CONDUCTOR_ID)
-                .single();
+                // 2. Inicializar mapa PRIMERO (antes que todo)
+                initMapa();
+                
+                // 3. Configurar UI
+                document.getElementById('nombre-conductor').textContent = CONDUCTOR_NOMBRE;
+                document.getElementById('avatar-inicial').textContent = CONDUCTOR_NOMBRE.charAt(0).toUpperCase();
 
-            if (!data) {
-                // Crear conductor si no existe
-                await supabase.from('conductores').insert({
-                    id: CONDUCTOR_ID,
-                    nombre: CONDUCTOR_NOMBRE,
-                    estado: 'offline'
-                });
+                // 4. Verificar conductor en DB
+                await verificarConductor();
+
+                // 5. Iniciar GPS
+                iniciarGPS();
+
+                console.log('✅ Todo listo!');
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                mostrarError('Error al iniciar: ' + error.message);
             }
+        });
 
-            iniciarGPS();
+        // ═══════════════════════════════════════════════════
+        // MAPA
+        // ═══════════════════════════════════════════════════
+        function initMapa() {
+            try {
+                const mapContainer = document.getElementById('map');
+                if (!mapContainer) {
+                    throw new Error('No se encontró el contenedor del mapa');
+                }
+
+                map = L.map('map', { 
+                    zoomControl: false,
+                    attributionControl: false 
+                }).setView([-34.564, -58.770], 15);
+
+                // Capa gratuita OpenStreetMap
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19
+                }).addTo(map);
+
+                console.log('✅ Mapa OK');
+
+            } catch (error) {
+                console.error('❌ Error mapa:', error);
+                mostrarError('Error al cargar mapa');
+            }
         }
 
         // ═══════════════════════════════════════════════════
-        // GPS - Actualizar posición en tiempo real
+        // VERIFICAR CONDUCTOR EN DB
+        // ═══════════════════════════════════════════════════
+        async function verificarConductor() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('conductores')
+                    .select('*')
+                    .eq('id', CONDUCTOR_ID)
+                    .single();
+
+                if (error && error.code === 'PGRST116') {
+                    // No existe, crearlo
+                    const { error: insertError } = await supabaseClient
+                        .from('conductores')
+                        .insert({
+                            id: CONDUCTOR_ID,
+                            nombre: CONDUCTOR_NOMBRE,
+                            estado: 'offline',
+                            lat: -34.564,
+                            lng: -58.770
+                        });
+
+                    if (insertError) throw insertError;
+                    console.log('✅ Conductor creado');
+                } else if (data) {
+                    console.log('✅ Conductor encontrado:', data.nombre);
+                }
+
+            } catch (error) {
+                console.error('❌ Error DB:', error);
+                // No mostrar error al usuario, seguir funcionando
+            }
+        }
+
+        // ═══════════════════════════════════════════════════
+        // GPS
         // ═══════════════════════════════════════════════════
         function iniciarGPS() {
-            if (!navigator.geolocation) return;
+            if (!navigator.geolocation) {
+                mostrarError('Tu navegador no soporta GPS');
+                return;
+            }
 
             // Posición inicial
-            navigator.geolocation.getCurrentPosition((pos) => {
-                miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                map.setView([miPosicion.lat, miPosicion.lng], 16);
-                
-                marcadorYo = L.marker([miPosicion.lat, miPosicion.lng], { icon: iconoYo })
-                    .addTo(map);
-            });
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    miPosicion = { 
+                        lat: pos.coords.latitude, 
+                        lng: pos.coords.longitude 
+                    };
+                    
+                    if (map) {
+                        map.setView([miPosicion.lat, miPosicion.lng], 16);
+                        
+                        const iconoYo = L.divIcon({
+                            html: '<div style="background:linear-gradient(135deg,#f47920,#e61e2b);width:40px;height:40px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-taxi" style="color:white;font-size:16px;"></i></div>',
+                            iconSize: [44, 44],
+                            iconAnchor: [22, 22]
+                        });
 
-            // Actualización continua
+                        marcadorYo = L.marker([miPosicion.lat, miPosicion.lng], { icon: iconoYo })
+                            .addTo(map);
+                    }
+                },
+                (err) => {
+                    console.log('GPS inicial error:', err);
+                    // Usar posición por defecto
+                    if (map) map.setView([-34.564, -58.770], 15);
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+
+            // Watch position
             watchId = navigator.geolocation.watchPosition(
                 async (pos) => {
-                    miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    miPosicion = { 
+                        lat: pos.coords.latitude, 
+                        lng: pos.coords.longitude 
+                    };
                     
                     if (marcadorYo) {
                         marcadorYo.setLatLng([miPosicion.lat, miPosicion.lng]);
                     }
 
-                    // Enviar posición a Supabase si está online
-                    if (online) {
-                        await supabase
-                            .from('conductores')
-                            .update({ 
-                                lat: miPosicion.lat, 
-                                lng: miPosicion.lng,
-                                ultima_actualizacion: new Date().toISOString()
-                            })
-                            .eq('id', CONDUCTOR_ID);
+                    // Enviar a Supabase si está online
+                    if (online && supabaseClient) {
+                        try {
+                            await supabaseClient
+                                .from('conductores')
+                                .update({ 
+                                    lat: miPosicion.lat, 
+                                    lng: miPosicion.lng,
+                                    ultima_actualizacion: new Date().toISOString()
+                                })
+                                .eq('id', CONDUCTOR_ID);
+                        } catch (e) {
+                            // Silenciar errores de red
+                        }
                     }
 
-                    // Si hay viaje activo, actualizar ruta
+                    // Actualizar ruta si hay viaje
                     if (viajeActual && marcadorPasajero) {
                         actualizarRuta();
                     }
                 },
-                (err) => console.log('GPS error:', err),
-                { enableHighAccuracy: true, maximumAge: 3000 }
+                (err) => console.log('GPS watch error:', err),
+                { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
             );
         }
 
@@ -443,23 +536,37 @@
         // CAMBIAR ESTADO ONLINE/OFFLINE
         // ═══════════════════════════════════════════════════
         async function cambiarEstado() {
+            if (!supabaseClient) {
+                mostrarError('Supabase no conectado');
+                return;
+            }
+
             online = !online;
             const nuevoEstado = online ? 'disponible' : 'offline';
 
-            await supabase
-                .from('conductores')
-                .update({ estado: nuevoEstado })
-                .eq('id', CONDUCTOR_ID);
+            try {
+                const { error } = await supabaseClient
+                    .from('conductores')
+                    .update({ estado: nuevoEstado })
+                    .eq('id', CONDUCTOR_ID);
 
-            actualizarUIEstado();
+                if (error) throw error;
 
-            if (online) {
-                escucharPedidos();
-            } else {
-                if (canalPedidos) {
-                    supabase.removeChannel(canalPedidos);
-                    canalPedidos = null;
+                actualizarUIEstado();
+
+                if (online) {
+                    escucharPedidos();
+                } else {
+                    if (canalPedidos) {
+                        supabaseClient.removeChannel(canalPedidos);
+                        canalPedidos = null;
+                    }
                 }
+
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarError('Error: ' + error.message);
+                online = !online;
             }
         }
 
@@ -482,32 +589,37 @@
         // ESCUCHAR PEDIDOS (Realtime)
         // ═══════════════════════════════════════════════════
         function escucharPedidos() {
-            canalPedidos = supabase
-                .channel('pedidos-nuevos')
-                .on('postgres_changes', {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'viajes',
-                    filter: 'estado=eq.pendiente'
-                }, (payload) => {
-                    const viaje = payload.new;
-                    
-                    // Calcular distancia
-                    const dist = calcularDistancia(
-                        miPosicion.lat, miPosicion.lng,
-                        viaje.lat_salida, viaje.lng_salida
-                    );
+            if (!supabaseClient) return;
 
-                    // Solo mostrar si está cerca (menos de 5km)
-                    if (dist < 5 && !viajeActual && !pedidoPendiente) {
-                        mostrarPedido(viaje, dist);
-                    }
-                })
-                .subscribe();
+            try {
+                canalPedidos = supabaseClient
+                    .channel('pedidos-' + Date.now())
+                    .on('postgres_changes', {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'viajes',
+                        filter: 'estado=eq.pendiente'
+                    }, (payload) => {
+                        const viaje = payload.new;
+                        
+                        const dist = calcularDistancia(
+                            miPosicion.lat, miPosicion.lng,
+                            viaje.lat_salida, viaje.lng_salida
+                        );
+
+                        if (dist < 5 && !viajeActual && !pedidoPendiente) {
+                            mostrarPedido(viaje, dist);
+                        }
+                    })
+                    .subscribe();
+
+            } catch (error) {
+                console.error('Error suscribiendo:', error);
+            }
         }
 
         // ═══════════════════════════════════════════════════
-        // MOSTRAR PEDIDO ENTRANTE
+        // MOSTRAR PEDIDO
         // ═══════════════════════════════════════════════════
         function mostrarPedido(viaje, distancia) {
             pedidoPendiente = viaje;
@@ -515,64 +627,71 @@
             document.getElementById('panel-stats').style.display = 'none';
             document.getElementById('pedido-entrante').classList.add('activo');
 
-            document.getElementById('p-nombre').textContent = viaje.nombre_pasajero;
-            document.getElementById('p-direccion').textContent = viaje.direccion_salida;
+            document.getElementById('p-nombre').textContent = viaje.nombre_pasajero || 'Sin nombre';
+            document.getElementById('p-direccion').textContent = viaje.direccion_salida || 'Sin dirección';
             document.getElementById('p-referencia').textContent = viaje.referencia || 'Sin referencia';
             document.getElementById('p-telefono').textContent = viaje.telefono_pasajero || 'Sin teléfono';
-            document.getElementById('distancia-pedido').textContent = `A ${distancia.toFixed(1)} km de distancia`;
+            document.getElementById('distancia-pedido').textContent = `A ${distancia.toFixed(1)} km`;
 
-            // Mostrar pasajero en mapa
             if (marcadorPasajero) map.removeLayer(marcadorPasajero);
+            
+            const iconoPasajero = L.divIcon({
+                html: '<div style="background:#e61e2b;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="color:white;font-size:12px;"></i></div>',
+                iconSize: [36, 36],
+                iconAnchor: [18, 18]
+            });
             
             marcadorPasajero = L.marker([viaje.lat_salida, viaje.lng_salida], { icon: iconoPasajero })
                 .addTo(map)
                 .bindPopup(`<b>${viaje.nombre_pasajero}</b><br>${viaje.direccion_salida}`);
 
-            // Ajustar vista
-            const bounds = L.latLngBounds(
-                [miPosicion.lat, miPosicion.lng],
-                [viaje.lat_salida, viaje.lng_salida]
-            );
-            map.fitBounds(bounds, { padding: [80, 80] });
-
-            // Sonido de notificación (opcional)
-            // new Audio('notificacion.mp3').play().catch(()=>{});
+            if (map && marcadorYo) {
+                const bounds = L.latLngBounds(
+                    [miPosicion.lat, miPosicion.lng],
+                    [viaje.lat_salida, viaje.lng_salida]
+                );
+                map.fitBounds(bounds, { padding: [80, 80] });
+            }
         }
 
         // ═══════════════════════════════════════════════════
-        // ACEPTAR / RECHAZAR PEDIDO
+        // ACEPTAR / RECHAZAR
         // ═══════════════════════════════════════════════════
         async function aceptarPedido() {
-            if (!pedidoPendiente) return;
+            if (!pedidoPendiente || !supabaseClient) return;
 
             viajeActual = pedidoPendiente;
             pedidoPendiente = null;
 
-            // Actualizar viaje
-            await supabase
-                .from('viajes')
-                .update({ 
-                    estado: 'aceptado',
-                    conductor_id: CONDUCTOR_ID
-                })
-                .eq('id', viajeActual.id);
+            try {
+                await supabaseClient
+                    .from('viajes')
+                    .update({ 
+                        estado: 'aceptado',
+                        conductor_id: CONDUCTOR_ID
+                    })
+                    .eq('id', viajeActual.id);
 
-            // Marcar conductor como ocupado
-            await supabase
-                .from('conductores')
-                .update({ estado: 'ocupado' })
-                .eq('id', CONDUCTOR_ID);
+                await supabaseClient
+                    .from('conductores')
+                    .update({ estado: 'ocupado' })
+                    .eq('id', CONDUCTOR_ID);
 
-            // Cambiar UI
-            document.getElementById('pedido-entrante').classList.remove('activo');
-            document.getElementById('viaje-activo').style.display = 'block';
+                viajeActual.estado = 'aceptado';
 
-            document.getElementById('v-nombre').textContent = viajeActual.nombre_pasajero;
-            document.getElementById('v-direccion').textContent = viajeActual.direccion_salida;
-            document.getElementById('v-telefono').textContent = viajeActual.telefono_pasajero || 'Sin teléfono';
+                document.getElementById('pedido-entrante').classList.remove('activo');
+                document.getElementById('viaje-activo-panel').classList.add('activo');
 
-            // Dibujar ruta
-            actualizarRuta();
+                document.getElementById('v-nombre').textContent = viajeActual.nombre_pasajero;
+                document.getElementById('v-direccion').textContent = viajeActual.direccion_salida;
+                document.getElementById('v-telefono').textContent = viajeActual.telefono_pasajero || 'Sin teléfono';
+
+                actualizarRuta();
+
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarError('Error al aceptar');
+            }
         }
 
         function rechazarPedido() {
@@ -592,33 +711,73 @@
         async function siguienteAccion() {
             const btn = document.getElementById('btn-accion');
 
-            if (!viajeActual) return;
+            if (!viajeActual || !supabaseClient) return;
 
-            if (viajeActual.estado === 'pendiente' || !viajeActual.estado) {
-                // Primer click: llegué al punto
-                await supabase
-                    .from('viajes')
-                    .update({ estado: 'en_camino' })
-                    .eq('id', viajeActual.id);
+            try {
+                if (viajeActual.estado === 'pendiente' || viajeActual.estado === 'aceptado') {
+                    await supabaseClient
+                        .from('viajes')
+                        .update({ estado: 'en_camino' })
+                        .eq('id', viajeActual.id);
 
-                viajeActual.estado = 'en_camino';
-                
-                btn.innerHTML = '<i class="fas fa-flag-checkered"></i> Completar viaje';
-                btn.className = 'btn btn-completar';
+                    viajeActual.estado = 'en_camino';
+                    btn.innerHTML = '<i class="fas fa-flag-checkered"></i> Completar viaje';
+                    btn.className = 'btn btn-completar';
+                }
+                else if (viajeActual.estado === 'en_camino') {
+                    await supabaseClient
+                        .from('viajes')
+                        .update({ estado: 'completado' })
+                        .eq('id', viajeActual.id);
+
+                    await supabaseClient
+                        .from('conductores')
+                        .update({ estado: 'disponible' })
+                        .eq('id', CONDUCTOR_ID);
+
+                    // Reset
+                    viajeActual = null;
+                    
+                    if (marcadorPasajero) {
+                        map.removeLayer(marcadorPasajero);
+                        marcadorPasajero = null;
+                    }
+                    if (rutaLinea) {
+                        map.removeLayer(rutaLinea);
+                        rutaLinea = null;
+                    }
+
+                    document.getElementById('viaje-activo-panel').classList.remove('activo');
+                    document.getElementById('panel-stats').style.display = 'block';
+
+                    const viajes = parseInt(document.getElementById('viajes-hoy').textContent) + 1;
+                    document.getElementById('viajes-hoy').textContent = viajes;
+
+                    btn.innerHTML = '<i class="fas fa-car"></i> Llegué al punto';
+                    btn.className = 'btn btn-llegue';
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarError('Error al actualizar viaje');
             }
-            else if (viajeActual.estado === 'en_camino') {
-                // Completar
-                await supabase
+        }
+
+        async function cancelarViaje() {
+            if (!viajeActual || !supabaseClient) return;
+            if (!confirm('¿Cancelar este viaje?')) return;
+
+            try {
+                await supabaseClient
                     .from('viajes')
-                    .update({ estado: 'completado' })
+                    .update({ estado: 'cancelado' })
                     .eq('id', viajeActual.id);
 
-                await supabase
+                await supabaseClient
                     .from('conductores')
                     .update({ estado: 'disponible' })
                     .eq('id', CONDUCTOR_ID);
 
-                // Reset
                 viajeActual = null;
                 
                 if (marcadorPasajero) {
@@ -630,49 +789,20 @@
                     rutaLinea = null;
                 }
 
-                document.getElementById('viaje-activo').style.display = 'none';
+                document.getElementById('viaje-activo-panel').classList.remove('activo');
                 document.getElementById('panel-stats').style.display = 'block';
 
-                // Actualizar contador
-                const viajes = parseInt(document.getElementById('viajes-hoy').textContent) + 1;
-                document.getElementById('viajes-hoy').textContent = viajes;
-
+                const btn = document.getElementById('btn-accion');
                 btn.innerHTML = '<i class="fas fa-car"></i> Llegué al punto';
                 btn.className = 'btn btn-llegue';
+
+            } catch (error) {
+                console.error('Error:', error);
             }
-        }
-
-        async function cancelarViaje() {
-            if (!viajeActual) return;
-            if (!confirm("¿Cancelar este viaje?")) return;
-
-            await supabase
-                .from('viajes')
-                .update({ estado: 'cancelado' })
-                .eq('id', viajeActual.id);
-
-            await supabase
-                .from('conductores')
-                .update({ estado: 'disponible' })
-                .eq('id', CONDUCTOR_ID);
-
-            viajeActual = null;
-            
-            if (marcadorPasajero) {
-                map.removeLayer(marcadorPasajero);
-                marcadorPasajero = null;
-            }
-            if (rutaLinea) {
-                map.removeLayer(rutaLinea);
-                rutaLinea = null;
-            }
-
-            document.getElementById('viaje-activo').style.display = 'none';
-            document.getElementById('panel-stats').style.display = 'block';
         }
 
         // ═══════════════════════════════════════════════════
-        // DIBUJAR RUTA (línea simple entre puntos)
+        // RUTA
         // ═══════════════════════════════════════════════════
         function actualizarRuta() {
             if (rutaLinea) map.removeLayer(rutaLinea);
@@ -687,20 +817,3 @@
         }
 
         // ═══════════════════════════════════════════════════
-        // UTILIDADES
-        // ═══════════════════════════════════════════════════
-        function calcularDistancia(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        }
-
-        // Iniciar
-        init();
-    </script>
-</body>
-</html>
