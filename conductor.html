@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conductor - Las Catalinas</title>
+    <style>
+        :root { --naranja: #f47920; --celeste: #0093d0; --fondo: #121212; --card: #1e1e1e; }
+        body { font-family: sans-serif; background: var(--fondo); color: white; margin: 0; padding: 15px; }
+        h2 { color: var(--naranja); text-align: center; border-bottom: 2px solid var(--celeste); padding-bottom: 10px; }
+        .pedido { background: var(--card); border-radius: 12px; padding: 15px; border-left: 6px solid var(--celeste); margin-bottom: 15px; position: relative; }
+        .pasajero { font-size: 1.2rem; font-weight: bold; color: var(--naranja); }
+        .detalle { margin: 5px 0; font-size: 1rem; }
+        .btn-ready { background: #28a745; color: white; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h2>Móvil #53 - Pedidos</h2>
+    <div id="lista-pedidos">Cargando pedidos...</div>
+
+    <script>
+        const SB_URL = "https://efryvjjunfeoxhekvwza.supabase.co";
+        const SB_KEY = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM";
+
+        async function obtenerPedidos() {
+            const res = await fetch(`${SB_URL}/rest/v1/pedidos?estado=eq.pendiente&order=created_at.desc`, {
+                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
+            });
+            const datos = await res.json();
+            const lista = document.getElementById('lista-pedidos');
+            lista.innerHTML = datos.length === 0 ? "<p style='text-align:center'>No hay pedidos.</p>" : "";
+
+            datos.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'pedido';
+                div.innerHTML = `
+                    <div class="pasajero">${p.pasajero}</div>
+                    <div class="detalle">📍 <b>Dir:</b> ${p.origen}</div>
+                    <div class="detalle">📝 <b>Ref:</b> ${p.referencia || '-'}</div>
+                    <button class="btn-ready" onclick="terminar('${p.id}')">VIAJE REALIZADO</button>
+                `;
+                lista.appendChild(div);
+            });
+        }
+
+        async function terminar(id) {
+            await fetch(`${SB_URL}/rest/v1/pedidos?id=eq.${id}`, {
+                method: "PATCH",
+                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ estado: 'completado' })
+            });
+            obtenerPedidos();
+        }
+
+        setInterval(obtenerPedidos, 5000);
+        obtenerPedidos();
+    </script>
+</body>
+</html>
