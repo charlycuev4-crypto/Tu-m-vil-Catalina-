@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Control - Las Catalinas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
+        h2 { color: #f47920; border-bottom: 2px solid #0093d0; padding-bottom: 10px; }
+        .pedido-card { background: #2d2d2d; border-radius: 10px; padding: 15px; margin-bottom: 15px; border-left: 5px solid #e61e2b; }
+        .info { margin-bottom: 10px; }
+        .nombre { font-weight: bold; font-size: 1.2rem; color: #0093d0; }
+        .btn-ready { background: #4CAF50; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; }
+    </style>
+</head>
+<body>
+    <h2>Pedidos Entrantes #53</h2>
+    <div id="lista-pedidos">Cargando pedidos...</div>
+
+    <script>
+        const SB_URL = "https://efryvjjunfeoxhekvwza.supabase.co";
+        const SB_KEY = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM";
+
+        async function cargarPedidos() {
+            const res = await fetch(`${SB_URL}/rest/v1/pedidos?estado=eq.pendiente&order=created_at.desc`, {
+                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
+            });
+            const pedidos = await res.json();
+            const contenedor = document.getElementById('lista-pedidos');
+            contenedor.innerHTML = "";
+
+            pedidos.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'pedido-card';
+                div.innerHTML = `
+                    <div class="info">
+                        <div class="nombre">${p.pasajero}</div>
+                        <div>📍 <b>Dir:</b> ${p.origen}</div>
+                        <div>📝 <b>Ref:</b> ${p.referencia}</div>
+                        <div>⏰ ${new Date(p.created_at).toLocaleTimeString()}</div>
+                    </div>
+                    <button class="btn-ready" onclick="finalizarPedido('${p.id}')">Marcar como Realizado</button>
+                `;
+                contenedor.appendChild(div);
+            });
+        }
+
+        async function finalizarPedido(id) {
+            await fetch(`${SB_URL}/rest/v1/pedidos?id=eq.${id}`, {
+                method: "PATCH",
+                headers: { 
+                    "apikey": SB_KEY, 
+                    "Authorization": `Bearer ${SB_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ estado: 'completado' })
+            });
+            cargarPedidos();
+        }
+
+        setInterval(cargarPedidos, 5000); // Se actualiza solo cada 5 segundos
+        cargarPedidos();
+    </script>
+</body>
+</html>
