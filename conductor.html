@@ -2,58 +2,705 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conductor - Las Catalinas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Conductor - Las Catalinas #53</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    
     <style>
-        :root { --naranja: #f47920; --celeste: #0093d0; --fondo: #121212; --card: #1e1e1e; }
-        body { font-family: sans-serif; background: var(--fondo); color: white; margin: 0; padding: 15px; }
-        h2 { color: var(--naranja); text-align: center; border-bottom: 2px solid var(--celeste); padding-bottom: 10px; }
-        .pedido { background: var(--card); border-radius: 12px; padding: 15px; border-left: 6px solid var(--celeste); margin-bottom: 15px; position: relative; }
-        .pasajero { font-size: 1.2rem; font-weight: bold; color: var(--naranja); }
-        .detalle { margin: 5px 0; font-size: 1rem; }
-        .btn-ready { background: #28a745; color: white; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 10px; }
+        :root {
+            --naranja: #f47920;
+            --celeste: #0093d0;
+            --rojo: #e61e2b;
+            --verde: #28a745;
+            --fondo: #f0f2f5;
+            --blanco: #ffffff;
+            --texto: #1a1a1a;
+            --gris: #666666;
+            --sombra: 0 2px 12px rgba(0,0,0,0.15);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--fondo); color: var(--texto); overflow: hidden;
+        }
+
+        #map { 
+            position: absolute; top: 0; left: 0; 
+            height: 100%; width: 100%; z-index: 1;
+        }
+
+        /* Header conductor */
+        .header-conductor {
+            position: absolute; top: 12px; left: 12px; right: 12px;
+            z-index: 1000; display: flex; gap: 10px;
+            pointer-events: none;
+        }
+
+        .header-card {
+            flex: 1; background: var(--blanco);
+            border-radius: 16px; padding: 12px 16px;
+            box-shadow: var(--sombra); pointer-events: auto;
+            display: flex; align-items: center; gap: 12px;
+        }
+
+        .header-card .avatar {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--naranja), var(--rojo));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; font-size: 1.2rem;
+        }
+
+        .header-card h3 { margin: 0; font-size: 1rem; }
+        .header-card p { margin: 2px 0 0; font-size: 0.8rem; color: var(--gris); }
+
+        /* Toggle online */
+        .toggle-online {
+            width: 60px; height: 36px;
+            background: #ccc; border-radius: 36px;
+            position: relative; cursor: pointer;
+            transition: background 0.3s; pointer-events: auto;
+        }
+
+        .toggle-online.activo { background: var(--verde); }
+
+        .toggle-online::after {
+            content: ''; position: absolute;
+            width: 28px; height: 28px;
+            background: white; border-radius: 50%;
+            top: 4px; left: 4px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .toggle-online.activo::after { transform: translateX(24px); }
+
+        /* Panel inferior */
+        .panel {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            z-index: 1000; background: var(--blanco);
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            padding: 20px; max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        .panel-handle {
+            width: 40px; height: 4px; background: #ddd;
+            border-radius: 2px; margin: 0 auto 15px;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px; margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: var(--fondo); border-radius: 14px;
+            padding: 14px; text-align: center;
+        }
+
+        .stat-card .numero {
+            font-size: 1.6rem; font-weight: 800; color: var(--naranja);
+        }
+
+        .stat-card .label {
+            font-size: 0.75rem; color: var(--gris); margin-top: 4px;
+        }
+
+        /* Pedido entrante */
+        .pedido-card {
+            display: none;
+            background: linear-gradient(135deg, #fff8f3, #fff);
+            border: 2px solid var(--naranja);
+            border-radius: 20px; padding: 20px;
+            animation: slideUp 0.4s ease;
+        }
+
+        .pedido-card.activo { display: block; }
+
+        .pedido-header {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .pedido-header .icono {
+            width: 50px; height: 50px;
+            background: linear-gradient(135deg, var(--naranja), var(--rojo));
+            border-radius: 14px; display: flex;
+            align-items: center; justify-content: center;
+            color: white; font-size: 1.5rem;
+        }
+
+        .pedido-header h3 { margin: 0; font-size: 1.2rem; }
+        .pedido-header p { margin: 4px 0 0; color: var(--gris); font-size: 0.85rem; }
+
+        .pedido-info {
+            background: var(--blanco); border-radius: 14px;
+            padding: 14px; margin-bottom: 16px;
+        }
+
+        .pedido-info .fila {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 0; border-bottom: 1px solid #eee;
+        }
+
+        .pedido-info .fila:last-child { border-bottom: none; }
+
+        .pedido-info i { color: var(--celeste); width: 20px; }
+
+        /* Botones de acción */
+        .botones-accion { display: flex; gap: 10px; }
+
+        .btn {
+            flex: 1; padding: 16px; border: none;
+            border-radius: 16px; font-size: 1rem;
+            font-weight: 700; cursor: pointer;
+            display: flex; align-items: center;
+            justify-content: center; gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-aceptar {
+            background: var(--verde); color: white;
+            box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+        }
+
+        .btn-rechazar {
+            background: #eee; color: var(--gris);
+        }
+
+        .btn-llegue {
+            background: var(--celeste); color: white;
+            width: 100%; margin-top: 10px;
+        }
+
+        .btn-completar {
+            background: var(--naranja); color: white;
+            width: 100%; margin-top: 10px;
+        }
+
+        .btn:active { transform: scale(0.97); }
+
+        /* Estado actual */
+        .estado-actual {
+            text-align: center; padding: 20px;
+            display: none;
+        }
+
+        .estado-actual.activo { display: block; }
+
+        .estado-actual .icono-grande {
+            font-size: 3rem; margin-bottom: 10px;
+        }
+
+        .estado-actual h3 { margin: 0; font-size: 1.2rem; }
+        .estado-actual p { margin: 6px 0 0; color: var(--gris); }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-    <h2>Móvil #53 - Pedidos</h2>
-    <div id="lista-pedidos">Cargando pedidos...</div>
+
+    <!-- Mapa -->
+    <div id="map"></div>
+
+    <!-- Header -->
+    <div class="header-conductor">
+        <div class="header-card">
+            <div class="avatar" id="avatar-inicial">?</div>
+            <div>
+                <h3 id="nombre-conductor">Conductor</h3>
+                <p id="estado-texto">Desconectado</p>
+            </div>
+        </div>
+        <div class="toggle-online" id="toggle-online" onclick="cambiarEstado()"></div>
+    </div>
+
+    <!-- Panel inferior -->
+    <div class="panel">
+        <div class="panel-handle"></div>
+
+        <!-- Stats (sin pedido) -->
+        <div id="panel-stats">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="numero" id="viajes-hoy">0</div>
+                    <div class="label">Viajes hoy</div>
+                </div>
+                <div class="stat-card">
+                    <div class="numero" id="ganancias">$0</div>
+                    <div class="label">Ganancias</div>
+                </div>
+                <div class="stat-card">
+                    <div class="numero" id="calificacion">5.0</div>
+                    <div class="label">Calificación</div>
+                </div>
+            </div>
+            <div class="estado-actual activo">
+                <div class="icono-grande">📍</div>
+                <h3>Esperando pedidos...</h3>
+                <p>Mantenete online para recibir viajes</p>
+            </div>
+        </div>
+
+        <!-- Pedido entrante -->
+        <div class="pedido-card" id="pedido-entrante">
+            <div class="pedido-header">
+                <div class="icono"><i class="fas fa-bell"></i></div>
+                <div>
+                    <h3>¡Nuevo pedido!</h3>
+                    <p id="distancia-pedido">A 1.2 km de distancia</p>
+                </div>
+            </div>
+            <div class="pedido-info">
+                <div class="fila">
+                    <i class="fas fa-user"></i>
+                    <span id="p-nombre">-</span>
+                </div>
+                <div class="fila">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span id="p-direccion">-</span>
+                </div>
+                <div class="fila">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="p-referencia">-</span>
+                </div>
+                <div class="fila">
+                    <i class="fas fa-phone"></i>
+                    <span id="p-telefono">-</span>
+                </div>
+            </div>
+            <div class="botones-accion">
+                <button class="btn btn-rechazar" onclick="rechazarPedido()">
+                    <i class="fas fa-times"></i> Rechazar
+                </button>
+                <button class="btn btn-aceptar" onclick="aceptarPedido()">
+                    <i class="fas fa-check"></i> Aceptar
+                </button>
+            </div>
+        </div>
+
+        <!-- Viaje activo -->
+        <div id="viaje-activo" style="display:none;">
+            <div class="pedido-info">
+                <div class="fila">
+                    <i class="fas fa-user"></i>
+                    <span id="v-nombre">-</span>
+                </div>
+                <div class="fila">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span id="v-direccion">-</span>
+                </div>
+                <div class="fila">
+                    <i class="fas fa-phone"></i>
+                    <span id="v-telefono">-</span>
+                </div>
+            </div>
+            <button class="btn btn-llegue" id="btn-accion" onclick="siguienteAccion()">
+                <i class="fas fa-car"></i> Llegué al punto
+            </button>
+            <button class="btn btn-rechazar" style="margin-top:10px;" onclick="cancelarViaje()">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        const SB_URL = "https://efryvjjunfeoxhekvwza.supabase.co";
-        const SB_KEY = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM";
+        // ═══════════════════════════════════════════════════
+        // CONFIGURACIÓN - REEMPLAZÁ CON TUS DATOS
+        // ═══════════════════════════════════════════════════
+        const SUPABASE_URL = 'https://TU-PROJECT.supabase.co';
+        const SUPABASE_KEY = 'TU-ANON-KEY';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function obtenerPedidos() {
-            const res = await fetch(`${SB_URL}/rest/v1/pedidos?estado=eq.pendiente&order=created_at.desc`, {
-                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
-            });
-            const datos = await res.json();
-            const lista = document.getElementById('lista-pedidos');
-            lista.innerHTML = datos.length === 0 ? "<p style='text-align:center'>No hay pedidos.</p>" : "";
+        // ID del conductor (en producción viene del login)
+        // Para probar: creá un conductor en Supabase y poné su UUID acá
+        const CONDUCTOR_ID = 'ID-DEL-CONDUCTOR-AQUÍ';
+        const CONDUCTOR_NOMBRE = 'Juan Pérez';
 
-            datos.forEach(p => {
-                const div = document.createElement('div');
-                div.className = 'pedido';
-                div.innerHTML = `
-                    <div class="pasajero">${p.pasajero}</div>
-                    <div class="detalle">📍 <b>Dir:</b> ${p.origen}</div>
-                    <div class="detalle">📝 <b>Ref:</b> ${p.referencia || '-'}</div>
-                    <button class="btn-ready" onclick="terminar('${p.id}')">VIAJE REALIZADO</button>
-                `;
-                lista.appendChild(div);
-            });
+        // ═══════════════════════════════════════════════════
+        // MAPA
+        // ═══════════════════════════════════════════════════
+        const map = L.map('map', { 
+            zoomControl: false,
+            attributionControl: false 
+        }).setView([-34.564, -58.770], 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        // Iconos
+        const iconoYo = L.divIcon({
+            html: '<div style="background:linear-gradient(135deg,#f47920,#e61e2b);width:40px;height:40px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-taxi" style="color:white;font-size:16px;"></i></div>',
+            iconSize: [44, 44],
+            iconAnchor: [22, 22]
+        });
+
+        const iconoPasajero = L.divIcon({
+            html: '<div style="background:#e61e2b;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="color:white;font-size:12px;"></i></div>',
+            iconSize: [36, 36],
+            iconAnchor: [18, 18]
+        });
+
+        let marcadorYo = null;
+        let marcadorPasajero = null;
+        let rutaLinea = null;
+
+        // ═══════════════════════════════════════════════════
+        // VARIABLES DE ESTADO
+        // ═══════════════════════════════════════════════════
+        let online = false;
+        let viajeActual = null;
+        let pedidoPendiente = null;
+        let miPosicion = { lat: -34.564, lng: -58.770 };
+        let watchId = null;
+        let canalPedidos = null;
+
+        // ═══════════════════════════════════════════════════
+        // INICIALIZAR
+        // ═══════════════════════════════════════════════════
+        async function init() {
+            document.getElementById('nombre-conductor').textContent = CONDUCTOR_NOMBRE;
+            document.getElementById('avatar-inicial').textContent = CONDUCTOR_NOMBRE.charAt(0).toUpperCase();
+
+            // Verificar si el conductor existe en DB
+            const { data } = await supabase
+                .from('conductores')
+                .select('*')
+                .eq('id', CONDUCTOR_ID)
+                .single();
+
+            if (!data) {
+                // Crear conductor si no existe
+                await supabase.from('conductores').insert({
+                    id: CONDUCTOR_ID,
+                    nombre: CONDUCTOR_NOMBRE,
+                    estado: 'offline'
+                });
+            }
+
+            iniciarGPS();
         }
 
-        async function terminar(id) {
-            await fetch(`${SB_URL}/rest/v1/pedidos?id=eq.${id}`, {
-                method: "PATCH",
-                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ estado: 'completado' })
+        // ═══════════════════════════════════════════════════
+        // GPS - Actualizar posición en tiempo real
+        // ═══════════════════════════════════════════════════
+        function iniciarGPS() {
+            if (!navigator.geolocation) return;
+
+            // Posición inicial
+            navigator.geolocation.getCurrentPosition((pos) => {
+                miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                map.setView([miPosicion.lat, miPosicion.lng], 16);
+                
+                marcadorYo = L.marker([miPosicion.lat, miPosicion.lng], { icon: iconoYo })
+                    .addTo(map);
             });
-            obtenerPedidos();
+
+            // Actualización continua
+            watchId = navigator.geolocation.watchPosition(
+                async (pos) => {
+                    miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    
+                    if (marcadorYo) {
+                        marcadorYo.setLatLng([miPosicion.lat, miPosicion.lng]);
+                    }
+
+                    // Enviar posición a Supabase si está online
+                    if (online) {
+                        await supabase
+                            .from('conductores')
+                            .update({ 
+                                lat: miPosicion.lat, 
+                                lng: miPosicion.lng,
+                                ultima_actualizacion: new Date().toISOString()
+                            })
+                            .eq('id', CONDUCTOR_ID);
+                    }
+
+                    // Si hay viaje activo, actualizar ruta
+                    if (viajeActual && marcadorPasajero) {
+                        actualizarRuta();
+                    }
+                },
+                (err) => console.log('GPS error:', err),
+                { enableHighAccuracy: true, maximumAge: 3000 }
+            );
         }
 
-        setInterval(obtenerPedidos, 5000);
-        obtenerPedidos();
+        // ═══════════════════════════════════════════════════
+        // CAMBIAR ESTADO ONLINE/OFFLINE
+        // ═══════════════════════════════════════════════════
+        async function cambiarEstado() {
+            online = !online;
+            const nuevoEstado = online ? 'disponible' : 'offline';
+
+            await supabase
+                .from('conductores')
+                .update({ estado: nuevoEstado })
+                .eq('id', CONDUCTOR_ID);
+
+            actualizarUIEstado();
+
+            if (online) {
+                escucharPedidos();
+            } else {
+                if (canalPedidos) {
+                    supabase.removeChannel(canalPedidos);
+                    canalPedidos = null;
+                }
+            }
+        }
+
+        function actualizarUIEstado() {
+            const toggle = document.getElementById('toggle-online');
+            const texto = document.getElementById('estado-texto');
+
+            if (online) {
+                toggle.classList.add('activo');
+                texto.textContent = 'En línea • Buscando viajes';
+                texto.style.color = 'var(--verde)';
+            } else {
+                toggle.classList.remove('activo');
+                texto.textContent = 'Desconectado';
+                texto.style.color = 'var(--gris)';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════
+        // ESCUCHAR PEDIDOS (Realtime)
+        // ═══════════════════════════════════════════════════
+        function escucharPedidos() {
+            canalPedidos = supabase
+                .channel('pedidos-nuevos')
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'viajes',
+                    filter: 'estado=eq.pendiente'
+                }, (payload) => {
+                    const viaje = payload.new;
+                    
+                    // Calcular distancia
+                    const dist = calcularDistancia(
+                        miPosicion.lat, miPosicion.lng,
+                        viaje.lat_salida, viaje.lng_salida
+                    );
+
+                    // Solo mostrar si está cerca (menos de 5km)
+                    if (dist < 5 && !viajeActual && !pedidoPendiente) {
+                        mostrarPedido(viaje, dist);
+                    }
+                })
+                .subscribe();
+        }
+
+        // ═══════════════════════════════════════════════════
+        // MOSTRAR PEDIDO ENTRANTE
+        // ═══════════════════════════════════════════════════
+        function mostrarPedido(viaje, distancia) {
+            pedidoPendiente = viaje;
+
+            document.getElementById('panel-stats').style.display = 'none';
+            document.getElementById('pedido-entrante').classList.add('activo');
+
+            document.getElementById('p-nombre').textContent = viaje.nombre_pasajero;
+            document.getElementById('p-direccion').textContent = viaje.direccion_salida;
+            document.getElementById('p-referencia').textContent = viaje.referencia || 'Sin referencia';
+            document.getElementById('p-telefono').textContent = viaje.telefono_pasajero || 'Sin teléfono';
+            document.getElementById('distancia-pedido').textContent = `A ${distancia.toFixed(1)} km de distancia`;
+
+            // Mostrar pasajero en mapa
+            if (marcadorPasajero) map.removeLayer(marcadorPasajero);
+            
+            marcadorPasajero = L.marker([viaje.lat_salida, viaje.lng_salida], { icon: iconoPasajero })
+                .addTo(map)
+                .bindPopup(`<b>${viaje.nombre_pasajero}</b><br>${viaje.direccion_salida}`);
+
+            // Ajustar vista
+            const bounds = L.latLngBounds(
+                [miPosicion.lat, miPosicion.lng],
+                [viaje.lat_salida, viaje.lng_salida]
+            );
+            map.fitBounds(bounds, { padding: [80, 80] });
+
+            // Sonido de notificación (opcional)
+            // new Audio('notificacion.mp3').play().catch(()=>{});
+        }
+
+        // ═══════════════════════════════════════════════════
+        // ACEPTAR / RECHAZAR PEDIDO
+        // ═══════════════════════════════════════════════════
+        async function aceptarPedido() {
+            if (!pedidoPendiente) return;
+
+            viajeActual = pedidoPendiente;
+            pedidoPendiente = null;
+
+            // Actualizar viaje
+            await supabase
+                .from('viajes')
+                .update({ 
+                    estado: 'aceptado',
+                    conductor_id: CONDUCTOR_ID
+                })
+                .eq('id', viajeActual.id);
+
+            // Marcar conductor como ocupado
+            await supabase
+                .from('conductores')
+                .update({ estado: 'ocupado' })
+                .eq('id', CONDUCTOR_ID);
+
+            // Cambiar UI
+            document.getElementById('pedido-entrante').classList.remove('activo');
+            document.getElementById('viaje-activo').style.display = 'block';
+
+            document.getElementById('v-nombre').textContent = viajeActual.nombre_pasajero;
+            document.getElementById('v-direccion').textContent = viajeActual.direccion_salida;
+            document.getElementById('v-telefono').textContent = viajeActual.telefono_pasajero || 'Sin teléfono';
+
+            // Dibujar ruta
+            actualizarRuta();
+        }
+
+        function rechazarPedido() {
+            pedidoPendiente = null;
+            document.getElementById('pedido-entrante').classList.remove('activo');
+            document.getElementById('panel-stats').style.display = 'block';
+            
+            if (marcadorPasajero) {
+                map.removeLayer(marcadorPasajero);
+                marcadorPasajero = null;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════
+        // ACCIONES DEL VIAJE
+        // ═══════════════════════════════════════════════════
+        async function siguienteAccion() {
+            const btn = document.getElementById('btn-accion');
+
+            if (!viajeActual) return;
+
+            if (viajeActual.estado === 'pendiente' || !viajeActual.estado) {
+                // Primer click: llegué al punto
+                await supabase
+                    .from('viajes')
+                    .update({ estado: 'en_camino' })
+                    .eq('id', viajeActual.id);
+
+                viajeActual.estado = 'en_camino';
+                
+                btn.innerHTML = '<i class="fas fa-flag-checkered"></i> Completar viaje';
+                btn.className = 'btn btn-completar';
+            }
+            else if (viajeActual.estado === 'en_camino') {
+                // Completar
+                await supabase
+                    .from('viajes')
+                    .update({ estado: 'completado' })
+                    .eq('id', viajeActual.id);
+
+                await supabase
+                    .from('conductores')
+                    .update({ estado: 'disponible' })
+                    .eq('id', CONDUCTOR_ID);
+
+                // Reset
+                viajeActual = null;
+                
+                if (marcadorPasajero) {
+                    map.removeLayer(marcadorPasajero);
+                    marcadorPasajero = null;
+                }
+                if (rutaLinea) {
+                    map.removeLayer(rutaLinea);
+                    rutaLinea = null;
+                }
+
+                document.getElementById('viaje-activo').style.display = 'none';
+                document.getElementById('panel-stats').style.display = 'block';
+
+                // Actualizar contador
+                const viajes = parseInt(document.getElementById('viajes-hoy').textContent) + 1;
+                document.getElementById('viajes-hoy').textContent = viajes;
+
+                btn.innerHTML = '<i class="fas fa-car"></i> Llegué al punto';
+                btn.className = 'btn btn-llegue';
+            }
+        }
+
+        async function cancelarViaje() {
+            if (!viajeActual) return;
+            if (!confirm("¿Cancelar este viaje?")) return;
+
+            await supabase
+                .from('viajes')
+                .update({ estado: 'cancelado' })
+                .eq('id', viajeActual.id);
+
+            await supabase
+                .from('conductores')
+                .update({ estado: 'disponible' })
+                .eq('id', CONDUCTOR_ID);
+
+            viajeActual = null;
+            
+            if (marcadorPasajero) {
+                map.removeLayer(marcadorPasajero);
+                marcadorPasajero = null;
+            }
+            if (rutaLinea) {
+                map.removeLayer(rutaLinea);
+                rutaLinea = null;
+            }
+
+            document.getElementById('viaje-activo').style.display = 'none';
+            document.getElementById('panel-stats').style.display = 'block';
+        }
+
+        // ═══════════════════════════════════════════════════
+        // DIBUJAR RUTA (línea simple entre puntos)
+        // ═══════════════════════════════════════════════════
+        function actualizarRuta() {
+            if (rutaLinea) map.removeLayer(rutaLinea);
+
+            if (marcadorPasajero) {
+                const destino = marcadorPasajero.getLatLng();
+                rutaLinea = L.polyline(
+                    [[miPosicion.lat, miPosicion.lng], [destino.lat, destino.lng]],
+                    { color: '#f47920', weight: 4, opacity: 0.8, dashArray: '10, 10' }
+                ).addTo(map);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════
+        // UTILIDADES
+        // ═══════════════════════════════════════════════════
+        function calcularDistancia(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        // Iniciar
+        init();
     </script>
 </body>
 </html>
