@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pasajero - Las Catalinas #53</title>
-    
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    
+
     <style>
         :root {
             --naranja: #f47920;
@@ -371,8 +371,8 @@
             const destino = document.getElementById('destino').value.trim();
             const referencia = document.getElementById('referencia').value.trim();
 
-            if (!nombre || !direccion) {
-                alert("Por favor completá tu nombre y dirección");
+            if (!nombre || !direccion || !destino) {
+                alert("Por favor completá tu nombre, dirección y destino");
                 return;
             }
 
@@ -386,6 +386,7 @@
                     .single();
 
                 if (errPax) throw errPax;
+                console.log('✅ Pasajero creado:', pasajero.id);
 
                 const { data: viaje, error: errViaje } = await supabaseClient
                     .from('viajes')
@@ -394,27 +395,32 @@
                         nombre_pasajero: nombre,
                         telefono_pasajero: telefono,
                         direccion_salida: direccion,
+                        destino: destino,
                         referencia: referencia,
                         lat_salida: coordsSalida.lat,
                         lng_salida: coordsSalida.lng,
+                        conductor_id: null,
                         estado: 'pendiente'
                     })
                     .select()
                     .single();
 
                 if (errViaje) throw errViaje;
+                console.log('✅ Viaje creado:', viaje.id);
 
                 viajeActual = viaje;
                 mostrarPanel('estado-buscando');
                 escucharViaje(viaje.id);
 
             } catch (error) {
-                console.error("Error creando viaje:", error);
+                console.error("❌ Error creando viaje:", error);
                 alert("Error al crear el viaje: " + error.message);
             }
         }
 
         function escucharViaje(viajeId) {
+            console.log('🎧 Escuchando cambios del viaje:', viajeId);
+
             canalViaje = supabaseClient
                 .channel('viaje-' + viajeId)
                 .on('postgres_changes', {
@@ -423,10 +429,23 @@
                     table: 'viajes',
                     filter: `id=eq.${viajeId}`
                 }, (payload) => {
-                    const v = payload.new;
-                    procesarCambioEstado(v);
+                    console.log('🔄 Cambio recibido en viaje:', payload);
+                    procesarCambioEstado(payload.new);
                 })
-                .subscribe();
+                .subscribe((status, err) => {
+                    console.log('📡 Estado canal pasajero:', status);
+                    if (status === 'SUBSCRIBED') {
+                        console.log('✅ Pasajero conectado al viaje correctamente');
+                    }
+                    if (status === 'CHANNEL_ERROR') {
+                        console.error('❌ Error de canal del pasajero:', err);
+                        setTimeout(() => escucharViaje(viajeId), 3000);
+                    }
+                    if (status === 'TIMED_OUT') {
+                        console.warn('⏱️ Timeout del canal del pasajero, reconectando...');
+                        setTimeout(() => escucharViaje(viajeId), 2000);
+                    }
+                });
         }
 
         async function procesarCambioEstado(viaje) {
@@ -442,7 +461,7 @@
                     document.getElementById('datos-vehiculo').textContent = 
                         `${conductor.vehiculo || 'Móvil #53'} • ${conductor.placa || ''}`;
                     document.getElementById('avatar-conductor').textContent = conductor.nombre.charAt(0).toUpperCase();
-                    
+
                     if (conductor.lat && conductor.lng) {
                         mostrarConductorEnMapa(conductor.lat, conductor.lng);
                     }
@@ -492,7 +511,7 @@
                 if (canalViaje) canalViaje.unsubscribe();
                 location.reload();
             } catch (error) {
-                console.error("Error cancelando:", error);
+                console.error("❌ Error cancelando:", error);
             }
         }
 
@@ -503,7 +522,7 @@
         function mostrarPanel(id) {
             document.getElementById('formulario-pedido').style.display = 'none';
             document.querySelectorAll('.estado-viaje').forEach(el => el.classList.remove('activo'));
-            
+
             if (id === 'formulario-pedido') {
                 document.getElementById('formulario-pedido').style.display = 'block';
             } else {
