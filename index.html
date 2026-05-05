@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -32,10 +31,52 @@
 
         #map { 
             position: absolute; top: 0; left: 0; 
-            height: 100%; width: 100%; z-index: 1;
+            height: 72%; width: 100%; z-index: 1;
             background: #e5e5e5;
         }
 
+        /* MENU LATERAL */
+        .menu-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 2000;
+            display: none; opacity: 0; transition: opacity 0.3s;
+        }
+        .menu-overlay.activo { display: block; opacity: 1; }
+
+        .menu-lateral {
+            position: fixed; top: 0; left: -280px; bottom: 0;
+            width: 280px; background: var(--blanco);
+            z-index: 2001; transition: left 0.3s ease;
+            box-shadow: 2px 0 20px rgba(0,0,0,0.2);
+            display: flex; flex-direction: column;
+        }
+        .menu-lateral.abierto { left: 0; }
+
+        .menu-header {
+            background: linear-gradient(135deg, var(--naranja), var(--rojo));
+            padding: 30px 20px; color: white;
+        }
+        .menu-header h2 { margin: 0; font-size: 1.3rem; }
+        .menu-header p { margin: 5px 0 0; opacity: 0.9; font-size: 0.85rem; }
+
+        .menu-items {
+            flex: 1; padding: 10px 0;
+        }
+        .menu-item {
+            display: flex; align-items: center; gap: 15px;
+            padding: 16px 20px; cursor: pointer;
+            transition: background 0.2s; border: none; background: none;
+            width: 100%; text-align: left; font-size: 1rem; color: var(--texto);
+        }
+        .menu-item:hover, .menu-item:active { background: var(--fondo); }
+        .menu-item i { width: 24px; text-align: center; color: var(--naranja); }
+
+        .menu-footer {
+            padding: 20px; border-top: 1px solid #eee;
+            font-size: 0.8rem; color: var(--gris); text-align: center;
+        }
+
+        /* HEADER */
         .header {
             position: absolute; top: 12px; left: 12px; right: 12px;
             z-index: 1000; display: flex; justify-content: space-between; align-items: center;
@@ -58,7 +99,7 @@
         }
 
         .btn-mi-ubicacion {
-            position: absolute; bottom: 340px; right: 15px;
+            position: absolute; bottom: 30%; right: 15px;
             z-index: 1000; width: 50px; height: 50px;
             background: var(--blanco); border: none; border-radius: 50%;
             box-shadow: var(--sombra); cursor: pointer;
@@ -66,32 +107,30 @@
             color: var(--celeste); font-size: 1.3rem;
         }
 
-        .marcador-centro {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -100%);
-            z-index: 500; pointer-events: none;
-            font-size: 40px; color: var(--rojo);
-            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
-        }
-
+        /* PANEL INFERIOR */
         .panel {
             position: absolute; bottom: 0; left: 0; right: 0;
             z-index: 1000; background: var(--blanco);
             border-radius: 24px 24px 0 0;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-            padding: 20px; max-height: 50vh;
-            overflow-y: auto; transition: transform 0.3s ease;
+            padding: 15px 20px 25px;
+            max-height: 30vh;
+            overflow-y: auto;
         }
 
         .panel-handle {
             width: 40px; height: 4px; background: #ddd;
-            border-radius: 2px; margin: 0 auto 15px;
+            border-radius: 2px; margin: 0 auto 12px;
+        }
+
+        /* BUSCADOR INTELIGENTE */
+        .buscador-container {
+            position: relative; margin-bottom: 10px;
         }
 
         .input-row {
             display: flex; align-items: center; gap: 12px;
-            padding: 14px 16px; margin-bottom: 10px;
+            padding: 12px 16px;
             background: var(--fondo); border-radius: 14px;
             border: 2px solid transparent; transition: all 0.2s;
         }
@@ -108,21 +147,38 @@
             font-size: 1rem; outline: none; color: var(--texto);
         }
 
-        .input-row input::placeholder { color: #999; }
+        .sugerencias {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: var(--blanco); border-radius: 14px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            max-height: 200px; overflow-y: auto;
+            z-index: 1500; display: none;
+            margin-top: 5px;
+        }
 
-        .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-        .dot-verde { background: var(--verde); }
-        .dot-rojo { background: var(--rojo); }
+        .sugerencias.activo { display: block; }
+
+        .sugerencia-item {
+            padding: 12px 16px; cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .sugerencia-item:last-child { border-bottom: none; }
+        .sugerencia-item:hover { background: var(--fondo); }
+        .sugerencia-item i { color: var(--celeste); font-size: 0.9rem; }
+        .sugerencia-item .sug-text { font-size: 0.9rem; }
+        .sugerencia-item .sug-zona { font-size: 0.75rem; color: var(--gris); }
 
         .btn-principal {
-            width: 100%; padding: 18px;
+            width: 100%; padding: 16px;
             background: var(--rojo); color: white;
             border: none; border-radius: 16px;
             font-size: 1.1rem; font-weight: 800;
             text-transform: uppercase; letter-spacing: 0.5px;
             cursor: pointer; box-shadow: 0 6px 20px rgba(230,30,43,0.35);
             display: flex; align-items: center; justify-content: center; gap: 10px;
-            margin-top: 8px; transition: all 0.2s;
+            margin-top: 10px; transition: all 0.2s;
         }
 
         .btn-principal:active { transform: scale(0.97); }
@@ -132,51 +188,51 @@
         .estado-viaje.activo { display: block; animation: slideUp 0.4s ease; }
 
         .estado-header {
-            text-align: center; padding: 10px 0 20px;
+            text-align: center; padding: 8px 0 15px;
         }
 
         .estado-header .icono-grande {
-            font-size: 3.5rem; margin-bottom: 10px;
+            font-size: 3rem; margin-bottom: 8px;
         }
 
-        .estado-header h2 { margin: 0; font-size: 1.3rem; color: var(--texto); }
-        .estado-header p { margin: 6px 0 0; color: var(--gris); font-size: 0.95rem; }
+        .estado-header h2 { margin: 0; font-size: 1.2rem; color: var(--texto); }
+        .estado-header p { margin: 4px 0 0; color: var(--gris); font-size: 0.9rem; }
 
         .spinner {
-            width: 50px; height: 50px;
+            width: 40px; height: 40px;
             border: 4px solid #eee; border-top-color: var(--naranja);
             border-radius: 50%; animation: spin 0.8s linear infinite;
-            margin: 0 auto 15px;
+            margin: 0 auto 10px;
         }
 
         .info-conductor {
             background: var(--fondo); border-radius: 16px;
-            padding: 16px; margin: 15px 0;
+            padding: 14px; margin: 12px 0;
         }
 
         .info-conductor .fila {
             display: flex; align-items: center; gap: 12px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .info-conductor .fila:last-child { margin-bottom: 0; }
 
         .avatar {
-            width: 50px; height: 50px; border-radius: 50%;
+            width: 45px; height: 45px; border-radius: 50%;
             background: linear-gradient(135deg, var(--naranja), var(--rojo));
             display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 1.5rem; font-weight: bold;
+            color: white; font-size: 1.3rem; font-weight: bold;
         }
 
-        .datos-conductor h4 { margin: 0; font-size: 1.1rem; }
-        .datos-conductor p { margin: 2px 0 0; color: var(--gris); font-size: 0.85rem; }
+        .datos-conductor h4 { margin: 0; font-size: 1rem; }
+        .datos-conductor p { margin: 2px 0 0; color: var(--gris); font-size: 0.8rem; }
 
         .btn-secundario {
-            width: 100%; padding: 14px;
+            width: 100%; padding: 12px;
             background: transparent; color: var(--gris);
             border: 2px solid #ddd; border-radius: 14px;
-            font-size: 1rem; font-weight: 600; cursor: pointer;
-            margin-top: 10px;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer;
+            margin-top: 8px;
         }
 
         .btn-llamar {
@@ -185,23 +241,26 @@
 
         .tarifa-box {
             background: linear-gradient(135deg, var(--naranja), #ff9a44);
-            border-radius: 16px; padding: 16px; margin: 15px 0;
+            border-radius: 14px; padding: 14px; margin: 12px 0;
             color: white; text-align: center;
             box-shadow: 0 4px 15px rgba(244,121,32,0.3);
         }
 
         .tarifa-box .precio {
-            font-size: 2rem; font-weight: 800; margin: 5px 0;
+            font-size: 1.8rem; font-weight: 800; margin: 5px 0;
         }
 
         .tarifa-box .detalle {
-            font-size: 0.85rem; opacity: 0.9;
+            font-size: 0.8rem; opacity: 0.9;
         }
 
-        .mini-map {
-            height: 120px; border-radius: 12px; margin: 10px 0;
-            background: #e5e5e5; overflow: hidden;
+        .ruta-real {
+            background: var(--fondo); border-radius: 12px;
+            padding: 10px 14px; margin: 8px 0;
+            font-size: 0.85rem; color: var(--gris);
         }
+
+        .ruta-real i { color: var(--naranja); margin-right: 8px; }
 
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
@@ -209,14 +268,44 @@
 </head>
 <body>
 
-    <div id="map"></div>
-
-    <div class="marcador-centro">
-        <i class="fas fa-location-dot"></i>
+    <!-- MENU LATERAL -->
+    <div class="menu-overlay" id="menu-overlay" onclick="cerrarMenu()"></div>
+    <div class="menu-lateral" id="menu-lateral">
+        <div class="menu-header">
+            <h2>🚕 Las Catalinas #53</h2>
+            <p>Tu móvil de confianza</p>
+        </div>
+        <div class="menu-items">
+            <button class="menu-item" onclick="centrarEnMiUbicacion(); cerrarMenu();">
+                <i class="fas fa-crosshairs"></i>
+                <span>Mi ubicación</span>
+            </button>
+            <button class="menu-item" onclick="cerrarMenu(); alert('Próximamente: Historial de viajes')">
+                <i class="fas fa-history"></i>
+                <span>Historial de viajes</span>
+            </button>
+            <button class="menu-item" onclick="cerrarMenu(); alert('Teléfono: 1133667796')">
+                <i class="fas fa-phone"></i>
+                <span>Llamar a central</span>
+            </button>
+            <button class="menu-item" onclick="cerrarMenu(); alert('Zona de cobertura: San Miguel y Moreno')">
+                <i class="fas fa-map-marked-alt"></i>
+                <span>Zona de cobertura</span>
+            </button>
+            <button class="menu-item" onclick="cerrarMenu(); alert('Las Catalinas #53 - Remises de confianza')">
+                <i class="fas fa-info-circle"></i>
+                <span>Sobre nosotros</span>
+            </button>
+        </div>
+        <div class="menu-footer">
+            v1.0 - Las Catalinas #53
+        </div>
     </div>
 
+    <div id="map"></div>
+
     <div class="header">
-        <button class="menu-btn"><i class="fas fa-bars"></i></button>
+        <button class="menu-btn" onclick="abrirMenu()"><i class="fas fa-bars"></i></button>
         <div class="logo-tag">🚕 LAS CATALINAS #53</div>
     </div>
 
@@ -227,30 +316,26 @@
     <div class="panel" id="panel">
         <div class="panel-handle"></div>
 
+        <!-- FORMULARIO -->
         <div id="formulario-pedido">
-            <div class="input-row">
+            <div class="input-row" style="margin-bottom:8px;">
                 <i class="fas fa-user"></i>
                 <input type="text" id="nombre" placeholder="¿Cómo te llamás?">
             </div>
 
-            <div class="input-row">
+            <div class="input-row" style="margin-bottom:8px;">
                 <i class="fas fa-phone"></i>
                 <input type="tel" id="telefono" placeholder="Teléfono">
             </div>
 
-            <div class="input-row">
-                <div class="dot dot-verde"></div>
-                <input type="text" id="direccion" placeholder="Dirección de salida">
-            </div>
-
-            <div class="input-row">
-                <div class="dot dot-rojo"></div>
-                <input type="text" id="destino" placeholder="¿A dónde vas?">
-            </div>
-
-            <div class="input-row">
-                <i class="fas fa-info-circle"></i>
-                <input type="text" id="referencia" placeholder="Referencia: portón azul, casa blanca...">
+            <!-- DESTINO CON BUSCADOR INTELIGENTE -->
+            <div class="buscador-container">
+                <div class="input-row">
+                    <i class="fas fa-search" style="color:var(--rojo)"></i>
+                    <input type="text" id="destino" placeholder="¿A dónde vas? (ej: San Miguel centro)" 
+                           autocomplete="off" oninput="buscarDireccion(this.value)">
+                </div>
+                <div class="sugerencias" id="sugerencias"></div>
             </div>
 
             <button class="btn-principal" onclick="solicitarViaje()">
@@ -258,22 +343,23 @@
             </button>
         </div>
 
+        <!-- BUSCANDO -->
         <div class="estado-viaje" id="estado-buscando">
             <div class="estado-header">
                 <div class="spinner"></div>
                 <h2>Buscando conductor...</h2>
-                <p>Estamos buscando el móvil #53 más cercano a tu ubicación</p>
+                <p>Estamos buscando el móvil #53 más cercano</p>
             </div>
             <button class="btn-secundario" onclick="cancelarViaje()">
                 <i class="fas fa-times"></i> Cancelar búsqueda
             </button>
         </div>
 
+        <!-- ACEPTADO -->
         <div class="estado-viaje" id="estado-aceptado">
             <div class="estado-header">
                 <div class="icono-grande">🚕</div>
                 <h2>¡Conductor en camino!</h2>
-                <p id="texto-aceptado">Tu móvil está llegando</p>
             </div>
             <div class="info-conductor" id="info-conductor">
                 <div class="fila">
@@ -289,13 +375,17 @@
                 </div>
                 <div class="fila">
                     <i class="fas fa-road" style="color:var(--celeste)"></i>
-                    <span id="distancia-conductor">Calculando distancia...</span>
+                    <span id="distancia-conductor">Calculando...</span>
                 </div>
             </div>
-            <div class="tarifa-box" id="tarifa-pasajero" style="display:none;">
+            <div class="ruta-real" id="ruta-info">
+                <i class="fas fa-route"></i>
+                <span id="ruta-texto">Calculando ruta...</span>
+            </div>
+            <div class="tarifa-box" id="tarifa-pasajero">
                 <div class="detalle">Tarifa estimada</div>
                 <div class="precio" id="precio-final">$3.000</div>
-                <div class="detalle" id="detalle-tarifa">Base $3.000 + $0/km</div>
+                <div class="detalle" id="detalle-tarifa">Base + km</div>
             </div>
             <button class="btn-principal btn-llamar" onclick="llamarConductor()">
                 <i class="fas fa-phone"></i> Llamar al conductor
@@ -305,6 +395,7 @@
             </button>
         </div>
 
+        <!-- EN CAMINO -->
         <div class="estado-viaje" id="estado-en-camino">
             <div class="estado-header">
                 <div class="icono-grande">🛣️</div>
@@ -318,6 +409,7 @@
             </div>
         </div>
 
+        <!-- COMPLETADO -->
         <div class="estado-viaje" id="estado-completado">
             <div class="estado-header">
                 <div class="icono-grande">⭐</div>
@@ -340,17 +432,20 @@
 
     <script>
         // ═══════════════════════════════════════════════════
-        // CONFIGURACIÓN SUPABASE - DATOS REALES
+        // CONFIGURACIÓN
         // ═══════════════════════════════════════════════════
         const SUPABASE_URL = 'https://efryvjjunfeoxhekvwza.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // ═══════════════════════════════════════════════════
-        // CONFIGURACIÓN TARIFAS
-        // ═══════════════════════════════════════════════════
         const TARIFA_BASE = 3000;
         const TARIFA_POR_KM = 800;
+
+        // ZONA LIMITADA: San Miguel y Moreno (aprox)
+        const BOUNDS_SAN_MIGUEL = {
+            minLat: -34.65, maxLat: -34.52,
+            minLng: -58.85, maxLng: -58.68
+        };
 
         // ═══════════════════════════════════════════════════
         // MAPA
@@ -364,6 +459,12 @@
             maxZoom: 19
         }).addTo(map);
 
+        // Limitar vista a zona de cobertura
+        map.setMaxBounds([
+            [BOUNDS_SAN_MIGUEL.minLat, BOUNDS_SAN_MIGUEL.minLng],
+            [BOUNDS_SAN_MIGUEL.maxLat, BOUNDS_SAN_MIGUEL.maxLng]
+        ]);
+
         const iconoConductor = L.divIcon({
             html: '<div style="background:linear-gradient(135deg,#f47920,#e61e2b);width:36px;height:36px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-taxi" style="color:white;font-size:14px;"></i></div>',
             className: 'conductor-marker',
@@ -372,7 +473,7 @@
         });
 
         const iconoDestino = L.divIcon({
-            html: '<div style="background:#e61e2b;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-flag-checkered" style="color:white;font-size:12px;"></i></div>',
+            html: '<div style="background:#28a745;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-flag-checkered" style="color:white;font-size:12px;"></i></div>',
             iconSize: [36, 36],
             iconAnchor: [18, 18]
         });
@@ -383,9 +484,15 @@
         let marcadorConductor = null;
         let marcadorDestino = null;
         let miPosicion = { lat: -34.564, lng: -58.770 };
+        let destinoCoords = null;
+        let rutaLayer = null;
         let watchId = null;
         let distanciaTotalKm = 0;
+        let timeoutBusqueda = null;
 
+        // ═══════════════════════════════════════════════════
+        // GPS - UBICACIÓN EXACTA DEL PASAJERO
+        // ═══════════════════════════════════════════════════
         function iniciarGPS() {
             if (!navigator.geolocation) {
                 alert("Tu navegador no soporta geolocalización");
@@ -396,9 +503,18 @@
                 (pos) => {
                     miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                     map.setView([miPosicion.lat, miPosicion.lng], 16);
+
+                    // Marcador de mi posición
+                    L.circleMarker([miPosicion.lat, miPosicion.lng], {
+                        radius: 8, fillColor: '#0093d0', color: '#fff',
+                        weight: 3, opacity: 1, fillOpacity: 0.9
+                    }).addTo(map).bindPopup('Tu ubicación');
                 },
-                (err) => console.log("GPS error:", err),
-                { enableHighAccuracy: true }
+                (err) => {
+                    console.log("GPS error:", err);
+                    map.setView([-34.564, -58.770], 15);
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
             );
 
             watchId = navigator.geolocation.watchPosition(
@@ -414,12 +530,183 @@
             map.setView([miPosicion.lat, miPosicion.lng], 16);
         }
 
-        function obtenerDireccionCentro() {
-            const centro = map.getCenter();
-            return { lat: centro.lat, lng: centro.lng };
+        // ═══════════════════════════════════════════════════
+        // MENU
+        // ═══════════════════════════════════════════════════
+        function abrirMenu() {
+            document.getElementById('menu-lateral').classList.add('abierto');
+            document.getElementById('menu-overlay').classList.add('activo');
         }
 
-        function calcularDistancia(lat1, lon1, lat2, lon2) {
+        function cerrarMenu() {
+            document.getElementById('menu-lateral').classList.remove('abierto');
+            document.getElementById('menu-overlay').classList.remove('activo');
+        }
+
+        // ═══════════════════════════════════════════════════
+        // BUSCADOR INTELIGENTE - AUTOCOMPLETADO
+        // ═══════════════════════════════════════════════════
+        async function buscarDireccion(query) {
+            const sugerenciasDiv = document.getElementById('sugerencias');
+
+            if (query.length < 3) {
+                sugerenciasDiv.classList.remove('activo');
+                return;
+            }
+
+            try {
+                // Buscar en Nominatim limitado a Argentina (San Miguel/Moreno)
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', San Miguel, Buenos Aires, Argentina')}&limit=5&countrycodes=ar&viewbox=-58.85,-34.52,-58.68,-34.65&bounded=1`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                sugerenciasDiv.innerHTML = '';
+
+                if (data.length === 0) {
+                    // Sugerencias locales predefinidas
+                    const sugerenciasLocales = [
+                        { nombre: 'San Miguel Centro', zona: 'San Miguel, Buenos Aires' },
+                        { nombre: 'Plaza San Miguel', zona: 'San Miguel, Buenos Aires' },
+                        { nombre: 'Municipalidad de San Miguel', zona: 'San Miguel, Buenos Aires' },
+                        { nombre: 'Moreno Centro', zona: 'Moreno, Buenos Aires' },
+                        { nombre: 'Plaza Moreno', zona: 'Moreno, Buenos Aires' },
+                        { nombre: 'Shopping San Miguel', zona: 'San Miguel, Buenos Aires' },
+                        { nombre: 'Hospital San Miguel', zona: 'San Miguel, Buenos Aires' },
+                        { nombre: 'Estación San Miguel', zona: 'San Miguel, Buenos Aires' },
+                        { nombre: 'La Reja', zona: 'Moreno, Buenos Aires' },
+                        { nombre: 'Trujui', zona: 'Moreno, Buenos Aires' },
+                        { nombre: 'Paso del Rey', zona: 'Moreno, Buenos Aires' },
+                        { nombre: 'Cuartel V', zona: 'Moreno, Buenos Aires' }
+                    ].filter(s => s.nombre.toLowerCase().includes(query.toLowerCase()));
+
+                    sugerenciasLocales.forEach(sug => {
+                        const div = document.createElement('div');
+                        div.className = 'sugerencia-item';
+                        div.innerHTML = `
+                            <i class="fas fa-map-marker-alt"></i>
+                            <div>
+                                <div class="sug-text">${sug.nombre}</div>
+                                <div class="sug-zona">${sug.zona}</div>
+                            </div>
+                        `;
+                        div.onclick = () => seleccionarDestino(sug.nombre, null);
+                        sugerenciasDiv.appendChild(div);
+                    });
+                } else {
+                    data.forEach(lugar => {
+                        const div = document.createElement('div');
+                        div.className = 'sugerencia-item';
+                        div.innerHTML = `
+                            <i class="fas fa-map-marker-alt"></i>
+                            <div>
+                                <div class="sug-text">${lugar.display_name.split(',')[0]}</div>
+                                <div class="sug-zona">${lugar.display_name.split(',').slice(1, 3).join(',')}</div>
+                            </div>
+                        `;
+                        div.onclick = () => seleccionarDestino(lugar.display_name.split(',')[0], {
+                            lat: parseFloat(lugar.lat),
+                            lng: parseFloat(lugar.lon)
+                        });
+                        sugerenciasDiv.appendChild(div);
+                    });
+                }
+
+                sugerenciasDiv.classList.add('activo');
+
+            } catch (error) {
+                console.error('Error buscando dirección:', error);
+            }
+        }
+
+        function seleccionarDestino(nombre, coords) {
+            document.getElementById('destino').value = nombre;
+            document.getElementById('sugerencias').classList.remove('activo');
+
+            if (coords) {
+                destinoCoords = coords;
+                mostrarDestinoEnMapa(coords.lat, coords.lng, nombre);
+            } else {
+                // Para sugerencias locales, buscar coordenadas
+                buscarCoordenadasDestino(nombre);
+            }
+        }
+
+        async function buscarCoordenadasDestino(nombre) {
+            try {
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(nombre + ', Buenos Aires, Argentina')}&limit=1&countrycodes=ar`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.length > 0) {
+                    destinoCoords = {
+                        lat: parseFloat(data[0].lat),
+                        lng: parseFloat(data[0].lon)
+                    };
+                    mostrarDestinoEnMapa(destinoCoords.lat, destinoCoords.lng, nombre);
+                }
+            } catch (e) {
+                console.error('Error geocodificando:', e);
+            }
+        }
+
+        function mostrarDestinoEnMapa(lat, lng, nombre) {
+            if (marcadorDestino) map.removeLayer(marcadorDestino);
+
+            marcadorDestino = L.marker([lat, lng], { icon: iconoDestino })
+                .addTo(map)
+                .bindPopup(`<b>Destino:</b><br>${nombre}`);
+
+            // Calcular ruta real
+            calcularRutaReal(miPosicion.lat, miPosicion.lng, lat, lng);
+
+            const bounds = L.latLngBounds(
+                [miPosicion.lat, miPosicion.lng],
+                [lat, lng]
+            );
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+
+        // ═══════════════════════════════════════════════════
+        // RUTA REAL CON CALLES (OSRM)
+        // ═══════════════════════════════════════════════════
+        async function calcularRutaReal(lat1, lng1, lat2, lng2) {
+            if (rutaLayer) map.removeLayer(rutaLayer);
+
+            try {
+                // OSRM demo server - en producción usar tu propio servidor
+                const url = `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.routes && data.routes.length > 0) {
+                    const route = data.routes[0];
+                    const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+
+                    distanciaTotalKm = route.distance / 1000;
+
+                    rutaLayer = L.polyline(coords, {
+                        color: '#f47920',
+                        weight: 5,
+                        opacity: 0.9,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    }).addTo(map);
+
+                    console.log(`📍 Ruta real: ${distanciaTotalKm.toFixed(2)} km`);
+                }
+            } catch (error) {
+                console.error('Error calculando ruta:', error);
+                // Fallback: línea recta
+                distanciaTotalKm = calcularDistanciaLineal(lat1, lng1, lat2, lng2);
+                rutaLayer = L.polyline([[lat1, lng1], [lat2, lng2]], {
+                    color: '#f47920', weight: 4, opacity: 0.7, dashArray: '10, 10'
+                }).addTo(map);
+            }
+        }
+
+        function calcularDistanciaLineal(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -439,19 +726,23 @@
             };
         }
 
+        // ═══════════════════════════════════════════════════
+        // SOLICITAR VIAJE
+        // ═══════════════════════════════════════════════════
         async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value.trim();
             const telefono = document.getElementById('telefono').value.trim();
-            const direccion = document.getElementById('direccion').value.trim();
             const destino = document.getElementById('destino').value.trim();
-            const referencia = document.getElementById('referencia').value.trim();
 
-            if (!nombre || !direccion || !destino) {
-                alert("Por favor completá tu nombre, dirección y destino");
+            if (!nombre || !telefono || !destino) {
+                alert("Completá tu nombre, teléfono y destino");
                 return;
             }
 
-            const coordsSalida = obtenerDireccionCentro();
+            if (!destinoCoords) {
+                alert("Seleccioná un destino de la lista");
+                return;
+            }
 
             try {
                 const { data: pasajero, error: errPax } = await supabaseClient
@@ -461,7 +752,8 @@
                     .single();
 
                 if (errPax) throw errPax;
-                console.log('✅ Pasajero creado:', pasajero.id);
+
+                const tarifa = calcularTarifa(distanciaTotalKm);
 
                 const { data: viaje, error: errViaje } = await supabaseClient
                     .from('viajes')
@@ -469,11 +761,16 @@
                         pasajero_id: pasajero.id,
                         nombre_pasajero: nombre,
                         telefono_pasajero: telefono,
-                        direccion_salida: direccion,
+                        direccion_salida: 'Mi ubicación actual (GPS)',
                         destino: destino,
-                        referencia: referencia,
-                        lat_salida: coordsSalida.lat,
-                        lng_salida: coordsSalida.lng,
+                        lat_salida: miPosicion.lat,
+                        lng_salida: miPosicion.lng,
+                        lat_destino: destinoCoords.lat,
+                        lng_destino: destinoCoords.lng,
+                        distancia_km: distanciaTotalKm.toFixed(2),
+                        tarifa_base: tarifa.base,
+                        tarifa_km: tarifa.costoKm,
+                        tarifa_total: tarifa.total,
                         conductor_id: null,
                         estado: 'pendiente'
                     })
@@ -481,21 +778,18 @@
                     .single();
 
                 if (errViaje) throw errViaje;
-                console.log('✅ Viaje creado:', viaje.id);
 
                 viajeActual = viaje;
                 mostrarPanel('estado-buscando');
                 escucharViaje(viaje.id);
 
             } catch (error) {
-                console.error("❌ Error creando viaje:", error);
+                console.error("❌ Error:", error);
                 alert("Error al crear el viaje: " + error.message);
             }
         }
 
         function escucharViaje(viajeId) {
-            console.log('🎧 Escuchando cambios del viaje:', viajeId);
-
             canalViaje = supabaseClient
                 .channel('viaje-' + viajeId)
                 .on('postgres_changes', {
@@ -504,21 +798,12 @@
                     table: 'viajes',
                     filter: `id=eq.${viajeId}`
                 }, (payload) => {
-                    console.log('🔄 Cambio recibido en viaje:', payload);
                     procesarCambioEstado(payload.new);
                 })
                 .subscribe((status, err) => {
-                    console.log('📡 Estado canal pasajero:', status);
-                    if (status === 'SUBSCRIBED') {
-                        console.log('✅ Pasajero conectado al viaje correctamente');
-                    }
+                    console.log('📡 Estado canal:', status);
                     if (status === 'CHANNEL_ERROR') {
-                        console.error('❌ Error de canal del pasajero:', err);
                         setTimeout(() => escucharViaje(viajeId), 3000);
-                    }
-                    if (status === 'TIMED_OUT') {
-                        console.warn('⏱️ Timeout del canal del pasajero, reconectando...');
-                        setTimeout(() => escucharViaje(viajeId), 2000);
                     }
                 });
         }
@@ -537,22 +822,24 @@
                         `${conductor.vehiculo || 'Móvil #53'} • ${conductor.placa || ''}`;
                     document.getElementById('avatar-conductor').textContent = conductor.nombre.charAt(0).toUpperCase();
 
-                    // Calcular distancia y tarifa
-                    const dist = calcularDistancia(
+                    const dist = calcularDistanciaLineal(
                         miPosicion.lat, miPosicion.lng,
                         conductor.lat || miPosicion.lat, 
                         conductor.lng || miPosicion.lng
                     );
-                    distanciaTotalKm = dist;
-                    const tarifa = calcularTarifa(dist);
 
                     document.getElementById('distancia-conductor').textContent = 
-                        `A ${dist.toFixed(1)} km de distancia`;
-                    document.getElementById('precio-final').textContent = 
-                        `$${tarifa.total.toLocaleString()}`;
+                        `A ${dist.toFixed(1)} km`;
+                    document.getElementById('tiempo-llegada').textContent = 
+                        `Llega en ${Math.ceil(dist * 3)} minutos aprox.`;
+
+                    // Mostrar tarifa
+                    const tarifa = calcularTarifa(viaje.distancia_km || distanciaTotalKm);
+                    document.getElementById('precio-final').textContent = `$${tarifa.total.toLocaleString()}`;
                     document.getElementById('detalle-tarifa').textContent = 
-                        `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()} (${dist.toFixed(1)} km × $${TARIFA_POR_KM})`;
-                    document.getElementById('tarifa-pasajero').style.display = 'block';
+                        `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()} (${(viaje.distancia_km || distanciaTotalKm).toFixed(1)} km × $${TARIFA_POR_KM})`;
+                    document.getElementById('ruta-texto').textContent = 
+                        `Ruta: ${(viaje.distancia_km || distanciaTotalKm).toFixed(1)} km por calles`;
 
                     if (conductor.lat && conductor.lng) {
                         mostrarConductorEnMapa(conductor.lat, conductor.lng);
@@ -563,17 +850,17 @@
                 mostrarPanel('estado-aceptado');
             }
             else if (viaje.estado === 'en_camino') {
-                const tarifa = calcularTarifa(distanciaTotalKm);
+                const tarifa = calcularTarifa(viaje.distancia_km || distanciaTotalKm);
                 document.getElementById('precio-en-camino').textContent = `$${tarifa.total.toLocaleString()}`;
                 document.getElementById('detalle-en-camino').textContent = 
-                    `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()} (${distanciaTotalKm.toFixed(1)} km)`;
+                    `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()}`;
                 mostrarPanel('estado-en-camino');
             }
             else if (viaje.estado === 'completado') {
-                const tarifa = calcularTarifa(distanciaTotalKm);
+                const tarifa = calcularTarifa(viaje.distancia_km || distanciaTotalKm);
                 document.getElementById('precio-completado').textContent = `$${tarifa.total.toLocaleString()}`;
                 document.getElementById('detalle-completado').textContent = 
-                    `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()} (${distanciaTotalKm.toFixed(1)} km)`;
+                    `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()}`;
                 mostrarPanel('estado-completado');
                 if (canalViaje) canalViaje.unsubscribe();
                 if (canalConductor) canalConductor.unsubscribe();
@@ -598,9 +885,7 @@
                         actualizarPosicionConductor(conductor.lat, conductor.lng);
                     }
                 })
-                .subscribe((status) => {
-                    console.log('📡 GPS conductor estado:', status);
-                });
+                .subscribe();
         }
 
         function mostrarConductorEnMapa(lat, lng) {
@@ -611,28 +896,17 @@
                     .addTo(map)
                     .bindPopup('Tu conductor');
             }
-
-            const bounds = L.latLngBounds(
-                [miPosicion.lat, miPosicion.lng],
-                [lat, lng]
-            );
-            map.fitBounds(bounds, { padding: [60, 60] });
         }
 
         function actualizarPosicionConductor(lat, lng) {
             if (marcadorConductor) {
                 marcadorConductor.setLatLng([lat, lng]);
 
-                const dist = calcularDistancia(miPosicion.lat, miPosicion.lng, lat, lng);
+                const dist = calcularDistanciaLineal(miPosicion.lat, miPosicion.lng, lat, lng);
                 document.getElementById('distancia-conductor').textContent = 
-                    `A ${dist.toFixed(1)} km de distancia`;
-
-                // Recalcular tarifa con distancia actualizada
-                distanciaTotalKm = dist;
-                const tarifa = calcularTarifa(dist);
-                document.getElementById('precio-final').textContent = `$${tarifa.total.toLocaleString()}`;
-                document.getElementById('detalle-tarifa').textContent = 
-                    `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()} (${dist.toFixed(1)} km × $${TARIFA_POR_KM})`;
+                    `A ${dist.toFixed(1)} km`;
+                document.getElementById('tiempo-llegada').textContent = 
+                    `Llega en ${Math.ceil(dist * 3)} minutos aprox.`;
             }
         }
 
@@ -668,6 +942,13 @@
                 document.getElementById(id).classList.add('activo');
             }
         }
+
+        // Cerrar sugerencias al hacer click fuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.buscador-container')) {
+                document.getElementById('sugerencias').classList.remove('activo');
+            }
+        });
 
         iniciarGPS();
     </script>
