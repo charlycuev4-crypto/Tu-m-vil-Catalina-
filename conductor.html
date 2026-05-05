@@ -1,1 +1,914 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Conductor - Las Catalinas #53</title>
 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <style>
+        :root {
+            --naranja: #f47920;
+            --naranja-claro: #ff9a44;
+            --celeste: #0093d0;
+            --celeste-claro: #4db8e8;
+            --rojo: #e61e2b;
+            --verde: #28a745;
+            --fondo: #fff5eb;
+            --panel-bg: linear-gradient(180deg, #fff8f0 0%, #ffecd9 100%);
+            --blanco: #ffffff;
+            --texto: #1a1a1a;
+            --gris: #666666;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--fondo); color: var(--texto); overflow: hidden;
+        }
+
+        #map { 
+            position: absolute; top: 0; left: 0; 
+            height: 100%; width: 100%; z-index: 1;
+            background: #e8e8e8;
+        }
+
+        .header-conductor {
+            position: absolute; top: 12px; left: 12px; right: 12px;
+            z-index: 1000; display: flex; gap: 10px;
+            pointer-events: none;
+        }
+
+        .header-card {
+            flex: 1; 
+            background: linear-gradient(135deg, var(--naranja), var(--naranja-claro));
+            border-radius: 16px; padding: 12px 16px;
+            box-shadow: 0 4px 15px rgba(244,121,32,0.3); 
+            pointer-events: auto;
+            display: flex; align-items: center; gap: 12px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .header-card .avatar {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: var(--blanco);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--naranja); font-weight: bold; font-size: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .header-card h3 { margin: 0; font-size: 1rem; color: white; }
+        .header-card p { margin: 2px 0 0; font-size: 0.8rem; color: rgba(255,255,255,0.9); }
+
+        .toggle-online {
+            width: 60px; height: 36px;
+            background: rgba(255,255,255,0.3); 
+            border-radius: 36px;
+            position: relative; cursor: pointer;
+            transition: all 0.3s; 
+            pointer-events: auto;
+            flex-shrink: 0;
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+
+        .toggle-online.activo { 
+            background: var(--verde); 
+            border-color: var(--verde);
+        }
+
+        .toggle-online::after {
+            content: ''; position: absolute;
+            width: 28px; height: 28px;
+            background: white; border-radius: 50%;
+            top: 2px; left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .toggle-online.activo::after { transform: translateX(24px); }
+
+        .panel {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            z-index: 1000; 
+            background: var(--panel-bg);
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 -4px 20px rgba(244,121,32,0.2);
+            padding: 20px; 
+            max-height: 55vh;
+            overflow-y: auto;
+            border-top: 3px solid var(--naranja);
+        }
+
+        .panel-handle {
+            width: 40px; height: 4px; 
+            background: var(--naranja);
+            border-radius: 2px; margin: 0 auto 15px;
+            opacity: 0.5;
+        }
+
+        .stats-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px; margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--naranja), var(--naranja-claro));
+            border-radius: 14px;
+            padding: 14px; text-align: center;
+            box-shadow: 0 3px 10px rgba(244,121,32,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .stat-card .numero {
+            font-size: 1.6rem; font-weight: 800; color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .stat-card .label {
+            font-size: 0.75rem; color: rgba(255,255,255,0.9); 
+            margin-top: 4px;
+        }
+
+        .estado-espera {
+            text-align: center; padding: 20px;
+            background: linear-gradient(135deg, rgba(0,147,208,0.1), rgba(77,184,232,0.1));
+            border-radius: 16px;
+            border: 2px solid var(--celeste);
+        }
+
+        .estado-espera .icono-grande {
+            font-size: 3rem; margin-bottom: 10px;
+        }
+
+        .estado-espera h3 { margin: 0; font-size: 1.2rem; color: var(--celeste); }
+        .estado-espera p { margin: 6px 0 0; color: var(--gris); }
+
+        .pedido-card {
+            display: none;
+            background: linear-gradient(180deg, #fff8f0 0%, #ffecd9 100%);
+            border: 3px solid var(--naranja);
+            border-radius: 20px; padding: 20px;
+            animation: slideUp 0.4s ease;
+            box-shadow: 0 4px 15px rgba(244,121,32,0.2);
+        }
+
+        .pedido-card.activo { display: block; }
+
+        .pedido-header {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .pedido-header .icono {
+            width: 50px; height: 50px;
+            background: linear-gradient(135deg, var(--naranja), var(--rojo));
+            border-radius: 14px; display: flex;
+            align-items: center; justify-content: center;
+            color: white; font-size: 1.5rem;
+            box-shadow: 0 3px 10px rgba(244,121,32,0.3);
+        }
+
+        .pedido-header h3 { margin: 0; font-size: 1.2rem; color: var(--naranja); }
+        .pedido-header p { margin: 4px 0 0; color: var(--gris); font-size: 0.85rem; }
+
+        .pedido-info {
+            background: var(--blanco); 
+            border-radius: 14px;
+            padding: 14px; margin-bottom: 16px;
+            border: 2px solid var(--celeste);
+        }
+
+        .pedido-info .fila {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 0; border-bottom: 1px solid #eee;
+        }
+
+        .pedido-info .fila:last-child { border-bottom: none; }
+        .pedido-info i { color: var(--celeste); width: 20px; text-align: center; }
+
+        .tarifa-info {
+            background: linear-gradient(135deg, var(--naranja), var(--naranja-claro));
+            border-radius: 14px; padding: 14px; margin-bottom: 16px;
+            color: white; text-align: center;
+            box-shadow: 0 3px 10px rgba(244,121,32,0.2);
+        }
+
+        .tarifa-info .precio {
+            font-size: 1.8rem; font-weight: 800; margin: 5px 0;
+        }
+
+        .tarifa-info .detalle {
+            font-size: 0.8rem; opacity: 0.9;
+        }
+
+        .botones-accion { display: flex; gap: 10px; }
+
+        .btn {
+            flex: 1; padding: 16px; border: none;
+            border-radius: 16px; font-size: 1rem;
+            font-weight: 700; cursor: pointer;
+            display: flex; align-items: center;
+            justify-content: center; gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-aceptar {
+            background: linear-gradient(135deg, var(--verde), #34ce57);
+            color: white;
+            box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+        }
+
+        .btn-rechazar {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: white;
+        }
+
+        .btn-llegue {
+            background: linear-gradient(135deg, var(--celeste), var(--celeste-claro));
+            color: white; width: 100%; margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(0,147,208,0.3);
+        }
+
+        .btn-completar {
+            background: linear-gradient(135deg, var(--naranja), var(--naranja-claro));
+            color: white; width: 100%; margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(244,121,32,0.3);
+        }
+
+        .btn:active { transform: scale(0.97); }
+
+        .viaje-activo-panel { display: none; }
+        .viaje-activo-panel.activo { display: block; }
+
+        .ruta-info {
+            background: var(--blanco);
+            border-radius: 14px; padding: 14px; margin-bottom: 16px;
+            border: 2px solid var(--celeste);
+        }
+
+        .ruta-info .fila {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 0; border-bottom: 1px solid #eee;
+        }
+
+        .ruta-info .fila:last-child { border-bottom: none; }
+        .ruta-info i { color: var(--celeste); width: 20px; text-align: center; }
+
+        @keyframes slideUp { 
+            from { opacity: 0; transform: translateY(30px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <div class="header-conductor">
+        <div class="header-card">
+            <div class="avatar" id="avatar-inicial">?</div>
+            <div>
+                <h3 id="nombre-conductor">Conductor</h3>
+                <p id="estado-texto">Desconectado</p>
+            </div>
+        </div>
+        <div class="toggle-online" id="toggle-online" onclick="cambiarEstado()"></div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-handle"></div>
+
+        <div id="panel-stats">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="numero" id="viajes-hoy">0</div>
+                    <div class="label">Viajes hoy</div>
+                </div>
+                <div class="stat-card">
+                    <div class="numero" id="ganancias">$0</div>
+                    <div class="label">Ganancias</div>
+                </div>
+                <div class="stat-card">
+                    <div class="numero" id="calificacion">5.0</div>
+                    <div class="label">Calificación</div>
+                </div>
+            </div>
+            <div class="estado-espera" id="estado-espera">
+                <div class="icono-grande">📍</div>
+                <h3>Esperando pedidos...</h3>
+                <p>Mantenete online para recibir viajes</p>
+            </div>
+        </div>
+
+        <div class="pedido-card" id="pedido-entrante">
+            <div class="pedido-header">
+                <div class="icono"><i class="fas fa-bell"></i></div>
+                <div>
+                    <h3>¡Nuevo pedido!</h3>
+                    <p id="distancia-pedido">Calculando distancia...</p>
+                </div>
+            </div>
+            <div class="pedido-info">
+                <div class="fila">
+                    <i class="fas fa-user"></i>
+                    <span id="p-nombre">-</span>
+                </div>
+                <div class="fila">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span id="p-direccion">-</span>
+                </div>
+                <div class="fila">
+                    <i class="fas fa-flag-checkered"></i>
+                    <span id="p-destino">-</span>
+                </div>
+                <div class="fila">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="p-referencia">-</span>
+                </div>
+                <div class="fila">
+                    <i class="fas fa-phone"></i>
+                    <span id="p-telefono">-</span>
+                </div>
+            </div>
+            <div class="tarifa-info">
+                <div class="detalle">Tarifa estimada</div>
+                <div class="precio" id="p-tarifa">$3.000</div>
+                <div class="detalle" id="p-detalle-tarifa">Base + km</div>
+            </div>
+            <div class="botones-accion">
+                <button class="btn btn-rechazar" onclick="rechazarPedido()">
+                    <i class="fas fa-times"></i> Rechazar
+                </button>
+                <button class="btn btn-aceptar" onclick="aceptarPedido()">
+                    <i class="fas fa-check"></i> Aceptar
+                </button>
+            </div>
+        </div>
+
+        <div class="viaje-activo-panel" id="viaje-activo-panel">
+            <div class="ruta-info">
+                <div class="fila">
+                    <i class="fas fa-user"></i>
+                    <span id="v-nombre">-</span>
+                </div>
+                <div class="fila">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span id="v-direccion">-</span>
+                </div>
+                <div class="fila">
+                    <i class="fas fa-flag-checkered"></i>
+                    <span id="v-destino">-</span>
+                </div>
+                <div class="fila">
+                    <i class="fas fa-phone"></i>
+                    <span id="v-telefono">-</span>
+                </div>
+                <div class="fila">
+                    <i class="fas fa-road"></i>
+                    <span id="v-distancia">-</span>
+                </div>
+            </div>
+            <div class="tarifa-info">
+                <div class="detalle">Tarifa del viaje</div>
+                <div class="precio" id="v-tarifa">$3.000</div>
+                <div class="detalle" id="v-detalle-tarifa">Base + km</div>
+            </div>
+            <button class="btn btn-llegue" id="btn-accion" onclick="siguienteAccion()">
+                <i class="fas fa-car"></i> Llegué al punto
+            </button>
+            <button class="btn btn-rechazar" style="margin-top:10px;" onclick="cancelarViaje()">
+                <i class="fas fa-times"></i> Cancelar viaje
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // ═══════════════════════════════════════════════════
+        // CONFIGURACIÓN SUPABASE - DATOS REALES
+        // ═══════════════════════════════════════════════════
+        const SUPABASE_URL = 'https://efryvjjunfeoxhekvwza.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
+
+        const CONDUCTOR_ID = 'b2e55e81-b40e-48ad-89d8-0d41d56d5fb8';
+        const CONDUCTOR_NOMBRE = 'Juan Pérez';
+
+        // ═══════════════════════════════════════════════════
+        // CONFIGURACIÓN TARIFAS
+        // ═══════════════════════════════════════════════════
+        const TARIFA_BASE = 3000;
+        const TARIFA_POR_KM = 800;
+
+        let supabaseClient = null;
+        let map = null;
+        let marcadorYo = null;
+        let marcadorPasajero = null;
+        let marcadorDestino = null;
+        let rutaLinea = null;
+        let online = false;
+        let viajeActual = null;
+        let pedidoPendiente = null;
+        let miPosicion = { lat: -34.564, lng: -58.770 };
+        let watchId = null;
+        let canalPedidos = null;
+        let distanciaTotalKm = 0;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('✅ Supabase inicializado');
+
+                initMapa();
+
+                document.getElementById('nombre-conductor').textContent = CONDUCTOR_NOMBRE;
+                document.getElementById('avatar-inicial').textContent = CONDUCTOR_NOMBRE.charAt(0).toUpperCase();
+
+                iniciarGPS();
+
+                console.log('✅ App inicializada');
+
+            } catch (error) {
+                console.error('❌ Error inicializando:', error);
+            }
+        });
+
+        function initMapa() {
+            try {
+                const mapDiv = document.getElementById('map');
+                if (!mapDiv) {
+                    console.error('No se encontró el div del mapa');
+                    return;
+                }
+
+                mapDiv.style.height = window.innerHeight + 'px';
+                mapDiv.style.width = window.innerWidth + 'px';
+
+                map = L.map('map', { 
+                    zoomControl: false,
+                    attributionControl: false 
+                }).setView([-34.564, -58.770], 15);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '',
+                    crossOrigin: true
+                }).addTo(map);
+
+                console.log('✅ Mapa inicializado');
+
+            } catch (error) {
+                console.error('❌ Error mapa:', error);
+            }
+        }
+
+        function iniciarGPS() {
+            if (!navigator.geolocation) {
+                console.log('GPS no disponible');
+                if (map) map.setView([-34.564, -58.770], 15);
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    miPosicion = { 
+                        lat: pos.coords.latitude, 
+                        lng: pos.coords.longitude 
+                    };
+
+                    if (map) {
+                        map.setView([miPosicion.lat, miPosicion.lng], 16);
+
+                        const iconoYo = L.divIcon({
+                            html: '<div style="background:linear-gradient(135deg,#f47920,#e61e2b);width:40px;height:40px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-taxi" style="color:white;font-size:16px;"></i></div>',
+                            iconSize: [44, 44],
+                            iconAnchor: [22, 22]
+                        });
+
+                        marcadorYo = L.marker([miPosicion.lat, miPosicion.lng], { icon: iconoYo })
+                            .addTo(map);
+                    }
+                },
+                (err) => {
+                    console.log('GPS inicial error:', err);
+                    if (map) map.setView([-34.564, -58.770], 15);
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+
+            watchId = navigator.geolocation.watchPosition(
+                async (pos) => {
+                    miPosicion = { 
+                        lat: pos.coords.latitude, 
+                        lng: pos.coords.longitude 
+                    };
+
+                    if (marcadorYo) {
+                        marcadorYo.setLatLng([miPosicion.lat, miPosicion.lng]);
+                    }
+
+                    if (online && supabaseClient) {
+                        try {
+                            await supabaseClient
+                                .from('conductores')
+                                .update({ 
+                                    lat: miPosicion.lat, 
+                                    lng: miPosicion.lng,
+                                    ultima_actualizacion: new Date().toISOString()
+                                })
+                                .eq('id', CONDUCTOR_ID);
+                        } catch (e) {}
+                    }
+
+                    if (viajeActual && marcadorPasajero) {
+                        actualizarRuta();
+                    }
+                },
+                (err) => console.log('GPS watch error:', err),
+                { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+            );
+        }
+
+        function calcularDistancia(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        function calcularTarifa(distanciaKm) {
+            const total = TARIFA_BASE + (distanciaKm * TARIFA_POR_KM);
+            return {
+                total: Math.round(total),
+                base: TARIFA_BASE,
+                km: distanciaKm,
+                costoKm: Math.round(distanciaKm * TARIFA_POR_KM)
+            };
+        }
+
+        async function cambiarEstado() {
+            if (!supabaseClient) {
+                alert('Error: Supabase no conectado');
+                return;
+            }
+
+            online = !online;
+            const nuevoEstado = online ? 'disponible' : 'offline';
+
+            try {
+                const { error } = await supabaseClient
+                    .from('conductores')
+                    .update({ estado: nuevoEstado })
+                    .eq('id', CONDUCTOR_ID);
+
+                if (error) throw error;
+
+                actualizarUIEstado();
+
+                if (online) {
+                    escucharPedidos();
+                } else {
+                    if (canalPedidos) {
+                        await canalPedidos.unsubscribe();
+                        canalPedidos = null;
+                        console.log('🔌 Canal de pedidos cerrado');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error cambiando estado:', error);
+                alert('Error de conexión: ' + error.message);
+                online = !online;
+                actualizarUIEstado();
+            }
+        }
+
+        function actualizarUIEstado() {
+            const toggle = document.getElementById('toggle-online');
+            const texto = document.getElementById('estado-texto');
+
+            if (online) {
+                toggle.classList.add('activo');
+                texto.textContent = 'En línea • Buscando viajes';
+                texto.style.color = 'var(--verde)';
+            } else {
+                toggle.classList.remove('activo');
+                texto.textContent = 'Desconectado';
+                texto.style.color = 'rgba(255,255,255,0.7)';
+            }
+        }
+
+        function escucharPedidos() {
+            if (!supabaseClient) {
+                console.error('❌ Supabase no inicializado');
+                return;
+            }
+
+            try {
+                console.log('🎧 Iniciando escucha de pedidos...');
+
+                canalPedidos = supabaseClient
+                    .channel('pedidos-nuevos-' + Date.now())
+                    .on('postgres_changes', {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'viajes',
+                        filter: 'estado=eq.pendiente'
+                    }, (payload) => {
+                        console.log('📦 Nuevo pedido recibido:', payload);
+                        const viaje = payload.new;
+
+                        if (!viaje.lat_salida || !viaje.lng_salida) {
+                            console.warn('⚠️ Pedido sin coordenadas, ignorando');
+                            return;
+                        }
+
+                        const dist = calcularDistancia(
+                            miPosicion.lat, miPosicion.lng,
+                            viaje.lat_salida, viaje.lng_salida
+                        );
+
+                        console.log(`📍 Distancia al pedido: ${dist.toFixed(2)} km`);
+
+                        if (dist < 5 && !viajeActual && !pedidoPendiente) {
+                            mostrarPedido(viaje, dist);
+                        } else if (dist >= 5) {
+                            console.log('📍 Pedido muy lejos (>5km)');
+                        }
+                    })
+                    .subscribe((status, err) => {
+                        console.log('📡 Estado canal conductor:', status);
+                        if (status === 'SUBSCRIBED') {
+                            console.log('✅ Conductor escuchando pedidos correctamente');
+                        }
+                        if (status === 'CHANNEL_ERROR') {
+                            console.error('❌ Error de canal:', err);
+                            setTimeout(() => {
+                                if (online) escucharPedidos();
+                            }, 3000);
+                        }
+                        if (status === 'TIMED_OUT') {
+                            console.warn('⏱️ Timeout del canal, reconectando...');
+                            setTimeout(() => {
+                                if (online) escucharPedidos();
+                            }, 2000);
+                        }
+                    });
+
+            } catch (error) {
+                console.error('❌ Error suscribiendo a pedidos:', error);
+            }
+        }
+
+        function mostrarPedido(viaje, distancia) {
+            pedidoPendiente = viaje;
+            distanciaTotalKm = distancia;
+
+            document.getElementById('panel-stats').style.display = 'none';
+            document.getElementById('pedido-entrante').classList.add('activo');
+
+            document.getElementById('p-nombre').textContent = viaje.nombre_pasajero || 'Sin nombre';
+            document.getElementById('p-direccion').textContent = viaje.direccion_salida || 'Sin dirección';
+            document.getElementById('p-destino').textContent = viaje.destino || 'Sin destino';
+            document.getElementById('p-referencia').textContent = viaje.referencia || 'Sin referencia';
+            document.getElementById('p-telefono').textContent = viaje.telefono_pasajero || 'Sin teléfono';
+            document.getElementById('distancia-pedido').textContent = `A ${distancia.toFixed(1)} km de distancia`;
+
+            // Calcular y mostrar tarifa
+            const tarifa = calcularTarifa(distancia);
+            document.getElementById('p-tarifa').textContent = `$${tarifa.total.toLocaleString()}`;
+            document.getElementById('p-detalle-tarifa').textContent = 
+                `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()} (${distancia.toFixed(1)} km × $${TARIFA_POR_KM})`;
+
+            // Limpiar marcadores anteriores
+            if (marcadorPasajero) map.removeLayer(marcadorPasajero);
+            if (marcadorDestino) map.removeLayer(marcadorDestino);
+            if (rutaLinea) map.removeLayer(rutaLinea);
+
+            // Marcador del pasajero (origen)
+            const iconoPasajero = L.divIcon({
+                html: '<div style="background:#e61e2b;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="color:white;font-size:12px;"></i></div>',
+                iconSize: [36, 36],
+                iconAnchor: [18, 18]
+            });
+
+            marcadorPasajero = L.marker([viaje.lat_salida, viaje.lng_salida], { icon: iconoPasajero })
+                .addTo(map)
+                .bindPopup(`<b>${viaje.nombre_pasajero}</b><br>${viaje.direccion_salida}`);
+
+            // Marcador del destino
+            const iconoDestino = L.divIcon({
+                html: '<div style="background:#28a745;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-flag-checkered" style="color:white;font-size:12px;"></i></div>',
+                iconSize: [36, 36],
+                iconAnchor: [18, 18]
+            });
+
+            // Para el destino usamos las coordenadas del pasajero + un offset simulado
+            // En producción, deberías geocodificar la dirección de destino
+            const latDestino = viaje.lat_salida + (Math.random() - 0.5) * 0.02;
+            const lngDestino = viaje.lng_salida + (Math.random() - 0.5) * 0.02;
+
+            marcadorDestino = L.marker([latDestino, lngDestino], { icon: iconoDestino })
+                .addTo(map)
+                .bindPopup(`<b>Destino:</b><br>${viaje.destino}`);
+
+            // Dibujar ruta: Conductor → Pasajero → Destino
+            actualizarRutaCompleta(viaje.lat_salida, viaje.lng_salida, latDestino, lngDestino);
+
+            if (map && marcadorYo) {
+                const bounds = L.latLngBounds(
+                    [miPosicion.lat, miPosicion.lng],
+                    [viaje.lat_salida, viaje.lng_salida],
+                    [latDestino, lngDestino]
+                );
+                map.fitBounds(bounds, { padding: [80, 80] });
+            }
+        }
+
+        function actualizarRutaCompleta(latPasajero, lngPasajero, latDestino, lngDestino) {
+            if (rutaLinea) map.removeLayer(rutaLinea);
+
+            rutaLinea = L.polyline(
+                [
+                    [miPosicion.lat, miPosicion.lng],
+                    [latPasajero, lngPasajero],
+                    [latDestino, lngDestino]
+                ],
+                { color: '#f47920', weight: 5, opacity: 0.8, dashArray: '12, 8' }
+            ).addTo(map);
+        }
+
+        async function aceptarPedido() {
+            if (!pedidoPendiente) return;
+
+            viajeActual = pedidoPendiente;
+            pedidoPendiente = null;
+
+            await supabaseClient
+                .from('viajes')
+                .update({ 
+                    estado: 'aceptado',
+                    conductor_id: CONDUCTOR_ID
+                })
+                .eq('id', viajeActual.id);
+
+            await supabaseClient
+                .from('conductores')
+                .update({ estado: 'ocupado' })
+                .eq('id', CONDUCTOR_ID);
+
+            document.getElementById('pedido-entrante').classList.remove('activo');
+            document.getElementById('viaje-activo-panel').classList.add('activo');
+
+            document.getElementById('v-nombre').textContent = viajeActual.nombre_pasajero;
+            document.getElementById('v-direccion').textContent = viajeActual.direccion_salida;
+            document.getElementById('v-destino').textContent = viajeActual.destino || 'Sin destino';
+            document.getElementById('v-telefono').textContent = viajeActual.telefono_pasajero || 'Sin teléfono';
+            document.getElementById('v-distancia').textContent = `${distanciaTotalKm.toFixed(1)} km`;
+
+            const tarifa = calcularTarifa(distanciaTotalKm);
+            document.getElementById('v-tarifa').textContent = `$${tarifa.total.toLocaleString()}`;
+            document.getElementById('v-detalle-tarifa').textContent = 
+                `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()} (${distanciaTotalKm.toFixed(1)} km × $${TARIFA_POR_KM})`;
+
+            actualizarRuta();
+        }
+
+        function rechazarPedido() {
+            pedidoPendiente = null;
+            document.getElementById('pedido-entrante').classList.remove('activo');
+            document.getElementById('panel-stats').style.display = 'block';
+
+            if (marcadorPasajero) {
+                map.removeLayer(marcadorPasajero);
+                marcadorPasajero = null;
+            }
+            if (marcadorDestino) {
+                map.removeLayer(marcadorDestino);
+                marcadorDestino = null;
+            }
+            if (rutaLinea) {
+                map.removeLayer(rutaLinea);
+                rutaLinea = null;
+            }
+        }
+
+        async function siguienteAccion() {
+            const btn = document.getElementById('btn-accion');
+
+            if (!viajeActual) return;
+
+            if (viajeActual.estado === 'pendiente' || !viajeActual.estado) {
+                await supabaseClient
+                    .from('viajes')
+                    .update({ estado: 'en_camino' })
+                    .eq('id', viajeActual.id);
+
+                viajeActual.estado = 'en_camino';
+
+                btn.innerHTML = '<i class="fas fa-flag-checkered"></i> Completar viaje';
+                btn.className = 'btn btn-completar';
+            }
+            else if (viajeActual.estado === 'en_camino') {
+                await supabaseClient
+                    .from('viajes')
+                    .update({ estado: 'completado' })
+                    .eq('id', viajeActual.id);
+
+                await supabaseClient
+                    .from('conductores')
+                    .update({ estado: 'disponible' })
+                    .eq('id', CONDUCTOR_ID);
+
+                // Actualizar ganancias
+                const tarifa = calcularTarifa(distanciaTotalKm);
+                const gananciasActuales = parseInt(document.getElementById('ganancias').textContent.replace(/[^0-9]/g, '')) || 0;
+                const nuevasGanancias = gananciasActuales + tarifa.total;
+                document.getElementById('ganancias').textContent = `$${nuevasGanancias.toLocaleString()}`;
+
+                viajeActual = null;
+
+                if (marcadorPasajero) {
+                    map.removeLayer(marcadorPasajero);
+                    marcadorPasajero = null;
+                }
+                if (marcadorDestino) {
+                    map.removeLayer(marcadorDestino);
+                    marcadorDestino = null;
+                }
+                if (rutaLinea) {
+                    map.removeLayer(rutaLinea);
+                    rutaLinea = null;
+                }
+
+                document.getElementById('viaje-activo-panel').classList.remove('activo');
+                document.getElementById('panel-stats').style.display = 'block';
+
+                const viajes = parseInt(document.getElementById('viajes-hoy').textContent) + 1;
+                document.getElementById('viajes-hoy').textContent = viajes;
+
+                btn.innerHTML = '<i class="fas fa-car"></i> Llegué al punto';
+                btn.className = 'btn btn-llegue';
+            }
+        }
+
+        async function cancelarViaje() {
+            if (!viajeActual) return;
+            if (!confirm("¿Cancelar este viaje?")) return;
+
+            await supabaseClient
+                .from('viajes')
+                .update({ estado: 'cancelado' })
+                .eq('id', viajeActual.id);
+
+            await supabaseClient
+                .from('conductores')
+                .update({ estado: 'disponible' })
+                .eq('id', CONDUCTOR_ID);
+
+            viajeActual = null;
+
+            if (marcadorPasajero) {
+                map.removeLayer(marcadorPasajero);
+                marcadorPasajero = null;
+            }
+            if (marcadorDestino) {
+                map.removeLayer(marcadorDestino);
+                marcadorDestino = null;
+            }
+            if (rutaLinea) {
+                map.removeLayer(rutaLinea);
+                rutaLinea = null;
+            }
+
+            document.getElementById('viaje-activo-panel').classList.remove('activo');
+            document.getElementById('panel-stats').style.display = 'block';
+        }
+
+        function actualizarRuta() {
+            if (rutaLinea) map.removeLayer(rutaLinea);
+
+            if (marcadorPasajero && marcadorDestino) {
+                const origen = marcadorPasajero.getLatLng();
+                const destino = marcadorDestino.getLatLng();
+                rutaLinea = L.polyline(
+                    [
+                        [miPosicion.lat, miPosicion.lng],
+                        [origen.lat, origen.lng],
+                        [destino.lat, destino.lng]
+                    ],
+                    { color: '#f47920', weight: 5, opacity: 0.8, dashArray: '12, 8' }
+                ).addTo(map);
+            }
+        }
+    </script>
+</body>
+</html>
