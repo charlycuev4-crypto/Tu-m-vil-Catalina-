@@ -1,1065 +1,260 @@
-
-# Generar el panel del PASAJERO actualizado con Mapbox + Supabase seguro
-pasajero_html = '''<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pasajero - Las Catalinas #53</title>
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-
-    <style>
-        :root {
-            --naranja: #f47920;
-            --celeste: #0093d0;
-            --rojo: #e61e2b;
-            --verde: #28a745;
-            --fondo: #f0f2f5;
-            --blanco: #ffffff;
-            --texto: #1a1a1a;
-            --gris: #666666;
-            --sombra: 0 2px 12px rgba(0,0,0,0.15);
-        }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body, html { 
-            margin: 0; padding: 0; height: 100%; width: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--fondo); color: var(--texto); overflow: hidden;
-        }
-
-        #map { 
-            position: absolute; top: 0; left: 0; 
-            height: 72%; width: 100%; z-index: 1;
-            background: #e5e5e5;
-        }
-
-        /* MENU LATERAL */
-        .menu-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); z-index: 2000;
-            display: none; opacity: 0; transition: opacity 0.3s;
-        }
-        .menu-overlay.activo { display: block; opacity: 1; }
-
-        .menu-lateral {
-            position: fixed; top: 0; left: -280px; bottom: 0;
-            width: 280px; background: var(--blanco);
-            z-index: 2001; transition: left 0.3s ease;
-            box-shadow: 2px 0 20px rgba(0,0,0,0.2);
-            display: flex; flex-direction: column;
-        }
-        .menu-lateral.abierto { left: 0; }
-
-        .menu-header {
-            background: linear-gradient(135deg, var(--naranja), var(--rojo));
-            padding: 30px 20px; color: white;
-        }
-        .menu-header h2 { margin: 0; font-size: 1.3rem; }
-        .menu-header p { margin: 5px 0 0; opacity: 0.9; font-size: 0.85rem; }
-
-        .menu-items {
-            flex: 1; padding: 10px 0;
-        }
-        .menu-item {
-            display: flex; align-items: center; gap: 15px;
-            padding: 16px 20px; cursor: pointer;
-            transition: background 0.2s; border: none; background: none;
-            width: 100%; text-align: left; font-size: 1rem; color: var(--texto);
-        }
-        .menu-item:hover, .menu-item:active { background: var(--fondo); }
-        .menu-item i { width: 24px; text-align: center; color: var(--naranja); }
-
-        .menu-footer {
-            padding: 20px; border-top: 1px solid #eee;
-            font-size: 0.8rem; color: var(--gris); text-align: center;
-        }
-
-        /* HEADER */
-        .header {
-            position: absolute; top: 12px; left: 12px; right: 12px;
-            z-index: 1000; display: flex; justify-content: space-between; align-items: center;
-            pointer-events: none;
-        }
-
-        .menu-btn {
-            background: var(--blanco); color: var(--naranja);
-            width: 44px; height: 44px; border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            pointer-events: auto; cursor: pointer; border: none;
-            box-shadow: var(--sombra); font-size: 1.2rem;
-        }
-
-        .logo-tag {
-            background: var(--blanco); padding: 10px 18px;
-            border-radius: 25px; border: 2px solid var(--celeste);
-            font-weight: 800; color: var(--celeste); font-size: 0.85rem;
-            box-shadow: var(--sombra); pointer-events: auto;
-        }
-
-        .btn-mi-ubicacion {
-            position: absolute; bottom: 30%; right: 15px;
-            z-index: 1000; width: 50px; height: 50px;
-            background: var(--blanco); border: none; border-radius: 50%;
-            box-shadow: var(--sombra); cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            color: var(--celeste); font-size: 1.3rem;
-        }
-
-        /* PANEL INFERIOR */
-        .panel {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            z-index: 1000; background: var(--blanco);
-            border-radius: 24px 24px 0 0;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-            padding: 15px 20px 25px;
-            max-height: 30vh;
-            overflow-y: auto;
-        }
-
-        .panel-handle {
-            width: 40px; height: 4px; background: #ddd;
-            border-radius: 2px; margin: 0 auto 12px;
-        }
-
-        /* BUSCADOR INTELIGENTE */
-        .buscador-container {
-            position: relative; margin-bottom: 10px;
-        }
-
-        .input-row {
-            display: flex; align-items: center; gap: 12px;
-            padding: 12px 16px;
-            background: var(--fondo); border-radius: 14px;
-            border: 2px solid transparent; transition: all 0.2s;
-        }
-
-        .input-row:focus-within { border-color: var(--naranja); background: #fff8f3; }
-
-        .input-row i { 
-            width: 24px; text-align: center; 
-            font-size: 1.1rem; color: var(--celeste);
-        }
-
-        .input-row input {
-            flex: 1; border: none; background: transparent;
-            font-size: 1rem; outline: none; color: var(--texto);
-        }
-
-        .sugerencias {
-            position: absolute; top: 100%; left: 0; right: 0;
-            background: var(--blanco); border-radius: 14px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            max-height: 200px; overflow-y: auto;
-            z-index: 1500; display: none;
-            margin-top: 5px;
-        }
-
-        .sugerencias.activo { display: block; }
-
-        .sugerencia-item {
-            padding: 12px 16px; cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-            display: flex; align-items: center; gap: 10px;
-        }
-
-        .sugerencia-item:last-child { border-bottom: none; }
-        .sugerencia-item:hover { background: var(--fondo); }
-        .sugerencia-item i { color: var(--celeste); font-size: 0.9rem; }
-        .sugerencia-item .sug-text { font-size: 0.9rem; }
-        .sugerencia-item .sug-zona { font-size: 0.75rem; color: var(--gris); }
-
-        .btn-principal {
-            width: 100%; padding: 16px;
-            background: var(--rojo); color: white;
-            border: none; border-radius: 16px;
-            font-size: 1.1rem; font-weight: 800;
-            text-transform: uppercase; letter-spacing: 0.5px;
-            cursor: pointer; box-shadow: 0 6px 20px rgba(230,30,43,0.35);
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            margin-top: 10px; transition: all 0.2s;
-        }
-
-        .btn-principal:active { transform: scale(0.97); }
-        .btn-principal:disabled { background: #ccc; box-shadow: none; }
-
-        .estado-viaje { display: none; }
-        .estado-viaje.activo { display: block; animation: slideUp 0.4s ease; }
-
-        .estado-header {
-            text-align: center; padding: 8px 0 15px;
-        }
-
-        .estado-header .icono-grande {
-            font-size: 3rem; margin-bottom: 8px;
-        }
-
-        .estado-header h2 { margin: 0; font-size: 1.2rem; color: var(--texto); }
-        .estado-header p { margin: 4px 0 0; color: var(--gris); font-size: 0.9rem; }
-
-        .spinner {
-            width: 40px; height: 40px;
-            border: 4px solid #eee; border-top-color: var(--naranja);
-            border-radius: 50%; animation: spin 0.8s linear infinite;
-            margin: 0 auto 10px;
-        }
-
-        .info-conductor {
-            background: var(--fondo); border-radius: 16px;
-            padding: 14px; margin: 12px 0;
-        }
-
-        .info-conductor .fila {
-            display: flex; align-items: center; gap: 12px;
-            margin-bottom: 8px;
-        }
-
-        .info-conductor .fila:last-child { margin-bottom: 0; }
-
-        .avatar {
-            width: 45px; height: 45px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--naranja), var(--rojo));
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 1.3rem; font-weight: bold;
-        }
-
-        .datos-conductor h4 { margin: 0; font-size: 1rem; }
-        .datos-conductor p { margin: 2px 0 0; color: var(--gris); font-size: 0.8rem; }
-
-        .btn-secundario {
-            width: 100%; padding: 12px;
-            background: transparent; color: var(--gris);
-            border: 2px solid #ddd; border-radius: 14px;
-            font-size: 0.95rem; font-weight: 600; cursor: pointer;
-            margin-top: 8px;
-        }
-
-        .btn-llamar {
-            background: var(--verde); color: white; border: none;
-        }
-
-        .tarifa-box {
-            background: linear-gradient(135deg, var(--naranja), #ff9a44);
-            border-radius: 14px; padding: 14px; margin: 12px 0;
-            color: white; text-align: center;
-            box-shadow: 0 4px 15px rgba(244,121,32,0.3);
-        }
-
-        .tarifa-box .precio {
-            font-size: 1.8rem; font-weight: 800; margin: 5px 0;
-        }
-
-        .tarifa-box .detalle {
-            font-size: 0.8rem; opacity: 0.9;
-        }
-
-        .ruta-real {
-            background: var(--fondo); border-radius: 12px;
-            padding: 10px 14px; margin: 8px 0;
-            font-size: 0.85rem; color: var(--gris);
-        }
-
-        .ruta-real i { color: var(--naranja); margin-right: 8px; }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body>
-
-    <!-- MENU LATERAL -->
-    <div class="menu-overlay" id="menu-overlay" onclick="cerrarMenu()"></div>
-    <div class="menu-lateral" id="menu-lateral">
-        <div class="menu-header">
-            <h2>🚕 Las Catalinas #53</h2>
-            <p>Tu móvil de confianza</p>
-        </div>
-        <div class="menu-items">
-            <button class="menu-item" onclick="centrarEnMiUbicacion(); cerrarMenu();">
-                <i class="fas fa-crosshairs"></i>
-                <span>Mi ubicación</span>
-            </button>
-            <button class="menu-item" onclick="cerrarMenu(); alert('Próximamente: Historial de viajes')">
-                <i class="fas fa-history"></i>
-                <span>Historial de viajes</span>
-            </button>
-            <button class="menu-item" onclick="cerrarMenu(); alert('Teléfono: 1133667796')">
-                <i class="fas fa-phone"></i>
-                <span>Llamar a central</span>
-            </button>
-            <button class="menu-item" onclick="cerrarMenu(); alert('Zona de cobertura: San Miguel y Moreno')">
-                <i class="fas fa-map-marked-alt"></i>
-                <span>Zona de cobertura</span>
-            </button>
-            <button class="menu-item" onclick="cerrarMenu(); alert('Las Catalinas #53 - Remises de confianza')">
-                <i class="fas fa-info-circle"></i>
-                <span>Sobre nosotros</span>
-            </button>
-        </div>
-        <div class="menu-footer">
-            v1.0 - Las Catalinas #53
-        </div>
-    </div>
-
-    <div id="map"></div>
-
-    <div class="header">
-        <button class="menu-btn" onclick="abrirMenu()"><i class="fas fa-bars"></i></button>
-        <div class="logo-tag">🚕 LAS CATALINAS #53</div>
-    </div>
-
-    <button class="btn-mi-ubicacion" onclick="centrarEnMiUbicacion()">
-        <i class="fas fa-crosshairs"></i>
-    </button>
-
-    <div class="panel" id="panel">
-        <div class="panel-handle"></div>
-
-        <!-- FORMULARIO -->
-        <div id="formulario-pedido">
-            <div class="input-row" style="margin-bottom:8px;">
-                <i class="fas fa-user"></i>
-                <input type="text" id="nombre" placeholder="¿Cómo te llamás?">
-            </div>
-
-            <div class="input-row" style="margin-bottom:8px;">
-                <i class="fas fa-phone"></i>
-                <input type="tel" id="telefono" placeholder="Teléfono">
-            </div>
-
-            <!-- DESTINO CON BUSCADOR INTELIGENTE -->
-            <div class="buscador-container">
-                <div class="input-row">
-                    <i class="fas fa-search" style="color:var(--rojo)"></i>
-                    <input type="text" id="destino" placeholder="¿A dónde vas? (ej: San Miguel centro)" 
-                           autocomplete="off" oninput="buscarDireccion(this.value)">
-                </div>
-                <div class="sugerencias" id="sugerencias"></div>
-            </div>
-
-            <button class="btn-principal" onclick="solicitarViaje()">
-                <i class="fas fa-paper-plane"></i> Solicitar Móvil
-            </button>
-        </div>
-
-        <!-- BUSCANDO -->
-        <div class="estado-viaje" id="estado-buscando">
-            <div class="estado-header">
-                <div class="spinner"></div>
-                <h2>Buscando conductor...</h2>
-                <p>Estamos buscando el móvil #53 más cercano</p>
-            </div>
-            <button class="btn-secundario" onclick="cancelarViaje()">
-                <i class="fas fa-times"></i> Cancelar búsqueda
-            </button>
-        </div>
-
-        <!-- ACEPTADO -->
-        <div class="estado-viaje" id="estado-aceptado">
-            <div class="estado-header">
-                <div class="icono-grande">🚕</div>
-                <h2>¡Conductor en camino!</h2>
-            </div>
-            <div class="info-conductor" id="info-conductor">
-                <div class="fila">
-                    <div class="avatar" id="avatar-conductor">?</div>
-                    <div class="datos-conductor">
-                        <h4 id="nombre-conductor">-</h4>
-                        <p id="datos-vehiculo">-</p>
-                    </div>
-                </div>
-                <div class="fila">
-                    <i class="fas fa-clock" style="color:var(--naranja)"></i>
-                    <span id="tiempo-llegada">Calculando...</span>
-                </div>
-                <div class="fila">
-                    <i class="fas fa-road" style="color:var(--celeste)"></i>
-                    <span id="distancia-conductor">Calculando...</span>
-                </div>
-            </div>
-            <div class="ruta-real" id="ruta-info">
-                <i class="fas fa-route"></i>
-                <span id="ruta-texto">Calculando ruta...</span>
-            </div>
-            <div class="tarifa-box" id="tarifa-pasajero">
-                <div class="detalle">Tarifa estimada</div>
-                <div class="precio" id="precio-final">$3.000</div>
-                <div class="detalle" id="detalle-tarifa">Base + km</div>
-            </div>
-            <button class="btn-principal btn-llamar" onclick="llamarConductor()">
-                <i class="fas fa-phone"></i> Llamar al conductor
-            </button>
-            <button class="btn-secundario" onclick="cancelarViaje()">
-                Cancelar viaje
-            </button>
-        </div>
-
-        <!-- EN CAMINO -->
-        <div class="estado-viaje" id="estado-en-camino">
-            <div class="estado-header">
-                <div class="icono-grande">🛣️</div>
-                <h2>¡En camino!</h2>
-                <p>Disfrutá tu viaje con Las Catalinas #53</p>
-            </div>
-            <div class="tarifa-box">
-                <div class="detalle">Tarifa del viaje</div>
-                <div class="precio" id="precio-en-camino">$3.000</div>
-                <div class="detalle" id="detalle-en-camino">Base + km</div>
-            </div>
-        </div>
-
-        <!-- COMPLETADO -->
-        <div class="estado-viaje" id="estado-completado">
-            <div class="estado-header">
-                <div class="icono-grande">⭐</div>
-                <h2>¡Llegamos!</h2>
-                <p>Gracias por viajar con nosotros</p>
-            </div>
-            <div class="tarifa-box">
-                <div class="detalle">Total a pagar</div>
-                <div class="precio" id="precio-completado">$3.000</div>
-                <div class="detalle" id="detalle-completado">Base + km</div>
-            </div>
-            <button class="btn-principal" onclick="location.reload()">
-                <i class="fas fa-redo"></i> Nuevo viaje
-            </button>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <script>
-        // ═══════════════════════════════════════════════════
-        // CONFIGURACIÓN COMPARTIDA (igual que el conductor)
-        // ═══════════════════════════════════════════════════
-        const SUPABASE_URL = 'https://efryvjjunfeoxhekvwza.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
-
-        const TARIFA_BASE = 3000;
-        const TARIFA_POR_KM = 800;
-
-        const BOUNDS_SAN_MIGUEL = {
-            minLat: -34.65, maxLat: -34.52,
-            minLng: -58.85, maxLng: -58.68
-        };
-
-        let supabaseClient = null;
-        let MAPBOX_TOKEN = null;  // 🔑 Se carga desde Supabase
-        let map = null;
-        let viajeActual = null;
-        let canalViaje = null;
-        let canalConductor = null;
-        let marcadorConductor = null;
-        let marcadorDestino = null;
-        let miPosicion = { lat: -34.564, lng: -58.770 };
-        let destinoCoords = null;
-        let rutaLayer = null;
-        let watchId = null;
-        let distanciaTotalKm = 0;
-
-        // ═══════════════════════════════════════════════════
-        // INICIALIZACIÓN
-        // ═══════════════════════════════════════════════════
-        document.addEventListener('DOMContentLoaded', async function() {
-            try {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                console.log('✅ Supabase inicializado');
-
-                // 🔑 CARGAR TOKEN DE MAPBOX DESDE SUPABASE (mismo método que conductor)
-                await cargarMapboxToken();
-
-                initMapa();
-                iniciarGPS();
-
-                console.log('✅ App pasajero inicializada');
-
-            } catch (error) {
-                console.error('❌ Error inicializando:', error);
-            }
-        });
-
-        // ═══════════════════════════════════════════════════
-        // 🔑 CARGAR TOKEN DE MAPBOX DESDE SUPABASE
-        // ═══════════════════════════════════════════════════
-        async function cargarMapboxToken() {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('app_config')
-                    .select('value')
-                    .eq('key', 'mapbox_token')
-                    .single();
-
-                if (error) {
-                    console.error('Error cargando token:', error);
-                    alert('Error: No se pudo cargar la configuración del mapa. Verificá que la tabla app_config exista en Supabase.');
-                    return;
-                }
-
-                if (data && data.value) {
-                    MAPBOX_TOKEN = data.value;
-                    console.log('✅ Token de Mapbox cargado desde Supabase');
-                } else {
-                    console.error('Token no encontrado en Supabase');
-                    alert('Error: Token de Mapbox no configurado. Ejecutá el SQL de configuración en Supabase.');
-                }
-            } catch (error) {
-                console.error('Error cargando Mapbox token:', error);
-            }
-        }
-
-        // ═══════════════════════════════════════════════════
-        // MAPA
-        // ═══════════════════════════════════════════════════
-        function initMapa() {
-            map = L.map('map', { 
-                zoomControl: false,
-                attributionControl: false 
-            }).setView([-34.564, -58.770], 15);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19
-            }).addTo(map);
-
-            map.setMaxBounds([
-                [BOUNDS_SAN_MIGUEL.minLat, BOUNDS_SAN_MIGUEL.minLng],
-                [BOUNDS_SAN_MIGUEL.maxLat, BOUNDS_SAN_MIGUEL.maxLng]
-            ]);
-        }
-
-        // ═══════════════════════════════════════════════════
-        // GPS
-        // ═══════════════════════════════════════════════════
-        function iniciarGPS() {
-            if (!navigator.geolocation) {
-                alert("Tu navegador no soporta geolocalización");
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    map.setView([miPosicion.lat, miPosicion.lng], 16);
-
-                    L.circleMarker([miPosicion.lat, miPosicion.lng], {
-                        radius: 8, fillColor: '#0093d0', color: '#fff',
-                        weight: 3, opacity: 1, fillOpacity: 0.9
-                    }).addTo(map).bindPopup('Tu ubicación');
-                },
-                (err) => {
-                    console.log("GPS error:", err);
-                    map.setView([-34.564, -58.770], 15);
-                },
-                { enableHighAccuracy: true, timeout: 10000 }
-            );
-
-            watchId = navigator.geolocation.watchPosition(
-                (pos) => {
-                    miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                },
-                (err) => console.log("Watch error:", err),
-                { enableHighAccuracy: true, maximumAge: 5000 }
-            );
-        }
-
-        function centrarEnMiUbicacion() {
-            map.setView([miPosicion.lat, miPosicion.lng], 16);
-        }
-
-        // ═══════════════════════════════════════════════════
-        // MENU
-        // ═══════════════════════════════════════════════════
-        function abrirMenu() {
-            document.getElementById('menu-lateral').classList.add('abierto');
-            document.getElementById('menu-overlay').classList.add('activo');
-        }
-
-        function cerrarMenu() {
-            document.getElementById('menu-lateral').classList.remove('abierto');
-            document.getElementById('menu-overlay').classList.remove('activo');
-        }
-
-        // ═══════════════════════════════════════════════════
-        // BUSCADOR INTELIGENTE
-        // ═══════════════════════════════════════════════════
-        async function buscarDireccion(query) {
-            const sugerenciasDiv = document.getElementById('sugerencias');
-
-            if (query.length < 3) {
-                sugerenciasDiv.classList.remove('activo');
-                return;
-            }
-
-            try {
-                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', San Miguel, Buenos Aires, Argentina')}&limit=5&countrycodes=ar&viewbox=-58.85,-34.52,-58.68,-34.65&bounded=1`;
-
-                const response = await fetch(url);
-                const data = await response.json();
-
-                sugerenciasDiv.innerHTML = '';
-
-                if (data.length === 0) {
-                    const sugerenciasLocales = [
-                        { nombre: 'San Miguel Centro', zona: 'San Miguel, Buenos Aires' },
-                        { nombre: 'Plaza San Miguel', zona: 'San Miguel, Buenos Aires' },
-                        { nombre: 'Municipalidad de San Miguel', zona: 'San Miguel, Buenos Aires' },
-                        { nombre: 'Moreno Centro', zona: 'Moreno, Buenos Aires' },
-                        { nombre: 'Plaza Moreno', zona: 'Moreno, Buenos Aires' },
-                        { nombre: 'Shopping San Miguel', zona: 'San Miguel, Buenos Aires' },
-                        { nombre: 'Hospital San Miguel', zona: 'San Miguel, Buenos Aires' },
-                        { nombre: 'Estación San Miguel', zona: 'San Miguel, Buenos Aires' },
-                        { nombre: 'La Reja', zona: 'Moreno, Buenos Aires' },
-                        { nombre: 'Trujui', zona: 'Moreno, Buenos Aires' },
-                        { nombre: 'Paso del Rey', zona: 'Moreno, Buenos Aires' },
-                        { nombre: 'Cuartel V', zona: 'Moreno, Buenos Aires' }
-                    ].filter(s => s.nombre.toLowerCase().includes(query.toLowerCase()));
-
-                    sugerenciasLocales.forEach(sug => {
-                        const div = document.createElement('div');
-                        div.className = 'sugerencia-item';
-                        div.innerHTML = `
-                            <i class="fas fa-map-marker-alt"></i>
-                            <div>
-                                <div class="sug-text">${sug.nombre}</div>
-                                <div class="sug-zona">${sug.zona}</div>
-                            </div>
-                        `;
-                        div.onclick = () => seleccionarDestino(sug.nombre, null);
-                        sugerenciasDiv.appendChild(div);
-                    });
-                } else {
-                    data.forEach(lugar => {
-                        const div = document.createElement('div');
-                        div.className = 'sugerencia-item';
-                        div.innerHTML = `
-                            <i class="fas fa-map-marker-alt"></i>
-                            <div>
-                                <div class="sug-text">${lugar.display_name.split(',')[0]}</div>
-                                <div class="sug-zona">${lugar.display_name.split(',').slice(1, 3).join(',')}</div>
-                            </div>
-                        `;
-                        div.onclick = () => seleccionarDestino(lugar.display_name.split(',')[0], {
-                            lat: parseFloat(lugar.lat),
-                            lng: parseFloat(lugar.lon)
-                        });
-                        sugerenciasDiv.appendChild(div);
-                    });
-                }
-
-                sugerenciasDiv.classList.add('activo');
-
-            } catch (error) {
-                console.error('Error buscando dirección:', error);
-            }
-        }
-
-        function seleccionarDestino(nombre, coords) {
-            document.getElementById('destino').value = nombre;
-            document.getElementById('sugerencias').classList.remove('activo');
-
-            if (coords) {
-                destinoCoords = coords;
-                mostrarDestinoEnMapa(coords.lat, coords.lng, nombre);
-            } else {
-                buscarCoordenadasDestino(nombre);
-            }
-        }
-
-        async function buscarCoordenadasDestino(nombre) {
-            try {
-                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(nombre + ', Buenos Aires, Argentina')}&limit=1&countrycodes=ar`;
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if (data.length > 0) {
-                    destinoCoords = {
-                        lat: parseFloat(data[0].lat),
-                        lng: parseFloat(data[0].lon)
-                    };
-                    mostrarDestinoEnMapa(destinoCoords.lat, destinoCoords.lng, nombre);
-                }
-            } catch (e) {
-                console.error('Error geocodificando:', e);
-            }
-        }
-
-        function mostrarDestinoEnMapa(lat, lng, nombre) {
-            if (marcadorDestino) map.removeLayer(marcadorDestino);
-
-            const iconoDestino = L.divIcon({
-                html: '<div style="background:#28a745;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-flag-checkered" style="color:white;font-size:12px;"></i></div>',
-                iconSize: [36, 36],
-                iconAnchor: [18, 18]
-            });
-
-            marcadorDestino = L.marker([lat, lng], { icon: iconoDestino })
-                .addTo(map)
-                .bindPopup(`<b>Destino:</b><br>${nombre}`);
-
-            // 🗺️ MAPBOX: Calcular ruta REAL por calles
-            calcularRutaReal(miPosicion.lat, miPosicion.lng, lat, lng);
-
-            const bounds = L.latLngBounds(
-                [miPosicion.lat, miPosicion.lng],
-                [lat, lng]
-            );
-            map.fitBounds(bounds, { padding: [50, 50] });
-        }
-
-        // ═══════════════════════════════════════════════════
-        // 🗺️ MAPBOX DIRECTIONS - RUTA REAL POR CALLES
-        // ═══════════════════════════════════════════════════
-        async function calcularRutaReal(lat1, lng1, lat2, lng2) {
-            if (!MAPBOX_TOKEN) {
-                console.error('❌ Token de Mapbox no cargado');
-                await fallbackOSRM(lat1, lng1, lat2, lng2);
-                return;
-            }
-
-            if (rutaLayer) map.removeLayer(rutaLayer);
-
-            try {
-                const url = `https://api.mapbox.com/directions/v5/mapbox/driving/` +
-                    `${lng1},${lat1};${lng2},${lat2}` +
-                    `?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
-
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if (data.routes && data.routes.length > 0) {
-                    const route = data.routes[0];
-                    const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
-
-                    distanciaTotalKm = route.distance / 1000;
-
-                    rutaLayer = L.polyline(coords, {
-                        color: '#f47920',
-                        weight: 5,
-                        opacity: 0.9,
-                        lineCap: 'round',
-                        lineJoin: 'round'
-                    }).addTo(map);
-
-                    console.log(`📍 Ruta Mapbox pasajero: ${distanciaTotalKm.toFixed(2)} km reales`);
-                }
-            } catch (error) {
-                console.error('Error Mapbox:', error);
-                await fallbackOSRM(lat1, lng1, lat2, lng2);
-            }
-        }
-
-        // ═══════════════════════════════════════════════════
-        // 🛟 FALLBACK OSRM
-        // ═══════════════════════════════════════════════════
-        async function fallbackOSRM(lat1, lng1, lat2, lng2) {
-            try {
-                const url = `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`;
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if (data.routes && data.routes.length > 0) {
-                    const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                    distanciaTotalKm = data.routes[0].distance / 1000;
-                    
-                    rutaLayer = L.polyline(coords, {
-                        color: '#f47920', weight: 4, opacity: 0.8,
-                        lineCap: 'round', lineJoin: 'round'
-                    }).addTo(map);
-                }
-            } catch (e) {
-                // Fallback línea recta
-                distanciaTotalKm = calcularDistanciaLineal(lat1, lng1, lat2, lng2);
-                rutaLayer = L.polyline([[lat1, lng1], [lat2, lng2]], {
-                    color: '#f47920', weight: 4, opacity: 0.7, dashArray: '10, 10'
-                }).addTo(map);
-            }
-        }
-
-        function calcularDistanciaLineal(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        }
-
-        function calcularTarifa(distanciaKm) {
-            const total = TARIFA_BASE + (distanciaKm * TARIFA_POR_KM);
-            return {
-                total: Math.round(total),
-                base: TARIFA_BASE,
-                km: distanciaKm,
-                costoKm: Math.round(distanciaKm * TARIFA_POR_KM)
-            };
-        }
-
-        // ═══════════════════════════════════════════════════
-        // SOLICITAR VIAJE
-        // ═══════════════════════════════════════════════════
-        async function solicitarViaje() {
-            const nombre = document.getElementById('nombre').value.trim();
-            const telefono = document.getElementById('telefono').value.trim();
-            const destino = document.getElementById('destino').value.trim();
-
-            if (!nombre || !telefono || !destino) {
-                alert("Completá tu nombre, teléfono y destino");
-                return;
-            }
-
-            if (!destinoCoords) {
-                alert("Seleccioná un destino de la lista");
-                return;
-            }
-
-            try {
-                const { data: pasajero, error: errPax } = await supabaseClient
-                    .from('pasajeros')
-                    .insert({ nombre, telefono })
-                    .select()
-                    .single();
-
-                if (errPax) throw errPax;
-
-                const tarifa = calcularTarifa(distanciaTotalKm);
-
-                const { data: viaje, error: errViaje } = await supabaseClient
-                    .from('viajes')
-                    .insert({
-                        pasajero_id: pasajero.id,
-                        nombre_pasajero: nombre,
-                        telefono_pasajero: telefono,
-                        direccion_salida: 'Mi ubicación actual (GPS)',
-                        destino: destino,
-                        lat_salida: miPosicion.lat,
-                        lng_salida: miPosicion.lng,
-                        lat_destino: destinoCoords.lat,
-                        lng_destino: destinoCoords.lng,
-                        distancia_km: distanciaTotalKm.toFixed(2),
-                        tarifa_base: tarifa.base,
-                        tarifa_km: tarifa.costoKm,
-                        tarifa_total: tarifa.total,
-                        conductor_id: null,
-                        estado: 'pendiente'
-                    })
-                    .select()
-                    .single();
-
-                if (errViaje) throw errViaje;
-
-                viajeActual = viaje;
-                mostrarPanel('estado-buscando');
-                escucharViaje(viaje.id);
-
-            } catch (error) {
-                console.error("❌ Error:", error);
-                alert("Error al crear el viaje: " + error.message);
-            }
-        }
-
-        function escucharViaje(viajeId) {
-            canalViaje = supabaseClient
-                .channel('viaje-' + viajeId)
-                .on('postgres_changes', {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'viajes',
-                    filter: `id=eq.${viajeId}`
-                }, (payload) => {
-                    procesarCambioEstado(payload.new);
-                })
-                .subscribe((status, err) => {
-                    console.log('📡 Estado canal:', status);
-                    if (status === 'CHANNEL_ERROR') {
-                        setTimeout(() => escucharViaje(viajeId), 3000);
-                    }
-                });
-        }
-
-        async function procesarCambioEstado(viaje) {
-            if (viaje.estado === 'aceptado') {
-                const { data: conductor } = await supabaseClient
-                    .from('conductores')
-                    .select('*')
-                    .eq('id', viaje.conductor_id)
-                    .single();
-
-                if (conductor) {
-                    document.getElementById('nombre-conductor').textContent = conductor.nombre;
-                    document.getElementById('datos-vehiculo').textContent = 
-                        `${conductor.vehiculo || 'Móvil #53'} • ${conductor.placa || ''}`;
-                    document.getElementById('avatar-conductor').textContent = conductor.nombre.charAt(0).toUpperCase();
-
-                    // 🗺️ Calcular ruta real Conductor → Pasajero con Mapbox
-                    if (conductor.lat && conductor.lng) {
-                        await calcularRutaRealConductor(conductor.lat, conductor.lng, miPosicion.lat, miPosicion.lng);
-                    }
-
-                    // Mostrar tarifa con distancia REAL
-                    const tarifa = calcularTarifa(viaje.distancia_km || distanciaTotalKm);
-                    document.getElementById('precio-final').textContent = `$${tarifa.total.toLocaleString()}`;
-                    document.getElementById('detalle-tarifa').textContent = 
-                        `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()} (${(viaje.distancia_km || distanciaTotalKm).toFixed(1)} km × $${TARIFA_POR_KM})`;
-                    document.getElementById('ruta-texto').textContent = 
-                        `Ruta: ${(viaje.distancia_km || distanciaTotalKm).toFixed(1)} km por calles`;
-
-                    if (conductor.lat && conductor.lng) {
-                        mostrarConductorEnMapa(conductor.lat, conductor.lng);
-                        iniciarEscuchaGPSConductor(viaje.conductor_id);
-                    }
-                }
-
-                mostrarPanel('estado-aceptado');
-            }
-            else if (viaje.estado === 'en_camino') {
-                const tarifa = calcularTarifa(viaje.distancia_km || distanciaTotalKm);
-                document.getElementById('precio-en-camino').textContent = `$${tarifa.total.toLocaleString()}`;
-                document.getElementById('detalle-en-camino').textContent = 
-                    `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()}`;
-                mostrarPanel('estado-en-camino');
-            }
-            else if (viaje.estado === 'completado') {
-                const tarifa = calcularTarifa(viaje.distancia_km || distanciaTotalKm);
-                document.getElementById('precio-completado').textContent = `$${tarifa.total.toLocaleString()}`;
-                document.getElementById('detalle-completado').textContent = 
-                    `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()}`;
-                mostrarPanel('estado-completado');
-                if (canalViaje) canalViaje.unsubscribe();
-                if (canalConductor) canalConductor.unsubscribe();
-            }
-            else if (viaje.estado === 'cancelado') {
-                alert("El viaje fue cancelado");
-                location.reload();
-            }
-        }
-
-        // ═══════════════════════════════════════════════════
-        // 🗺️ RUTA CONDUCTOR → PASAJERO (cuando acepta)
-        // ═══════════════════════════════════════════════════
-        async function calcularRutaRealConductor(latConductor, lngConductor, latPasajero, lngPasajero) {
-            if (!MAPBOX_TOKEN) return;
-
-            try {
-                const url = `https://api.mapbox.com/directions/v5/mapbox/driving/` +
-                    `${lngConductor},${latConductor};${lngPasajero},${latPasajero}` +
-                    `?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
-
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if (data.routes && data.routes.length > 0) {
-                    const route = data.routes[0];
-                    const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
-                    const distanciaConductor = route.distance / 1000;
-
-                    // Dibujar ruta del conductor al pasajero
-                    if (rutaLayer) map.removeLayer(rutaLayer);
-                    rutaLayer = L.polyline(coords, {
-                        color: '#0093d0',
-                        weight: 5,
-                        opacity: 0.8,
-                        lineCap: 'round',
-                        lineJoin: 'round'
-                    }).addTo(map);
-
-                    document.getElementById('distancia-conductor').textContent = 
-                        `A ${distanciaConductor.toFixed(1)} km`;
-                    document.getElementById('tiempo-llegada').textContent = 
-                        `Llega en ${Math.ceil(distanciaConductor * 3)} minutos aprox.`;
-                }
-            } catch (error) {
-                console.error('Error ruta conductor:', error);
-            }
-        }
-
-        function iniciarEscuchaGPSConductor(conductorId) {
-            canalConductor = supabaseClient
-                .channel('conductor-gps-' + conductorId)
-                .on('postgres_changes', {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'conductores',
-                    filter: `id=eq.${conductorId}`
-                }, (payload) => {
-                    const conductor = payload.new;
-                    if (conductor.lat && conductor.lng) {
-                        actualizarPosicionConductor(conductor.lat, conductor.lng);
-                    }
-                })
-                .subscribe();
-        }
-
-        function mostrarConductorEnMapa(lat, lng) {
-            const iconoConductor = L.divIcon({
-                html: '<div style="background:linear-gradient(135deg,#f47920,#e61e2b);width:36px;height:36px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-taxi" style="color:white;font-size:14px;"></i></div>',
-                iconSize: [40, 40],
-                iconAnchor: [20, 20]
-            });
-
-            if (marcadorConductor) {
-                marcadorConductor.setLatLng([lat, lng]);
-            } else {
-                marcadorConductor = L.marker([lat, lng], { icon: iconoConductor })
-                    .addTo(map)
-                    .bindPopup('Tu conductor');
-            }
-        }
-
-        function actualizarPosicionConductor(lat, lng) {
-            if (marcadorConductor) {
-                marcadorConductor.setLatLng([lat, lng]);
-            }
-        }
-
-        async function cancelarViaje() {
-            if (!viajeActual) return;
-            if (!confirm("¿Cancelar el viaje?")) return;
-
-            try {
-                await supabaseClient
-                    .from('viajes')
-                    .update({ estado: 'cancelado' })
-                    .eq('id', viajeActual.id);
-
-                if (canalViaje) canalViaje.unsubscribe();
-                if (canalConductor) canalConductor.unsubscribe();
-                location.reload();
-            } catch (error) {
-                console.error("❌ Error cancelando:", error);
-            }
-        }
-
-        function llamarConductor() {
-            alert("Llamando al conductor...");
-        }
-
-        function mostrarPanel(id) {
-            document.getElementById('formulario-pedido').style.display = 'none';
-            document.querySelectorAll('.estado-viaje').forEach(el => el.classList.remove('activo'));
-
-            if (id === 'formulario-pedido') {
-                document.getElementById('formulario-pedido').style.display = 'block';
-            } else {
-                document.getElementById(id).classList.add('activo');
-            }
-        }
-
-        // Cerrar sugerencias al hacer click fuera
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.buscador-container')) {
-                document.getElementById('sugerencias').classList.remove('activo');
-            }
-        });
-    </script>
-</body>
-</html>'''
-
-with open('/mnt/agents/output/pasajero_mapbox_seguro.html', 'w', encoding='utf-8') as f:
-    f.write(pasajero_html)
-
-print("✅ Panel PASAJERO generado: pasajero_mapbox_seguro.html")
-print(f"📄 Tamaño: {len(pasajero_html):,} caracteres")
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+<style>
+    :root {
+        --naranja: #f47920;
+        --celeste: #0093d0;
+        --rojo: #e61e2b;
+        --verde: #28a745;
+        --fondo: #f0f2f5;
+        --blanco: #ffffff;
+        --texto: #1a1a1a;
+        --gris: #666666;
+        --sombra: 0 2px 12px rgba(0,0,0,0.15);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body, html { 
+        margin: 0; padding: 0; height: 100%; width: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: var(--fondo); color: var(--texto); overflow: hidden;
+    }
+
+    #map { 
+        position: absolute; top: 0; left: 0; 
+        height: 72%; width: 100%; z-index: 1;
+        background: #e5e5e5;
+    }
+
+    /* MENU LATERAL */
+    .menu-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5); z-index: 2000;
+        display: none; opacity: 0; transition: opacity 0.3s;
+    }
+    .menu-overlay.activo { display: block; opacity: 1; }
+
+    .menu-lateral {
+        position: fixed; top: 0; left: -280px; bottom: 0;
+        width: 280px; background: var(--blanco);
+        z-index: 2001; transition: left 0.3s ease;
+        box-shadow: 2px 0 20px rgba(0,0,0,0.2);
+        display: flex; flex-direction: column;
+    }
+    .menu-lateral.abierto { left: 0; }
+
+    .menu-header {
+        background: linear-gradient(135deg, var(--naranja), var(--rojo));
+        padding: 30px 20px; color: white;
+    }
+    .menu-header h2 { margin: 0; font-size: 1.3rem; }
+    .menu-header p { margin: 5px 0 0; opacity: 0.9; font-size: 0.85rem; }
+
+    .menu-items {
+        flex: 1; padding: 10px 0;
+    }
+    .menu-item {
+        display: flex; align-items: center; gap: 15px;
+        padding: 16px 20px; cursor: pointer;
+        transition: background 0.2s; border: none; background: none;
+        width: 100%; text-align: left; font-size: 1rem; color: var(--texto);
+    }
+    .menu-item:hover, .menu-item:active { background: var(--fondo); }
+    .menu-item i { width: 24px; text-align: center; color: var(--naranja); }
+
+    .menu-footer {
+        padding: 20px; border-top: 1px solid #eee;
+        font-size: 0.8rem; color: var(--gris); text-align: center;
+    }
+
+    /* HEADER */
+    .header {
+        position: absolute; top: 12px; left: 12px; right: 12px;
+        z-index: 1000; display: flex; justify-content: space-between; align-items: center;
+        pointer-events: none;
+    }
+
+    .menu-btn {
+        background: var(--blanco); color: var(--naranja);
+        width: 44px; height: 44px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        pointer-events: auto; cursor: pointer; border: none;
+        box-shadow: var(--sombra); font-size: 1.2rem;
+    }
+
+    .logo-tag {
+        background: var(--blanco); padding: 10px 18px;
+        border-radius: 25px; border: 2px solid var(--celeste);
+        font-weight: 800; color: var(--celeste); font-size: 0.85rem;
+        box-shadow: var(--sombra); pointer-events: auto;
+    }
+
+    .btn-mi-ubicacion {
+        position: absolute; bottom: 30%; right: 15px;
+        z-index: 1000; width: 50px; height: 50px;
+        background: var(--blanco); border: none; border-radius: 50%;
+        box-shadow: var(--sombra); cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        color: var(--celeste); font-size: 1.3rem;
+    }
+
+    /* PANEL INFERIOR */
+    .panel {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        z-index: 1000; background: var(--blanco);
+        border-radius: 24px 24px 0 0;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+        padding: 15px 20px 25px;
+        max-height: 30vh;
+        overflow-y: auto;
+    }
+
+    .panel-handle {
+        width: 40px; height: 4px; background: #ddd;
+        border-radius: 2px; margin: 0 auto 12px;
+    }
+
+    /* BUSCADOR INTELIGENTE */
+    .buscador-container {
+        position: relative; margin-bottom: 10px;
+    }
+
+    .input-row {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 16px;
+        background: var(--fondo); border-radius: 14px;
+        border: 2px solid transparent; transition: all 0.2s;
+    }
+
+    .input-row:focus-within { border-color: var(--naranja); background: #fff8f3; }
+
+    .input-row i { 
+        width: 24px; text-align: center; 
+        font-size: 1.1rem; color: var(--celeste);
+    }
+
+    .input-row input {
+        flex: 1; border: none; background: transparent;
+        font-size: 1rem; outline: none; color: var(--texto);
+    }
+
+    .sugerencias {
+        position: absolute; top: 100%; left: 0; right: 0;
+        background: var(--blanco); border-radius: 14px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        max-height: 200px; overflow-y: auto;
+        z-index: 1500; display: none;
+        margin-top: 5px;
+    }
+
+    .sugerencias.activo { display: block; }
+
+    .sugerencia-item {
+        padding: 12px 16px; cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex; align-items: center; gap: 10px;
+    }
+
+    .sugerencia-item:last-child { border-bottom: none; }
+    .sugerencia-item:hover { background: var(--fondo); }
+    .sugerencia-item i { color: var(--celeste); font-size: 0.9rem; }
+    .sugerencia-item .sug-text { font-size: 0.9rem; }
+    .sugerencia-item .sug-zona { font-size: 0.75rem; color: var(--gris); }
+
+    .btn-principal {
+        width: 100%; padding: 16px;
+        background: var(--rojo); color: white;
+        border: none; border-radius: 16px;
+        font-size: 1.1rem; font-weight: 800;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        cursor: pointer; box-shadow: 0 6px 20px rgba(230,30,43,0.35);
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        margin-top: 10px; transition: all 0.2s;
+    }
+
+    .btn-principal:active { transform: scale(0.97); }
+    .btn-principal:disabled { background: #ccc; box-shadow: none; }
+
+    .estado-viaje { display: none; }
+    .estado-viaje.activo { display: block; animation: slideUp 0.4s ease; }
+
+    .estado-header {
+        text-align: center; padding: 8px 0 15px;
+    }
+
+    .estado-header .icono-grande {
+        font-size: 3rem; margin-bottom: 8px;
+    }
+
+    .estado-header h2 { margin: 0; font-size: 1.2rem; color: var(--texto); }
+    .estado-header p { margin: 4px 0 0; color: var(--gris); font-size: 0.9rem; }
+
+    .spinner {
+        width: 40px; height: 40px;
+        border: 4px solid #eee; border-top-color: var(--naranja);
+        border-radius: 50%; animation: spin 0.8s linear infinite;
+        margin: 0 auto 10px;
+    }
+
+    .info-conductor {
+        background: var(--fondo); border-radius: 16px;
+        padding: 14px; margin: 12px 0;
+    }
+
+    .info-conductor .fila {
+        display: flex; align-items: center; gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .info-conductor .fila:last-child { margin-bottom: 0; }
+
+    .avatar {
+        width: 45px; height: 45px; border-radius: 50%;
+        background: linear-gradient(135deg, var(--naranja), var(--rojo));
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 1.3rem; font-weight: bold;
+    }
+
+    .datos-conductor h4 { margin: 0; font-size: 1rem; }
+    .datos-conductor p { margin: 2px 0 0; color: var(--gris); font-size: 0.8rem; }
+
+    .btn-secundario {
+        width: 100%; padding: 12px;
+        background: transparent; color: var(--gris);
+        border: 2px solid #ddd; border-radius: 14px;
+        font-size: 0.95rem; font-weight: 600; cursor: pointer;
+        margin-top: 8px;
+    }
+
+    .btn-llamar {
+        background: var(--verde); color: white; border: none;
+    }
+
+    .tarifa-box {
+        background: linear-gradient(135deg, var(--naranja), #ff9a44);
+        border-radius: 14px; padding: 14px; margin: 12px 0;
+        color: white; text-align: center;
+        box-shadow: 0 4px 15px rgba(244,121,32,0.3);
+    }
+
+    .tarifa-box .precio {
+        font-size: 1.8rem; font-weight: 800; margin: 5px 0;
+    }
+
+    .tarifa-box .detalle {
+        font-size: 0.8rem; opacity: 0.9;
+    }
+
+    .ruta-real {
+        background: var(--fondo); border-radius: 12px;
+        padding: 10px 14px; margin: 8px 0;
+        font-size: 0.85rem; color: var(--gris);
+    }
+
+    .ruta-real i { color: var(--naranja); margin-right: 8px; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+</style>
