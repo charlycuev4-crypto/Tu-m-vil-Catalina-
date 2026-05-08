@@ -1,9 +1,0 @@
-{
-  "version": 2,
-  "name": "lascatalinas-53",
-  "routes": [
-    { "src": "/conductor", "dest": "/conductor.html" },
-    { "src": "/pasajero", "dest": "/pasajero.html" },
-    { "src": "/", "dest": "/pasajero.html" }
-  ]
-}
