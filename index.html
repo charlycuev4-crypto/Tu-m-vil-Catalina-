@@ -661,9 +661,6 @@
         let temaOscuro = false;
         let audioCtx = null;
 
-        // ═══════════════════════════════════════
-        // SISTEMA DE ALARMAS / SONIDOS
-        // ═══════════════════════════════════════
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -734,9 +731,6 @@
             document.removeEventListener('click', initAudioOnClick);
         }, { once: true });
 
-        // ═══════════════════════════════════════
-        // TEMA OSCURO / CLARO
-        // ═══════════════════════════════════════
         function detectarTemaSistema() {
             const prefiereOscuro = window.matchMedia('(prefers-color-scheme: dark)').matches;
             temaOscuro = prefiereOscuro;
@@ -765,9 +759,6 @@
             });
         }
 
-        // ═══════════════════════════════════════
-        // GPS EN TIEMPO REAL
-        // ═══════════════════════════════════════
         function iniciarGPS() {
             if (!navigator.geolocation) {
                 alert("Tu navegador no soporta geolocalización");
@@ -804,9 +795,6 @@
             map.setView([miPosicion.lat, miPosicion.lng], 16);
         }
 
-        // ═══════════════════════════════════════
-        // MENU
-        // ═══════════════════════════════════════
         function abrirMenu() {
             document.getElementById('menu-lateral').classList.add('abierto');
             document.getElementById('menu-overlay').classList.add('activo');
@@ -817,9 +805,6 @@
             document.getElementById('menu-overlay').classList.remove('activo');
         }
 
-        // ═══════════════════════════════════════
-        // DEMANDA INTELIGENTE
-        // ═══════════════════════════════════════
         async function calcularDemanda() {
             if (!supabaseClient) return;
             
@@ -866,9 +851,6 @@
             texto.innerHTML = `${emoji} ${label} • x${mult.toFixed(1)} • ${conductoresOnline} móviles disponibles`;
         }
 
-        // ═══════════════════════════════════════
-        // BUSCADOR INTELIGENTE
-        // ═══════════════════════════════════════
         async function buscarDireccion(query) {
             const sugerenciasDiv = document.getElementById('sugerencias');
 
@@ -986,9 +968,6 @@
             map.fitBounds(bounds, { padding: [50, 50] });
         }
 
-        // ═══════════════════════════════════════
-        // RUTA REAL CON CALLES (OSRM)
-        // ═══════════════════════════════════════
         async function calcularRutaReal(lat1, lng1, lat2, lng2) {
             if (rutaLayer) map.removeLayer(rutaLayer);
 
@@ -1032,9 +1011,6 @@
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
-        // ═══════════════════════════════════════
-        // TARIFA INTELIGENTE CON DEMANDA
-        // ═══════════════════════════════════════
         function calcularTarifa(distanciaKm) {
             const mult = MULTIPLICADOR_DEMANDA[nivelDemanda];
             const base = TARIFA_BASE * mult;
@@ -1051,9 +1027,6 @@
             };
         }
 
-        // ═══════════════════════════════════════
-        // SOLICITAR VIAJE
-        // ═══════════════════════════════════════
         async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value.trim();
             const telefono = document.getElementById('telefono').value.trim();
@@ -1165,9 +1138,6 @@
                 });
         }
 
-        // ═══════════════════════════════════════
-        // PROCESAR CAMBIOS DE ESTADO
-        // ═══════════════════════════════════════
         async function procesarCambioEstado(viaje) {
             if (viaje.estado === 'aceptado') {
                 const { data: conductor } = await supabaseClient
@@ -1215,7 +1185,6 @@
                     }
                 }
 
-                // 🔊 ALARMA: Conductor asignado
                 playAlarmaConductorAsignado();
 
                 mostrarPanel('estado-aceptado');
@@ -1243,11 +1212,7 @@
             }
         }
 
-        // ═══════════════════════════════════════
-        // GPS DEL CONDUCTOR EN TIEMPO REAL
-        // ═══════════════════════════════════════
         function iniciarEscuchaGPSConductor(conductorId) {
-            // Escuchar notificaciones de llegada
             supabaseClient
                 .channel('notificacion-llegada-' + viajeActual.id)
                 .on('postgres_changes', {
@@ -1258,10 +1223,7 @@
                 }, (payload) => {
                     const viaje = payload.new;
                     if (viaje.notificacion_llegada && viaje.estado === 'en_camino') {
-                        // 🚨 ALARMA: El conductor llegó
                         playAlarmaConductorLlego();
-                        
-                        // Mostrar alerta visual
                         mostrarAlertaLlegada();
                     }
                 })
@@ -1305,9 +1267,6 @@
             }
         }
 
-        // ═══════════════════════════════════════
-        // ALERTA VISUAL DE LLEGADA
-        // ═══════════════════════════════════════
         function mostrarAlertaLlegada() {
             const overlay = document.createElement('div');
             overlay.id = 'alerta-llegada';
@@ -1352,9 +1311,6 @@
             }
         }
 
-        // ═══════════════════════════════════════
-        // CANCELAR / LLAMAR
-        // ═══════════════════════════════════════
         async function cancelarViaje() {
             if (!viajeActual) return;
             if (!confirm("¿Cancelar el viaje?")) return;
@@ -1394,7 +1350,6 @@
             }
         });
 
-        // Inicializar
         detectarTemaSistema();
         iniciarGPS();
         calcularDemanda();
