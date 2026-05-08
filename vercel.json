@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "name": "tu-m-vil-catalina",
+  "routes": [
+    { "src": "/conductor", "dest": "/conductor.html" },
+    { "src": "/pasajero", "dest": "/pasajero.html" },
+    { "src": "/", "dest": "/index.html" }
+  ]
+}
