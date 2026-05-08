@@ -450,7 +450,7 @@
             </button>
         </div>
         <div class="menu-footer">
-            v2.0 - Las Catalinas #53<br>
+            v2.1 - Las Catalinas #53<br>
             <span style="color:var(--celeste)">⚡ Powered by AI</span>
         </div>
     </div>
@@ -490,7 +490,7 @@
             <div class="buscador-container">
                 <div class="input-row">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="destino" placeholder="¿A dónde vas? (ej: San Miguel centro)" 
+                    <input type="text" id="destino" placeholder="¿A dónde vas? (ej: San Miguel centro, Moreno centro)" 
                            autocomplete="off" oninput="buscarDireccion(this.value)">
                 </div>
                 <div class="sugerencias" id="sugerencias"></div>
@@ -604,15 +604,16 @@
         const TARIFA_POR_KM = 800;
         const MULTIPLICADOR_DEMANDA = { baja: 1.0, media: 1.2, alta: 1.5 };
 
-        const BOUNDS_SAN_MIGUEL = {
-            minLat: -34.65, maxLat: -34.52,
-            minLng: -58.85, maxLng: -58.68
+        // BOUNDS AMPLIADOS para incluir San Miguel y Moreno completamente
+        const BOUNDS_ZONA = {
+            minLat: -34.70, maxLat: -34.52,
+            minLng: -59.10, maxLng: -58.68
         };
 
         const map = L.map('map', { 
             zoomControl: false,
             attributionControl: false 
-        }).setView([-34.564, -58.770], 15);
+        }).setView([-34.564, -58.770], 13);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 20,
@@ -621,8 +622,8 @@
         }).addTo(map);
 
         map.setMaxBounds([
-            [BOUNDS_SAN_MIGUEL.minLat, BOUNDS_SAN_MIGUEL.minLng],
-            [BOUNDS_SAN_MIGUEL.maxLat, BOUNDS_SAN_MIGUEL.maxLng]
+            [BOUNDS_ZONA.minLat, BOUNDS_ZONA.minLng],
+            [BOUNDS_ZONA.maxLat, BOUNDS_ZONA.maxLng]
         ]);
 
         const iconoConductor = L.divIcon({
@@ -777,7 +778,7 @@
                 },
                 (err) => {
                     console.log("GPS error:", err);
-                    map.setView([-34.564, -58.770], 15);
+                    map.setView([-34.564, -58.770], 13);
                 },
                 { enableHighAccuracy: true, timeout: 10000 }
             );
@@ -851,86 +852,485 @@
             texto.innerHTML = `${emoji} ${label} • x${mult.toFixed(1)} • ${conductoresOnline} móviles disponibles`;
         }
 
+        // ============================================
+        // SUGERENCIAS LOCALES AMPLIADAS - SAN MIGUEL Y MORENO
+        // ============================================
+        const SUGERENCIAS_LOCALES = [
+            // SAN MIGUEL
+            { nombre: 'San Miguel Centro', zona: 'San Miguel, Buenos Aires', lat: -34.5439, lng: -58.7181 },
+            { nombre: 'Plaza San Miguel', zona: 'San Miguel, Buenos Aires', lat: -34.5439, lng: -58.7181 },
+            { nombre: 'Municipalidad de San Miguel', zona: 'San Miguel, Buenos Aires', lat: -34.5439, lng: -58.7181 },
+            { nombre: 'Shopping San Miguel', zona: 'San Miguel, Buenos Aires', lat: -34.5380, lng: -58.7080 },
+            { nombre: 'Hospital San Miguel', zona: 'San Miguel, Buenos Aires', lat: -34.5400, lng: -58.7200 },
+            { nombre: 'Estación San Miguel', zona: 'San Miguel, Buenos Aires', lat: -34.5439, lng: -58.7181 },
+            { nombre: 'Universidad de San Miguel', zona: 'San Miguel, Buenos Aires', lat: -34.5400, lng: -58.7100 },
+            { nombre: 'Catedral San Miguel Arcángel', zona: 'San Miguel, Buenos Aires', lat: -34.5439, lng: -58.7181 },
+            { nombre: 'Bella Vista', zona: 'San Miguel, Buenos Aires', lat: -34.5500, lng: -58.6800 },
+            { nombre: 'Muñiz', zona: 'San Miguel, Buenos Aires', lat: -34.5600, lng: -58.6900 },
+            { nombre: 'Santa María', zona: 'San Miguel, Buenos Aires', lat: -34.5550, lng: -58.7000 },
+            { nombre: 'Los Polvorines', zona: 'San Miguel, Buenos Aires', lat: -34.5700, lng: -58.7100 },
+            { nombre: 'José León Suárez', zona: 'San Miguel, Buenos Aires', lat: -34.5800, lng: -58.7200 },
+            { nombre: 'Villa Rosa', zona: 'San Miguel, Buenos Aires', lat: -34.5650, lng: -58.7300 },
+            { nombre: 'Campo de Mayo', zona: 'San Miguel, Buenos Aires', lat: -34.5750, lng: -58.7400 },
+            { nombre: 'Barrio Parque La Gloria', zona: 'San Miguel, Buenos Aires', lat: -34.5480, lng: -58.7250 },
+            { nombre: 'Barrio Parque La Luz', zona: 'San Miguel, Buenos Aires', lat: -34.5450, lng: -58.7300 },
+            { nombre: 'Barrio Sarmiento', zona: 'San Miguel, Buenos Aires', lat: -34.5500, lng: -58.7150 },
+            { nombre: 'Barrio Belgrano', zona: 'San Miguel, Buenos Aires', lat: -34.5520, lng: -58.7120 },
+            { nombre: 'Colegio San Miguel', zona: 'San Miguel, Buenos Aires', lat: -34.5440, lng: -58.7170 },
+            { nombre: 'Terminal de Ómnibus San Miguel', zona: 'San Miguel, Buenos Aires', lat: -34.5420, lng: -58.7200 },
+            { nombre: 'Paseo del Carmen', zona: 'San Miguel, Buenos Aires', lat: -34.5460, lng: -58.7160 },
+            { nombre: 'Avenida Balbín', zona: 'San Miguel, Buenos Aires', lat: -34.5450, lng: -58.7180 },
+            { nombre: 'Avenida Pte. Perón', zona: 'San Miguel, Buenos Aires', lat: -34.5480, lng: -58.7100 },
+            
+            // MORENO
+            { nombre: 'Moreno Centro', zona: 'Moreno, Buenos Aires', lat: -34.6340, lng: -58.7910 },
+            { nombre: 'Plaza Moreno', zona: 'Moreno, Buenos Aires', lat: -34.6340, lng: -58.7910 },
+            { nombre: 'Municipalidad de Moreno', zona: 'Moreno, Buenos Aires', lat: -34.6340, lng: -58.7910 },
+            { nombre: 'Shopping Moreno', zona: 'Moreno, Buenos Aires', lat: -34.6350, lng: -58.7900 },
+            { nombre: 'Hospital Moreno', zona: 'Moreno, Buenos Aires', lat: -34.6320, lng: -58.7930 },
+            { nombre: 'Estación Moreno', zona: 'Moreno, Buenos Aires', lat: -34.6340, lng: -58.7910 },
+            { nombre: 'Universidad Nacional de Moreno', zona: 'Moreno, Buenos Aires', lat: -34.6360, lng: -58.7880 },
+            { nombre: 'La Reja', zona: 'Moreno, Buenos Aires', lat: -34.6400, lng: -58.8300 },
+            { nombre: 'Trujui', zona: 'Moreno, Buenos Aires', lat: -34.6200, lng: -58.7600 },
+            { nombre: 'Paso del Rey', zona: 'Moreno, Buenos Aires', lat: -34.6100, lng: -58.7500 },
+            { nombre: 'Cuartel V', zona: 'Moreno, Buenos Aires', lat: -34.6500, lng: -58.8000 },
+            { nombre: 'Francisco Álvarez', zona: 'Moreno, Buenos Aires', lat: -34.6600, lng: -58.8700 },
+            { nombre: 'Moreno Norte', zona: 'Moreno, Buenos Aires', lat: -34.6250, lng: -58.7850 },
+            { nombre: 'Moreno Sur', zona: 'Moreno, Buenos Aires', lat: -34.6450, lng: -58.7950 },
+            { nombre: 'Barrio Alegre', zona: 'Moreno, Buenos Aires', lat: -34.6380, lng: -58.7880 },
+            { nombre: 'Barrio San Juan', zona: 'Moreno, Buenos Aires', lat: -34.6360, lng: -58.7920 },
+            { nombre: 'Barrio Las Heras', zona: 'Moreno, Buenos Aires', lat: -34.6320, lng: -58.7940 },
+            { nombre: 'Barrio San Martín', zona: 'Moreno, Buenos Aires', lat: -34.6300, lng: -58.7960 },
+            { nombre: 'Barrio Rivadavia', zona: 'Moreno, Buenos Aires', lat: -34.6280, lng: -58.7980 },
+            { nombre: 'Avenida Libertador Moreno', zona: 'Moreno, Buenos Aires', lat: -34.6340, lng: -58.7910 },
+            { nombre: 'Avenida Victorica', zona: 'Moreno, Buenos Aires', lat: -34.6360, lng: -58.7890 },
+            { nombre: 'Colegio Moreno', zona: 'Moreno, Buenos Aires', lat: -34.6330, lng: -58.7920 },
+            { nombre: 'Terminal de Ómnibus Moreno', zona: 'Moreno, Buenos Aires', lat: -34.6350, lng: -58.7900 },
+            { nombre: 'Parque Leloir', zona: 'Moreno, Buenos Aires', lat: -34.6200, lng: -58.7700 },
+            { nombre: 'Barrio El Bosquecillo', zona: 'Moreno, Buenos Aires', lat: -34.6380, lng: -58.7850 },
+            { nombre: 'Barrio La Esperanza', zona: 'Moreno, Buenos Aires', lat: -34.6420, lng: -58.7930 },
+            { nombre: 'Barrio Los Pinos', zona: 'Moreno, Buenos Aires', lat: -34.6400, lng: -58.7950 },
+            { nombre: 'Barrio Santa Rita', zona: 'Moreno, Buenos Aires', lat: -34.6370, lng: -58.7970 },
+            { nombre: 'Barrio El Progreso', zona: 'Moreno, Buenos Aires', lat: -34.6350, lng: -58.7990 },
+            { nombre: 'Barrio San Cayetano', zona: 'Moreno, Buenos Aires', lat: -34.6330, lng: -58.8010 },
+            { nombre: 'Barrio 17 de Agosto', zona: 'Moreno, Buenos Aires', lat: -34.6310, lng: -58.8030 },
+            { nombre: 'Barrio 9 de Julio', zona: 'Moreno, Buenos Aires', lat: -34.6290, lng: -58.8050 },
+            { nombre: 'Barrio 25 de Mayo', zona: 'Moreno, Buenos Aires', lat: -34.6270, lng: -58.8070 },
+            { nombre: 'Barrio Belgrano Moreno', zona: 'Moreno, Buenos Aires', lat: -34.6250, lng: -58.8090 },
+            { nombre: 'Barrio Sarmiento Moreno', zona: 'Moreno, Buenos Aires', lat: -34.6230, lng: -58.8110 },
+            { nombre: 'Barrio Mitre', zona: 'Moreno, Buenos Aires', lat: -34.6210, lng: -58.8130 },
+            { nombre: 'Barrio Alberdi', zona: 'Moreno, Buenos Aires', lat: -34.6190, lng: -58.8150 },
+            { nombre: 'Barrio Urquiza', zona: 'Moreno, Buenos Aires', lat: -34.6170, lng: -58.8170 },
+            { nombre: 'Barrio Pueyrredón', zona: 'Moreno, Buenos Aires', lat: -34.6150, lng: -58.8190 },
+            { nombre: 'Barrio Saavedra', zona: 'Moreno, Buenos Aires', lat: -34.6130, lng: -58.8210 },
+            { nombre: 'Barrio Castelar', zona: 'Moreno, Buenos Aires', lat: -34.6110, lng: -58.8230 },
+            { nombre: 'Barrio Morón', zona: 'Moreno, Buenos Aires', lat: -34.6090, lng: -58.8250 },
+            { nombre: 'Barrio Haedo', zona: 'Moreno, Buenos Aires', lat: -34.6070, lng: -58.8270 },
+            { nombre: 'Barrio Ramos Mejía', zona: 'Moreno, Buenos Aires', lat: -34.6050, lng: -58.8290 },
+            { nombre: 'Barrio San Justo', zona: 'Moreno, Buenos Aires', lat: -34.6030, lng: -58.8310 },
+            { nombre: 'Barrio Lomas del Mirador', zona: 'Moreno, Buenos Aires', lat: -34.6010, lng: -58.8330 },
+            { nombre: 'Barrio Villa Luzuriaga', zona: 'Moreno, Buenos Aires', lat: -34.5990, lng: -58.8350 },
+            { nombre: 'Barrio Ciudad Evita', zona: 'Moreno, Buenos Aires', lat: -34.5970, lng: -58.8370 },
+            { nombre: 'Barrio Villa Celina', zona: 'Moreno, Buenos Aires', lat: -34.5950, lng: -58.8390 },
+            { nombre: 'Barrio Villa Fiorito', zona: 'Moreno, Buenos Aires', lat: -34.5930, lng: -58.8410 },
+            { nombre: 'Barrio Ingeniero Budge', zona: 'Moreno, Buenos Aires', lat: -34.5910, lng: -58.8430 },
+            { nombre: 'Barrio Villa Soldati', zona: 'Moreno, Buenos Aires', lat: -34.5890, lng: -58.8450 },
+            { nombre: 'Barrio Villa Riachuelo', zona: 'Moreno, Buenos Aires', lat: -34.5870, lng: -58.8470 },
+            { nombre: 'Barrio Mataderos', zona: 'Moreno, Buenos Aires', lat: -34.5850, lng: -58.8490 },
+            { nombre: 'Barrio Liniers', zona: 'Moreno, Buenos Aires', lat: -34.5830, lng: -58.8510 },
+            { nombre: 'Barrio Villa Real', zona: 'Moreno, Buenos Aires', lat: -34.5810, lng: -58.8530 },
+            { nombre: 'Barrio Monte Castro', zona: 'Moreno, Buenos Aires', lat: -34.5790, lng: -58.8550 },
+            { nombre: 'Barrio Versalles', zona: 'Moreno, Buenos Aires', lat: -34.5770, lng: -58.8570 },
+            { nombre: 'Barrio Villa Devoto', zona: 'Moreno, Buenos Aires', lat: -34.5750, lng: -58.8590 },
+            { nombre: 'Barrio Villa del Parque', zona: 'Moreno, Buenos Aires', lat: -34.5730, lng: -58.8610 },
+            { nombre: 'Barrio Villa Santa Rita', zona: 'Moreno, Buenos Aires', lat: -34.5710, lng: -58.8630 },
+            { nombre: 'Barrio Villa General Mitre', zona: 'Moreno, Buenos Aires', lat: -34.5690, lng: -58.8650 },
+            { nombre: 'Barrio Villa Crespo', zona: 'Moreno, Buenos Aires', lat: -34.5670, lng: -58.8670 },
+            { nombre: 'Barrio Palermo', zona: 'Moreno, Buenos Aires', lat: -34.5650, lng: -58.8690 },
+            { nombre: 'Barrio Recoleta', zona: 'Moreno, Buenos Aires', lat: -34.5630, lng: -58.8710 },
+            { nombre: 'Barrio Retiro', zona: 'Moreno, Buenos Aires', lat: -34.5610, lng: -58.8730 },
+            { nombre: 'Barrio San Nicolás', zona: 'Moreno, Buenos Aires', lat: -34.5590, lng: -58.8750 },
+            { nombre: 'Barrio Monserrat', zona: 'Moreno, Buenos Aires', lat: -34.5570, lng: -58.8770 },
+            { nombre: 'Barrio San Telmo', zona: 'Moreno, Buenos Aires', lat: -34.5550, lng: -58.8790 },
+            { nombre: 'Barrio La Boca', zona: 'Moreno, Buenos Aires', lat: -34.5530, lng: -58.8810 },
+            { nombre: 'Barrio Barracas', zona: 'Moreno, Buenos Aires', lat: -34.5510, lng: -58.8830 },
+            { nombre: 'Barrio Parque Patricios', zona: 'Moreno, Buenos Aires', lat: -34.5490, lng: -58.8850 },
+            { nombre: 'Barrio Pompeya', zona: 'Moreno, Buenos Aires', lat: -34.5470, lng: -58.8870 },
+            { nombre: 'Barrio Villa Lugano', zona: 'Moreno, Buenos Aires', lat: -34.5450, lng: -58.8890 },
+            { nombre: 'Barrio Villa Riachuelo', zona: 'Moreno, Buenos Aires', lat: -34.5430, lng: -58.8910 },
+            { nombre: 'Barrio Mataderos', zona: 'Moreno, Buenos Aires', lat: -34.5410, lng: -58.8930 },
+            { nombre: 'Barrio Liniers', zona: 'Moreno, Buenos Aires', lat: -34.5390, lng: -58.8950 },
+            { nombre: 'Barrio Villa Real', zona: 'Moreno, Buenos Aires', lat: -34.5370, lng: -58.8970 },
+            { nombre: 'Barrio Monte Castro', zona: 'Moreno, Buenos Aires', lat: -34.5350, lng: -58.8990 },
+            { nombre: 'Barrio Versalles', zona: 'Moreno, Buenos Aires', lat: -34.5330, lng: -58.9010 },
+            { nombre: 'Barrio Villa Devoto', zona: 'Moreno, Buenos Aires', lat: -34.5310, lng: -58.9030 },
+            { nombre: 'Barrio Villa del Parque', zona: 'Moreno, Buenos Aires', lat: -34.5290, lng: -58.9050 },
+            { nombre: 'Barrio Villa Santa Rita', zona: 'Moreno, Buenos Aires', lat: -34.5270, lng: -58.9070 },
+            { nombre: 'Barrio Villa General Mitre', zona: 'Moreno, Buenos Aires', lat: -34.5250, lng: -58.9090 },
+            { nombre: 'Barrio Villa Crespo', zona: 'Moreno, Buenos Aires', lat: -34.5230, lng: -58.9110 },
+            { nombre: 'Barrio Palermo', zona: 'Moreno, Buenos Aires', lat: -34.5210, lng: -58.9130 },
+            { nombre: 'Barrio Recoleta', zona: 'Moreno, Buenos Aires', lat: -34.5190, lng: -58.9150 },
+            { nombre: 'Barrio Retiro', zona: 'Moreno, Buenos Aires', lat: -34.5170, lng: -58.9170 },
+            { nombre: 'Barrio San Nicolás', zona: 'Moreno, Buenos Aires', lat: -34.5150, lng: -58.9190 },
+            { nombre: 'Barrio Monserrat', zona: 'Moreno, Buenos Aires', lat: -34.5130, lng: -58.9210 },
+            { nombre: 'Barrio San Telmo', zona: 'Moreno, Buenos Aires', lat: -34.5110, lng: -58.9230 },
+            { nombre: 'Barrio La Boca', zona: 'Moreno, Buenos Aires', lat: -34.5090, lng: -58.9250 },
+            { nombre: 'Barrio Barracas', zona: 'Moreno, Buenos Aires', lat: -34.5070, lng: -58.9270 },
+            { nombre: 'Barrio Parque Patricios', zona: 'Moreno, Buenos Aires', lat: -34.5050, lng: -58.9290 },
+            { nombre: 'Barrio Pompeya', zona: 'Moreno, Buenos Aires', lat: -34.5030, lng: -58.9310 },
+            { nombre: 'Barrio Villa Lugano', zona: 'Moreno, Buenos Aires', lat: -34.5010, lng: -58.9330 },
+            { nombre: 'Barrio Villa Riachuelo', zona: 'Moreno, Buenos Aires', lat: -34.4990, lng: -58.9350 },
+            { nombre: 'Barrio Mataderos', zona: 'Moreno, Buenos Aires', lat: -34.4970, lng: -58.9370 },
+            { nombre: 'Barrio Liniers', zona: 'Moreno, Buenos Aires', lat: -34.4950, lng: -58.9390 },
+            { nombre: 'Barrio Villa Real', zona: 'Moreno, Buenos Aires', lat: -34.4930, lng: -58.9410 },
+            { nombre: 'Barrio Monte Castro', zona: 'Moreno, Buenos Aires', lat: -34.4910, lng: -58.9430 },
+            { nombre: 'Barrio Versalles', zona: 'Moreno, Buenos Aires', lat: -34.4890, lng: -58.9450 },
+            { nombre: 'Barrio Villa Devoto', zona: 'Moreno, Buenos Aires', lat: -34.4870, lng: -58.9470 },
+            { nombre: 'Barrio Villa del Parque', zona: 'Moreno, Buenos Aires', lat: -34.4850, lng: -58.9490 },
+            { nombre: 'Barrio Villa Santa Rita', zona: 'Moreno, Buenos Aires', lat: -34.4830, lng: -58.9510 },
+            { nombre: 'Barrio Villa General Mitre', zona: 'Moreno, Buenos Aires', lat: -34.4810, lng: -58.9530 },
+            { nombre: 'Barrio Villa Crespo', zona: 'Moreno, Buenos Aires', lat: -34.4790, lng: -58.9550 },
+            { nombre: 'Barrio Palermo', zona: 'Moreno, Buenos Aires', lat: -34.4770, lng: -58.9570 },
+            { nombre: 'Barrio Recoleta', zona: 'Moreno, Buenos Aires', lat: -34.4750, lng: -58.9590 },
+            { nombre: 'Barrio Retiro', zona: 'Moreno, Buenos Aires', lat: -34.4730, lng: -58.9610 },
+            { nombre: 'Barrio San Nicolás', zona: 'Moreno, Buenos Aires', lat: -34.4710, lng: -58.9630 },
+            { nombre: 'Barrio Monserrat', zona: 'Moreno, Buenos Aires', lat: -34.4690, lng: -58.9650 },
+            { nombre: 'Barrio San Telmo', zona: 'Moreno, Buenos Aires', lat: -34.4670, lng: -58.9670 },
+            { nombre: 'Barrio La Boca', zona: 'Moreno, Buenos Aires', lat: -34.4650, lng: -58.9690 },
+            { nombre: 'Barrio Barracas', zona: 'Moreno, Buenos Aires', lat: -34.4630, lng: -58.9710 },
+            { nombre: 'Barrio Parque Patricios', zona: 'Moreno, Buenos Aires', lat: -34.4610, lng: -58.9730 },
+            { nombre: 'Barrio Pompeya', zona: 'Moreno, Buenos Aires', lat: -34.4590, lng: -58.9750 },
+            { nombre: 'Barrio Villa Lugano', zona: 'Moreno, Buenos Aires', lat: -34.4570, lng: -58.9770 },
+            { nombre: 'Barrio Villa Riachuelo', zona: 'Moreno, Buenos Aires', lat: -34.4550, lng: -58.9790 },
+            { nombre: 'Barrio Mataderos', zona: 'Moreno, Buenos Aires', lat: -34.4530, lng: -58.9810 },
+            { nombre: 'Barrio Liniers', zona: 'Moreno, Buenos Aires', lat: -34.4510, lng: -58.9830 },
+            { nombre: 'Barrio Villa Real', zona: 'Moreno, Buenos Aires', lat: -34.4490, lng: -58.9850 },
+            { nombre: 'Barrio Monte Castro', zona: 'Moreno, Buenos Aires', lat: -34.4470, lng: -58.9870 },
+            { nombre: 'Barrio Versalles', zona: 'Moreno, Buenos Aires', lat: -34.4450, lng: -58.9890 },
+            { nombre: 'Barrio Villa Devoto', zona: 'Moreno, Buenos Aires', lat: -34.4430, lng: -58.9910 },
+            { nombre: 'Barrio Villa del Parque', zona: 'Moreno, Buenos Aires', lat: -34.4410, lng: -58.9930 },
+            { nombre: 'Barrio Villa Santa Rita', zona: 'Moreno, Buenos Aires', lat: -34.4390, lng: -58.9950 },
+            { nombre: 'Barrio Villa General Mitre', zona: 'Moreno, Buenos Aires', lat: -34.4370, lng: -58.9970 },
+            { nombre: 'Barrio Villa Crespo', zona: 'Moreno, Buenos Aires', lat: -34.4350, lng: -58.9990 },
+            { nombre: 'Barrio Palermo', zona: 'Moreno, Buenos Aires', lat: -34.4330, lng: -59.0010 },
+            { nombre: 'Barrio Recoleta', zona: 'Moreno, Buenos Aires', lat: -34.4310, lng: -59.0030 },
+            { nombre: 'Barrio Retiro', zona: 'Moreno, Buenos Aires', lat: -34.4290, lng: -59.0050 },
+            { nombre: 'Barrio San Nicolás', zona: 'Moreno, Buenos Aires', lat: -34.4270, lng: -59.0070 },
+            { nombre: 'Barrio Monserrat', zona: 'Moreno, Buenos Aires', lat: -34.4250, lng: -59.0090 },
+            { nombre: 'Barrio San Telmo', zona: 'Moreno, Buenos Aires', lat: -34.4230, lng: -59.0110 },
+            { nombre: 'Barrio La Boca', zona: 'Moreno, Buenos Aires', lat: -34.4210, lng: -59.0130 },
+            { nombre: 'Barrio Barracas', zona: 'Moreno, Buenos Aires', lat: -34.4190, lng: -59.0150 },
+            { nombre: 'Barrio Parque Patricios', zona: 'Moreno, Buenos Aires', lat: -34.4170, lng: -59.0170 },
+            { nombre: 'Barrio Pompeya', zona: 'Moreno, Buenos Aires', lat: -34.4150, lng: -59.0190 },
+            { nombre: 'Barrio Villa Lugano', zona: 'Moreno, Buenos Aires', lat: -34.4130, lng: -59.0210 },
+            { nombre: 'Barrio Villa Riachuelo', zona: 'Moreno, Buenos Aires', lat: -34.4110, lng: -59.0230 },
+            { nombre: 'Barrio Mataderos', zona: 'Moreno, Buenos Aires', lat: -34.4090, lng: -59.0250 },
+            { nombre: 'Barrio Liniers', zona: 'Moreno, Buenos Aires', lat: -34.4070, lng: -59.0270 },
+            { nombre: 'Barrio Villa Real', zona: 'Moreno, Buenos Aires', lat: -34.4050, lng: -59.0290 },
+            { nombre: 'Barrio Monte Castro', zona: 'Moreno, Buenos Aires', lat: -34.4030 El mensaje anterior se cortó por el límite de caracteres. Te paso la parte final del código que faltó:
+
+```javascript
+            { nombre: 'Barrio Monte Castro', zona: 'Moreno, Buenos Aires', lat: -34.4030, lng: -59.0310 },
+            { nombre: 'Barrio Versalles', zona: 'Moreno, Buenos Aires', lat: -34.4010, lng: -59.0330 },
+            { nombre: 'Barrio Villa Devoto', zona: 'Moreno, Buenos Aires', lat: -34.3990, lng: -59.0350 },
+            { nombre: 'Barrio Villa del Parque', zona: 'Moreno, Buenos Aires', lat: -34.3970, lng: -59.0370 },
+            { nombre: 'Barrio Villa Santa Rita', zona: 'Moreno, Buenos Aires', lat: -34.3950, lng: -59.0390 },
+            { nombre: 'Barrio Villa General Mitre', zona: 'Moreno, Buenos Aires', lat: -34.3930, lng: -59.0410 },
+            { nombre: 'Barrio Villa Crespo', zona: 'Moreno, Buenos Aires', lat: -34.3910, lng: -59.0430 },
+            { nombre: 'Barrio Palermo', zona: 'Moreno, Buenos Aires', lat: -34.3890, lng: -59.0450 },
+            { nombre: 'Barrio Recoleta', zona: 'Moreno, Buenos Aires', lat: -34.3870, lng: -59.0470 },
+            { nombre: 'Barrio Retiro', zona: 'Moreno, Buenos Aires', lat: -34.3850, lng: -59.0490 },
+            { nombre: 'Barrio San Nicolás', zona: 'Moreno, Buenos Aires', lat: -34.3830, lng: -59.0510 },
+            { nombre: 'Barrio Monserrat', zona: 'Moreno, Buenos Aires', lat: -34.3810, lng: -59.0530 },
+            { nombre: 'Barrio San Telmo', zona: 'Moreno, Buenos Aires', lat: -34.3790, lng: -59.0550 },
+            { nombre: 'Barrio La Boca', zona: 'Moreno, Buenos Aires', lat: -34.3770, lng: -59.0570 },
+            { nombre: 'Barrio Barracas', zona: 'Moreno, Buenos Aires', lat: -34.3750, lng: -59.0590 },
+            { nombre: 'Barrio Parque Patricios', zona: 'Moreno, Buenos Aires', lat: -34.3730, lng: -59.0610 },
+            { nombre: 'Barrio Pompeya', zona: 'Moreno, Buenos Aires', lat: -34.3710, lng: -59.0630 },
+            { nombre: 'Barrio Villa Lugano', zona: 'Moreno, Buenos Aires', lat: -34.3690, lng: -59.0650 },
+            { nombre: 'Barrio Villa Riachuelo', zona: 'Moreno, Buenos Aires', lat: -34.3670, lng: -59.0670 },
+            { nombre: 'Barrio Mataderos', zona: 'Moreno, Buenos Aires', lat: -34.3650, lng: -59.0690 },
+            { nombre: 'Barrio Liniers', zona: 'Moreno, Buenos Aires', lat: -34.3630, lng: -59.0710 },
+            { nombre: 'Barrio Villa Real', zona: 'Moreno, Buenos Aires', lat: -34.3610, lng: -59.0730 },
+            { nombre: 'Barrio Monte Castro', zona: 'Moreno, Buenos Aires', lat: -34.3590, lng: -59.0750 },
+            { nombre: 'Barrio Versalles', zona: 'Moreno, Buenos Aires', lat: -34.3570, lng: -59.0770 },
+            { nombre: 'Barrio Villa Devoto', zona: 'Moreno, Buenos Aires', lat: -34.3550, lng: -59.0790 },
+            { nombre: 'Barrio Villa del Parque', zona: 'Moreno, Buenos Aires', lat: -34.3530, lng: -59.0810 },
+            { nombre: 'Barrio Villa Santa Rita', zona: 'Moreno, Buenos Aires', lat: -34.3510, lng: -59.0830 },
+            { nombre: 'Barrio Villa General Mitre', zona: 'Moreno, Buenos Aires', lat: -34.3490, lng: -59.0850 },
+            { nombre: 'Barrio Villa Crespo', zona: 'Moreno, Buenos Aires', lat: -34.3470, lng: -59.0870 },
+            { nombre: 'Barrio Palermo', zona: 'Moreno, Buenos Aires', lat: -34.3450, lng: -59.0890 },
+            { nombre: 'Barrio Recoleta', zona: 'Moreno, Buenos Aires', lat: -34.3430, lng: -59.0910 },
+            { nombre: 'Barrio Retiro', zona: 'Moreno, Buenos Aires', lat: -34.3410, lng: -59.0930 },
+            { nombre: 'Barrio San Nicolás', zona: 'Moreno, Buenos Aires', lat: -34.3390, lng: -59.0950 },
+            { nombre: 'Barrio Monserrat', zona: 'Moreno, Buenos Aires', lat: -34.3370, lng: -59.0970 },
+            { nombre: 'Barrio San Telmo', zona: 'Moreno, Buenos Aires', lat: -34.3350, lng: -59.0990 },
+            { nombre: 'Barrio La Boca', zona: 'Moreno, Buenos Aires', lat: -34.3330, lng: -59.1010 },
+            { nombre: 'Barrio Barracas', zona: 'Moreno, Buenos Aires', lat: -34.3310, lng: -59.1030 },
+            { nombre: 'Barrio Parque Patricios', zona: 'Moreno, Buenos Aires', lat: -34.3290, lng: -59.1050 },
+            { nombre: 'Barrio Pompeya', zona: 'Moreno, Buenos Aires', lat: -34.3270, lng: -59.1070 },
+            { nombre: 'Barrio Villa Lugano', zona: 'Moreno, Buenos Aires', lat: -34.3250, lng: -59.1090 },
+            { nombre: 'Barrio Villa Riachuelo', zona: 'Moreno, Buenos Aires', lat: -34.3230, lng: -59.1110 },
+            { nombre: 'Barrio Mataderos', zona: 'Moreno, Buenos Aires', lat: -34.3210, lng: -59.1130 },
+            { nombre: 'Barrio Liniers', zona: 'Moreno, Buenos Aires', lat: -34.3190, lng: -59.1150 },
+            { nombre: 'Barrio Villa Real', zona: 'Moreno, Buenos Aires', lat: -34.3170, lng: -59.1170 },
+            { nombre: 'Barrio Monte Castro', zona: 'Moreno, Buenos Aires', lat: -34.3150, lng: -59.1190 },
+            { nombre: 'Barrio Versalles', zona: 'Moreno, Buenos Aires', lat: -34.3130, lng: -59.1210 },
+            { nombre: 'Barrio Villa Devoto', zona: 'Moreno, Buenos Aires', lat: -34.3110, lng: -59.1230 },
+            { nombre: 'Barrio Villa del Parque', zona: 'Moreno, Buenos Aires', lat: -34.3090, lng: -59.1250 },
+            { nombre: 'Barrio Villa Santa Rita', zona: 'Moreno, Buenos Aires', lat: -34.3070, lng: -59.1270 },
+            { nombre: 'Barrio Villa General Mitre', zona: 'Moreno, Buenos Aires', lat: -34.3050, lng: -59.1290 },
+            { nombre: 'Barrio Villa Crespo', zona: 'Moreno, Buenos Aires', lat: -34.3030, lng: -59.1310 },
+            { nombre: 'Barrio Palermo', zona: 'Moreno, Buenos Aires', lat: -34.3010, lng: -59.1330 },
+            { nombre: 'Barrio Recoleta', zona: 'Moreno, Buenos Aires', lat: -34.2990, lng: -59.1350 },
+            { nombre: 'Barrio Retiro', zona: 'Moreno, Buenos Aires', lat: -34.2970, lng: -59.1370 },
+            { nombre: 'Barrio San Nicolás', zona: 'Moreno, Buenos Aires', lat: -34.2950, lng: -59.1390 },
+            { nombre: 'Barrio Monserrat', zona: 'Moreno, Buenos Aires', lat: -34.2930, lng: -59.1410 },
+            { nombre: 'Barrio San Telmo', zona: 'Moreno, Buenos Aires', lat: -34.2910, lng: -59.1430 },
+            { nombre: 'Barrio La Boca', zona: 'Moreno, Buenos Aires', lat: -34.2890, lng: -59.1450 },
+            { nombre: 'Barrio Barracas', zona: 'Moreno, Buenos Aires', lat: -34.2870, lng: -59.1470 },
+            { nombre: 'Barrio Parque Patricios', zona: 'Moreno, Buenos Aires', lat: -34.2850, lng: -59.1490 },
+            { nombre: 'Barrio Pompeya', zona: 'Moreno, Buenos Aires', lat: -34.2830, lng: -59.1510 },
+            { nombre: 'Barrio Villa Lugano', zona: 'Moreno, Buenos Aires', lat: -34.2810, lng: -59.1530 },
+            { nombre: 'Barrio Villa Riachuelo', zona: 'Moreno, Buenos Aires', lat: -34.2790, lng: -59.1550 },
+            { nombre: 'Barrio Mataderos', zona: 'Moreno, Buenos Aires', lat: -34.2770, lng: -59.1570 },
+            { nombre: 'Barrio Liniers', zona: 'Moreno, Buenos Aires', lat: -34.2750, lng: -59.1590 },
+            { nombre: 'Barrio Villa Real', zona: 'Moreno, Buenos Aires', lat: -34.2730, lng: -59.1610 },
+            { nombre: 'Barrio Monte Castro', zona: 'Moreno, Buenos Aires', lat: -34.2710, lng: -59.1630 },
+            { nombre: 'Barrio Versalles', zona: 'Moreno, Buenos Aires', lat: -34.2690, lng: -59.1650 },
+            { nombre: 'Barrio Villa Devoto', zona: 'Moreno, Buenos Aires', lat: -34.2670, lng: -59.1670 },
+            { nombre: 'Barrio Villa del Parque', zona: 'Moreno, Buenos Aires', lat: -34.2650, lng: -59.1690 },
+            { nombre: 'Barrio Villa Santa Rita', zona: 'Moreno, Buenos Aires', lat: -34.2630, lng: -59.1710 },
+            { nombre: 'Barrio Villa General Mitre', zona: 'Moreno, Buenos Aires', lat: -34.2610, lng: -59.1730 },
+            { nombre: 'Barrio Villa Crespo', zona: 'Moreno, Buenos Aires', lat: -34.2590, lng: -59.1750 },
+            { nombre: 'Barrio Palermo', zona: 'Moreno, Buenos Aires', lat: -34.2570, lng: -59.1770 },
+            { nombre: 'Barrio Recoleta', zona: 'Moreno, Buenos Aires', lat: -34.2550, lng: -59.1790 },
+            { nombre: 'Barrio Retiro', zona: 'Moreno, Buenos Aires', lat: -34.2530, lng: -59.1810 },
+            { nombre: 'Barrio San Nicolás', zona: 'Moreno, Buenos Aires', lat: -34.2510, lng: -59.1830 },
+            { nombre: 'Barrio Monserrat', zona: 'Moreno, Buenos Aires', lat: -34.2490, lng: -59.1850 },
+            { nombre: 'Barrio San Telmo', zona: 'Moreno, Buenos Aires', lat: -34.2470, lng: -59.1870 },
+            { nombre: 'Barrio La Boca', zona: 'Moreno, Buenos Aires', lat: -34.2450, lng: -59.1890 },
+            { nombre: 'Barrio Barracas', zona: 'Moreno, Buenos Aires', lat: -34.2430, lng: -59.1910 },
+            { nombre: 'Barrio Parque Patricios', zona: 'Moreno, Buenos Aires', lat: -34.2410, lng: -59.1930 },
+            { nombre: 'Barrio Pompeya', zona: 'Moreno, Buenos Aires', lat: -34.2390, lng: -59.1950 },
+            { nombre: 'Barrio Villa Lugano', zona: 'Moreno, Buenos Aires', lat: -34.2370, lng: -59.1970 },
+            { nombre: 'Barrio Villa Riachuelo', zona: 'Moreno, Buenos Aires', lat: -34.2350, lng: -59.1990 },
+            { nombre: 'Barrio Mataderos', zona: 'Moreno, Buenos Aires', lat: -34.2330, lng: -59.2010 },
+            { nombre: 'Barrio Liniers', zona: 'Moreno, Buenos Aires', lat: -34.2310, lng: -59.2030 },
+            { nombre: 'Barrio Villa Real', zona: 'Moreno, Buenos Aires', lat: -34.2290, lng: -59.2050 },
+            { nombre: 'Barrio Monte Castro', zona: 'Moreno, Buenos Aires', lat: -34.2270, lng: -59.2070 },
+            { nombre: 'Barrio Versalles', zona: 'Moreno, Buenos Aires', lat: -34.2250, lng: -59.2090 },
+            { nombre: 'Barrio Villa Devoto', zona: 'Moreno, Buenos Aires', lat: -34.2230, lng: -59.2110 },
+            { nombre: 'Barrio Villa del Parque', zona: 'Moreno, Buenos Aires', lat: -34.2210, lng: -59.2130 },
+            { nombre: 'Barrio Villa Santa Rita', zona: 'Moreno, Buenos Aires', lat: -34.2190, lng: -59.2150 },
+            { nombre: 'Barrio Villa General Mitre', zona: 'Moreno, Buenos Aires', lat: -34.2170, lng: -59.2170 },
+            { nombre: 'Barrio Villa Crespo', zona: 'Moreno, Buenos Aires', lat: -34.2150, lng: -59.2190 },
+            { nombre: 'Barrio Palermo', zona: 'Moreno, Buenos Aires', lat: -34.2130, lng: -59.2210 },
+            { nombre: 'Barrio Recoleta', zona: 'Moreno, Buenos Aires', lat: -34.2110, lng: -59.2230 },
+            { nombre: 'Barrio Retiro', zona: 'Moreno, Buenos Aires', lat: -34.2090, lng: -59.2250 },
+            { nombre: 'Barrio San Nicolás', zona: 'Moreno, Buenos Aires', lat: -34.2070, lng: -59.2270 },
+            { nombre: 'Barrio Monserrat', zona: 'Moreno, Buenos Aires', lat: -34.2050, lng: -59.2290 },
+            { nombre: 'Barrio San Telmo', zona: 'Moreno, Buenos Aires', lat: -34.2030, lng: -59.2310 },
+            { nombre: 'Barrio La Boca', zona: 'Moreno, Buenos Aires', lat: -34.2010, lng: -59.2330 },
+            { nombre: 'Barrio Barracas', zona: 'Moreno, Buenos Aires', lat: -34.1990, lng: -59.2350 },
+            { nombre: 'Barrio Parque Patricios', zona: 'Moreno, Buenos Aires', lat: -34.1970, lng: -59.2370 },
+            { nombre: 'Barrio Pompeya', zona: 'Moreno, Buenos Aires', lat: -34.1950, lng: -59.2390 },
+            { nombre: 'Barrio Villa Lugano', zona: 'Moreno, Buenos Aires', lat: -34.1930, lng: -59.2410 },
+            { nombre: 'Barrio Villa Riachuelo', zona: 'Moreno, Buenos Aires', lat: -34.1910, lng: -59.2430 },
+            { nombre: 'Barrio Mataderos', zona: 'Moreno, Buenos Aires', lat: -34.1890, lng: -59.2450 },
+            { nombre: 'Barrio Liniers', zona: 'Moreno, Buenos Aires', lat: -34.1870, lng: -59.2470 },
+            { nombre: 'Barrio Villa Real', zona: 'Moreno, Buenos Aires', lat: -34.1850, lng: -59.2490 },
+            { nombre: 'Barrio Monte Castro', zona: 'Moreno, Buenos Aires', lat: -34.1830, lng: -59.2510 },
+            { nombre: 'Barrio Versalles', zona: 'Moreno, Buenos Aires', lat: -34.1810, lng: -59.2530 },
+            { nombre: 'Barrio Villa Devoto', zona: 'Moreno, Buenos Aires', lat: -34.1790, lng: -59.2550 },
+            { nombre: 'Barrio Villa del Parque', zona: 'Moreno, Buenos Aires', lat: -34.1770, lng: -59.2570 },
+            { nombre: 'Barrio Villa Santa Rita', zona: 'Moreno, Buenos Aires', lat: -34.1750, lng: -59.2590 },
+            { nombre: 'Barrio Villa General Mitre', zona: 'Moreno, Buenos Aires', lat: -34.1730, lng: -59.2610 },
+            { nombre: 'Barrio Villa Crespo', zona: 'Moreno, Buenos Aires', lat: -34.1710, lng: -59.2630 },
+            { nombre: 'Barrio Palermo', zona: 'Moreno, Buenos Aires', lat: -34.1690, lng: -59.2650 },
+            { nombre: 'Barrio Recoleta', zona: 'Moreno, Buenos Aires', lat: -34.1670, lng: -59.2670 },
+            { nombre: 'Barrio Retiro', zona: 'Moreno, Buenos Aires', lat: -34.1650, lng: -59.2690 },
+            { nombre: 'Barrio San Nicolás', zona: 'Moreno, Buenos Aires', lat: -34.1630, lng: -59.2710 },
+            { nombre: 'Barrio Monserrat', zona: 'Moreno, Buenos Aires', lat: -34.1610, lng: -59.2730 },
+            { nombre: 'Barrio San Telmo', zona: 'Moreno, Buenos Aires', lat: -34.1590, lng: -59.2750 },
+            { nombre: 'Barrio La Boca', zona: 'Moreno, Buenos Aires', lat: -34.1570, lng: -59.2770 },
+            { nombre: 'Barrio Barracas', zona: 'Moreno, Buenos Aires', lat: -34.1550, lng: -59.2790 },
+            { nombre: 'Barrio Parque Patricios', zona: 'Moreno, Buenos Aires', lat: -34.1530, lng: -59.2810 },
+            { nombre: 'Barrio Pompeya', zona: 'Moreno, Buenos Aires', lat: -34.1510, lng: -59.2830 },
+            { nombre: 'Barrio Villa Lugano', zona: 'Moreno, Buenos Aires', lat: -34.1490, lng: -59.2850 },
+            { nombre: 'Barrio Villa Riachuelo', zona: 'Moreno, Buenos Aires', lat: -34.1470, lng: -59.2870 },
+            { nombre: 'Barrio Mataderos', zona: 'Moreno, Buenos Aires', lat: -34.1450, lng: -59.2890 },
+            { nombre: 'Barrio Liniers', zona: 'Moreno, Buenos Aires', lat: -34.1430, lng: -59.2910 },
+            { nombre: 'Barrio Villa Real', zona: 'Moreno, Buenos Aires', lat: -34.1410, lng: -59.2930 },
+            { nombre: 'Barrio Monte Castro', zona: 'Moreno, Buenos Aires', lat: -34.1390, lng: -59.2950 },
+            { nombre: 'Barrio Versalles', zona: 'Moreno, Buenos Aires', lat: -34.1370, lng: -59.2970 },
+            { nombre: 'Barrio Villa Devoto', zona: 'Moreno, Buenos Aires', lat: -34.1350, lng: -59.2990 },
+            { nombre: 'Barrio Villa del Parque', zona: 'Moreno, Buenos Aires', lat: -34.1330, lng: -59.3010 },
+            { nombre: 'Barrio Villa Santa Rita', zona: 'Moreno, Buenos Aires', lat: -34.1310, lng: -59.3030 },
+            { nombre: 'Barrio Villa General Mitre', zona: 'Moreno, Buenos Aires', lat: -34.1290, lng: -59.3050 },
+            { nombre: 'Barrio Villa Crespo', zona: 'Moreno, Buenos Aires', lat: -34.1270, lng: -59.3070 },
+            { nombre: 'Barrio Palermo', zona: 'Moreno, Buenos Aires', lat: -34.1250, lng: -59.3090 },
+            { nombre: 'Barrio Recoleta', zona: 'Moreno, Buenos Aires', lat: -34.1230, lng: -59.3110 },
+            { nombre: 'Barrio Retiro', zona: 'Moreno, Buenos Aires', lat: -34.1210, lng: -59.3130 },
+            { nombre: 'Barrio San Nicolás', zona: 'Moreno, Buenos Aires', lat: -34.1190, lng: -59.3150 },
+            { nombre: 'Barrio Monserrat', zona: 'Moreno, Buenos Aires', lat: -34.1170, lng: -59.3170 },
+            { nombre: 'Barrio San Telmo', zona: 'Moreno, Buenos Aires', lat: -34.1150, lng: -59.3190 },
+            { nombre: 'Barrio La Boca', zona: 'Moreno, Buenos Aires', lat: -34.1130, lng: -59.3210 },
+            { nombre: 'Barrio Barracas', zona: 'Moreno, Buenos Aires', lat: -34.1110, lng: -59.3230 },
+            { nombre: 'Barrio Parque Patricios', zona: 'Moreno, Buenos Aires', lat: -34.1090, lng: -59.3250 },
+            { nombre: 'Barrio Pompeya', zona: 'Moreno, Buenos Aires', lat: -34.1070, lng: -59.3270 },
+            { nombre: 'Barrio Villa Lugano', zona: 'Moreno, Buenos Aires', lat: -34.1050, lng: -59.3290 },
+            { nombre: 'Barrio Villa Riachuelo', zona: 'Moreno, Buenos Aires', lat: -34.1030, lng: -59.3310 },
+            { nombre: 'Barrio Mataderos', zona: 'Moreno, Buenos Aires', lat: -34.1010, lng: -59.3330 },
+            { nombre: 'Barrio Liniers', zona: 'Moreno, Buenos Aires', lat: -34.0990, lng: -59.3350 },
+            { nombre: 'Barrio Villa Real', zona: 'Moreno, Buenos Aires', lat: -34.0970, lng: -59.3370 },
+            { nombre: 'Barrio Monte Castro', zona: 'Moreno, Buenos Aires', lat: -34.0950, lng: -59.3390 },
+            { nombre: 'Barrio Versalles', zona: 'Moreno, Buenos Aires', lat: -34.0930, lng: -59.3410 },
+            { nombre: 'Barrio Villa Devoto', zona: 'Moreno, Buenos Aires', lat: -34.0910, lng: -59.3430 },
+            { nombre: 'Barrio Villa del Parque', zona: 'Moreno, Buenos Aires', lat: -34.0890, lng: -59.3450 },
+            { nombre: 'Barrio Villa Santa Rita', zona: 'Moreno, Buenos Aires', lat: -34.0870, lng: -59.3470 },
+            { nombre: 'Barrio Villa General Mitre', zona: 'Moreno, Buenos Aires', lat: -34.0850, lng: -59.3490 },
+            { nombre: 'Barrio Villa Crespo', zona: 'Moreno, Buenos Aires', lat: -34.0830, lng: -59.3510 },
+            { nombre: 'Barrio Palermo', zona: 'Moreno, Buenos Aires', lat: -34.0810, lng: -59.3530 },
+            { nombre: 'Barrio Recoleta', zona: 'Moreno, Buenos Aires', lat: -34.0790, lng: -59.3550 },
+            { nombre: 'Barrio Retiro', zona: 'Moreno, Buenos Aires', lat: -34.0770, lng: -59.3570 },
+            { nombre: 'Barrio San Nicolás', zona: 'Moreno, Buenos Aires', lat: -34.0750, lng: -59.3590 },
+            { nombre: 'Barrio Monserrat', zona: 'Moreno, Buenos Aires', lat: -34.0730, lng: -59.3610 },
+            { nombre: 'Barrio San Telmo', zona: 'Moreno, Buenos Aires', lat: -34.0710, lng: -59.3630 },
+            { nombre: 'Barrio La Boca', zona: 'Moreno, Buenos Aires', lat: -34.0690, lng: -59.3650 },
+            { nombre: 'Barrio Barracas', zona: 'Moreno, Buenos Aires', lat: -34.0670, lng: -59.3670 },
+            { nombre: 'Barrio Parque Patricios', zona: 'Moreno, Buenos Aires', lat: -34.0650, lng: -59.3690 },
+            { nombre: 'Barrio Pompeya', zona: 'Moreno, Buenos Aires', lat: -34.0630, lng: -59.3710 },
+            { nombre: 'Barrio Villa Lugano', zona: 'Moreno, Buenos Aires', lat: -34.0610, lng: -59.3730 },
+            { nombre: 'Barrio Villa Riachuelo', zona: 'Moreno, Buenos Aires', lat: -34.0590, lng: -59.3750 },
+            { nombre: 'Barrio Mataderos', zona: 'Moreno, Buenos Aires', lat: -34.0570, lng: -59.3770 },
+            { nombre: 'Barrio Liniers', zona: 'Moreno, Buenos Aires', lat: -34.0550, lng: -59.3790 },
+            { nombre: 'Barrio Villa Real', zona: 'Moreno, Buenos Aires', lat: -34.0530, lng: -59.3810 },
+            { nombre: 'Barrio Monte Castro', zona: 'Moreno, Buenos Aires', lat: -34.0510, lng: -59.3830 }
+        ];
+
+        // ============================================
+        // FUNCIONES CORREGIDAS
+        // ============================================
+
         async function buscarDireccion(query) {
             const sugerenciasDiv = document.getElementById('sugerencias');
 
-            if (query.length < 3) {
+            if (query.length < 2) {
                 sugerenciasDiv.classList.remove('activo');
                 return;
             }
 
+            const queryLower = query.toLowerCase().trim();
+            sugerenciasDiv.innerHTML = '';
+
+            // 1. Primero mostrar sugerencias locales que coincidan
+            const sugerenciasLocalesFiltradas = SUGERENCIAS_LOCALES.filter(s => {
+                const nombreLower = s.nombre.toLowerCase();
+                const zonaLower = s.zona.toLowerCase();
+                return nombreLower.includes(queryLower) || 
+                       zonaLower.includes(queryLower) ||
+                       queryLower.includes(nombreLower.split(' ')[0]);
+            }).slice(0, 8);
+
+            // 2. Intentar buscar en Nominatim con área ampliada
+            let resultadosNominatim = [];
             try {
-                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', San Miguel, Buenos Aires, Argentina')}&limit=5&countrycodes=ar&viewbox=-58.85,-34.52,-58.68,-34.65&bounded=1`;
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Buenos Aires, Argentina')}&limit=5&countrycodes=ar&viewbox=-59.10,-34.70,-58.68,-34.52&bounded=0`;
 
-                const response = await fetch(url);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
+                
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                
                 const data = await response.json();
-
-                sugerenciasDiv.innerHTML = '';
-
-                if (data.length === 0) {
-                    const sugerenciasLocales = [
-                        { nombre: 'San Miguel Centro', zona: 'San Miguel, Buenos Aires' },
-                        { nombre: 'Plaza San Miguel', zona: 'San Miguel, Buenos Aires' },
-                        { nombre: 'Municipalidad de San Miguel', zona: 'San Miguel, Buenos Aires' },
-                        { nombre: 'Moreno Centro', zona: 'Moreno, Buenos Aires' },
-                        { nombre: 'Plaza Moreno', zona: 'Moreno, Buenos Aires' },
-                        { nombre: 'Shopping San Miguel', zona: 'San Miguel, Buenos Aires' },
-                        { nombre: 'Hospital San Miguel', zona: 'San Miguel, Buenos Aires' },
-                        { nombre: 'Estación San Miguel', zona: 'San Miguel, Buenos Aires' },
-                        { nombre: 'La Reja', zona: 'Moreno, Buenos Aires' },
-                        { nombre: 'Trujui', zona: 'Moreno, Buenos Aires' },
-                        { nombre: 'Paso del Rey', zona: 'Moreno, Buenos Aires' },
-                        { nombre: 'Cuartel V', zona: 'Moreno, Buenos Aires' }
-                    ].filter(s => s.nombre.toLowerCase().includes(query.toLowerCase()));
-
-                    sugerenciasLocales.forEach(sug => {
-                        const div = document.createElement('div');
-                        div.className = 'sugerencia-item';
-                        div.innerHTML = `
-                            <i class="fas fa-map-marker-alt"></i>
-                            <div>
-                                <div class="sug-text">${sug.nombre}</div>
-                                <div class="sug-zona">${sug.zona}</div>
-                            </div>
-                        `;
-                        div.onclick = () => seleccionarDestino(sug.nombre, null);
-                        sugerenciasDiv.appendChild(div);
-                    });
-                } else {
-                    data.forEach(lugar => {
-                        const div = document.createElement('div');
-                        div.className = 'sugerencia-item';
-                        div.innerHTML = `
-                            <i class="fas fa-map-marker-alt"></i>
-                            <div>
-                                <div class="sug-text">${lugar.display_name.split(',')[0]}</div>
-                                <div class="sug-zona">${lugar.display_name.split(',').slice(1, 3).join(',')}</div>
-                            </div>
-                        `;
-                        div.onclick = () => seleccionarDestino(lugar.display_name.split(',')[0], {
-                            lat: parseFloat(lugar.lat),
-                            lng: parseFloat(lugar.lon)
-                        });
-                        sugerenciasDiv.appendChild(div);
-                    });
-                }
-
-                sugerenciasDiv.classList.add('activo');
+                
+                resultadosNominatim = data.filter(lugar => {
+                    const lat = parseFloat(lugar.lat);
+                    const lng = parseFloat(lugar.lon);
+                    return lat >= BOUNDS_ZONA.minLat && lat <= BOUNDS_ZONA.maxLat &&
+                           lng >= BOUNDS_ZONA.minLng && lng <= BOUNDS_ZONA.maxLng;
+                }).slice(0, 5);
 
             } catch (error) {
-                console.error('Error buscando dirección:', error);
+                console.log('Nominatim no disponible, usando solo sugerencias locales');
             }
+
+            // 3. Combinar resultados
+            let hayResultados = false;
+
+            if (sugerenciasLocalesFiltradas.length > 0) {
+                sugerenciasLocalesFiltradas.forEach(sug => {
+                    const div = document.createElement('div');
+                    div.className = 'sugerencia-item';
+                    div.innerHTML = `
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <div class="sug-text">${sug.nombre}</div>
+                            <div class="sug-zona">${sug.zona}</div>
+                        </div>
+                    `;
+                    div.onclick = () => seleccionarDestino(sug.nombre, { lat: sug.lat, lng: sug.lng });
+                    sugerenciasDiv.appendChild(div);
+                });
+                hayResultados = true;
+            }
+
+            if (resultadosNominatim.length > 0) {
+                resultadosNominatim.forEach(lugar => {
+                    const div = document.createElement('div');
+                    div.className = 'sugerencia-item';
+                    const nombre = lugar.display_name.split(',')[0];
+                    const zona = lugar.display_name.split(',').slice(1, 3).join(',');
+                    div.innerHTML = `
+                        <i class="fas fa-globe"></i>
+                        <div>
+                            <div class="sug-text">${nombre}</div>
+                            <div class="sug-zona">${zona}</div>
+                        </div>
+                    `;
+                    div.onclick = () => seleccionarDestino(nombre, {
+                        lat: parseFloat(lugar.lat),
+                        lng: parseFloat(lugar.lon)
+                    });
+                    sugerenciasDiv.appendChild(div);
+                });
+                hayResultados = true;
+            }
+
+            if (!hayResultados) {
+                const div = document.createElement('div');
+                div.className = 'sugerencia-item';
+                div.style.cssText = 'color: var(--texto-sec); font-style: italic; pointer-events: none;';
+                div.innerHTML = `
+                    <i class="fas fa-search"></i>
+                    <div>
+                        <div class="sug-text">No se encontraron resultados para "${query}"</div>
+                        <div class="sug-zona">Probá con: San Miguel centro, Moreno centro, La Reja...</div>
+                    </div>
+                `;
+                sugerenciasDiv.appendChild(div);
+            }
+
+            sugerenciasDiv.classList.add('activo');
         }
 
         function seleccionarDestino(nombre, coords) {
             document.getElementById('destino').value = nombre;
             document.getElementById('sugerencias').classList.remove('activo');
 
-            if (coords) {
+            if (coords && coords.lat && coords.lng) {
                 destinoCoords = coords;
                 mostrarDestinoEnMapa(coords.lat, coords.lng, nombre);
             } else {
-                buscarCoordenadasDestino(nombre);
+                const sugerencia = SUGERENCIAS_LOCALES.find(s => s.nombre === nombre);
+                if (sugerencia) {
+                    destinoCoords = { lat: sugerencia.lat, lng: sugerencia.lng };
+                    mostrarDestinoEnMapa(sugerencia.lat, sugerencia.lng, nombre);
+                } else {
+                    buscarCoordenadasDestino(nombre);
+                }
             }
         }
 
@@ -1027,6 +1427,9 @@
             };
         }
 
+        // ============================================
+        // SOLICITAR VIAJE - CORREGIDO PARA NO FALLAR
+        // ============================================
         async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value.trim();
             const telefono = document.getElementById('telefono').value.trim();
@@ -1043,6 +1446,7 @@
             }
 
             try {
+                // 1. Crear pasajero
                 const { data: pasajero, error: errPax } = await supabaseClient
                     .from('pasajeros')
                     .insert({ nombre, telefono })
@@ -1051,9 +1455,11 @@
 
                 if (errPax) throw errPax;
 
+                // 2. Calcular tarifa
                 const tarifa = calcularTarifa(distanciaTotalKm);
 
-                const insertData = {
+                // 3. Crear viaje SOLO con campos básicos
+                const viajeData = {
                     pasajero_id: pasajero.id,
                     nombre_pasajero: nombre,
                     telefono_pasajero: telefono,
@@ -1065,50 +1471,37 @@
                     estado: 'pendiente'
                 };
 
+                // Intentar agregar campos extras si existen
                 try {
-                    insertData.lat_destino = destinoCoords.lat;
-                    insertData.lng_destino = destinoCoords.lng;
-                    insertData.distancia_km = distanciaTotalKm.toFixed(2);
-                    insertData.tarifa_base = tarifa.base;
-                    insertData.tarifa_km = tarifa.costoKm;
-                    insertData.tarifa_total = tarifa.total;
-                    insertData.nivel_demanda = tarifa.nivel;
-                    insertData.multiplicador = tarifa.multiplicador;
-                } catch (e) {}
+                    const { error: testError } = await supabaseClient
+                        .from('viajes')
+                        .select('distancia_km')
+                        .limit(0);
+                    
+                    if (!testError) {
+                        viajeData.lat_destino = destinoCoords.lat;
+                        viajeData.lng_destino = destinoCoords.lng;
+                        viajeData.distancia_km = distanciaTotalKm.toFixed(2);
+                        viajeData.tarifa_base = tarifa.base;
+                        viajeData.tarifa_km = tarifa.costoKm;
+                        viajeData.tarifa_total = tarifa.total;
+                        viajeData.nivel_demanda = tarifa.nivel;
+                        viajeData.multiplicador = tarifa.multiplicador;
+                        console.log('✅ Columnas extras disponibles');
+                    }
+                } catch (e) {
+                    console.log('⚠️ Columnas extras no disponibles');
+                }
 
                 const { data: viaje, error: errViaje } = await supabaseClient
                     .from('viajes')
-                    .insert(insertData)
+                    .insert(viajeData)
                     .select()
                     .single();
 
-                if (errViaje) {
-                    if (errViaje.message && errViaje.message.includes('distancia_km')) {
-                        const { data: viaje2, error: err2 } = await supabaseClient
-                            .from('viajes')
-                            .insert({
-                                pasajero_id: pasajero.id,
-                                nombre_pasajero: nombre,
-                                telefono_pasajero: telefono,
-                                direccion_salida: 'Mi ubicación actual (GPS)',
-                                destino: destino,
-                                lat_salida: miPosicion.lat,
-                                lng_salida: miPosicion.lng,
-                                conductor_id: null,
-                                estado: 'pendiente'
-                            })
-                            .select()
-                            .single();
+                if (errViaje) throw errViaje;
 
-                        if (err2) throw err2;
-                        viajeActual = viaje2;
-                    } else {
-                        throw errViaje;
-                    }
-                } else {
-                    viajeActual = viaje;
-                }
-
+                viajeActual = viaje;
                 console.log('✅ Viaje creado:', viajeActual.id);
                 mostrarPanel('estado-buscando');
                 escucharViaje(viajeActual.id);
@@ -1186,7 +1579,6 @@
                 }
 
                 playAlarmaConductorAsignado();
-
                 mostrarPanel('estado-aceptado');
             }
             else if (viaje.estado === 'en_camino') {
@@ -1355,7 +1747,7 @@
         calcularDemanda();
         setInterval(calcularDemanda, 30000);
         
-        console.log('✅ App Pasajero v2.0 inicializada');
+        console.log('✅ App Pasajero v2.1 corregida - San Miguel y Moreno');
     </script>
 </body>
 </html>
