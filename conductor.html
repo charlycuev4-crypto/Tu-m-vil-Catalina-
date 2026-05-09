@@ -20,6 +20,7 @@
             --blanco: #ffffff;
             --verde: #00ff88;
             --naranja: #ff6b35;
+            --naranja-app: #f47920;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -154,6 +155,18 @@
             color: var(--celeste); font-size: 1.2rem;
             box-shadow: var(--shadow);
         }
+
+        .gps-status {
+            position: absolute; top: 75px; right: 12px;
+            z-index: 1000; background: var(--blanco);
+            padding: 6px 12px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600;
+            box-shadow: var(--shadow); display: flex;
+            align-items: center; gap: 6px;
+        }
+        .gps-status.preciso { color: var(--verde); border: 2px solid var(--verde); }
+        .gps-status.aproximado { color: var(--naranja); border: 2px solid var(--naranja); }
+        .gps-status.error { color: var(--rojo); border: 2px solid var(--rojo); }
 
         .panel {
             position: absolute; bottom: 0; left: 0; right: 0;
@@ -409,6 +422,14 @@
         .demanda-baja { background: rgba(0,255,136,0.15); color: var(--verde); border: 1px solid var(--verde); }
         .demanda-media { background: rgba(255,107,53,0.15); color: var(--naranja); border: 1px solid var(--naranja); }
         .demanda-alta { background: rgba(230,30,43,0.15); color: var(--rojo); border: 1px solid var(--rojo); }
+
+        .zona-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: var(--celeste); color: white;
+            padding: 2px 8px; border-radius: 10px;
+            font-size: 0.65rem; font-weight: 700;
+            text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
@@ -430,6 +451,11 @@
             <i class="fas fa-moon" id="icono-tema"></i>
         </button>
         <div class="toggle-online" id="toggle-online" onclick="cambiarEstado()"></div>
+    </div>
+
+    <div class="gps-status aproximado" id="gps-status">
+        <i class="fas fa-satellite-dish"></i>
+        <span id="gps-texto">Buscando GPS...</span>
     </div>
 
     <div class="panel">
@@ -566,7 +592,8 @@
         const TARIFA_POR_KM = 800;
         const MULTIPLICADOR_DEMANDA = { baja: 1.0, media: 1.2, alta: 1.5 };
 
-        const BOUNDS_SAN_MIGUEL = {
+        // Límites EXACTOS: San Miguel y Moreno (NO Los Polvorines)
+        const BOUNDS_ZONA = {
             minLat: -34.65, maxLat: -34.52,
             minLng: -58.85, maxLng: -58.68
         };
@@ -580,15 +607,17 @@
         let online = false;
         let viajeActual = null;
         let pedidoPendiente = null;
-        let miPosicion = { lat: -34.564, lng: -58.770 };
+        let miPosicion = { lat: -34.564, lng: -58.770, precision: null };
         let watchId = null;
         let canalPedidos = null;
+        let canalViaje = null;
         let distanciaTotalKm = 0;
         let nivelDemanda = 'baja';
         let conductoresOnline = 0;
         let viajesPendientes = 0;
         let temaOscuro = false;
         let audioCtx = null;
+        let gpsActivo = false;
 
         // ═══════════════════════════════════════
         // SISTEMA DE ALARMAS / SONIDOS
@@ -686,12 +715,12 @@
                 document.getElementById('nombre-conductor').textContent = CONDUCTOR_NOMBRE;
                 document.getElementById('avatar-inicial').textContent = CONDUCTOR_NOMBRE.charAt(0).toUpperCase();
 
-                iniciarGPS();
+                iniciarGPSInteligente();
                 calcularDemanda();
                 
                 setInterval(calcularDemanda, 30000);
 
-                console.log('✅ App Conductor v2.0 inicializada');
+                console.log('✅ App Conductor v2.1 inicializada');
 
             } catch (error) {
                 console.error('❌ Error inicializando:', error);
@@ -741,65 +770,53 @@
                     attributionControl: false 
                 }).setView([-34.564, -58.770], 15);
 
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                    maxZoom: 20,
-                    attribution: '',
-                    subdomains: 'abcd'
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19
                 }).addTo(map);
 
                 map.setMaxBounds([
-                    [BOUNDS_SAN_MIGUEL.minLat, BOUNDS_SAN_MIGUEL.minLng],
-                    [BOUNDS_SAN_MIGUEL.maxLat, BOUNDS_SAN_MIGUEL.maxLng]
+                    [BOUNDS_ZONA.minLat, BOUNDS_ZONA.minLng],
+                    [BOUNDS_ZONA.maxLat, BOUNDS_ZONA.maxLng]
                 ]);
 
-                console.log('✅ Mapa GPS blanco inicializado');
+                console.log('✅ Mapa inicializado');
 
             } catch (error) {
                 console.error('❌ Error mapa:', error);
             }
         }
 
-        function iniciarGPS() {
+        // ═══════════════════════════════════════
+        // GPS INTELIGENTE (igual que pasajero)
+        // ═══════════════════════════════════════
+        function iniciarGPSInteligente() {
             if (!navigator.geolocation) {
-                console.log('GPS no disponible');
+                actualizarEstadoGPS('error', 'GPS no soportado');
                 if (map) map.setView([-34.564, -58.770], 15);
                 return;
             }
 
+            // Primera ubicación rápida
             navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-
-                    if (map) {
-                        map.setView([miPosicion.lat, miPosicion.lng], 16);
-
-                        const iconoYo = L.divIcon({
-                            html: `<div style="background:linear-gradient(135deg,#e61e2b,#ff4757);width:44px;height:44px;border-radius:50%;border:3px solid #00d4ff;box-shadow:0 6px 20px rgba(230,30,43,0.5),0 0 15px rgba(0,212,255,0.4);display:flex;align-items:center;justify-content:center;animation:pulseMarker 2s ease infinite;"><i class="fas fa-taxi" style="color:white;font-size:18px;"></i></div>`,
-                            iconSize: [48, 48],
-                            iconAnchor: [24, 24],
-                            className: 'marker-conductor'
-                        });
-
-                        marcadorYo = L.marker([miPosicion.lat, miPosicion.lng], { icon: iconoYo })
-                            .addTo(map)
-                            .bindPopup('<b>🚕 Tu posición</b>');
-                    }
-                },
+                (pos) => actualizarUbicacionGPS(pos, true),
                 (err) => {
-                    console.log('GPS inicial error:', err);
+                    console.log("GPS inicial error:", err);
+                    actualizarEstadoGPS('aproximado', 'Ubicación aproximada');
                     if (map) map.setView([-34.564, -58.770], 15);
                 },
-                { enableHighAccuracy: true, timeout: 10000 }
+                { 
+                    enableHighAccuracy: true, 
+                    timeout: 15000,
+                    maximumAge: 0
+                }
             );
 
+            // Watch con alta precisión
             watchId = navigator.geolocation.watchPosition(
                 async (pos) => {
-                    miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-
-                    if (marcadorYo) {
-                        marcadorYo.setLatLng([miPosicion.lat, miPosicion.lng]);
-                    }
-
+                    actualizarUbicacionGPS(pos, false);
+                    
+                    // Actualizar posición en Supabase si está online
                     if (online && supabaseClient) {
                         try {
                             await supabaseClient
@@ -813,13 +830,85 @@
                         } catch (e) {}
                     }
 
+                    // Actualizar ruta si hay viaje activo
                     if (viajeActual) {
-                        actualizarRuta();
+                        actualizarRutaConductor();
                     }
                 },
-                (err) => console.log('GPS watch error:', err),
-                { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+                (err) => {
+                    console.log("Watch error:", err);
+                    actualizarEstadoGPS('error', 'Error de GPS');
+                },
+                { 
+                    enableHighAccuracy: true, 
+                    maximumAge: 3000,
+                    timeout: 10000
+                }
             );
+
+            // Fallback
+            setTimeout(() => {
+                if (!gpsActivo) {
+                    actualizarEstadoGPS('aproximado', 'Usando ubicación aproximada');
+                }
+            }, 10000);
+        }
+
+        function actualizarUbicacionGPS(posicion, esPrimera) {
+            const { latitude, longitude, accuracy } = posicion.coords;
+            
+            miPosicion = { 
+                lat: latitude, 
+                lng: longitude, 
+                precision: accuracy 
+            };
+
+            gpsActivo = true;
+
+            if (accuracy <= 20) {
+                actualizarEstadoGPS('preciso', `GPS Preciso (${Math.round(accuracy)}m)`);
+            } else if (accuracy <= 100) {
+                actualizarEstadoGPS('aproximado', `GPS Aproximado (${Math.round(accuracy)}m)`);
+            } else {
+                actualizarEstadoGPS('aproximado', `GPS Bajo (${Math.round(accuracy)}m)`);
+            }
+
+            // Actualizar o crear marcador del conductor
+            if (marcadorYo) {
+                marcadorYo.setLatLng([latitude, longitude]);
+            } else if (map) {
+                const iconoYo = L.divIcon({
+                    html: `<div style="background:linear-gradient(135deg,#e61e2b,#ff4757);width:44px;height:44px;border-radius:50%;border:3px solid #00d4ff;box-shadow:0 6px 20px rgba(230,30,43,0.5),0 0 15px rgba(0,212,255,0.4);display:flex;align-items:center;justify-content:center;animation:pulseMarker 2s ease infinite;"><i class="fas fa-taxi" style="color:white;font-size:18px;"></i></div>`,
+                    iconSize: [48, 48],
+                    iconAnchor: [24, 24],
+                    className: 'marker-conductor'
+                });
+
+                marcadorYo = L.marker([latitude, longitude], { icon: iconoYo })
+                    .addTo(map)
+                    .bindPopup('<b>🚕 Tu posición</b>');
+            }
+
+            // Círculo de precisión
+            if (window.circuloPrecision) map.removeLayer(window.circuloPrecision);
+            window.circuloPrecision = L.circle([latitude, longitude], {
+                radius: accuracy,
+                color: '#00d4ff',
+                fillColor: '#00d4ff',
+                fillOpacity: 0.1,
+                weight: 1
+            }).addTo(map);
+
+            if (esPrimera && map) {
+                map.setView([latitude, longitude], 16);
+            }
+        }
+
+        function actualizarEstadoGPS(clase, texto) {
+            const el = document.getElementById('gps-status');
+            const txt = document.getElementById('gps-texto');
+            el.className = `gps-status ${clase}`;
+            txt.textContent = texto;
         }
 
         async function calcularDemanda() {
@@ -921,6 +1010,10 @@
                         await canalPedidos.unsubscribe();
                         canalPedidos = null;
                     }
+                    if (canalViaje) {
+                        await canalViaje.unsubscribe();
+                        canalViaje = null;
+                    }
                 }
 
             } catch (error) {
@@ -946,6 +1039,9 @@
             }
         }
 
+        // ═══════════════════════════════════════
+        // ESCUCHAR PEDIDOS - CONEXIÓN PASAJERO
+        // ═══════════════════════════════════════
         function escucharPedidos() {
             if (!supabaseClient) return;
 
@@ -967,6 +1063,7 @@
                             viaje.lat_salida, viaje.lng_salida
                         );
 
+                        // Solo mostrar si está cerca (menos de 5km) y no tiene viaje activo
                         if (dist < 5 && !viajeActual && !pedidoPendiente) {
                             mostrarPedido(viaje, dist);
                         }
@@ -990,7 +1087,6 @@
             document.getElementById('panel-stats').style.display = 'none';
             document.getElementById('pedido-entrante').classList.add('activo');
             
-            // 🔊 ALARMA: Nueva solicitud
             playAlarmaSolicitud();
 
             document.getElementById('p-nombre').textContent = viaje.nombre_pasajero || 'Sin nombre';
@@ -1010,10 +1106,12 @@
             document.getElementById('p-detalle-tarifa').textContent = 
                 `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()} (${distancia.toFixed(1)} km × $${Math.round(TARIFA_POR_KM * mult)}) • x${mult.toFixed(1)}`;
 
+            // Limpiar marcadores anteriores
             if (marcadorPasajero) map.removeLayer(marcadorPasajero);
             if (marcadorDestino) map.removeLayer(marcadorDestino);
             if (rutaLayer) map.removeLayer(rutaLayer);
 
+            // Marcador del pasajero (origen)
             const iconoPasajero = L.divIcon({
                 html: '<div style="background:linear-gradient(135deg,#e61e2b,#ff4757);width:36px;height:36px;border-radius:50%;border:3px solid #00d4ff;box-shadow:0 6px 20px rgba(230,30,43,0.5);display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="color:white;font-size:14px;"></i></div>',
                 iconSize: [40, 40],
@@ -1024,6 +1122,7 @@
                 .addTo(map)
                 .bindPopup(`<b>${viaje.nombre_pasajero}</b><br>📍 Origen`);
 
+            // Marcador del destino
             const iconoDestino = L.divIcon({
                 html: '<div style="background:linear-gradient(135deg,#00d4ff,#0099cc);width:36px;height:36px;border-radius:50%;border:3px solid white;box-shadow:0 6px 20px rgba(0,212,255,0.5);display:flex;align-items:center;justify-content:center;"><i class="fas fa-flag-checkered" style="color:white;font-size:14px;"></i></div>',
                 iconSize: [40, 40],
@@ -1033,32 +1132,130 @@
             let latDest = viaje.lat_destino;
             let lngDest = viaje.lng_destino;
 
+            // Si no hay destino en el viaje, no mostrar marcador de destino todavía
             if (!latDest || !lngDest) {
-                latDest = viaje.lat_salida + (Math.random() - 0.5) * 0.02;
-                lngDest = viaje.lng_salida + (Math.random() - 0.5) * 0.02;
+                // Intentar geocodificar el destino con Georef
+                const coordsDest = await geocodificarDestino(viaje.destino);
+                if (coordsDest) {
+                    latDest = coordsDest.lat;
+                    lngDest = coordsDest.lng;
+                }
             }
 
-            marcadorDestino = L.marker([latDest, lngDest], { icon: iconoDestino })
-                .addTo(map)
-                .bindPopup(`<b>🏁 Destino:</b><br>${viaje.destino}`);
+            if (latDest && lngDest) {
+                marcadorDestino = L.marker([latDest, lngDest], { icon: iconoDestino })
+                    .addTo(map)
+                    .bindPopup(`<b>🏁 Destino:</b><br>${viaje.destino}`);
 
-            await calcularRutaReal(viaje.lat_salida, viaje.lng_salida, latDest, lngDest);
-
-            if (map && marcadorYo) {
-                const bounds = L.latLngBounds(
-                    [miPosicion.lat, miPosicion.lng],
-                    [viaje.lat_salida, viaje.lng_salida],
-                    [latDest, lngDest]
+                // Ruta REAL por calles desde conductor -> pasajero -> destino
+                await calcularRutaRealConductor(
+                    miPosicion.lat, miPosicion.lng,
+                    viaje.lat_salida, viaje.lng_salida,
+                    latDest, lngDest
                 );
-                map.fitBounds(bounds, { padding: [60, 60] });
+
+                if (map && marcadorYo) {
+                    const bounds = L.latLngBounds(
+                        [miPosicion.lat, miPosicion.lng],
+                        [viaje.lat_salida, viaje.lng_salida],
+                        [latDest, lngDest]
+                    );
+                    map.fitBounds(bounds, { padding: [60, 60] });
+                }
+            } else {
+                // Solo ruta hasta el pasajero si no hay destino
+                await calcularRutaSimple(
+                    miPosicion.lat, miPosicion.lng,
+                    viaje.lat_salida, viaje.lng_salida
+                );
+
+                if (map && marcadorYo) {
+                    const bounds = L.latLngBounds(
+                        [miPosicion.lat, miPosicion.lng],
+                        [viaje.lat_salida, viaje.lng_salida]
+                    );
+                    map.fitBounds(bounds, { padding: [60, 60] });
+                }
             }
         }
 
-        async function calcularRutaReal(lat1, lng1, lat2, lng2) {
+        // Geocodificar destino usando Georef (igual que pasajero)
+        async function geocodificarDestino(destinoTexto) {
+            if (!destinoTexto) return null;
+            
+            try {
+                const url = `https://apis.datos.gob.ar/georef/api/v2.0/direcciones?` +
+                    `direccion=${encodeURIComponent(destinoTexto)}&` +
+                    `departamento=moreno&` +
+                    `provincia=buenos%20aires&` +
+                    `max=1`;
+
+                const response = await fetch(url);
+                if (!response.ok) return null;
+                
+                const data = await response.json();
+                
+                if (data.direcciones && data.direcciones.length > 0) {
+                    const dir = data.direcciones[0];
+                    if (dir.ubicacion && dir.ubicacion.lat && dir.ubicacion.lon) {
+                        return {
+                            lat: parseFloat(dir.ubicacion.lat),
+                            lng: parseFloat(dir.ubicacion.lon)
+                        };
+                    }
+                }
+                
+                // Fallback a Nominatim
+                return await geocodificarNominatim(destinoTexto);
+                
+            } catch (e) {
+                return await geocodificarNominatim(destinoTexto);
+            }
+        }
+
+        async function geocodificarNominatim(destinoTexto) {
+            try {
+                const url = `https://nominatim.openstreetmap.org/search?` +
+                    `format=json&` +
+                    `q=${encodeURIComponent(destinoTexto + ', Buenos Aires, Argentina')}&` +
+                    `limit=1&` +
+                    `countrycodes=ar`;
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Accept-Language': 'es-AR',
+                        'User-Agent': 'LasCatalinas53/2.1'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.length > 0) {
+                    return {
+                        lat: parseFloat(data[0].lat),
+                        lng: parseFloat(data[0].lon)
+                    };
+                }
+            } catch (e) {
+                console.log('Error geocodificando destino:', e);
+            }
+            return null;
+        }
+
+        // ═══════════════════════════════════════
+        // RUTAS REALES POR CALLES (OSRM - GRATIS)
+        // ═══════════════════════════════════════
+
+        // Ruta completa: Conductor -> Pasajero -> Destino
+        async function calcularRutaRealConductor(latCond, lngCond, latPax, lngPax, latDest, lngDest) {
             if (rutaLayer) map.removeLayer(rutaLayer);
 
             try {
-                const url = `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`;
+                // OSRM soporta múltiples puntos: conductor -> pasajero -> destino
+                const url = `https://router.project-osrm.org/route/v1/driving/` +
+                    `${lngCond},${latCond};${lngPax},${latPax};${lngDest},${latDest}` +
+                    `?overview=full&geometries=geojson`;
+
                 const response = await fetch(url);
                 const data = await response.json();
 
@@ -1073,17 +1270,94 @@
                         weight: 6,
                         opacity: 0.9,
                         lineCap: 'round',
-                        lineJoin: 'round',
-                        dashArray: null
+                        lineJoin: 'round'
                     }).addTo(map);
 
-                    console.log(`📍 Ruta real: ${distanciaTotalKm.toFixed(2)} km`);
+                    console.log(`📍 Ruta real conductor: ${distanciaTotalKm.toFixed(2)} km por calles`);
+                    
+                    // Actualizar distancia en UI con valor real
+                    document.getElementById('p-distancia').textContent = 
+                        `${distanciaTotalKm.toFixed(1)} km por calles`;
+                    
+                    return distanciaTotalKm;
                 }
             } catch (error) {
-                console.error('Error ruta:', error);
-                rutaLayer = L.polyline([[lat1, lng1], [lat2, lng2]], {
-                    color: '#e61e2b', weight: 5, opacity: 0.7, dashArray: '12, 8'
-                }).addTo(map);
+                console.error('Error ruta OSRM:', error);
+            }
+
+            // Fallback a línea recta si todo falla
+            return fallbackRutaLineal(latCond, lngCond, latPax, lngPax, latDest, lngDest);
+        }
+
+        // Ruta simple: Conductor -> Pasajero (cuando no hay destino todavía)
+        async function calcularRutaSimple(lat1, lng1, lat2, lng2) {
+            if (rutaLayer) map.removeLayer(rutaLayer);
+
+            try {
+                const url = `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.routes && data.routes.length > 0) {
+                    const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                    const distancia = data.routes[0].distance / 1000;
+
+                    rutaLayer = L.polyline(coords, {
+                        color: '#e61e2b',
+                        weight: 6,
+                        opacity: 0.9,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    }).addTo(map);
+
+                    console.log(`📍 Ruta simple: ${distancia.toFixed(2)} km`);
+                    return distancia;
+                }
+            } catch (error) {
+                console.error('Error ruta simple:', error);
+            }
+
+            // Fallback
+            rutaLayer = L.polyline([[lat1, lng1], [lat2, lng2]], {
+                color: '#e61e2b', weight: 5, opacity: 0.7, dashArray: '12, 8'
+            }).addTo(map);
+            
+            return calcularDistancia(lat1, lng1, lat2, lng2);
+        }
+
+        function fallbackRutaLineal(latCond, lngCond, latPax, lngPax, latDest, lngDest) {
+            rutaLayer = L.polyline(
+                [
+                    [latCond, lngCond],
+                    [latPax, lngPax],
+                    [latDest, lngDest]
+                ],
+                { color: '#e61e2b', weight: 5, opacity: 0.7, dashArray: '12, 8' }
+            ).addTo(map);
+            
+            const d1 = calcularDistancia(latCond, lngCond, latPax, lngPax);
+            const d2 = calcularDistancia(latPax, lngPax, latDest, lngDest);
+            return d1 + d2;
+        }
+
+        // Actualizar ruta en tiempo real mientras el conductor se mueve
+        async function actualizarRutaConductor() {
+            if (!viajeActual || !marcadorPasajero) return;
+
+            const destino = marcadorDestino ? marcadorDestino.getLatLng() : null;
+            const pasajero = marcadorPasajero.getLatLng();
+
+            if (destino) {
+                await calcularRutaRealConductor(
+                    miPosicion.lat, miPosicion.lng,
+                    pasajero.lat, pasajero.lng,
+                    destino.lat, destino.lng
+                );
+            } else {
+                await calcularRutaSimple(
+                    miPosicion.lat, miPosicion.lng,
+                    pasajero.lat, pasajero.lng
+                );
             }
         }
 
@@ -1125,7 +1399,26 @@
             
             document.getElementById('badge-monto').textContent = tarifa.total.toLocaleString();
 
-            actualizarRuta();
+            // Escuchar cambios del viaje (por si el pasajero cancela)
+            escucharCambiosViaje(viajeActual.id);
+        }
+
+        function escucharCambiosViaje(viajeId) {
+            canalViaje = supabaseClient
+                .channel('viaje-conductor-' + viajeId)
+                .on('postgres_changes', {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'viajes',
+                    filter: `id=eq.${viajeId}`
+                }, (payload) => {
+                    const viaje = payload.new;
+                    if (viaje.estado === 'cancelado') {
+                        alert('El pasajero canceló el viaje');
+                        resetearViaje();
+                    }
+                })
+                .subscribe();
         }
 
         function rechazarPedido() {
@@ -1151,7 +1444,6 @@
 
                 viajeActual.estado = 'en_camino';
                 
-                // 🔊 ALARMA: Notificar llegada al pasajero
                 await notificarLlegadaPasajero();
 
                 btn.innerHTML = '<i class="fas fa-flag-checkered"></i> Completar viaje';
@@ -1175,19 +1467,28 @@
 
                 viajeActual = null;
 
-                if (marcadorPasajero) { map.removeLayer(marcadorPasajero); marcadorPasajero = null; }
-                if (marcadorDestino) { map.removeLayer(marcadorDestino); marcadorDestino = null; }
-                if (rutaLayer) { map.removeLayer(rutaLayer); rutaLayer = null; }
-
-                document.getElementById('viaje-activo-panel').classList.remove('activo');
-                document.getElementById('panel-stats').style.display = 'block';
-                document.getElementById('precio-badge').style.display = 'none';
+                resetearViaje();
 
                 const viajes = parseInt(document.getElementById('viajes-hoy').textContent) + 1;
                 document.getElementById('viajes-hoy').textContent = viajes;
 
                 btn.innerHTML = '<i class="fas fa-car"></i> Llegué al punto';
                 btn.className = 'btn btn-llegue';
+            }
+        }
+
+        function resetearViaje() {
+            if (marcadorPasajero) { map.removeLayer(marcadorPasajero); marcadorPasajero = null; }
+            if (marcadorDestino) { map.removeLayer(marcadorDestino); marcadorDestino = null; }
+            if (rutaLayer) { map.removeLayer(rutaLayer); rutaLayer = null; }
+
+            document.getElementById('viaje-activo-panel').classList.remove('activo');
+            document.getElementById('panel-stats').style.display = 'block';
+            document.getElementById('precio-badge').style.display = 'none';
+
+            if (canalViaje) {
+                canalViaje.unsubscribe();
+                canalViaje = null;
             }
         }
 
@@ -1222,32 +1523,7 @@
                 .update({ estado: 'disponible' })
                 .eq('id', CONDUCTOR_ID);
 
-            viajeActual = null;
-
-            if (marcadorPasajero) { map.removeLayer(marcadorPasajero); marcadorPasajero = null; }
-            if (marcadorDestino) { map.removeLayer(marcadorDestino); marcadorDestino = null; }
-            if (rutaLayer) { map.removeLayer(rutaLayer); rutaLayer = null; }
-
-            document.getElementById('viaje-activo-panel').classList.remove('activo');
-            document.getElementById('panel-stats').style.display = 'block';
-            document.getElementById('precio-badge').style.display = 'none';
-        }
-
-        function actualizarRuta() {
-            if (rutaLayer) map.removeLayer(rutaLayer);
-
-            if (marcadorPasajero && marcadorDestino) {
-                const origen = marcadorPasajero.getLatLng();
-                const destino = marcadorDestino.getLatLng();
-                rutaLayer = L.polyline(
-                    [
-                        [miPosicion.lat, miPosicion.lng],
-                        [origen.lat, origen.lng],
-                        [destino.lat, destino.lng]
-                    ],
-                    { color: '#e61e2b', weight: 6, opacity: 0.85, dashArray: '14, 8' }
-                ).addTo(map);
-            }
+            resetearViaje();
         }
     </script>
 </body>
