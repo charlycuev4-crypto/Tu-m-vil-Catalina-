@@ -3,194 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pasajero - Las Catalinas #53</title>
+    <title>Pasajero PRO - Las Catalinas #53</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <style>
-        :root{--naranja:#f47920;--celeste:#0093d0;--rojo:#e61e2b;--verde:#28a745;--fondo:#f0f2f5;--blanco:#fff;--texto:#1a1a1a;--gris:#666;--sombra:0 2px 12px rgba(0,0,0,0.15)}
+        :root{--naranja:#f47920;--celeste:#0093d0;--rojo:#e61e2b;--verde:#28a745;--fondo:#f4f7f6;--blanco:#fff;--texto:#1a1a1a;--sombra:0 4px 15px rgba(0,0,0,0.2)}
         *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-        body,html{margin:0;padding:0;height:100%;width:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--fondo);color:var(--texto);overflow:hidden}
-        #map{position:absolute;top:0;left:0;height:70%;width:100%;z-index:1;background:#e5e5e5}
-        .header{position:absolute;top:12px;left:12px;right:12px;z-index:1000;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
-        .menu-btn{background:var(--blanco);color:var(--naranja);width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;border:none;box-shadow:var(--sombra);font-size:1.2rem}
-        .logo-tag{background:var(--blanco);padding:10px 18px;border-radius:25px;border:2px solid var(--celeste);font-weight:800;color:var(--celeste);font-size:.85rem;box-shadow:var(--sombra);pointer-events:auto}
-        .gps-status{position:absolute;top:70px;right:12px;z-index:1000;background:var(--blanco);padding:6px 12px;border-radius:20px;font-size:.75rem;font-weight:600;box-shadow:var(--sombra);display:flex;align-items:center;gap:6px}
-        .gps-status.preciso{color:var(--verde);border:2px solid var(--verde)}
-        .gps-status.busqueda{color:var(--naranja);border:2px solid var(--naranja)}
-        .btn-mi-ubicacion{position:absolute;bottom:32%;right:15px;z-index:1000;width:50px;height:50px;background:var(--blanco);border:none;border-radius:50%;box-shadow:var(--sombra);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--celeste);font-size:1.3rem}
-        .panel{position:absolute;bottom:0;left:0;right:0;z-index:1000;background:var(--blanco);border-radius:24px 24px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.15);padding:15px 20px 25px;max-height:40vh;overflow-y:auto}
-        .panel-handle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 12px}
-        .input-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--fondo);border-radius:14px;border:2px solid transparent;margin-bottom:8px}
-        .input-row:focus-within{border-color:var(--naranja);background:#fff8f3}
-        .input-row i{width:24px;text-align:center;color:var(--celeste)}
-        .input-row input{flex:1;border:none;background:transparent;font-size:1rem;outline:none;color:var(--texto)}
-        .sugerencias{position:absolute;bottom:100%;left:12px;right:12px;background:var(--blanco);border-radius:14px;box-shadow:0 -8px 25px rgba(0,0,0,0.15);max-height:200px;overflow-y:auto;z-index:1500;display:none;margin-bottom:10px}
-        .sugerencias.activo{display:block}
-        .sugerencia-item{padding:12px 16px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:10px}
-        .sug-text{font-size:.9rem;font-weight:600;display:block}
-        .sug-zona{font-size:.75rem;color:var(--gris)}
-        .btn-principal{width:100%;padding:16px;background:var(--rojo);color:white;border:none;border-radius:16px;font-size:1.1rem;font-weight:800;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 20px rgba(230,30,43,0.35);display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px}
+        body,html{margin:0;padding:0;height:100%;width:100%;font-family:sans-serif;background:var(--fondo);overflow:hidden}
+        
+        #map{position:absolute;top:0;left:0;height:100%;width:100%;z-index:1}
+
+        /* Contenedores UI */
+        .overlay{position:absolute;z-index:1000;pointer-events:none;width:100%;display:flex;flex-direction:column;padding:12px}
+        .top-ui{top:0;pointer-events:auto}
+        .bottom-ui{bottom:0;pointer-events:auto;background:var(--blanco);border-radius:24px 24px 0 0;padding:20px;box-shadow:0 -5px 20px rgba(0,0,0,0.1)}
+
+        /* Buscador Avanzado */
+        .search-box{background:var(--blanco);border-radius:15px;padding:8px;box-shadow:var(--sombra);display:flex;flex-direction:column;gap:5px}
+        .input-row{display:flex;align-items:center;padding:10px;background:#f0f2f5;border-radius:10px;gap:10px}
+        .input-row input{border:none;background:transparent;width:100%;outline:none;font-size:16px}
+        
+        .results-list{background:var(--blanco);margin-top:5px;border-radius:12px;max-height:200px;overflow-y:auto;display:none;box-shadow:var(--sombra)}
+        .results-list.active{display:block}
+        .res-item{padding:12px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:10px;font-size:14px}
+
+        /* Botones Flotantes */
+        .map-tools{position:absolute;right:15px;bottom:32%;display:flex;flex-direction:column;gap:10px;pointer-events:auto}
+        .tool-btn{width:50px;height:50px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:var(--sombra);border:none;color:var(--celeste);font-size:1.2rem}
+        .tool-btn.active{background:var(--naranja);color:white}
+
+        /* Info de Viaje */
+        .trip-info{display:none;margin-bottom:15px;background:#fff8f3;padding:12px;border-radius:12px;border:1px solid var(--naranja)}
+        .trip-info b{color:var(--naranja);font-size:1.2rem}
+
+        .btn-confirmar{width:100%;padding:16px;background:var(--rojo);color:white;border:none;border-radius:15px;font-weight:800;font-size:1.1rem;box-shadow:0 4px 15px rgba(230,30,43,0.3)}
+        
+        /* Indicador de "Punto Manual" */
+        .center-marker{position:absolute;top:50%;left:50%;transform:translate(-50%, -100%);z-index:2;display:none;pointer-events:none}
+        .center-marker i{font-size:40px;color:var(--rojo);text-shadow:0 2px 5px rgba(0,0,0,0.3)}
     </style>
 </head>
 <body>
+
     <div id="map"></div>
-    <div class="header">
-        <button class="menu-btn"><i class="fas fa-bars"></i></button>
-        <div class="logo-tag">🚕 LAS CATALINAS #53</div>
-    </div>
-    <div class="gps-status busqueda" id="gps-status">
-        <i class="fas fa-satellite-dish"></i><span id="gps-texto">Buscando GPS...</span>
+    
+    <div class="center-marker" id="manual-marker">
+        <i class="fas fa-map-marker-alt"></i>
     </div>
 
-    <button class="btn-mi-ubicacion" onclick="centrarEnMiUbicacion()"><i class="fas fa-crosshairs"></i></button>
-
-    <div class="sugerencias" id="sugerencias"></div>
-
-    <div class="panel">
-        <div class="panel-handle"></div>
-        <div id="formulario-pedido">
-            <div class="input-row"><i class="fas fa-user"></i><input type="text" id="nombre" placeholder="¿Tu nombre?"></div>
-            <div class="input-row"><i class="fas fa-phone"></i><input type="tel" id="telefono" placeholder="Tu celular"></div>
+    <div class="overlay top-ui">
+        <div class="search-box">
             <div class="input-row">
-                <i class="fas fa-search" style="color:var(--rojo)"></i>
-                <input type="text" id="destino" placeholder="¿A dónde vas? (Hospital, Plaza, Calle...)" autocomplete="off" oninput="buscar(this.value)">
+                <i class="fas fa-user-circle"></i>
+                <input type="text" id="nombre" placeholder="¿Quién viaja?">
             </div>
-            <button class="btn-principal" id="btn-solicitar" onclick="solicitar()"><i class="fas fa-paper-plane"></i> Pedir Móvil Ahora</button>
+            <div class="input-row">
+                <i class="fas fa-search-location" style="color:var(--rojo)"></i>
+                <input type="text" id="destino" placeholder="Buscar destino en Moreno/S. Miguel" oninput="buscarInteligente(this.value)">
+            </div>
+            <div id="results" class="results-list"></div>
         </div>
+    </div>
+
+    <div class="map-tools">
+        <button class="tool-btn" id="btn-manual" onclick="toggleModoManual()" title="Elegir en el mapa">
+            <i class="fas fa-hand-pointer"></i>
+        </button>
+        <button class="tool-btn" onclick="centrarGPS()">
+            <i class="fas fa-crosshairs"></i>
+        </button>
+    </div>
+
+    <div class="overlay bottom-ui">
+        <div class="trip-info" id="trip-card">
+            <div style="display:flex; justify-content:space-between; align-items:center">
+                <span>Distancia: <span id="dist-val">0</span> km</span>
+                <b id="precio-val">$0</b>
+            </div>
+            <small id="dest-nombre" style="display:block; color:#666; margin-top:5px"></small>
+        </div>
+        <button class="btn-confirmar" id="btn-pedir" onclick="solicitarViaje()">SOLICITAR AHORA</button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
-        const SUPABASE_URL='https://efryvjjunfeoxhekvwza.supabase.co';
-        const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
+        const SUPABASE_URL = 'https://efryvjjunfeoxhekvwza.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const ZONA = {minLat:-34.65, maxLat:-34.50, minLng:-58.85, maxLng:-58.60};
+        let map, markerGPS, markerDest, polylineRuta;
+        let userPos = {lat: -34.5847, lng: -58.7482}; // Trujui default
+        let destPos = null;
+        let modoManual = false;
 
-        // Puntos de Referencia Locales (Inteligencia Propia)
-        const LUGARES_CLAVE = [
-            {nombre:"Hospital Larcade", tipo:"Hospital", localidad:"San Miguel", lat:-34.5428, lng:-58.7125},
-            {nombre:"Hospital Santa María", tipo:"Hospital", localidad:"San Miguel", lat:-34.5580, lng:-58.7050},
-            {nombre:"Maternidad Estela de Carlotto", tipo:"Hospital", localidad:"Trujui", lat:-34.5865, lng:-58.7520},
-            {nombre:"Cruce Castelar", tipo:"Referencia", localidad:"Trujui", lat:-34.5847, lng:-58.7482},
-            {nombre:"Plaza San Miguel", tipo:"Plaza", localidad:"San Miguel", lat:-34.5415, lng:-58.7120},
-            {nombre:"Plaza Buján", tipo:"Plaza", localidad:"Moreno", lat:-34.6450, lng:-58.7750},
-            {nombre:"Escuela Media 2", tipo:"Escuela", localidad:"Trujui", lat:-34.5880, lng:-58.7495},
-            {nombre:"Estación San Miguel", tipo:"Tren", localidad:"San Miguel", lat:-34.5430, lng:-58.7120},
-            {nombre:"Estación Moreno", tipo:"Tren", localidad:"Moreno", lat:-34.6570, lng:-58.7900}
-        ];
+        // Inicializar mapa
+        map = L.map('map', {zoomControl: false, attributionControl: false}).setView([userPos.lat, userPos.lng], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
 
-        let supabaseClient, map, miPosicion={lat:null,lng:null}, destinoCoords=null, markerDestino=null, markerGPS=null, timeoutBusq=null, idBusq=0;
+        // GPS Real
+        navigator.geolocation.watchPosition(p => {
+            userPos = {lat: p.coords.latitude, lng: p.coords.longitude};
+            if(!markerGPS) {
+                markerGPS = L.circleMarker([userPos.lat, userPos.lng], {radius: 8, color: '#fff', weight: 3, fillColor: '#0093d0', fillOpacity: 1}).addTo(map);
+            } else {
+                markerGPS.setLatLng([userPos.lat, userPos.lng]);
+            }
+        }, null, {enableHighAccuracy: true});
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            map = L.map('map',{zoomControl:false,attributionControl:false}).setView([-34.5847,-58.7482],15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            iniciarGPS();
-        });
+        function centrarGPS() { map.flyTo([userPos.lat, userPos.lng], 17); }
 
-        function iniciarGPS(){
-            navigator.geolocation.watchPosition(pos => {
-                const {latitude:lat, longitude:lng, accuracy} = pos.coords;
-                miPosicion = {lat, lng};
-                actualizarMarcadorGPS(lat, lng, accuracy);
-            }, err => console.error(err), {enableHighAccuracy:true});
+        // MODO MANUAL: Elegir moviendo el mapa
+        function toggleModoManual() {
+            modoManual = !modoManual;
+            const btn = document.getElementById('btn-manual');
+            const pin = document.getElementById('manual-marker');
+            
+            if(modoManual) {
+                btn.classList.add('active');
+                pin.style.display = 'block';
+                document.getElementById('destino').placeholder = "Mové el mapa hasta el destino...";
+                map.on('moveend', actualizarDestinoManual);
+            } else {
+                btn.classList.remove('active');
+                pin.style.display = 'none';
+                map.off('moveend', actualizarDestinoManual);
+            }
         }
 
-        function actualizarMarcadorGPS(lat, lng, accuracy){
-            if(markerGPS) map.removeLayer(markerGPS);
-            markerGPS = L.circleMarker([lat, lng], {radius:8, fillColor:'#0093d0', color:'#fff', weight:2, fillOpacity:1}).addTo(map);
-            document.getElementById('gps-status').className = accuracy < 50 ? 'gps-status preciso' : 'gps-status busqueda';
-            document.getElementById('gps-texto').textContent = accuracy < 50 ? 'GPS Preciso' : 'Buscando...';
+        async function actualizarDestinoManual() {
+            if(!modoManual) return;
+            const centro = map.getCenter();
+            // Reverse Geocoding simple para saber qué calle es
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${centro.lat}&lon=${centro.lng}`);
+                const data = await res.json();
+                seleccionarUbicacion(data.display_name.split(',')[0], centro.lat, centro.lng);
+            } catch(e) {
+                seleccionarUbicacion("Punto en el mapa", centro.lat, centro.lng);
+            }
         }
 
-        async function buscar(query) {
-            const div = document.getElementById('sugerencias');
-            if (query.length < 3) { div.classList.remove('activo'); return; }
+        // BUSCADOR INTELIGENTE (Filtro Moreno/San Miguel)
+        async function buscarInteligente(q) {
+            if(q.length < 3) return;
+            const box = document.getElementById('results');
+            box.innerHTML = '<div class="res-item">Buscando...</div>';
+            box.classList.add('active');
 
-            if (timeoutBusq) clearTimeout(timeoutBusq);
-            const miId = ++idBusq;
-
-            timeoutBusq = setTimeout(async () => {
-                if (idBusq !== miId) return;
-                div.innerHTML = '<div class="sugerencia-item">Buscando...</div>';
-                div.classList.add('activo');
-
-                let resLocal = LUGARES_CLAVE.filter(l => l.nombre.toLowerCase().includes(query.toLowerCase()));
-                
-                // Nominatim con filtro de zona
-                let resMapa = [];
-                try {
-                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Buenos Aires')}&viewbox=-58.85,-34.50,-58.60,-34.65&bounded=1&limit=5`;
-                    const resp = await fetch(url);
-                    const data = await resp.json();
-                    resMapa = data.map(d => ({
-                        nombre: d.display_name.split(',')[0] + (d.display_name.split(',')[1] || ''),
-                        tipo: "Mapa",
-                        localidad: "Zona Local",
-                        lat: parseFloat(d.lat),
-                        lng: parseFloat(d.lon)
-                    }));
-                } catch (e) {}
-
-                const finales = [...resLocal, ...resMapa];
-                div.innerHTML = '';
-                finales.forEach(r => {
-                    div.innerHTML += `
-                        <div class="sugerencia-item" onclick="seleccionar('${r.nombre}', ${r.lat}, ${r.lng})">
-                            <i class="fas fa-map-pin" style="color:var(--celeste)"></i>
-                            <div>
-                                <span class="sug-text">${r.nombre}</span>
-                                <span class="sug-zona">${r.tipo} • ${r.localidad}</span>
-                            </div>
-                        </div>`;
+            // Buscamos con sesgo hacia las coordenadas de Trujui
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${q}&viewbox=-58.85,-34.50,-58.60,-34.65&bounded=1&limit=6&addressdetails=1`;
+            
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                box.innerHTML = '';
+                data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'res-item';
+                    div.innerHTML = `<i class="fas fa-map-marker-alt"></i> <div><b>${item.display_name.split(',')[0]}</b><br><small>${item.address.suburb || item.address.city || ''}</small></div>`;
+                    div.onclick = () => {
+                        seleccionarUbicacion(item.display_name.split(',')[0], item.lat, item.lng);
+                        box.classList.remove('active');
+                        document.getElementById('destino').value = item.display_name.split(',')[0];
+                    };
+                    box.appendChild(div);
                 });
-            }, 400);
+            } catch(e) {}
         }
 
-        function seleccionar(nombre, lat, lng){
-            document.getElementById('destino').value = nombre;
-            document.getElementById('sugerencias').classList.remove('activo');
-            destinoCoords = {lat, lng};
-            if(markerDestino) map.removeLayer(markerDestino);
-            markerDestino = L.marker([lat, lng]).addTo(map);
-            map.flyTo([lat, lng], 16);
+        // RUTEADOR POR CALLES (OSRM)
+        async function seleccionarUbicacion(nombre, lat, lng) {
+            destPos = {lat: parseFloat(lat), lng: parseFloat(lng)};
+            
+            if(markerDest) map.removeLayer(markerDest);
+            markerDest = L.marker([destPos.lat, destPos.lng]).addTo(map);
+
+            // Llamada al motor de ruteo OSRM para no cruzar por encima de las casas
+            const routeUrl = `https://router.project-osrm.org/route/v1/driving/${userPos.lng},${userPos.lat};${destPos.lng},${destPos.lat}?overview=full&geometries=geojson`;
+            
+            try {
+                const res = await fetch(routeUrl);
+                const data = await res.json();
+                const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                const distanciaKm = (data.routes[0].distance / 1000).toFixed(2);
+                
+                if(polylineRuta) map.removeLayer(polylineRuta);
+                polylineRuta = L.polyline(coords, {color: '#f47920', weight: 6, opacity: 0.8}).addTo(map);
+
+                // Mostrar Info y Precio
+                document.getElementById('trip-card').style.display = 'block';
+                document.getElementById('dist-val').innerText = distanciaKm;
+                document.getElementById('dest-nombre').innerText = nombre;
+                
+                // Cálculo de Tarifa ($3000 base + $800 por km)
+                const total = Math.round(3000 + (distanciaKm * 800));
+                document.getElementById('precio-val').innerText = `$${total}`;
+
+                map.fitBounds(polylineRuta.getBounds(), {padding: [50, 50]});
+            } catch(e) {
+                console.error("Error en ruteo:", e);
+            }
         }
 
-        function centrarEnMiUbicacion(){
-            if(miPosicion.lat) map.flyTo([miPosicion.lat, miPosicion.lng], 17);
-        }
-
-        async function solicitar(){
-            const btn = document.getElementById('btn-solicitar');
+        async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value;
-            const tel = document.getElementById('telefono').value;
-            const dest = document.getElementById('destino').value;
-
-            if(!nombre || !tel || !destinoCoords){ alert("Completa todos los datos"); return; }
-
+            if(!nombre || !destPos) { alert("Completá tu nombre y elegí destino"); return; }
+            
+            const btn = document.getElementById('btn-pedir');
             btn.disabled = true;
-            btn.innerHTML = "Enviando...";
+            btn.innerText = "ENVIANDO PEDIDO...";
 
             try {
-                const { data: pax } = await supabaseClient.from('pasajeros').insert({ nombre, telefono: tel }).select().single();
-                await supabaseClient.from('viajes').insert({
+                const { data: pax } = await supabase.from('pasajeros').insert({nombre}).select().single();
+                await supabase.from('viajes').insert({
                     pasajero_id: pax.id,
                     nombre_pasajero: nombre,
-                    telefono_pasajero: tel,
-                    destino: dest,
-                    lat_salida: miPosicion.lat || -34.5847,
-                    lng_salida: miPosicion.lng || -58.7482,
-                    lat_destino: destinoCoords.lat,
-                    lng_destino: destinoCoords.lng,
+                    destino: document.getElementById('dest-nombre').innerText,
+                    lat_salida: userPos.lat,
+                    lng_salida: userPos.lng,
+                    lat_destino: destPos.lat,
+                    lng_destino: destPos.lng,
+                    tarifa_total: parseInt(document.getElementById('precio-val').innerText.replace('$','')),
                     estado: 'pendiente'
                 });
-                alert("¡Móvil solicitado! Espera en la app.");
-                btn.innerHTML = "Solicitado ✅";
-            } catch (e) {
-                alert("Error al conectar");
+                alert("¡Pedido enviado con éxito! Buscando chofer en Las Catalinas.");
+                btn.innerText = "PEDIDO ENVIADO ✅";
+            } catch(e) {
+                alert("Error de conexión");
                 btn.disabled = false;
-                btn.innerHTML = "Pedir Móvil Ahora";
+                btn.innerText = "SOLICITAR AHORA";
             }
         }
     </script>
