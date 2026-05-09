@@ -147,7 +147,7 @@
             position: absolute; top: 100%; left: 0; right: 0;
             background: var(--blanco); border-radius: 14px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            max-height: 250px; overflow-y: auto;
+            max-height: 280px; overflow-y: auto;
             z-index: 1500; display: none;
             margin-top: 5px;
         }
@@ -166,6 +166,7 @@
         .sugerencia-item .sug-text { font-size: 0.9rem; font-weight: 500; }
         .sugerencia-item .sug-zona { font-size: 0.75rem; color: var(--gris); margin-top: 2px; }
         .sugerencia-item .sug-tipo { font-size: 0.7rem; color: var(--naranja); margin-top: 2px; text-transform: uppercase; }
+        .sugerencia-item .sug-exacta { font-size: 0.7rem; color: var(--verde); margin-top: 2px; font-weight: 600; }
 
         .btn-principal {
             width: 100%; padding: 16px;
@@ -272,6 +273,14 @@
         .gps-status.aproximado { color: var(--naranja); border: 2px solid var(--naranja); }
         .gps-status.error { color: var(--rojo); border: 2px solid var(--rojo); }
 
+        .zona-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: var(--celeste); color: white;
+            padding: 2px 8px; border-radius: 10px;
+            font-size: 0.65rem; font-weight: 700;
+            text-transform: uppercase;
+        }
+
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -307,7 +316,7 @@
             </button>
         </div>
         <div class="menu-footer">
-            v2.0 - Las Catalinas #53
+            v2.1 - Las Catalinas #53
         </div>
     </div>
 
@@ -344,7 +353,7 @@
             <div class="buscador-container">
                 <div class="input-row">
                     <i class="fas fa-search" style="color:var(--rojo)"></i>
-                    <input type="text" id="destino" placeholder="Ej: Belgrano 1234, San Miguel" 
+                    <input type="text" id="destino" placeholder="Ej: La Pinta 243, Moreno" 
                            autocomplete="off" oninput="buscarDireccionInteligente(this.value)">
                 </div>
                 <div class="sugerencias" id="sugerencias"></div>
@@ -451,105 +460,8 @@
             minLng: -58.85, maxLng: -58.68
         };
 
-        // Calles principales de San Miguel y Moreno para autocompletado inteligente
-        const CALLES_ZONA = [
-            // San Miguel - Calles principales
-            { nombre: 'Belgrano', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Sarmiento', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Rivadavia', tipo: 'avenida', localidad: 'San Miguel' },
-            { nombre: 'Balbín', tipo: 'avenida', localidad: 'San Miguel' },
-            { nombre: 'Presidente Perón', tipo: 'avenida', localidad: 'San Miguel' },
-            { nombre: 'San Martín', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Moreno', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Mitre', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Alem', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Pellegrini', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'España', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Urquiza', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Las Heras', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Paunero', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Muñoz', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Italia', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Francia', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'José María Paz', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Dr. Ricardo Balbín', tipo: 'avenida', localidad: 'San Miguel' },
-            { nombre: 'Primera Junta', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: '25 de Mayo', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: '9 de Julio', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Alsina', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Castelli', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Chacabuco', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Guemes', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Laprida', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Lavalle', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Marconi', tipo: 'calle', localidad: 'San Miguel' },
-            { nombre: 'Rodríguez Peña', tipo: 'calle', localidad: 'San Miguel' },
-            
-            // Moreno - Calles principales
-            { nombre: 'Bartolomé Mitre', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Necochea', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Alsina', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Belgrano', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Sarmiento', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Alem', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'San Martín', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Rivadavia', tipo: 'avenida', localidad: 'Moreno' },
-            { nombre: 'Acceso Oeste', tipo: 'autopista', localidad: 'Moreno' },
-            { nombre: 'Ruta 25', tipo: 'ruta', localidad: 'Moreno' },
-            { nombre: 'Ruta 7', tipo: 'ruta', localidad: 'Moreno' },
-            { nombre: 'Victorica', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'República', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Libertad', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Independencia', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Pellegrini', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Laprida', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Italia', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'España', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Francia', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Ingeniero Huergo', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Dorrego', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Guido', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Alberdi', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Pasco', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Tucumán', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Catamarca', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'La Rioja', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Salta', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Jujuy', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Mendoza', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Córdoba', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Santa Fe', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Entre Ríos', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Corrientes', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Formosa', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Chaco', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Misiones', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Neuquén', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Río Negro', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Chubut', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Santa Cruz', tipo: 'calle', localidad: 'Moreno' },
-            { nombre: 'Tierra del Fuego', tipo: 'calle', localidad: 'Moreno' },
-            
-            // Zonas y barrios
-            { nombre: 'San Miguel Centro', tipo: 'zona', localidad: 'San Miguel' },
-            { nombre: 'Plaza San Miguel', tipo: 'zona', localidad: 'San Miguel' },
-            { nombre: 'Municipalidad de San Miguel', tipo: 'zona', localidad: 'San Miguel' },
-            { nombre: 'Shopping San Miguel', tipo: 'zona', localidad: 'San Miguel' },
-            { nombre: 'Hospital San Miguel', tipo: 'zona', localidad: 'San Miguel' },
-            { nombre: 'Estación San Miguel', tipo: 'zona', localidad: 'San Miguel' },
-            { nombre: 'Bella Vista', tipo: 'barrio', localidad: 'San Miguel' },
-            { nombre: 'Santa María', tipo: 'barrio', localidad: 'San Miguel' },
-            { nombre: 'Moreno Centro', tipo: 'zona', localidad: 'Moreno' },
-            { nombre: 'Plaza Moreno', tipo: 'zona', localidad: 'Moreno' },
-            { nombre: 'Municipalidad de Moreno', tipo: 'zona', localidad: 'Moreno' },
-            { nombre: 'La Reja', tipo: 'barrio', localidad: 'Moreno' },
-            { nombre: 'Trujui', tipo: 'barrio', localidad: 'Moreno' },
-            { nombre: 'Paso del Rey', tipo: 'barrio', localidad: 'Moreno' },
-            { nombre: 'Cuartel V', tipo: 'barrio', localidad: 'Moreno' },
-            { nombre: 'Francisco Álvarez', tipo: 'barrio', localidad: 'Moreno' },
-            { nombre: 'Moreno Norte', tipo: 'zona', localidad: 'Moreno' },
-            { nombre: 'Moreno Sur', tipo: 'zona', localidad: 'Moreno' }
-        ];
+        // Localidades permitidas exactas
+        const LOCALIDADES_PERMITIDAS = ['san miguel', 'moreno', 'paso del rey', 'trujui', 'la reja', 'cuartel v', 'francisco alvarez'];
 
         let supabaseClient = null;
         let MAPBOX_TOKEN = null;
@@ -577,7 +489,7 @@
                 initMapa();
                 iniciarGPSInteligente();
 
-                console.log('✅ App pasajero v2.0 inicializada');
+                console.log('✅ App pasajero v2.1 inicializada');
 
             } catch (error) {
                 console.error('❌ Error inicializando:', error);
@@ -660,7 +572,7 @@
                 }
             );
 
-            // Fallback: si no hay respuesta en 10 segundos, usar ubicación aproximada
+            // Fallback: si no hay respuesta en 10 segundos
             setTimeout(() => {
                 if (!gpsActivo) {
                     actualizarEstadoGPS('aproximado', 'Usando ubicación aproximada');
@@ -679,7 +591,6 @@
 
             gpsActivo = true;
 
-            // Determinar calidad del GPS
             if (accuracy <= 20) {
                 actualizarEstadoGPS('preciso', `GPS Preciso (${Math.round(accuracy)}m)`);
             } else if (accuracy <= 100) {
@@ -688,7 +599,6 @@
                 actualizarEstadoGPS('aproximado', `GPS Bajo (${Math.round(accuracy)}m)`);
             }
 
-            // Actualizar o crear marcador
             if (marcadorGPS) {
                 marcadorGPS.setLatLng([latitude, longitude]);
             } else {
@@ -702,7 +612,6 @@
                 }).addTo(map).bindPopup('Tu ubicación actual');
             }
 
-            // Círculo de precisión
             if (window.circuloPrecision) map.removeLayer(window.circuloPrecision);
             window.circuloPrecision = L.circle([latitude, longitude], {
                 radius: accuracy,
@@ -740,161 +649,194 @@
             document.getElementById('menu-overlay').classList.remove('activo');
         }
 
-        // Buscador inteligente con autocompletado de calles + número
+        // ============================================================
+        // BUSCADOR INTELIGENTE - GEOREF ARGENTINA (PRINCIPAL) + NOMINATIM (FALLBACK)
+        // ============================================================
+        
         async function buscarDireccionInteligente(query) {
             const sugerenciasDiv = document.getElementById('sugerencias');
 
-            if (query.length < 2) {
+            if (query.length < 3) {
                 sugerenciasDiv.classList.remove('activo');
                 return;
             }
 
-            // Limpiar timeout anterior
             if (timeoutBusqueda) clearTimeout(timeoutBusqueda);
 
             timeoutBusqueda = setTimeout(async () => {
-                const sugerencias = [];
-
-                // 1. Buscar en calles locales primero (autocompletado rápido)
-                const queryLower = query.toLowerCase();
-                const callesMatch = CALLES_ZONA.filter(c => 
-                    c.nombre.toLowerCase().includes(queryLower)
-                ).slice(0, 5);
-
-                callesMatch.forEach(calle => {
-                    // Si el usuario escribió un número, sugerir la combinación
-                    const numero = extraerNumero(query);
-                    const direccionCompleta = numero 
-                        ? `${calle.nombre} ${numero}, ${calle.localidad}, Buenos Aires`
-                        : `${calle.nombre}, ${calle.localidad}, Buenos Aires`;
-
-                    sugerencias.push({
-                        texto: direccionCompleta,
-                        tipo: numero ? 'direccion_exacta' : calle.tipo,
-                        localidad: calle.localidad,
-                        icono: numero ? 'fa-map-pin' : 'fa-road',
-                        prioridad: 1
-                    });
-                });
-
-                // 2. Buscar en Nominatim con query mejorado para San Miguel/Moreno
+                let sugerencias = [];
+                
+                // 1. PRIMER INTENTO: API Georef Argentina (oficial, más precisa para direcciones exactas)
                 try {
-                    const queryMejorado = mejorarQueryBusqueda(query);
-                    const url = `https://nominatim.openstreetmap.org/search?` + 
-                        `format=json&` +
-                        `q=${encodeURIComponent(queryMejorado)}&` +
-                        `limit=5&` +
-                        `countrycodes=ar&` +
-                        `viewbox=-58.85,-34.52,-58.68,-34.65&` +
-                        `bounded=1&` +
-                        `addressdetails=1`;
+                    const resultadosGeoref = await buscarGeoref(query);
+                    sugerencias = [...sugerencias, ...resultadosGeoref];
+                } catch (e) {
+                    console.log('Georef falló, usando fallback:', e);
+                }
 
-                    const response = await fetch(url, {
-                        headers: {
-                            'Accept-Language': 'es-AR',
-                            'User-Agent': 'LasCatalinas53/2.0'
-                        }
-                    });
-                    
-                    const data = await response.json();
+                // 2. SEGUNDO INTENTO: Nominatim (si Georef no dio resultados o dio pocos)
+                if (sugerencias.length < 3) {
+                    try {
+                        const resultadosNominatim = await buscarNominatim(query);
+                        // Filtrar duplicados
+                        resultadosNominatim.forEach(r => {
+                            const duplicado = sugerencias.some(s => 
+                                s.texto.toLowerCase() === r.texto.toLowerCase()
+                            );
+                            if (!duplicado) sugerencias.push(r);
+                        });
+                    } catch (e) {
+                        console.log('Nominatim también falló:', e);
+                    }
+                }
 
-                    data.forEach(lugar => {
-                        // Filtrar solo resultados de San Miguel o Moreno
-                        const displayName = lugar.display_name.toLowerCase();
-                        if (displayName.includes('san miguel') || 
-                            displayName.includes('moreno') ||
-                            displayName.includes('buenos aires')) {
+                // 3. Mostrar resultados
+                mostrarSugerencias(sugerencias, sugerenciasDiv);
+
+            }, 400);
+        }
+
+        // Buscar usando API Georef Argentina (oficial)
+        async function buscarGeoref(query) {
+            const resultados = [];
+            
+            // Detectar localidad del query
+            let localidad = 'moreno'; // default
+            let departamento = 'moreno';
+            const queryLower = query.toLowerCase();
+            
+            if (queryLower.includes('san miguel')) {
+                localidad = 'san miguel';
+                departamento = 'san miguel';
+            } else if (queryLower.includes('moreno')) {
+                localidad = 'moreno';
+                departamento = 'moreno';
+            } else if (queryLower.includes('paso del rey')) {
+                localidad = 'paso del rey';
+                departamento = 'moreno';
+            } else if (queryLower.includes('trujui')) {
+                localidad = 'trujui';
+                departamento = 'moreno';
+            } else if (queryLower.includes('la reja')) {
+                localidad = 'la reja';
+                departamento = 'moreno';
+            }
+
+            // Llamar a Georef v2.0
+            const url = `https://apis.datos.gob.ar/georef/api/v2.0/direcciones?` +
+                `direccion=${encodeURIComponent(query)}&` +
+                `departamento=${encodeURIComponent(departamento)}&` +
+                `provincia=buenos%20aires&` +
+                `max=10`;
+
+            const response = await fetch(url, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) throw new Error('Georef error');
+
+            const data = await response.json();
+
+            if (data.direcciones && data.direcciones.length > 0) {
+                data.direcciones.forEach(dir => {
+                    // Verificar que está en nuestra zona
+                    if (dir.ubicacion && dir.ubicacion.lat && dir.ubicacion.lon) {
+                        const lat = parseFloat(dir.ubicacion.lat);
+                        const lng = parseFloat(dir.ubicacion.lon);
+                        
+                        // Validar límites
+                        if (lat >= BOUNDS_ZONA.minLat && lat <= BOUNDS_ZONA.maxLat &&
+                            lng >= BOUNDS_ZONA.minLng && lng <= BOUNDS_ZONA.maxLng) {
                             
-                            const esDireccionExacta = lugar.type === 'house' || 
-                                                    lugar.class === 'building' ||
-                                                    (lugar.address && lugar.address.house_number);
+                            const esExacta = dir.altura && dir.altura.valor;
+                            const nombreCalle = dir.calle ? dir.calle.nombre : query;
+                            const altura = dir.altura ? ` ${dir.altura.valor}` : '';
+                            const localidadDir = dir.localidad_censal ? dir.localidad_censal.nombre : localidad;
                             
-                            sugerencias.push({
-                                texto: formatearDireccion(lugar),
-                                tipo: esDireccionExacta ? 'casa' : lugar.type,
-                                localidad: extraerLocalidad(lugar),
-                                lat: parseFloat(lugar.lat),
-                                lng: parseFloat(lugar.lon),
-                                icono: esDireccionExacta ? 'fa-home' : 'fa-map-marker-alt',
-                                prioridad: esDireccionExacta ? 0 : 2
+                            resultados.push({
+                                texto: `${nombreCalle}${altura}, ${localidadDir}, Buenos Aires`,
+                                tipo: esExacta ? 'casa' : 'calle',
+                                localidad: localidadDir,
+                                lat: lat,
+                                lng: lng,
+                                icono: esExacta ? 'fa-home' : 'fa-road',
+                                prioridad: esExacta ? 0 : 1,
+                                fuente: 'georef',
+                                exacta: esExacta
                             });
                         }
-                    });
+                    }
+                });
+            }
 
-                } catch (error) {
-                    console.error('Error Nominatim:', error);
+            return resultados;
+        }
+
+        // Buscar usando Nominatim (fallback)
+        async function buscarNominatim(query) {
+            const resultados = [];
+            
+            const queryMejorado = mejorarQueryBusqueda(query);
+            const url = `https://nominatim.openstreetmap.org/search?` + 
+                `format=json&` +
+                `q=${encodeURIComponent(queryMejorado)}&` +
+                `limit=5&` +
+                `countrycodes=ar&` +
+                `addressdetails=1`;
+
+            const response = await fetch(url, {
+                headers: {
+                    'Accept-Language': 'es-AR',
+                    'User-Agent': 'LasCatalinas53/2.1'
                 }
+            });
+            
+            const data = await response.json();
 
-                // Ordenar: direcciones exactas primero, luego calles, luego zonas
-                sugerencias.sort((a, b) => a.prioridad - b.prioridad);
-
-                // Mostrar sugerencias
-                sugerenciasDiv.innerHTML = '';
+            data.forEach(lugar => {
+                const displayName = lugar.display_name.toLowerCase();
                 
-                if (sugerencias.length === 0) {
-                    sugerenciasDiv.innerHTML = `
-                        <div class="sugerencia-item" style="color: var(--gris);">
-                            <i class="fas fa-search"></i>
-                            <div>
-                                <div class="sug-text">No se encontraron resultados</div>
-                                <div class="sug-zona">Probá con "Calle Número, Localidad"</div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    // Eliminar duplicados
-                    const unicos = [];
-                    const vistos = new Set();
+                // Solo San Miguel o Moreno
+                if (displayName.includes('san miguel') || 
+                    displayName.includes('moreno') ||
+                    displayName.includes('buenos aires')) {
                     
-                    sugerencias.forEach(sug => {
-                        const key = sug.texto.toLowerCase();
-                        if (!vistos.has(key)) {
-                            vistos.add(key);
-                            unicos.push(sug);
-                        }
-                    });
-
-                    unicos.slice(0, 8).forEach(sug => {
-                        const div = document.createElement('div');
-                        div.className = 'sugerencia-item';
-                        div.innerHTML = `
-                            <i class="fas ${sug.icono}"></i>
-                            <div style="flex: 1;">
-                                <div class="sug-text">${sug.texto}</div>
-                                <div class="sug-zona">${sug.localidad || 'Buenos Aires'}</div>
-                                ${sug.tipo === 'direccion_exacta' || sug.tipo === 'casa' ? 
-                                    '<div class="sug-tipo"><i class="fas fa-check-circle"></i> Dirección exacta</div>' : 
-                                    `<div class="sug-tipo">${sug.tipo}</div>`}
-                            </div>
-                        `;
+                    const lat = parseFloat(lugar.lat);
+                    const lng = parseFloat(lugar.lon);
+                    
+                    // Validar límites
+                    if (lat >= BOUNDS_ZONA.minLat && lat <= BOUNDS_ZONA.maxLat &&
+                        lng >= BOUNDS_ZONA.minLng && lng <= BOUNDS_ZONA.maxLng) {
                         
-                        if (sug.lat && sug.lng) {
-                            div.onclick = () => seleccionarDestino(sug.texto, { lat: sug.lat, lng: sug.lng });
-                        } else {
-                            div.onclick = () => seleccionarDestino(sug.texto, null);
-                        }
+                        const addr = lugar.address || {};
+                        const esExacta = addr.house_number || lugar.type === 'house';
                         
-                        sugerenciasDiv.appendChild(div);
-                    });
+                        resultados.push({
+                            texto: formatearDireccionNominatim(lugar),
+                            tipo: esExacta ? 'casa' : lugar.type,
+                            localidad: extraerLocalidadNominatim(lugar),
+                            lat: lat,
+                            lng: lng,
+                            icono: esExacta ? 'fa-home' : 'fa-map-marker-alt',
+                            prioridad: esExacta ? 0 : 2,
+                            fuente: 'nominatim',
+                            exacta: esExacta
+                        });
+                    }
                 }
+            });
 
-                sugerenciasDiv.classList.add('activo');
-
-            }, 300); // Debounce de 300ms
+            return resultados;
         }
 
         function mejorarQueryBusqueda(query) {
-            // Detectar si ya tiene localidad
-            const tieneLocalidad = /san miguel|moreno/i.test(query);
-            
-            // Detectar si parece una dirección con número
-            const pareceDireccion = /\d+/.test(query);
-            
+            const tieneLocalidad = /san miguel|moreno|paso del rey|trujui|la reja/i.test(query);
             let queryMejorado = query;
             
             if (!tieneLocalidad) {
-                // Si no tiene localidad, asumir San Miguel por defecto (zona más común)
-                queryMejorado += ', San Miguel, Buenos Aires, Argentina';
+                queryMejorado += ', Moreno, Buenos Aires, Argentina';
             } else if (!query.toLowerCase().includes('buenos aires')) {
                 queryMejorado += ', Buenos Aires, Argentina';
             }
@@ -902,12 +844,7 @@
             return queryMejorado;
         }
 
-        function extraerNumero(query) {
-            const match = query.match(/\d+/);
-            return match ? match[0] : null;
-        }
-
-        function extraerLocalidad(lugar) {
+        function extraerLocalidadNominatim(lugar) {
             if (lugar.address) {
                 if (lugar.address.suburb) return lugar.address.suburb;
                 if (lugar.address.town) return lugar.address.town;
@@ -917,7 +854,7 @@
             return partes.length > 1 ? partes[1].trim() : 'Buenos Aires';
         }
 
-        function formatearDireccion(lugar) {
+        function formatearDireccionNominatim(lugar) {
             const addr = lugar.address || {};
             const partes = [];
             
@@ -936,6 +873,67 @@
             return partes.join(', ');
         }
 
+        function mostrarSugerencias(sugerencias, contenedor) {
+            contenedor.innerHTML = '';
+            
+            if (sugerencias.length === 0) {
+                contenedor.innerHTML = `
+                    <div class="sugerencia-item" style="color: var(--gris); cursor: default;">
+                        <i class="fas fa-search"></i>
+                        <div>
+                            <div class="sug-text">No se encontraron resultados exactos</div>
+                            <div class="sug-zona">Probá con: "Calle Número, Localidad"</div>
+                            <div class="sug-zona">Ej: "La Pinta 243, Moreno"</div>
+                        </div>
+                    </div>
+                `;
+                contenedor.classList.add('activo');
+                return;
+            }
+
+            // Ordenar por prioridad y eliminar duplicados
+            sugerencias.sort((a, b) => a.prioridad - b.prioridad);
+            const unicos = [];
+            const vistos = new Set();
+            
+            sugerencias.forEach(sug => {
+                const key = sug.texto.toLowerCase();
+                if (!vistos.has(key)) {
+                    vistos.add(key);
+                    unicos.push(sug);
+                }
+            });
+
+            unicos.slice(0, 8).forEach(sug => {
+                const div = document.createElement('div');
+                div.className = 'sugerencia-item';
+                
+                const badgeExacta = sug.exacta 
+                    ? '<span class="zona-badge"><i class="fas fa-check"></i> EXACTA</span>' 
+                    : '';
+                const badgeFuente = sug.fuente === 'georef' 
+                    ? '<span class="zona-badge" style="background: var(--naranja);"><i class="fas fa-flag"></i> ARG</span>' 
+                    : '';
+                
+                div.innerHTML = `
+                    <i class="fas ${sug.icono}"></i>
+                    <div style="flex: 1;">
+                        <div class="sug-text">${sug.texto}</div>
+                        <div class="sug-zona">${sug.localidad || 'Buenos Aires'}</div>
+                        <div style="display: flex; gap: 4px; margin-top: 4px;">
+                            ${badgeExacta}
+                            ${badgeFuente}
+                        </div>
+                    </div>
+                `;
+                
+                div.onclick = () => seleccionarDestino(sug.texto, { lat: sug.lat, lng: sug.lng });
+                contenedor.appendChild(div);
+            });
+
+            contenedor.classList.add('activo');
+        }
+
         function seleccionarDestino(nombre, coords) {
             document.getElementById('destino').value = nombre;
             document.getElementById('sugerencias').classList.remove('activo');
@@ -943,50 +941,6 @@
             if (coords) {
                 destinoCoords = coords;
                 mostrarDestinoEnMapa(coords.lat, coords.lng, nombre);
-            } else {
-                geocodificarDireccionExacta(nombre);
-            }
-        }
-
-        async function geocodificarDireccionExacta(nombre) {
-            try {
-                const url = `https://nominatim.openstreetmap.org/search?` +
-                    `format=json&` +
-                    `q=${encodeURIComponent(nombre + ', Buenos Aires, Argentina')}&` +
-                    `limit=1&` +
-                    `countrycodes=ar&` +
-                    `addressdetails=1`;
-
-                const response = await fetch(url, {
-                    headers: {
-                        'Accept-Language': 'es-AR',
-                        'User-Agent': 'LasCatalinas53/2.0'
-                    }
-                });
-                
-                const data = await response.json();
-
-                if (data.length > 0) {
-                    const lugar = data[0];
-                    
-                    // Verificar que está dentro de los límites
-                    const lat = parseFloat(lugar.lat);
-                    const lng = parseFloat(lugar.lon);
-                    
-                    if (lat >= BOUNDS_ZONA.minLat && lat <= BOUNDS_ZONA.maxLat &&
-                        lng >= BOUNDS_ZONA.minLng && lng <= BOUNDS_ZONA.maxLng) {
-                        
-                        destinoCoords = { lat, lng };
-                        mostrarDestinoEnMapa(lat, lng, nombre);
-                    } else {
-                        alert('La dirección está fuera de nuestra zona de cobertura (San Miguel y Moreno)');
-                    }
-                } else {
-                    alert('No se encontró la dirección. Probá con formato: "Calle Número, Localidad"');
-                }
-            } catch (e) {
-                console.error('Error geocodificando:', e);
-                alert('Error al buscar la dirección. Intentá de nuevo.');
             }
         }
 
@@ -1109,7 +1063,7 @@
                 return;
             }
 
-            // Verificar que el destino está dentro de la zona
+            // Verificar zona
             if (destinoCoords.lat < BOUNDS_ZONA.minLat || destinoCoords.lat > BOUNDS_ZONA.maxLat ||
                 destinoCoords.lng < BOUNDS_ZONA.minLng || destinoCoords.lng > BOUNDS_ZONA.maxLng) {
                 alert('El destino está fuera de nuestra zona de cobertura (San Miguel y Moreno)');
