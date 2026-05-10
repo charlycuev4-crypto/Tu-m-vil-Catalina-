@@ -511,93 +511,854 @@
             {calle1:"Avenida Urquiza", calle2:"Alem", localidad:"San Miguel", lat:-34.5440, lng:-58.7220},
             {calle1:"Avenida Urquiza", calle2:"Pueyrredón", localidad:"San Miguel", lat:-34.5450, lng:-58.7240},
             {calle1:"Avenida Urquiza", calle2:"Las Heras", localidad:"San Miguel", lat:-34.5460, lng:-58.7260}
-        ];function actualizarRuta() {
-    // Limpiar ruta anterior
-    if (window.rutaLayer) {
-        map.removeLayer(window.rutaLayer);
-        window.rutaLayer = null;
-    }
+        ];        // ═══════════════════════════════════════════════════════════════════════
+        // INICIALIZACIÓN
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            
+            // Mapa centrado en Moreno/San Miguel
+            map = L.map('map', {zoomControl: false, attributionControl: false})
+                .setView([-34.595, -58.750], 12);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19}).addTo(map);
 
-    if (!miPosicion.lat || !miPosicion.lng || !destinoCoords) return;
+            // Marcador de Las Catalinas (base de la remisería)
+            const iconoCatalinas = L.divIcon({
+                html: '<div class="pin-catalinas"><i class="fas fa-plus"></i></div>',
+                iconSize: [46, 46],
+                iconAnchor: [23, 46],
+                className: ''
+            });
+            markerCatalinas = L.marker([-34.6510, -58.7880], {icon: iconoCatalinas})
+                .addTo(map)
+                .bindPopup('<b>Las Catalinas #53</b><br>Base de remises');
 
-    // Coordenadas: OSRM espera formato lng,lat
-    const origen = `${miPosicion.lng},${miPosicion.lat}`;
-    const destino = `${destinoCoords.lng},${destinoCoords.lat}`;
+            iniciarGPS();
+            inicializarSlideButton();
+        });
 
-    // Llamar a OSRM (servidor demo público, gratis, sin API key)
-    fetch(`https://router.project-osrm.org/route/v1/driving/${origen};${destino}?overview=full&geometries=geojson`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
-                console.error('OSRM error:', data);
-                // Fallback: línea recta si falla el routing
-                dibujarRutaRecta();
+        // ═══════════════════════════════════════════════════════════════════════
+        // GPS ROBUSTO - MÚLTIPLES INTENTOS
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        function iniciarGPS() {
+            if (!navigator.geolocation) {
+                actualizarGPS('error', 'GPS no soportado');
+                mostrarSinGPS();
                 return;
             }
 
-            const route = data.routes[0];
-            const coords = route.geometry.coordinates.map(c => [c[1], c[0]]); // [lat, lng]
+            actualizarGPS('buscando', 'Buscando GPS...');
 
-            // Dibujar ruta por calles
-            window.rutaLayer = L.polyline(coords, {
-                color: '#f47920',
-                weight: 5,
-                opacity: 0.9,
-                lineCap: 'round',
-                lineJoin: 'round'
+            // Intento 1: Alta precisión
+            navigator.geolocation.getCurrentPosition(
+                pos => { gpsActivo = true; actualizarGPSPos(pos, true); },
+                err => {
+                    console.log('GPS alta precisión falló:', err.code);
+                    // Intento 2: Estándar
+                    navigator.geolocation.getCurrentPosition(
+                        pos => { gpsActivo = true; actualizarGPSPos(pos, true); },
+                        err2 => {
+                            console.log('GPS estándar falló:', err2.code);
+                            // Intento 3: Última conocida
+                            navigator.geolocation.getCurrentPosition(
+                                pos => { gpsActivo = true; actualizarGPSPos(pos, true); },
+                                err3 => {
+                                    console.log('GPS última conocida falló:', err3.code);
+                                    actualizarGPS('error', 'GPS no disponible');
+                                    mostrarSinGPS();
+                                },
+                                {enableHighAccuracy: false, timeout: 5000, maximumAge: 600000}
+                            );
+                        },
+                        {enableHighAccuracy: false, timeout: 10000, maximumAge: 300000}
+                    );
+                },
+                {enableHighAccuracy: true, timeout: 20000, maximumAge: 0}
+            );
+
+            // Watch position para actualizar en tiempo real
+            if (watchIdGPS) navigator.geolocation.clearWatch(watchIdGPS);
+            watchIdGPS = navigator.geolocation.watchPosition(
+                pos => { 
+                    if (!gpsActivo) gpsActivo = true;
+                    actualizarGPSPos(pos, false); 
+                },
+                err => {},
+                {enableHighAccuracy: true, maximumAge: 10000, timeout: 30000}
+            );
+
+            // Timeout de seguridad
+            setTimeout(() => {
+                if (!gpsActivo && !usandoManual) {
+                    actualizarGPS('error', 'GPS demorado');
+                    document.getElementById('sin-gps-box').classList.add('activo');
+                }
+            }, 25000);
+        }
+
+        function actualizarGPSPos(position, primera) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const accuracy = Math.round(position.coords.accuracy);
+
+            // Validar que sea Argentina
+            if (lat > -20 || lat < -60 || lng < -80 || lng > -50) {
+                console.log('GPS inválido:', lat, lng);
+                return;
+            }
+
+            miPosicion = {lat, lng};
+
+            // Limpiar marcadores anteriores
+            if (markerGPS) map.removeLayer(markerGPS);
+            if (circuloGPS) map.removeLayer(circuloGPS);
+
+            // Marcador de posición
+            markerGPS = L.circleMarker([lat, lng], {
+                radius: 10, 
+                fillColor: '#0093d0', 
+                color: '#fff', 
+                weight: 3, 
+                fillOpacity: 0.9
             }).addTo(map);
 
-            // Calcular distancia REAL por calles (no en línea recta)
-            const distKm = route.distance / 1000;
-            const distTexto = distKm < 1 
-                ? `${(distKm * 1000).toFixed(0)} m` 
-                : `${distKm.toFixed(1)} km`;
+            // Círculo de precisión
+            circuloGPS = L.circle([lat, lng], {
+                radius: accuracy, 
+                color: '#0093d0', 
+                weight: 1, 
+                fillColor: '#0093d0', 
+                fillOpacity: 0.08
+            }).addTo(map);
 
-            // Calcular tiempo estimado
-            const tiempoMin = Math.round(route.duration / 60);
-            const tiempoTexto = tiempoMin < 60 
-                ? `${tiempoMin} min` 
-                : `${Math.floor(tiempoMin / 60)}h ${tiempoMin % 60}min`;
+            // Centrar mapa en primera lectura
+            if (primera) {
+                map.setView([lat, lng], 16);
+            }
 
+            // Actualizar indicador
+            let clase, texto;
+            if (accuracy < 20) {
+                clase = 'preciso';
+                texto = `GPS Preciso (${accuracy}m)`;
+            } else if (accuracy < 100) {
+                clase = 'preciso';
+                texto = `GPS Bueno (${accuracy}m)`;
+            } else if (accuracy < 500) {
+                clase = 'aproximado';
+                texto = `GPS Aproximado (${accuracy}m)`;
+            } else {
+                clase = 'aproximado';
+                texto = `GPS ±${accuracy}m`;
+            }
+            actualizarGPS(clase, texto);
+
+            // Solo alertar si está MUY lejos (fuera de todo GBA oeste)
+            if (lat > -34.50 || lat < -34.72 || lng < -58.88 || lng > -58.68) {
+                mostrarAlerta('⚠️ Parece que estás fuera de la zona habitual. Verificá tu ubicación.');
+            }
+
+            // Actualizar ruta si hay destino
+            if (destinoCoords) actualizarRuta();
+        }
+
+        function actualizarGPS(clase, texto) {
+            const el = document.getElementById('gps-status');
+            el.className = 'gps-status ' + clase;
+            document.getElementById('gps-texto').textContent = texto;
+        }
+
+        function mostrarSinGPS() {
+            document.getElementById('sin-gps-box').classList.add('activo');
+        }
+
+        function mostrarInputManual() {
+            document.getElementById('sin-gps-box').classList.remove('activo');
+            document.getElementById('direccion-manual').style.display = 'flex';
+            usandoManual = true;
+            miPosicion = {lat: -34.6510, lng: -58.7910};
+            map.setView([-34.6510, -58.7910], 15);
+            mostrarAlerta('Ingresá tu dirección arriba y el destino abajo');
+        }
+
+        function mostrarAlerta(texto) {
+            const box = document.getElementById('alerta-box');
+            document.getElementById('alerta-texto').textContent = texto;
+            box.classList.add('activo');
+            setTimeout(() => box.classList.remove('activo'), 5000);
+        }
+
+        function centrarEnMiUbicacion() {
+            if (miPosicion.lat && miPosicion.lng) {
+                map.setView([miPosicion.lat, miPosicion.lng], 17);
+            } else {
+                mostrarAlerta('GPS no activo todavía');
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // BUSCADOR INTELIGENTE
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        function buscar(query) {
+            const div = document.getElementById('sugerencias');
+            if (!query || query.length < 2) {
+                div.innerHTML = '';
+                div.classList.remove('activo');
+                return;
+            }
+
+            if (timeoutBusq) clearTimeout(timeoutBusq);
+            const miId = ++idBusq;
+
+            timeoutBusq = setTimeout(() => {
+                if (idBusq !== miId) return;
+
+                div.innerHTML = '<div class="sugerencia-item" style="cursor:default"><i class="fas fa-spinner fa-spin"></i><div><div class="sug-text">Buscando...</div></div></div>';
+                div.classList.add('activo');
+
+                const resultados = buscarLocal(query);
+                
+                if (idBusq !== miId) return;
+                mostrarResultados(resultados, div, query);
+            }, 200);
+        }
+
+        function buscarLocal(query) {
+            const resultados = [];
+            const q = normalizarTexto(query);
+            const qNumMatch = q.match(/(\d+)/);
+            const qNum = qNumMatch ? parseInt(qNumMatch[1]) : null;
+            let qCalle = q.replace(/\d+/g, ' ').replace(/\s+/g, ' ').trim();
+            
+            // Normalizar abreviaturas
+            qCalle = qCalle
+                .replace(/^av\.?/i, 'avenida ')
+                .replace(/^av /i, 'avenida ')
+                .replace(/^int\.?/i, 'intendente ')
+                .replace(/^int /i, 'intendente ')
+                .replace(/^dr\.?/i, 'doctor ')
+                .replace(/^dr /i, 'doctor ')
+                .replace(/^cnel\.?/i, 'coronel ')
+                .replace(/^cnel /i, 'coronel ')
+                .replace(/^pte\.?/i, 'presidente ')
+                .replace(/^pte /i, 'presidente ')
+                .replace(/^gral\.?/i, 'general ')
+                .replace(/^gral /i, 'general ');
+
+            // 1. DIRECCIONES EXACTAS (calle + número)
+            if (qNum) {
+                TODAS_LAS_CALLES.forEach(dir => {
+                    const calleNorm = normalizarTexto(dir.calle);
+                    const qCalleSimple = qCalle.replace(/avenida\s+/g, '').replace(/intendente\s+/g, '').trim();
+                    const dirCalleSimple = calleNorm.replace(/avenida\s+/g, '').replace(/intendente\s+/g, '').trim();
+                    
+                    const coincide = 
+                        calleNorm.includes(qCalle) || 
+                        qCalle.includes(calleNorm) ||
+                        dirCalleSimple.includes(qCalleSimple) ||
+                        qCalleSimple.includes(dirCalleSimple) ||
+                        qCalle.split(' ').filter(p => p.length > 2).every(p => 
+                            calleNorm.includes(p) || dirCalleSimple.includes(p)
+                        );
+
+                    if (coincide) {
+                        const diff = Math.abs(dir.altura - qNum);
+                        if (diff <= 500) {
+                            resultados.push({
+                                texto: `${dir.calle} ${dir.altura}, ${dir.localidad}`,
+                                lat: dir.lat, lng: dir.lng,
+                                tipo: 'exacta', prioridad: diff, fuente: 'local'
+                            });
+                        }
+                    }
+                });
+                resultados.sort((a, b) => a.prioridad - b.prioridad);
+            }
+
+            // 2. ESQUINAS (calle "y" calle)
+            if (q.includes(' y ') || q.includes(' e ') || q.includes(' esq ') || q.includes(' esquina ')) {
+                const separadores = [' y ', ' e ', ' esq ', ' esquina '];
+                let callesEsquina = [];
+                
+                for (let sep of separadores) {
+                    if (q.includes(sep)) {
+                        callesEsquina = q.split(sep).map(c => c.trim()).filter(c => c.length > 2);
+                        break;
+                    }
+                }
+
+                if (callesEsquina.length >= 2) {
+                    ESQUINAS.forEach(esq => {
+                        const c1 = normalizarTexto(esq.calle1);
+                        const c2 = normalizarTexto(esq.calle2);
+                        const busca1 = callesEsquina[0];
+                        const busca2 = callesEsquina[1];
+                        
+                        const coincide = 
+                            (c1.includes(busca1) || busca1.includes(c1.replace('avenida ', '')) || 
+                             c1.split(' ').some(p => busca1.includes(p) && p.length > 3)) &&
+                            (c2.includes(busca2) || busca2.includes(c2.replace('avenida ', '')) || 
+                             c2.split(' ').some(p => busca2.includes(p) && p.length > 3));
+                        
+                        const coincideInvertido = 
+                            (c1.includes(busca2) || busca2.includes(c1.replace('avenida ', '')) || 
+                             c1.split(' ').some(p => busca2.includes(p) && p.length > 3)) &&
+                            (c2.includes(busca1) || busca1.includes(c2.replace('avenida ', '')) || 
+                             c2.split(' ').some(p => busca1.includes(p) && p.length > 3));
+
+                        if (coincide || coincideInvertido) {
+                            const otraCalle = (coincide && coincideInvertido) ? 
+                                esq.cruces?.[0] || esq.calle2 : 
+                                (coincide ? esq.calle2 : esq.calle1);
+                            
+                            resultados.unshift({
+                                texto: `${esq.calle1} y ${esq.calle2}, ${esq.localidad}`,
+                                lat: esq.lat, lng: esq.lng,
+                                tipo: 'esquina', prioridad: 0, fuente: 'local'
+                            });
+                        }
+                    });
+                }
+            }
+
+            // 3. REFERENCIAS (tren, hospital, plaza, etc.)
+            REFERENCIAS.forEach(ref => {
+                const nombreNorm = normalizarTexto(ref.nombre);
+                const tipoNorm = normalizarTexto(ref.tipo);
+                const localidadNorm = normalizarTexto(ref.localidad);
+                
+                if (nombreNorm.includes(q) || q.includes(nombreNorm) || 
+                    tipoNorm.includes(q) || q.includes(tipoNorm) ||
+                    q.includes(localidadNorm)) {
+                    
+                    let textoRef = ref.nombre;
+                    if (ref.linea) textoRef += ` (Línea ${ref.linea})`;
+                    textoRef += `, ${ref.localidad}`;
+                    
+                    resultados.unshift({
+                        texto: textoRef,
+                        lat: ref.lat, lng: ref.lng,
+                        tipo: ref.tipo === 'tren' ? 'estacion' : ref.tipo,
+                        prioridad: 0, fuente: 'referencia'
+                    });
+                }
+            });
+
+            // 4. CALLE SOLA (sin número)
+            if (!qNum && resultados.length < 5) {
+                const callesUnicas = new Set();
+                TODAS_LAS_CALLES.forEach(dir => {
+                    const calleNorm = normalizarTexto(dir.calle);
+                    const qSimplificado = qCalle.replace(/avenida\s+/g, '').trim();
+                    const calleSimplificado = calleNorm.replace(/avenida\s+/g, '').trim();
+                    
+                    if (calleNorm.includes(qCalle) || qCalle.includes(calleSimplificado) ||
+                        calleSimplificado.includes(qSimplificado) ||
+                        qCalle.split(' ').filter(p => p.length > 3).some(p => 
+                            calleNorm.includes(p) || calleSimplificado.includes(p)
+                        )) {
+                        
+                        if (!callesUnicas.has(dir.calle)) {
+                            callesUnicas.add(dir.calle);
+                            resultados.push({
+                                texto: `${dir.calle}, ${dir.localidad}`,
+                                lat: dir.lat, lng: dir.lng,
+                                tipo: 'calle', prioridad: 100, fuente: 'local'
+                            });
+                        }
+                    }
+                });
+            }
+
+            // 5. ZONAS/BARRIOS
+            if (!qNum && resultados.length < 3) {
+                const zonas = [
+                    {nombre: 'Centro de Moreno', lat: -34.6510, lng: -58.7910, localidad: 'Moreno'},
+                    {nombre: 'Centro de San Miguel', lat: -34.5430, lng: -58.7120, localidad: 'San Miguel'},
+                    {nombre: 'Moreno Norte', lat: -34.6450, lng: -58.7850, localidad: 'Moreno'},
+                    {nombre: 'Moreno Sur', lat: -34.6550, lng: -58.7950, localidad: 'Moreno'},
+                    {nombre: 'San Miguel Centro', lat: -34.5420, lng: -58.7110, localidad: 'San Miguel'},
+                    {nombre: 'Terrazas de San Miguel', lat: -34.5350, lng: -58.7050, localidad: 'San Miguel'},
+                    {nombre: 'La Reja', lat: -34.6370, lng: -58.8280, localidad: 'Moreno'},
+                    {nombre: 'Paso del Rey', lat: -34.6420, lng: -58.8200, localidad: 'Moreno'},
+                    {nombre: 'Trujui', lat: -34.6680, lng: -58.7900, localidad: 'Moreno'},
+                    {nombre: 'Cuartel V', lat: -34.6650, lng: -58.8100, localidad: 'Moreno'},
+                    {nombre: 'Francisco Álvarez', lat: -34.6250, lng: -58.8400, localidad: 'Moreno'}
+                ];
+
+                zonas.forEach(z => {
+                    const nombreNorm = normalizarTexto(z.nombre);
+                    if (nombreNorm.includes(q) || q.includes(nombreNorm) ||
+                        q.includes(normalizarTexto(z.localidad))) {
+                        resultados.push({
+                            texto: z.nombre,
+                            lat: z.lat, lng: z.lng,
+                            tipo: 'zona', prioridad: 200, fuente: 'local'
+                        });
+                    }
+                });
+            }
+
+            // Eliminar duplicados
+            const unicos = [];
+            const vistos = new Set();
+            resultados.forEach(r => {
+                const key = r.texto.toLowerCase();
+                if (!vistos.has(key)) {
+                    vistos.add(key);
+                    unicos.push(r);
+                }
+            });
+
+            return unicos.slice(0, 10);
+        }
+
+        function mostrarResultados(resultados, div, queryOriginal) {
+            div.innerHTML = '';
+
+            if (resultados.length === 0) {
+                div.innerHTML = `
+                    <div class="sugerencia-item" style="cursor:default">
+                        <i class="fas fa-search" style="color:var(--rojo)"></i>
+                        <div>
+                            <div class="sug-text">No se encontró "${queryOriginal}"</div>
+                            <div class="sug-zona">Zona: Moreno, San Miguel y alrededores</div>
+                            <div class="sug-zona" style="margin-top:6px;font-size:.7rem">
+                                Probá con:<br>
+                                • "Solano López 500"<br>
+                                • "Moreno y Libertador"<br>
+                                • "Estación San Miguel"<br>
+                                • "Trujui"
+                            </div>
+                        </div>
+                    </div>`;
+                div.classList.add('activo');
+                return;
+            }
+
+            resultados.forEach(r => {
+                let icono, badge;
+                
+                switch(r.tipo) {
+                    case 'exacta':
+                        icono = 'fa-home';
+                        badge = '<span class="sug-badge">EXACTA</span>';
+                        break;
+                    case 'esquina':
+                        icono = 'fa-map-pin';
+                        badge = '<span class="sug-badge" style="background:var(--celeste)">ESQ</span>';
+                        break;
+                    case 'estacion':
+                        icono = 'fa-train';
+                        badge = '<span class="sug-badge">TREN</span>';
+                        break;
+                    case 'hospital':
+                        icono = 'fa-hospital';
+                        badge = '<span class="sug-badge" style="background:var(--rojo)">HOSP</span>';
+                        break;
+                    case 'plaza':
+                        icono = 'fa-tree';
+                        badge = '<span class="sug-badge">PLAZA</span>';
+                        break;
+                    case 'colegio':
+                        icono = 'fa-graduation-cap';
+                        badge = '<span class="sug-badge" style="background:var(--celeste)">ESC</span>';
+                        break;
+                    case 'supermercado':
+                        icono = 'fa-shopping-cart';
+                        badge = '<span class="sug-badge" style="background:var(--naranja)">SUP</span>';
+                        break;
+                    case 'banco':
+                        icono = 'fa-university';
+                        badge = '<span class="sug-badge" style="background:var(--celeste)">BANCO</span>';
+                        break;
+                    case 'comisaria':
+                        icono = 'fa-shield-alt';
+                        badge = '<span class="sug-badge" style="background:var(--rojo)">POLI</span>';
+                        break;
+                    case 'calle':
+                        icono = 'fa-road';
+                        badge = '<span class="sug-badge" style="background:var(--gris)">CALLE</span>';
+                        break;
+                    case 'zona':
+                        icono = 'fa-city';
+                        badge = '<span class="sug-badge" style="background:var(--celeste)">ZONA</span>';
+                        break;
+                    default:
+                        icono = 'fa-map-marker-alt';
+                        badge = '<span class="sug-badge" style="background:var(--gris)">LUGAR</span>';
+                }
+
+                const onclick = `onclick="seleccionar('${r.texto.replace(/'/g, "\\'")}', ${r.lat}, ${r.lng})"`;
+
+                div.innerHTML += `
+                    <div class="sugerencia-item" ${onclick}>
+                        <i class="${icono}"></i>
+                        <div style="flex:1">
+                            <div class="sug-text">${r.texto}</div>
+                            <div class="sug-zona">${r.fuente === 'local' ? '✓ Zona de cobertura' : 'Referencia'}</div>
+                        </div>
+                        ${badge}
+                    </div>`;
+            });
+
+            div.classList.add('activo');
+        }
+
+        function seleccionar(texto, lat, lng) {
+            if (!enZona(lat, lng)) {
+                mostrarAlerta('❌ Fuera de cobertura. Solo Moreno y San Miguel.');
+                document.getElementById('sugerencias').classList.remove('activo');
+                return;
+            }
+
+            document.getElementById('destino').value = texto;
+            document.getElementById('sugerencias').classList.remove('activo');
+            destinoCoords = {lat, lng};
+
+            // Limpiar marcador anterior
+            if (markerDestino) {
+                map.removeLayer(markerDestino);
+                markerDestino = null;
+            }
+
+            // Icono de destino
+            const iconoDestino = L.divIcon({
+                html: '<div class="pin-destino"><i class="fas fa-flag-checkered"></i></div>',
+                iconSize: [42, 42],
+                iconAnchor: [21, 42],
+                popupAnchor: [0, -42],
+                className: ''
+            });
+
+            markerDestino = L.marker([lat, lng], {icon: iconoDestino})
+                .addTo(map)
+                .bindPopup('<b>Destino:</b><br>' + texto)
+                .openPopup();
+
+            actualizarRuta();
+
+            if (miPosicion.lat && miPosicion.lng) {
+                map.fitBounds(
+                    [[miPosicion.lat, miPosicion.lng], [lat, lng]], 
+                    {padding: [80, 80], maxZoom: 17}
+                );
+            } else {
+                map.setView([lat, lng], 16);
+            }
+        }
+
+        function actualizarRuta() {
+            if (window.rutaLayer) {
+                map.removeLayer(window.rutaLayer);
+                window.rutaLayer = null;
+            }
+
+            if (!miPosicion.lat || !miPosicion.lng || !destinoCoords) return;
+
+            window.rutaLayer = L.polyline(
+                [[miPosicion.lat, miPosicion.lng], [destinoCoords.lat, destinoCoords.lng]],
+                {
+                    color: '#f47920', 
+                    weight: 5, 
+                    opacity: 0.8, 
+                    dashArray: '12, 8',
+                    lineCap: 'round'
+                }
+            ).addTo(map);
+
+            // Calcular distancia
+            const dist = calcularDistancia(miPosicion.lat, miPosicion.lng, destinoCoords.lat, destinoCoords.lng);
+            const distTexto = dist < 1 ? `${(dist * 1000).toFixed(0)} m` : `${dist.toFixed(1)} km`;
+            
             if (markerDestino) {
                 markerDestino.setPopupContent(
                     `<b>Destino:</b> ${document.getElementById('destino').value}<br>
-                     <b>Distancia:</b> ${distTexto}<br>
-                     <b>Tiempo estimado:</b> ${tiempoTexto}`
+                     <b>Distancia:</b> ${distTexto}`
                 );
             }
-
-            // Ajustar vista del mapa a la ruta
-            map.fitBounds(window.rutaLayer.getBounds(), {padding: [80, 80]});
-
-        })
-        .catch(err => {
-            console.error('Error al obtener ruta:', err);
-            dibujarRutaRecta(); // Fallback
-        });
-}
-
-// Fallback: línea recta (como tenías antes)
-function dibujarRutaRecta() {
-    window.rutaLayer = L.polyline(
-        [[miPosicion.lat, miPosicion.lng], [destinoCoords.lat, destinoCoords.lng]],
-        {
-            color: '#f47920',
-            weight: 5,
-            opacity: 0.8,
-            dashArray: '12, 8',
-            lineCap: 'round'
         }
-    ).addTo(map);
 
-    const dist = calcularDistancia(miPosicion.lat, miPosicion.lng, destinoCoords.lat, destinoCoords.lng);
-    const distTexto = dist < 1 ? `${(dist * 1000).toFixed(0)} m` : `${dist.toFixed(1)} km`;
+        // ═══════════════════════════════════════════════════════════════════════
+        // SOLICITAR VIAJE
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        async function solicitar() {
+            const nombre = document.getElementById('nombre').value.trim();
+            const telefono = document.getElementById('telefono').value.trim();
+            const destino = document.getElementById('destino').value.trim();
 
-    if (markerDestino) {
-        markerDestino.setPopupContent(
-            `<b>Destino:</b> ${document.getElementById('destino').value}<br>
-             <b>Distancia:</b> ${distTexto}`
-        );
-    }
-}
+            if (!nombre) {
+                mostrarAlerta('Ingresá tu nombre');
+                document.getElementById('nombre').focus();
+                return;
+            }
+            if (!telefono || telefono.length < 7) {
+                mostrarAlerta('Ingresá un teléfono válido');
+                document.getElementById('telefono').focus();
+                return;
+            }
+            if (!destino || !destinoCoords) {
+                mostrarAlerta('Seleccioná un destino de la lista');
+                document.getElementById('destino').focus();
+                return;
+            }
+
+            let latSalida = miPosicion.lat;
+            let lngSalida = miPosicion.lng;
+            let dirSalida;
+
+            if (usandoManual) {
+                const dirManual = document.getElementById('direccion-origen').value.trim();
+                if (!dirManual) {
+                    mostrarAlerta('Ingresá tu dirección de origen');
+                    document.getElementById('direccion-origen').focus();
+                    return;
+                }
+                dirSalida = dirManual + ' (manual)';
+            } else if (!latSalida || !lngSalida) {
+                mostrarAlerta('Esperá que el GPS encuentre tu ubicación, o ingresá manualmente');
+                return;
+            } else {
+                dirSalida = `GPS: ${latSalida.toFixed(5)}, ${lngSalida.toFixed(5)}`;
+            }
+
+            // Validar destino
+            if (!enZona(destinoCoords.lat, destinoCoords.lng)) {
+                alert('❌ El destino está fuera de nuestra zona de cobertura.\n\nSolo trabajamos en:\n• Moreno y alrededores\n• San Miguel y alrededores');
+                return;
+            }
+
+            // Calcular distancia y tarifa
+            const dist = calcularDistancia(
+                latSalida || -34.6510, 
+                lngSalida || -58.7910, 
+                destinoCoords.lat, 
+                destinoCoords.lng
+            );
+            const tarifaBase = 2500;
+            const costoKm = 700;
+            const tarifaTotal = Math.round(tarifaBase + dist * costoKm);
+
+            const btn = document.getElementById('btn-solicitar');
+            const btnOriginal = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+
+            try {
+                const {data: pax, error: errPax} = await supabaseClient
+                    .from('pasajeros')
+                    .insert({nombre, telefono})
+                    .select()
+                    .single();
+
+                if (errPax) throw errPax;
+
+                const {error: errViaje} = await supabaseClient
+                    .from('viajes')
+                    .insert({
+                        pasajero_id: pax.id,
+                        nombre_pasajero: nombre,
+                        telefono_pasajero: telefono,
+                        direccion_salida: dirSalida,
+                        destino: destino,
+                        lat_salida: latSalida || -34.6510,
+                        lng_salida: lngSalida || -58.7910,
+                        lat_destino: destinoCoords.lat,
+                        lng_destino: destinoCoords.lng,
+                        distancia_km: dist.toFixed(2),
+                        tarifa_base: tarifaBase,
+                        tarifa_km: Math.round(dist * costoKm),
+                        tarifa_total: tarifaTotal,
+                        estado: 'pendiente',
+                        creado_en: new Date().toISOString()
+                    });
+
+                if (errViaje) throw errViaje;
+
+                // Mostrar pantalla de estado del viaje
+                mostrarEstadoViaje(destino, dist, tarifaTotal);
+
+            } catch (e) {
+                console.error('Error:', e);
+                alert('Error al enviar: ' + (e.message || 'Problema de conexión'));
+                btn.disabled = false;
+                btn.innerHTML = btnOriginal;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // PANTALLA DE ESTADO DEL VIAJE (estilo imagen/video)
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        function mostrarEstadoViaje(destino, dist, tarifa) {
+            // Ocultar formulario, mostrar estado
+            document.getElementById('formulario-pedido').style.display = 'none';
+            document.getElementById('estado-viaje').classList.add('activo');
+
+            // Actualizar detalles
+            document.getElementById('detalle-destino').textContent = destino.length > 25 ? destino.substring(0, 25) + '...' : destino;
+            document.getElementById('detalle-distancia').textContent = dist < 1 ? `${(dist * 1000).toFixed(0)} m` : `${dist.toFixed(1)} km`;
+            document.getElementById('detalle-tarifa').textContent = `$${tarifa.toLocaleString('es-AR')}`;
+
+            // Simular búsqueda de conductor
+            let tiempo = 4;
+            document.getElementById('tiempo-numero').textContent = tiempo;
+            document.getElementById('movil-sub').textContent = 'Buscando conductor...';
+            document.getElementById('icono-estado').className = 'fas fa-search';
+
+            // Simular que encontró conductor después de 3 segundos
+            setTimeout(() => {
+                document.getElementById('movil-sub').textContent = 'Conductor asignado';
+                document.getElementById('icono-estado').className = 'fas fa-check';
+                document.getElementById('circulo-estado').style.background = '#34c759';
+                
+                // Foto del auto (podés cambiar esta URL por la foto real de tu móvil)
+                document.getElementById('foto-auto').innerHTML = '<i class="fas fa-taxi" style="font-size:2rem;color:#666"></i>';
+                
+                // Iniciar cuenta regresiva
+                const intervalo = setInterval(() => {
+                    tiempo--;
+                    if (tiempo <= 0) {
+                        tiempo = 0;
+                        clearInterval(intervalo);
+                        document.getElementById('tiempo-label').textContent = '¡Llegó!';
+                        document.getElementById('movil-sub').textContent = 'Tu móvil está aquí';
+                    }
+                    document.getElementById('tiempo-numero').textContent = tiempo;
+                }, 60000); // Cada minuto
+            }, 3000);
+
+            // Guardar referencia al viaje
+            viajeActual = {destino, dist, tarifa, tiempoInicio: Date.now()};
+        }
+
+        function cancelarViaje() {
+            if (!confirm('¿Cancelar el viaje?')) return;
+            
+            // Resetear todo
+            document.getElementById('estado-viaje').classList.remove('activo');
+            document.getElementById('formulario-pedido').style.display = 'block';
+            
+            // Limpiar formulario
+            document.getElementById('nombre').value = '';
+            document.getElementById('telefono').value = '';
+            document.getElementById('destino').value = '';
+            document.getElementById('direccion-origen').value = '';
+            
+            // Resetear botón
+            const btn = document.getElementById('btn-solicitar');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Solicitar Móvil';
+            
+            // Limpiar mapa
+            destinoCoords = null;
+            if (markerDestino) {
+                map.removeLayer(markerDestino);
+                markerDestino = null;
+            }
+            if (window.rutaLayer) {
+                map.removeLayer(window.rutaLayer);
+                window.rutaLayer = null;
+            }
+            
+            viajeActual = null;
+            mostrarAlerta('Viaje cancelado');
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // BOTÓN DESLIZAR PARA CANCELAR
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        function inicializarSlideButton() {
+            const slideBtn = document.getElementById('slide-btn');
+            const container = document.getElementById('slide-container');
+            let isDragging = false;
+            let startX = 0;
+            let currentX = 0;
+
+            const startDrag = (e) => {
+                isDragging = true;
+                startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                slideBtn.style.transition = 'none';
+            };
+
+            const moveDrag = (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const deltaX = x - startX;
+                const maxDelta = container.offsetWidth - slideBtn.offsetWidth - 8;
+                
+                currentX = Math.max(0, Math.min(deltaX, maxDelta));
+                slideBtn.style.transform = `translateX(${currentX}px)`;
+                
+                // Si llega al final, cancelar
+                if (currentX >= maxDelta - 10) {
+                    isDragging = false;
+                    slideBtn.style.transition = 'transform 0.3s';
+                    slideBtn.style.transform = `translateX(${maxDelta}px)`;
+                    setTimeout(() => cancelarViaje(), 300);
+                }
+            };
+
+            const endDrag = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                const maxDelta = container.offsetWidth - slideBtn.offsetWidth - 8;
+                
+                // Si no llegó al final, volver
+                if (currentX < maxDelta - 10) {
+                    slideBtn.style.transition = 'transform 0.3s';
+                    slideBtn.style.transform = 'translateX(0)';
+                }
+                currentX = 0;
+            };
+
+            // Mouse events
+            slideBtn.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', moveDrag);
+            document.addEventListener('mouseup', endDrag);
+
+            // Touch events
+            slideBtn.addEventListener('touchstart', startDrag, {passive: false});
+            document.addEventListener('touchmove', moveDrag, {passive: false});
+            document.addEventListener('touchend', endDrag);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // UTILIDADES
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        function toggleMenu() {
+            mostrarAlerta('Menú en desarrollo');
+        }
+
+        // Cerrar sugerencias al tocar fuera
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.buscador-container')) {
+                document.getElementById('sugerencias').classList.remove('activo');
+            }
+        });
+
+        // Prevenir envío con Enter
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keypress', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (input.id === 'destino' && destinoCoords) {
+                        document.getElementById('nombre').focus();
+                    } else if (input.id === 'telefono') {
+                        solicitar();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
 
