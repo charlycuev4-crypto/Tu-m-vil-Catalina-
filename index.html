@@ -511,568 +511,93 @@
             {calle1:"Avenida Urquiza", calle2:"Alem", localidad:"San Miguel", lat:-34.5440, lng:-58.7220},
             {calle1:"Avenida Urquiza", calle2:"Pueyrredón", localidad:"San Miguel", lat:-34.5450, lng:-58.7240},
             {calle1:"Avenida Urquiza", calle2:"Las Heras", localidad:"San Miguel", lat:-34.5460, lng:-58.7260}
-        ];
-    <script>
-        // ═══════════════════════════════════════════════════════════════════════
-        // VARIABLES GLOBALES (Asegurate que estén todas)
-        // ═══════════════════════════════════════════════════════════════════════
-        let map, markerGPS, circuloGPS, markerDestino, lineaRuta;
-        let miPosicion = { lat: null, lng: null };
-        let destinoCoords = null;
-        let gpsActivo = false;
-        let usandoManual = false;
-        let idBusq = 0;
-        let timeoutBusq = null;
-        let watchIdGPS = null;
-        let viajeActual = null;
-        let supabaseClient;
+        ];function actualizarRuta() {
+    // Limpiar ruta anterior
+    if (window.rutaLayer) {
+        map.removeLayer(window.rutaLayer);
+        window.rutaLayer = null;
+    }
 
-        // ═══════════════════════════════════════════════════════════════════════
-        // INICIALIZACIÓN
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Inicializar Supabase
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            
-            // MAPA: Corregido para evitar cuadros grises al inicio
-            map = L.map('map', {zoomControl: false, attributionControl: false})
-                .setView([-34.6510, -58.7880], 13); // Centrado inicial en Base Catalinas
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                keepBuffer: 2 // Mejora la carga de cuadros laterales
+    if (!miPosicion.lat || !miPosicion.lng || !destinoCoords) return;
+
+    // Coordenadas: OSRM espera formato lng,lat
+    const origen = `${miPosicion.lng},${miPosicion.lat}`;
+    const destino = `${destinoCoords.lng},${destinoCoords.lat}`;
+
+    // Llamar a OSRM (servidor demo público, gratis, sin API key)
+    fetch(`https://router.project-osrm.org/route/v1/driving/${origen};${destino}?overview=full&geometries=geojson`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+                console.error('OSRM error:', data);
+                // Fallback: línea recta si falla el routing
+                dibujarRutaRecta();
+                return;
+            }
+
+            const route = data.routes[0];
+            const coords = route.geometry.coordinates.map(c => [c[1], c[0]]); // [lat, lng]
+
+            // Dibujar ruta por calles
+            window.rutaLayer = L.polyline(coords, {
+                color: '#f47920',
+                weight: 5,
+                opacity: 0.9,
+                lineCap: 'round',
+                lineJoin: 'round'
             }).addTo(map);
 
-            // Marcador de Base
-            const iconoCatalinas = L.divIcon({
-                html: '<div class="pin-catalinas"><i class="fas fa-plus"></i></div>',
-                iconSize: [46, 46],
-                iconAnchor: [23, 46],
-                className: ''
-            });
-            L.marker([-34.6510, -58.7880], {icon: iconoCatalinas}).addTo(map);
+            // Calcular distancia REAL por calles (no en línea recta)
+            const distKm = route.distance / 1000;
+            const distTexto = distKm < 1 
+                ? `${(distKm * 1000).toFixed(0)} m` 
+                : `${distKm.toFixed(1)} km`;
 
-            iniciarGPS();
-            inicializarSlideButton();
+            // Calcular tiempo estimado
+            const tiempoMin = Math.round(route.duration / 60);
+            const tiempoTexto = tiempoMin < 60 
+                ? `${tiempoMin} min` 
+                : `${Math.floor(tiempoMin / 60)}h ${tiempoMin % 60}min`;
+
+            if (markerDestino) {
+                markerDestino.setPopupContent(
+                    `<b>Destino:</b> ${document.getElementById('destino').value}<br>
+                     <b>Distancia:</b> ${distTexto}<br>
+                     <b>Tiempo estimado:</b> ${tiempoTexto}`
+                );
+            }
+
+            // Ajustar vista del mapa a la ruta
+            map.fitBounds(window.rutaLayer.getBounds(), {padding: [80, 80]});
+
+        })
+        .catch(err => {
+            console.error('Error al obtener ruta:', err);
+            dibujarRutaRecta(); // Fallback
         });
+}
 
-        // ═══════════════════════════════════════════════════════════════════════
-        // GPS Y RUTEO POR CALLES (OSRM) - CORREGIDO
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        function iniciarGPS() {
-            if (!navigator.geolocation) {
-                actualizarGPS('error', 'GPS no soportado');
-                return;
-            }
-            actualizarGPS('buscando', 'Buscando GPS...');
-
-            navigator.geolocation.getCurrentPosition(
-                pos => { actualizarGPSPos(pos, true); },
-                err => { 
-                    console.log("Error GPS inicial:", err);
-                    actualizarGPS('error', 'GPS demorado');
-                },
-                {enableHighAccuracy: true, timeout: 10000}
-            );
-
-            watchIdGPS = navigator.geolocation.watchPosition(
-                pos => { actualizarGPSPos(pos, false); },
-                err => {},
-                {enableHighAccuracy: true, maximumAge: 10000}
-            );
+// Fallback: línea recta (como tenías antes)
+function dibujarRutaRecta() {
+    window.rutaLayer = L.polyline(
+        [[miPosicion.lat, miPosicion.lng], [destinoCoords.lat, destinoCoords.lng]],
+        {
+            color: '#f47920',
+            weight: 5,
+            opacity: 0.8,
+            dashArray: '12, 8',
+            lineCap: 'round'
         }
+    ).addTo(map);
 
-        function actualizarGPSPos(position, primera) {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            miPosicion = {lat, lng};
+    const dist = calcularDistancia(miPosicion.lat, miPosicion.lng, destinoCoords.lat, destinoCoords.lng);
+    const distTexto = dist < 1 ? `${(dist * 1000).toFixed(0)} m` : `${dist.toFixed(1)} km`;
 
-            if (markerGPS) map.removeLayer(markerGPS);
-            markerGPS = L.circleMarker([lat, lng], {
-                radius: 8, fillColor: '#007AFF', color: '#fff', weight: 2, fillOpacity: 1
-            }).addTo(map);
+    if (markerDestino) {
+        markerDestino.setPopupContent(
+            `<b>Destino:</b> ${document.getElementById('destino').value}<br>
+             <b>Distancia:</b> ${distTexto}`
+        );
+    }
+}
 
-            if (primera) map.setView([lat, lng], 16);
-            actualizarGPS('preciso', 'GPS Activo');
-            
-            // Si el usuario ya eligió destino, refrescar la ruta por calles
-            if (destinoCoords) actualizarRuta();
-        }
-
-        async function actualizarRuta() {
-            // VALIDACIÓN CRÍTICA: Si no hay GPS o Destino, no intentar dibujar (evita mapa gris)
-            if (!miPosicion.lat || !destinoCoords) return;
-
-            try {
-                // LLAMADA A OSRM PARA RUTA POR CALLES
-                const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${miPosicion.lng},${miPosicion.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson`);
-                const data = await response.json();
-
-                if (lineaRuta) map.removeLayer(lineaRuta);
-
-                if (data.code === 'Ok') {
-                    // RUTA POR CALLES: Extraemos coordenadas del ruteador
-                    const coordenadas = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                    lineaRuta = L.polyline(coordenadas, {
-                        color: '#f47920', 
-                        weight: 6, 
-                        opacity: 0.8,
-                        lineCap: 'round',
-                        lineJoin: 'round'
-                    }).addTo(map);
-                } else {
-                    // FALLBACK: Si falla OSRM, tiramos línea recta punteada para no romper el mapa
-                    lineaRuta = L.polyline([[miPosicion.lat, miPosicion.lng], [destinoCoords.lat, destinoCoords.lng]], {
-                        color: '#f47920', dashArray: '10, 15', weight: 4
-                    }).addTo(map);
-                }
-
-                // Ajustar zoom para mostrar ambos puntos
-                map.fitBounds(lineaRuta.getBounds(), {padding: [50, 50]});
-
-            } catch (error) {
-                console.error("Error en ruteo:", error);
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // HISTORIAL CORREGIDO (Usa created_at de Supabase)
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        async function mostrarHistorial() {
-            const telefono = document.getElementById('telefono').value.trim();
-            if (!telefono) {
-                mostrarAlerta('Ingresá tu teléfono primero');
-                return;
-            }
-            
-            try {
-                // CORRECCIÓN: 'created_at' es la columna nativa de Supabase
-                const {data, error} = await supabaseClient
-                    .from('viajes')
-                    .select('*')
-                    .eq('telefono_pasajero', telefono)
-                    .order('created_at', {ascending: false})
-                    .limit(8);
-                
-                if (error) throw error;
-                
-                let html = '<div style="max-height:350px;overflow-y:auto;padding:10px">';
-                if (!data || data.length === 0) {
-                    html += '<p style="text-align:center;color:#999">No tenés viajes aún</p>';
-                } else {
-                    data.forEach(v => {
-                        const fecha = new Date(v.created_at).toLocaleDateString('es-AR');
-                        const status = v.estado === 'completado' ? '✅' : '🕐';
-                        html += `
-                            <div style="padding:15px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center">
-                                <div>
-                                    <div style="font-weight:700;font-size:.9rem">${status} ${v.destino}</div>
-                                    <div style="font-size:.75rem;color:#888">${fecha}</div>
-                                </div>
-                                <div style="font-weight:800;color:var(--verde)">$${v.tarifa_total}</div>
-                            </div>`;
-                    });
-                }
-                html += '</div>';
-                
-                const modal = document.createElement('div');
-                modal.className = 'modal-hist';
-                modal.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:20px';
-                modal.innerHTML = `
-                    <div style="background:white;border-radius:25px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.3)">
-                        <div style="padding:20px;background:#f8f8f8;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
-                            <h3 style="margin:0;font-size:1.1rem">Mis Viajes</h3>
-                            <button onclick="this.closest('.modal-hist').remove()" style="border:none;background:none;font-size:1.5rem;color:#ccc">×</button>
-                        </div>
-                        ${html}
-                    </div>`;
-                document.body.appendChild(modal);
-                
-            } catch (e) {
-                console.error(e);
-                mostrarAlerta('Error al cargar historial');
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // BUSCADOR Y SELECCIÓN (Sin cambios drásticos, solo integración)
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        function seleccionar(texto, lat, lng) {
-            if (!enZona(lat, lng)) {
-                mostrarAlerta('❌ Fuera de zona (Moreno/San Miguel)');
-                return;
-            }
-            document.getElementById('destino').value = texto;
-            document.getElementById('sugerencias').classList.remove('activo');
-            destinoCoords = {lat, lng};
-
-            if (markerDestino) map.removeLayer(markerDestino);
-            const iconoDestino = L.divIcon({
-                html: '<div class="pin-destino"><i class="fas fa-flag-checkered"></i></div>',
-                iconSize: [42, 42], iconAnchor: [21, 42]
-            });
-            markerDestino = L.marker([lat, lng], {icon: iconoDestino}).addTo(map);
-
-            actualizarRuta();
-        }
-
-        // [Mantené tus funciones de normalizarTexto, enZona, calcularDistancia, etc. debajo]
-        function normalizarTexto(t) { return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
-        function enZona(lat, lng) { return lat < -34.50 && lat > -34.72 && lng > -58.88 && lng < -58.68; }
-        function calcularDistancia(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2-lat1) * Math.PI / 180;
-            const dLon = (lon2-lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        }
-
-        // El resto de tus funciones de solicitud, alertas y slide button siguen igual...
-        // [Copiá el resto de tu código de Solicitar(), mostrarEstadoViaje(), etc.]
-
-    </script>
-            // ═══════════════════════════════════════════════════════════════════════
-        // PARTE 3: FUNCIONALIDADES EXTRA
-        // ═══════════════════════════════════════════════════════════════════════
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // CHAT CON CONDUCTOR (simulado)
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        function toggleChat() {
-            if (!viajeActual) {
-                mostrarAlerta('No tenés un viaje activo');
-                return;
-            }
-            const chatBox = document.getElementById('chat-box');
-            if (chatBox) {
-                chatBox.classList.toggle('activo');
-            } else {
-                crearChatBox();
-            }
-        }
-
-        function crearChatBox() {
-            const chat = document.createElement('div');
-            chat.id = 'chat-box';
-            chat.className = 'chat-box';
-            chat.innerHTML = `
-                <div class="chat-header">
-                    <i class="fas fa-comments"></i> Chat con conductor
-                    <button onclick="document.getElementById('chat-box').classList.remove('activo')" style="background:none;border:none;color:white;float:right;font-size:1.2rem">×</button>
-                </div>
-                <div class="chat-messages" id="chat-messages">
-                    <div class="chat-msg chat-msg-ellos">
-                        <div class="chat-bubble">Hola, ya estoy en camino. Llego en 4 minutos.</div>
-                        <div class="chat-time">Ahora</div>
-                    </div>
-                </div>
-                <div class="chat-input">
-                    <input type="text" id="chat-texto" placeholder="Escribí un mensaje..." onkeypress="if(event.key==='Enter')enviarMensaje()">
-                    <button onclick="enviarMensaje()"><i class="fas fa-paper-plane"></i></button>
-                </div>
-            `;
-            document.body.appendChild(chat);
-            
-            // Estilos del chat
-            const style = document.createElement('style');
-            style.textContent = `
-                .chat-box{position:fixed;bottom:0;left:0;right:0;z-index:2000;background:white;border-radius:20px 20px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.15);display:none;flex-direction:column;height:60vh;max-height:500px}
-                .chat-box.activo{display:flex}
-                .chat-header{background:var(--verde);color:white;padding:14px 18px;font-weight:700;font-size:1rem;border-radius:20px 20px 0 0;display:flex;align-items:center;gap:8px}
-                .chat-messages{flex:1;overflow-y:auto;padding:16px;background:#f8f8f8}
-                .chat-msg{margin-bottom:12px;display:flex;flex-direction:column}
-                .chat-msg-yo{align-items:flex-end}
-                .chat-msg-ellos{align-items:flex-start}
-                .chat-bubble{max-width:80%;padding:10px 14px;border-radius:18px;font-size:.9rem;line-height:1.3}
-                .chat-msg-yo .chat-bubble{background:var(--verde);color:white;border-bottom-right-radius:4px}
-                .chat-msg-ellos .chat-bubble{background:white;color:var(--texto);border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
-                .chat-time{font-size:.7rem;color:var(--gris);margin-top:4px}
-                .chat-input{display:flex;padding:12px;background:white;border-top:1px solid #eee}
-                .chat-input input{flex:1;border:none;background:#f0f0f0;padding:10px 14px;border-radius:20px;font-size:.9rem;outline:none;margin-right:8px}
-                .chat-input button{background:var(--verde);color:white;border:none;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
-            `;
-            document.head.appendChild(style);
-            
-            setTimeout(() => chat.classList.add('activo'), 100);
-        }
-
-        function enviarMensaje() {
-            const input = document.getElementById('chat-texto');
-            const texto = input.value.trim();
-            if (!texto) return;
-            
-            const msgs = document.getElementById('chat-messages');
-            msgs.innerHTML += `
-                <div class="chat-msg chat-msg-yo">
-                    <div class="chat-bubble">${texto}</div>
-                    <div class="chat-time">Ahora</div>
-                </div>`;
-            input.value = '';
-            msgs.scrollTop = msgs.scrollHeight;
-            
-            // Simular respuesta del conductor
-            setTimeout(() => {
-                msgs.innerHTML += `
-                    <div class="chat-msg chat-msg-ellos">
-                        <div class="chat-bubble">Perfecto, ya casi llego. Estoy en ${document.getElementById('detalle-destino').textContent}</div>
-                        <div class="chat-time">Ahora</div>
-                    </div>`;
-                msgs.scrollTop = msgs.scrollHeight;
-            }, 2000);
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // HISTORIAL DE VIAJES
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        async function mostrarHistorial() {
-            const telefono = document.getElementById('telefono').value.trim();
-            if (!telefono) {
-                mostrarAlerta('Ingresá tu teléfono primero');
-                return;
-            }
-            
-            try {
-                const {data, error} = await supabaseClient
-                    .from('viajes')
-                    .select('*')
-                    .eq('telefono_pasajero', telefono)
-                    .order('creado_en', {ascending: false})
-                    .limit(10);
-                
-                if (error) throw error;
-                
-                if (!data || data.length === 0) {
-                    mostrarAlerta('No tenés viajes anteriores');
-                    return;
-                }
-                
-                let html = '<div style="max-height:300px;overflow-y:auto">';
-                data.forEach(v => {
-                    const fecha = new Date(v.creado_en).toLocaleDateString('es-AR');
-                    const estado = v.estado === 'completado' ? '✅' : v.estado === 'cancelado' ? '❌' : '🕐';
-                    html += `
-                        <div style="padding:12px;border-bottom:1px solid #eee">
-                            <div style="font-weight:600">${estado} ${v.destino}</div>
-                            <div style="font-size:.8rem;color:var(--gris)">${fecha} • $${v.tarifa_total?.toLocaleString('es-AR') || '-'}</div>
-                        </div>`;
-                });
-                html += '</div>';
-                
-                // Modal simple
-                const modal = document.createElement('div');
-                modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:3000;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px';
-                modal.innerHTML = `
-                    <div style="background:white;border-radius:20px;width:100%;max-width:400px;max-height:80vh;overflow:hidden">
-                        <div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
-                            <h3 style="margin:0;font-size:1.1rem">📋 Historial de viajes</h3>
-                            <button onclick="this.closest('.modal-hist').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer">×</button>
-                        </div>
-                        ${html}
-                    </div>`;
-                modal.className = 'modal-hist';
-                document.body.appendChild(modal);
-                
-            } catch (e) {
-                mostrarAlerta('Error al cargar historial');
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // COMPARTIR UBICACIÓN EN TIEMPO REAL
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        function compartirUbicacion() {
-            if (!miPosicion.lat || !miPosicion.lng) {
-                mostrarAlerta('GPS no disponible para compartir');
-                return;
-            }
-            
-            const url = `https://www.google.com/maps?q=${miPosicion.lat},${miPosicion.lng}`;
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Mi ubicación - Las Catalinas #53',
-                    text: 'Estoy aquí, vení a buscarme:',
-                    url: url
-                });
-            } else {
-                // Copiar al portapapeles
-                navigator.clipboard.writeText(url).then(() => {
-                    mostrarAlerta('📍 Link de ubicación copiado al portapapeles');
-                }).catch(() => {
-                    prompt('Copiá este link:', url);
-                });
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // CALIFICAR CONDUCTOR (después del viaje)
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        function mostrarCalificacion() {
-            const modal = document.createElement('div');
-            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:3000;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px';
-            modal.innerHTML = `
-                <div style="background:white;border-radius:24px;width:100%;max-width:350px;padding:24px;text-align:center">
-                    <div style="font-size:3rem;margin-bottom:8px">🚕</div>
-                    <h3 style="margin:0 0 8px">¿Cómo fue tu viaje?</h3>
-                    <p style="color:var(--gris);margin:0 0 20px">Calificá a tu conductor</p>
-                    <div style="display:flex;justify-content:center;gap:8px;margin-bottom:20px;font-size:2rem" id="estrellas">
-                        <span onclick="calificar(1)" style="cursor:pointer">⭐</span>
-                        <span onclick="calificar(2)" style="cursor:pointer">⭐</span>
-                        <span onclick="calificar(3)" style="cursor:pointer">⭐</span>
-                        <span onclick="calificar(4)" style="cursor:pointer">⭐</span>
-                        <span onclick="calificar(5)" style="cursor:pointer">⭐</span>
-                    </div>
-                    <textarea id="comentario" placeholder="Comentario opcional..." style="width:100%;padding:12px;border-radius:12px;border:1px solid #ddd;resize:none;height:80px;margin-bottom:16px;font-family:inherit"></textarea>
-                    <button onclick="enviarCalificacion()" style="width:100%;padding:14px;background:var(--verde);color:white;border:none;border-radius:14px;font-weight:700;font-size:1rem;cursor:pointer">Enviar calificación</button>
-                    <button onclick="this.closest('.modal-calif').remove()" style="width:100%;padding:12px;background:transparent;color:var(--gris);border:none;font-size:.9rem;cursor:pointer;margin-top:8px">Saltar</button>
-                </div>`;
-            modal.className = 'modal-calif';
-            document.body.appendChild(modal);
-        }
-
-        let calificacionEstrellas = 0;
-        function calificar(n) {
-            calificacionEstrellas = n;
-            const estrellas = document.querySelectorAll('#estrellas span');
-            estrellas.forEach((e, i) => {
-                e.style.opacity = i < n ? '1' : '0.3';
-            });
-        }
-
-        function enviarCalificacion() {
-            const comentario = document.getElementById('comentario').value;
-            console.log('Calificación:', calificacionEstrellas, 'Comentario:', comentario);
-            document.querySelector('.modal-calif').remove();
-            mostrarAlerta('¡Gracias por tu calificación! ⭐');
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // NOTIFICACIONES PUSH (simuladas)
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        function solicitarNotificaciones() {
-            if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        mostrarAlerta('✅ Notificaciones activadas');
-                    }
-                });
-            }
-        }
-
-        function enviarNotificacion(titulo, cuerpo) {
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(titulo, {
-                    body: cuerpo,
-                    icon: '🚕',
-                    badge: '🚕'
-                });
-            }
-        }
-
-        // Ejemplo: notificar cuando el conductor está cerca
-        function notificarConductorCerca() {
-            enviarNotificacion('Tu móvil está cerca', 'El conductor llegará en 1 minuto');
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // MENÚ LATERAL
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        function toggleMenu() {
-            let menu = document.getElementById('menu-lateral');
-            if (!menu) {
-                menu = document.createElement('div');
-                menu.id = 'menu-lateral';
-                menu.innerHTML = `
-                    <div style="position:fixed;top:0;left:0;bottom:0;width:280px;z-index:2500;background:white;box-shadow:4px 0 20px rgba(0,0,0,0.15);padding:20px;transform:translateX(-100%);transition:transform .3s" id="menu-contenido">
-                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:30px;padding-bottom:20px;border-bottom:2px solid #f0f0f0">
-                            <div style="width:50px;height:50px;background:var(--verde);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.5rem">🚕</div>
-                            <div>
-                                <div style="font-weight:800">Las Catalinas #53</div>
-                                <div style="font-size:.8rem;color:var(--gris)">Remises de confianza</div>
-                            </div>
-                        </div>
-                        <div style="display:flex;flex-direction:column;gap:8px">
-                            <button onclick="mostrarHistorial();cerrarMenu()" style="display:flex;align-items:center;gap:12px;padding:14px;background:#f8f8f8;border:none;border-radius:12px;font-size:1rem;cursor:pointer;text-align:left">
-                                <i class="fas fa-history" style="color:var(--celeste);width:24px"></i> Historial de viajes
-                            </button>
-                            <button onclick="compartirUbicacion();cerrarMenu()" style="display:flex;align-items:center;gap:12px;padding:14px;background:#f8f8f8;border:none;border-radius:12px;font-size:1rem;cursor:pointer;text-align:left">
-                                <i class="fas fa-share-alt" style="color:var(--verde);width:24px"></i> Compartir ubicación
-                            </button>
-                            <button onclick="toggleChat();cerrarMenu()" style="display:flex;align-items:center;gap:12px;padding:14px;background:#f8f8f8;border:none;border-radius:12px;font-size:1rem;cursor:pointer;text-align:left">
-                                <i class="fas fa-comments" style="color:var(--naranja);width:24px"></i> Chat con conductor
-                            </button>
-                            <button onclick="solicitarNotificaciones();cerrarMenu()" style="display:flex;align-items:center;gap:12px;padding:14px;background:#f8f8f8;border:none;border-radius:12px;font-size:1rem;cursor:pointer;text-align:left">
-                                <i class="fas fa-bell" style="color:var(--rojo);width:24px"></i> Notificaciones
-                            </button>
-                            <div style="margin-top:20px;padding-top:20px;border-top:1px solid #eee">
-                                <div style="font-size:.8rem;color:var(--gris);line-height:1.6">
-                                    <div style="font-weight:700;color:var(--texto);margin-bottom:4px">Zona de cobertura</div>
-                                    • Moreno y alrededores<br>
-                                    • San Miguel y alrededores<br>
-                                    • Trujui, La Reja, Paso del Rey<br>
-                                    • Cuartel V, Francisco Álvarez
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:2400;background:rgba(0,0,0,0.3);display:none" id="menu-overlay" onclick="cerrarMenu()"></div>
-                `;
-                document.body.appendChild(menu);
-            }
-            
-            const contenido = document.getElementById('menu-contenido');
-            const overlay = document.getElementById('menu-overlay');
-            contenido.style.transform = 'translateX(0)';
-            overlay.style.display = 'block';
-        }
-
-        function cerrarMenu() {
-            const contenido = document.getElementById('menu-contenido');
-            const overlay = document.getElementById('menu-overlay');
-            if (contenido) contenido.style.transform = 'translateX(-100%)';
-            if (overlay) overlay.style.display = 'none';
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // UTILIDADES Y EVENTOS
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        // Cerrar sugerencias al tocar fuera
-        document.addEventListener('click', e => {
-            if (!e.target.closest('.buscador-container')) {
-                document.getElementById('sugerencias').classList.remove('activo');
-            }
-        });
-
-        // Prevenir envío con Enter
-        document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('keypress', e => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (input.id === 'destino' && destinoCoords) {
-                        document.getElementById('nombre').focus();
-                    } else if (input.id === 'telefono') {
-                        solicitar();
-                    }
-                }
-            });
-        });
-
-        // Detectar si es iPhone para ajustes
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isIOS) {
-            document.body.classList.add('ios');
-        }
-    </script>
-</body>
-</html>
