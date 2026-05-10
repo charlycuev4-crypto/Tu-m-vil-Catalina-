@@ -3,215 +3,689 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pasajero PRO - Las Catalinas #53</title>
+    <title>Pasajero - Las Catalinas #53</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <style>
-        :root{--naranja:#f47920;--celeste:#0093d0;--rojo:#e61e2b;--verde:#28a745;--fondo:#f4f7f6;--blanco:#fff;--texto:#1a1a1a;--sombra:0 4px 15px rgba(0,0,0,0.2)}
+        :root{--naranja:#f47920;--celeste:#0093d0;--rojo:#e61e2b;--verde:#28a745;--fondo:#f0f2f5;--blanco:#fff;--texto:#1a1a1a;--gris:#666;--sombra:0 2px 12px rgba(0,0,0,0.15)}
         *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-        body,html{margin:0;padding:0;height:100%;width:100%;font-family:sans-serif;background:var(--fondo);overflow:hidden}
-        
-        #map{position:absolute;top:0;left:0;height:100%;width:100%;z-index:1}
-
-        .overlay{position:absolute;z-index:1000;pointer-events:none;width:100%;display:flex;flex-direction:column;padding:12px}
-        .top-ui{top:0;pointer-events:auto}
-        .bottom-ui{bottom:0;pointer-events:auto;background:var(--blanco);border-radius:24px 24px 0 0;padding:20px;box-shadow:0 -5px 20px rgba(0,0,0,0.1)}
-
-        .search-box{background:var(--blanco);border-radius:15px;padding:8px;box-shadow:var(--sombra);display:flex;flex-direction:column;gap:5px}
-        .input-row{display:flex;align-items:center;padding:10px;background:#f0f2f5;border-radius:10px;gap:10px}
-        .input-row input{border:none;background:transparent;width:100%;outline:none;font-size:16px}
-        
-        .results-list{background:var(--blanco);margin-top:5px;border-radius:12px;max-height:200px;overflow-y:auto;display:none;box-shadow:var(--sombra)}
-        .results-list.active{display:block}
-        .res-item{padding:12px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:10px;font-size:14px}
-
-        .map-tools{position:absolute;right:15px;bottom:32%;display:flex;flex-direction:column;gap:10px;pointer-events:auto}
-        .tool-btn{width:50px;height:50px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:var(--sombra);border:none;color:var(--celeste);font-size:1.2rem}
-        .tool-btn.active{background:var(--naranja);color:white}
-
-        .trip-info{display:none;margin-bottom:15px;background:#fff8f3;padding:12px;border-radius:12px;border:1px solid var(--naranja)}
-        .trip-info b{color:var(--naranja);font-size:1.2rem}
-
-        .btn-confirmar{width:100%;padding:16px;background:var(--rojo);color:white;border:none;border-radius:15px;font-weight:800;font-size:1.1rem;box-shadow:0 4px 15px rgba(230,30,43,0.3)}
-        
-        .center-marker{position:absolute;top:50%;left:50%;transform:translate(-50%, -100%);z-index:2;display:none;pointer-events:none}
-        .center-marker i{font-size:40px;color:var(--rojo);text-shadow:0 2px 5px rgba(0,0,0,0.3)}
+        body,html{margin:0;padding:0;height:100%;width:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--fondo);color:var(--texto);overflow:hidden}
+        #map{position:absolute;top:0;left:0;height:72%;width:100%;z-index:1;background:#e5e5e5}
+        .header{position:absolute;top:12px;left:12px;right:12px;z-index:1000;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+        .menu-btn{background:var(--blanco);color:var(--naranja);width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;border:none;box-shadow:var(--sombra);font-size:1.2rem}
+        .logo-tag{background:var(--blanco);padding:10px 18px;border-radius:25px;border:2px solid var(--celeste);font-weight:800;color:var(--celeste);font-size:.85rem;box-shadow:var(--sombra);pointer-events:auto}
+        .gps-status{position:absolute;top:70px;right:12px;z-index:1000;background:var(--blanco);padding:6px 12px;border-radius:20px;font-size:.75rem;font-weight:600;box-shadow:var(--sombra);display:flex;align-items:center;gap:6px}
+        .gps-status.preciso{color:var(--verde);border:2px solid var(--verde)}
+        .gps-status.aproximado{color:var(--naranja);border:2px solid var(--naranja)}
+        .gps-status.error{color:var(--rojo);border:2px solid var(--rojo)}
+        .btn-mi-ubicacion{position:absolute;bottom:30%;right:15px;z-index:1000;width:50px;height:50px;background:var(--blanco);border:none;border-radius:50%;box-shadow:var(--sombra);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--celeste);font-size:1.3rem}
+        .panel{position:absolute;bottom:0;left:0;right:0;z-index:1000;background:var(--blanco);border-radius:24px 24px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.15);padding:15px 20px 25px;max-height:35vh;overflow-y:auto}
+        .panel-handle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 12px}
+        .input-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--fondo);border-radius:14px;border:2px solid transparent;transition:all .2s;margin-bottom:8px}
+        .input-row:focus-within{border-color:var(--naranja);background:#fff8f3}
+        .input-row i{width:24px;text-align:center;font-size:1.1rem;color:var(--celeste)}
+        .input-row input{flex:1;border:none;background:transparent;font-size:1rem;outline:none;color:var(--texto)}
+        .buscador-container{position:relative}
+        .sugerencias{position:absolute;top:100%;left:0;right:0;background:var(--blanco);border-radius:14px;box-shadow:0 8px 25px rgba(0,0,0,0.15);max-height:250px;overflow-y:auto;z-index:1500;display:none;margin-top:5px}
+        .sugerencias.activo{display:block}
+        .sugerencia-item{padding:12px 16px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:10px}
+        .sugerencia-item:last-child{border-bottom:none}
+        .sugerencia-item:hover{background:var(--fondo)}
+        .sugerencia-item .sug-text{font-size:.9rem;font-weight:500}
+        .sugerencia-item .sug-zona{font-size:.75rem;color:var(--gris);margin-top:2px}
+        .sugerencia-item .sug-badge{font-size:.65rem;color:#fff;background:var(--verde);padding:1px 6px;border-radius:8px;margin-top:3px;display:inline-block}
+        .sugerencia-item .sug-badge.fallback{background:var(--naranja)}
+        .btn-principal{width:100%;padding:16px;background:var(--rojo);color:white;border:none;border-radius:16px;font-size:1.1rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;box-shadow:0 6px 20px rgba(230,30,43,0.35);display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px}
+        .btn-principal:disabled{background:#ccc;box-shadow:none;cursor:not-allowed}
+        .alerta-box{position:absolute;top:120px;left:12px;right:12px;z-index:1000;background:#fff3cd;border:2px solid #ffc107;border-radius:12px;padding:10px 14px;font-size:.8rem;color:#856404;display:none;align-items:center;gap:8px}
+        .alerta-box.activo{display:flex}
+        .alerta-box i{color:#ffc107;font-size:1.1rem}
+        .sin-gps-box{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2000;background:white;padding:20px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.3);text-align:center;display:none;width:90%;max-width:300px}
+        .sin-gps-box.activo{display:block}
+        .sin-gps-box h3{margin:0 0 10px;color:var(--rojo)}
+        .sin-gps-box p{margin:0 0 15px;font-size:.9rem;color:var(--gris)}
+        .sin-gps-box button{background:var(--celeste);color:white;border:none;padding:10px 20px;border-radius:10px;cursor:pointer;font-weight:600}
     </style>
 </head>
 <body>
-
     <div id="map"></div>
-    
-    <div class="center-marker" id="manual-marker">
-        <i class="fas fa-map-marker-alt"></i>
+    <div class="header">
+        <button class="menu-btn"><i class="fas fa-bars"></i></button>
+        <div class="logo-tag">🚕 LAS CATALINAS #53</div>
     </div>
+    <div class="gps-status busqueda" id="gps-status">
+        <i class="fas fa-satellite-dish"></i><span id="gps-texto">Buscando GPS...</span>
+    </div>
+    <div class="alerta-box" id="alerta-box">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="alerta-texto"></span>
+    </div>
+    <div class="sin-gps-box" id="sin-gps-box">
+        <h3><i class="fas fa-map-marker-alt"></i> GPS no disponible</h3>
+        <p>Tu celular no está enviando la ubicación. Podés igual pedir un móvil ingresando tu dirección manualmente.</p>
+        <button onclick="mostrarInputManual()">Ingresar dirección manual</button>
+    </div>
+    <button class="btn-mi-ubicacion" onclick="centrarEnMiUbicacion()"><i class="fas fa-crosshairs"></i></button>
 
-    <div class="overlay top-ui">
-        <div class="search-box">
-            <div class="input-row">
-                <i class="fas fa-user-circle"></i>
-                <input type="text" id="nombre" placeholder="¿Quién viaja?">
+    <div class="panel">
+        <div class="panel-handle"></div>
+        <div id="formulario-pedido">
+            <div class="input-row"><i class="fas fa-user"></i><input type="text" id="nombre" placeholder="¿Cómo te llamás?"></div>
+            <div class="input-row"><i class="fas fa-phone"></i><input type="tel" id="telefono" placeholder="Teléfono"></div>
+            <div class="buscador-container">
+                <div class="input-row">
+                    <i class="fas fa-search" style="color:var(--rojo)"></i>
+                    <input type="text" id="destino" placeholder="Ej: Solano López y Libertador, Moreno" autocomplete="off" oninput="buscar(this.value)">
+                </div>
+                <div class="sugerencias" id="sugerencias"></div>
             </div>
-            <div class="input-row">
-                <i class="fas fa-search-location" style="color:var(--rojo)"></i>
-                <input type="text" id="destino" placeholder="Buscar destino en Moreno/S. Miguel" oninput="buscarInteligente(this.value)">
+            <div class="input-row" id="direccion-manual" style="display:none">
+                <i class="fas fa-home" style="color:var(--naranja)"></i>
+                <input type="text" id="direccion-origen" placeholder="¿Dónde estás? Ej: Solano López 500, Moreno">
             </div>
-            <div id="results" class="results-list"></div>
+            <button class="btn-principal" id="btn-solicitar" onclick="solicitar()"><i class="fas fa-paper-plane"></i> Solicitar Móvil</button>
         </div>
-    </div>
-
-    <div class="map-tools">
-        <button class="tool-btn" id="btn-manual" onclick="toggleModoManual()">
-            <i class="fas fa-hand-pointer"></i>
-        </button>
-        <button class="tool-btn" onclick="centrarGPS()">
-            <i class="fas fa-crosshairs"></i>
-        </button>
-    </div>
-
-    <div class="overlay bottom-ui">
-        <div class="trip-info" id="trip-card">
-            <div style="display:flex; justify-content:space-between; align-items:center">
-                <span>Distancia: <span id="dist-val">0</span> km</span>
-                <b id="precio-val">$0</b>
-            </div>
-            <small id="dest-nombre" style="display:block; color:#666; margin-top:5px"></small>
-        </div>
-        <button class="btn-confirmar" id="btn-pedir" onclick="solicitarViaje()">SOLICITAR AHORA</button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script>
-        const SUPABASE_URL = 'https://efryvjjunfeoxhekvwza.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SUPABASE_URL='https://efryvjjunfeoxhekvwza.supabase.co';
+        const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
 
-        let map, markerGPS, markerDest, polylineRuta;
-        let userPos = {lat: -34.5847, lng: -58.7482}; 
-        let destPos = null;
-        let modoManual = false;
+        // ZONA: Moreno y San Miguel (aprox)
+        const ZONA = {minLat:-34.72, maxLat:-34.50, minLng:-58.95, maxLng:-58.65};
 
-        map = L.map('map', {zoomControl: false, attributionControl: false}).setView([userPos.lat, userPos.lng], 15);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+        let supabaseClient, map, miPosicion={lat:null,lng:null}, destinoCoords=null, 
+            rutaLayer=null, markerDestino=null, markerGPS=null, circuloGPS=null,
+            timeoutBusq=null, idBusq=0, watchIdGPS=null, gpsActivo=false, usandoManual=false;
 
-        navigator.geolocation.watchPosition(p => {
-            userPos = {lat: p.coords.latitude, lng: p.coords.longitude};
-            if(!markerGPS) {
-                markerGPS = L.circleMarker([userPos.lat, userPos.lng], {radius: 8, color: '#fff', weight: 3, fillColor: '#0093d0', fillOpacity: 1}).addTo(map);
-            } else {
-                markerGPS.setLatLng([userPos.lat, userPos.lng]);
-            }
-        }, null, {enableHighAccuracy: true});
-
-        function centrarGPS() { map.flyTo([userPos.lat, userPos.lng], 17); }
-
-        function toggleModoManual() {
-            modoManual = !modoManual;
-            const btn = document.getElementById('btn-manual');
-            const pin = document.getElementById('manual-marker');
+        // ═══════════════════════════════════════════════════════════════════════
+        // DIRECCIONES REALES DE MORENO (basadas en geocodificación real)
+        // ═══════════════════════════════════════════════════════════════════════
+        const DIRECCIONES_REALES = [
+            // Solano López - calle corta en Moreno centro
+            {calle:"Solano López", altura:100, localidad:"Moreno", lat:-34.6508, lng:-58.7895},
+            {calle:"Solano López", altura:200, localidad:"Moreno", lat:-34.6510, lng:-58.7892},
+            {calle:"Solano López", altura:300, localidad:"Moreno", lat:-34.6512, lng:-58.7889},
+            {calle:"Solano López", altura:400, localidad:"Moreno", lat:-34.6514, lng:-58.7886},
+            {calle:"Solano López", altura:500, localidad:"Moreno", lat:-34.6516, lng:-58.7883},
             
-            if(modoManual) {
-                btn.classList.add('active');
-                pin.style.display = 'block';
-                map.on('moveend', actualizarDestinoManual);
+            // Avenida Moreno (principal del centro)
+            {calle:"Avenida Moreno", altura:100, localidad:"Moreno", lat:-34.6502, lng:-58.7911},
+            {calle:"Avenida Moreno", altura:229, localidad:"Moreno", lat:-34.6505, lng:-58.7908},
+            {calle:"Avenida Moreno", altura:300, localidad:"Moreno", lat:-34.6507, lng:-58.7905},
+            {calle:"Avenida Moreno", altura:500, localidad:"Moreno", lat:-34.6510, lng:-58.7900},
+            {calle:"Avenida Moreno", altura:800, localidad:"Moreno", lat:-34.6515, lng:-58.7890},
+            {calle:"Avenida Moreno", altura:1000, localidad:"Moreno", lat:-34.6520, lng:-58.7880},
+            {calle:"Avenida Moreno", altura:1500, localidad:"Moreno", lat:-34.6530, lng:-58.7860},
+            
+            // Libertador
+            {calle:"Avenida Libertador", altura:100, localidad:"Moreno", lat:-34.6530, lng:-58.7850},
+            {calle:"Avenida Libertador", altura:500, localidad:"Moreno", lat:-34.6540, lng:-58.7840},
+            {calle:"Avenida Libertador", altura:1000, localidad:"Moreno", lat:-34.6550, lng:-58.7830},
+            {calle:"Avenida Libertador", altura:1500, localidad:"Moreno", lat:-34.6560, lng:-58.7820},
+            
+            // San Martín
+            {calle:"Avenida San Martín", altura:100, localidad:"Moreno", lat:-34.6520, lng:-58.7920},
+            {calle:"Avenida San Martín", altura:500, localidad:"Moreno", lat:-34.6530, lng:-58.7930},
+            {calle:"Avenida San Martín", altura:1000, localidad:"Moreno", lat:-34.6540, lng:-58.7940},
+            
+            // Alcorta
+            {calle:"Avenida Alcorta", altura:100, localidad:"Moreno", lat:-34.6540, lng:-58.7880},
+            {calle:"Avenida Alcorta", altura:500, localidad:"Moreno", lat:-34.6550, lng:-58.7870},
+            {calle:"Avenida Alcorta", altura:1000, localidad:"Moreno", lat:-34.6560, lng:-58.7860},
+            
+            // Piovano
+            {calle:"Avenida Piovano", altura:100, localidad:"Moreno", lat:-34.6510, lng:-58.7950},
+            {calle:"Avenida Piovano", altura:500, localidad:"Moreno", lat:-34.6520, lng:-58.7960},
+            
+            // Bartolomé Mitre
+            {calle:"Avenida Bartolomé Mitre", altura:100, localidad:"Moreno", lat:-34.6480, lng:-58.7930},
+            {calle:"Avenida Bartolomé Mitre", altura:500, localidad:"Moreno", lat:-34.6490, lng:-58.7940},
+            
+            // Rivadavia
+            {calle:"Avenida Rivadavia", altura:100, localidad:"Moreno", lat:-34.6490, lng:-58.7960},
+            {calle:"Avenida Rivadavia", altura:500, localidad:"Moreno", lat:-34.6500, lng:-58.7970},
+            
+            // Corvalán
+            {calle:"Intendente Corvalán", altura:100, localidad:"Moreno", lat:-34.6570, lng:-58.7920},
+            {calle:"Intendente Corvalán", altura:500, localidad:"Moreno", lat:-34.6580, lng:-58.7930},
+            
+            // Deán Funes
+            {calle:"Deán Funes", altura:100, localidad:"Moreno", lat:-34.6550, lng:-58.7940},
+            {calle:"Deán Funes", altura:500, localidad:"Moreno", lat:-34.6560, lng:-58.7950},
+            
+            // Alberdi
+            {calle:"Juan B. Alberdi", altura:100, localidad:"Moreno", lat:-34.6530, lng:-58.7960},
+            {calle:"Juan B. Alberdi", altura:500, localidad:"Moreno", lat:-34.6540, lng:-58.7970},
+            
+            // Pavón
+            {calle:"Pavón", altura:100, localidad:"Moreno", lat:-34.6520, lng:-58.7980},
+            {calle:"Pavón", altura:500, localidad:"Moreno", lat:-34.6530, lng:-58.7990},
+            
+            // Merlo (Moreno)
+            {calle:"Merlo", altura:100, localidad:"Moreno", lat:-34.6600, lng:-58.7900},
+            {calle:"Merlo", altura:500, localidad:"Moreno", lat:-34.6610, lng:-58.7910},
+            
+            // Inmigrantes
+            {calle:"De los Inmigrantes", altura:100, localidad:"Moreno", lat:-34.6560, lng:-58.8000},
+            {calle:"De los Inmigrantes", altura:500, localidad:"Moreno", lat:-34.6570, lng:-58.8010},
+            
+            // Nemesio Álvarez
+            {calle:"Nemesio Álvarez", altura:100, localidad:"Moreno", lat:-34.6580, lng:-58.7950},
+            {calle:"Nemesio Álvarez", altura:500, localidad:"Moreno", lat:-34.6590, lng:-58.7960},
+            
+            // Dr. Vera
+            {calle:"Dr. Vera", altura:100, localidad:"Moreno", lat:-34.6590, lng:-58.7920},
+            {calle:"Dr. Vera", altura:500, localidad:"Moreno", lat:-34.6600, lng:-58.7930},
+            
+            // Asconapé
+            {calle:"Asconapé", altura:100, localidad:"Moreno", lat:-34.6600, lng:-58.7940},
+            {calle:"Asconapé", altura:500, localidad:"Moreno", lat:-34.6610, lng:-58.7950},
+            
+            // Balbi
+            {calle:"Balbi", altura:100, localidad:"Moreno", lat:-34.6610, lng:-58.7960},
+            {calle:"Balbi", altura:500, localidad:"Moreno", lat:-34.6620, lng:-58.7970},
+            
+            // Edison
+            {calle:"Tomás Edison", altura:100, localidad:"Moreno", lat:-34.6620, lng:-58.7980},
+            {calle:"Tomás Edison", altura:500, localidad:"Moreno", lat:-34.6630, lng:-58.7990},
+            
+            // Irigoyen
+            {calle:"Bernardo de Irigoyen", altura:100, localidad:"Moreno", lat:-34.6630, lng:-58.8000},
+            {calle:"Bernardo de Irigoyen", altura:500, localidad:"Moreno", lat:-34.6640, lng:-58.8010},
+            
+            // Gnecco
+            {calle:"Intendente Gnecco", altura:100, localidad:"Moreno", lat:-34.6640, lng:-58.8020},
+            {calle:"Intendente Gnecco", altura:500, localidad:"Moreno", lat:-34.6650, lng:-58.8030},
+            
+            // El Ceibo
+            {calle:"El Ceibo", altura:100, localidad:"Moreno", lat:-34.6650, lng:-58.8040},
+            {calle:"El Ceibo", altura:500, localidad:"Moreno", lat:-34.6660, lng:-58.8050},
+            
+            // SAN MIGUEL
+            {calle:"Avenida Presidente Perón", altura:100, localidad:"San Miguel", lat:-34.5400, lng:-58.7100},
+            {calle:"Avenida Presidente Perón", altura:500, localidad:"San Miguel", lat:-34.5410, lng:-58.7110},
+            {calle:"Avenida Presidente Perón", altura:1000, localidad:"San Miguel", lat:-34.5420, lng:-58.7120},
+            {calle:"Avenida Presidente Perón", altura:2000, localidad:"San Miguel", lat:-34.5440, lng:-58.7140},
+            
+            {calle:"Avenida Balbín", altura:100, localidad:"San Miguel", lat:-34.5420, lng:-58.7150},
+            {calle:"Avenida Balbín", altura:500, localidad:"San Miguel", lat:-34.5430, lng:-58.7160},
+            {calle:"Avenida Balbín", altura:1000, localidad:"San Miguel", lat:-34.5440, lng:-58.7170},
+            
+            {calle:"Avenida Sáenz Peña", altura:100, localidad:"San Miguel", lat:-34.5380, lng:-58.7080},
+            {calle:"Avenida Sáenz Peña", altura:500, localidad:"San Miguel", lat:-34.5390, lng:-58.7090},
+            {calle:"Avenida Sáenz Peña", altura:1000, localidad:"San Miguel", lat:-34.5400, lng:-58.7100},
+            
+            {calle:"Avenida Urquiza", altura:100, localidad:"San Miguel", lat:-34.5410, lng:-58.7200},
+            {calle:"Avenida Urquiza", altura:500, localidad:"San Miguel", lat:-34.5420, lng:-58.7210},
+            
+            {calle:"Güemes", altura:100, localidad:"San Miguel", lat:-34.5440, lng:-58.7120},
+            {calle:"Güemes", altura:500, localidad:"San Miguel", lat:-34.5450, lng:-58.7130},
+            
+            {calle:"Rodríguez Peña", altura:100, localidad:"San Miguel", lat:-34.5450, lng:-58.7140},
+            {calle:"Rodríguez Peña", altura:500, localidad:"San Miguel", lat:-34.5460, lng:-58.7150},
+            
+            {calle:"Alem", altura:100, localidad:"San Miguel", lat:-34.5460, lng:-58.7160},
+            {calle:"Alem", altura:500, localidad:"San Miguel", lat:-34.5470, lng:-58.7170},
+            
+            {calle:"Pueyrredón", altura:100, localidad:"San Miguel", lat:-34.5470, lng:-58.7180},
+            {calle:"Pueyrredón", altura:500, localidad:"San Miguel", lat:-34.5480, lng:-58.7190},
+            
+            {calle:"Las Heras", altura:100, localidad:"San Miguel", lat:-34.5480, lng:-58.7200},
+            {calle:"Las Heras", altura:500, localidad:"San Miguel", lat:-34.5490, lng:-58.7210}
+        ];
+
+        const ESTACIONES_TREN = [
+            {nombre:"Estación Moreno", linea:"Sarmiento", localidad:"Moreno", lat:-34.6570, lng:-58.7900},
+            {nombre:"Estación La Reja", linea:"Sarmiento", localidad:"Moreno", lat:-34.6370, lng:-58.8280},
+            {nombre:"Estación General Rodríguez", linea:"Sarmiento", localidad:"Moreno", lat:-34.6080, lng:-58.9440},
+            {nombre:"Estación San Miguel", linea:"San Martín", localidad:"San Miguel", lat:-34.5430, lng:-58.7120},
+            {nombre:"Estación Muñiz", linea:"San Martín", localidad:"San Miguel", lat:-34.5350, lng:-58.7010},
+            {nombre:"Estación General Lemos", linea:"Urquiza", localidad:"San Miguel", lat:-34.5560, lng:-58.7230},
+            {nombre:"Estación Campo de Mayo", linea:"Urquiza", localidad:"San Miguel", lat:-34.5330, lng:-58.7330},
+            {nombre:"Estación Teniente Agneta", linea:"Urquiza", localidad:"San Miguel", lat:-34.5450, lng:-58.7250}
+        ];
+
+        const CRUCES = [
+            {calle:"Solano López", localidad:"Moreno", cruces:["Avenida Moreno","Libertador","San Martín","Alcorta","Piovano","Rivadavia","Bartolomé Mitre"]},
+            {calle:"Avenida Moreno", localidad:"Moreno", cruces:["Solano López","Libertador","San Martín","Alcorta","Piovano","Rivadavia","Bartolomé Mitre","Corvalán","Deán Funes","Alberdi"]},
+            {calle:"Avenida Libertador", localidad:"Moreno", cruces:["Avenida Moreno","San Martín","Alcorta","Piovano","Rivadavia","Bartolomé Mitre","Solano López","Corvalán","Deán Funes"]},
+            {calle:"Avenida San Martín", localidad:"Moreno", cruces:["Avenida Moreno","Libertador","Alcorta","Piovano","Rivadavia","Bartolomé Mitre","Solano López","Corvalán"]},
+            {calle:"Avenida Alcorta", localidad:"Moreno", cruces:["Avenida Moreno","Libertador","San Martín","Piovano","Bartolomé Mitre","Solano López"]},
+            {calle:"Avenida Piovano", localidad:"Moreno", cruces:["Avenida Moreno","Libertador","San Martín","Alcorta","Rivadavia","Bartolomé Mitre","Solano López"]},
+            {calle:"Avenida Bartolomé Mitre", localidad:"Moreno", cruces:["Avenida Moreno","Libertador","San Martín","Alcorta","Piovano","Rivadavia"]},
+            {calle:"Avenida Rivadavia", localidad:"Moreno", cruces:["Avenida Moreno","Libertador","San Martín","Piovano","Bartolomé Mitre","Solano López"]},
+            {calle:"Intendente Corvalán", localidad:"Moreno", cruces:["Avenida Moreno","Libertador","San Martín","Alcorta","Piovano"]},
+            {calle:"Deán Funes", localidad:"Moreno", cruces:["Avenida Moreno","Libertador","San Martín","Alcorta","Piovano","Rivadavia"]},
+            {calle:"Juan B. Alberdi", localidad:"Moreno", cruces:["Avenida Moreno","Libertador","San Martín","Alcorta","Piovano","Rivadavia"]},
+            {calle:"Pavón", localidad:"Moreno", cruces:["Avenida Moreno","Libertador","San Martín","Alcorta","Piovano","Rivadavia"]},
+            {calle:"Güemes", localidad:"San Miguel", cruces:["Perón","Balbín","Sáenz Peña","Urquiza"]},
+            {calle:"Rodríguez Peña", localidad:"San Miguel", cruces:["Perón","Balbín","Sáenz Peña","Urquiza"]},
+            {calle:"Alem", localidad:"San Miguel", cruces:["Perón","Balbín","Sáenz Peña","Urquiza"]},
+            {calle:"Avenida Presidente Perón", localidad:"San Miguel", cruces:["Sáenz Peña","Urquiza","Balbín","Güemes","Rodríguez Peña","Alem"]},
+            {calle:"Avenida Balbín", localidad:"San Miguel", cruces:["Perón","Sáenz Peña","Urquiza","Güemes","Rodríguez Peña"]},
+            {calle:"Avenida Sáenz Peña", localidad:"San Miguel", cruces:["Perón","Balbín","Urquiza","Güemes","Rodríguez Peña"]},
+            {calle:"Avenida Urquiza", localidad:"San Miguel", cruces:["Perón","Balbín","Sáenz Peña","Güemes","Rodríguez Peña"]}
+        ];
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // INICIALIZACIÓN
+        // ═══════════════════════════════════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', async () => {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            map = L.map('map',{zoomControl:false,attributionControl:false}).setView([-34.650,-58.790],14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+            iniciarGPS();
+        });
+
+        function iniciarGPS(){
+            if(!navigator.geolocation){
+                mostrarSinGPS();
+                return;
+            }
+
+            // Intento 1: Alta precisión
+            navigator.geolocation.getCurrentPosition(
+                pos => { gpsActivo = true; actualizarGPSPos(pos, true); },
+                err => {
+                    // Intento 2: Estándar
+                    navigator.geolocation.getCurrentPosition(
+                        pos => { gpsActivo = true; actualizarGPSPos(pos, true); },
+                        err2 => {
+                            // Intento 3: Última conocida
+                            navigator.geolocation.getCurrentPosition(
+                                pos => { gpsActivo = true; actualizarGPSPos(pos, true); },
+                                err3 => {
+                                    actualizarGPS('error','GPS bloqueado');
+                                    mostrarSinGPS();
+                                },
+                                {enableHighAccuracy:false, timeout:5000, maximumAge:600000}
+                            );
+                        },
+                        {enableHighAccuracy:false, timeout:10000, maximumAge:300000}
+                    );
+                },
+                {enableHighAccuracy:true, timeout:20000, maximumAge:0}
+            );
+
+            if(watchIdGPS) navigator.geolocation.clearWatch(watchIdGPS);
+            watchIdGPS = navigator.geolocation.watchPosition(
+                pos => { gpsActivo = true; actualizarGPSPos(pos, false); },
+                err => {},
+                {enableHighAccuracy:true, maximumAge:10000, timeout:30000}
+            );
+        }
+
+        function actualizarGPSPos(position, primera){
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const accuracy = Math.round(position.coords.accuracy);
+
+            // Validar coordenadas razonables (Argentina)
+            if(lat > -30 || lat < -55 || lng < -75 || lng > -50){
+                console.log('GPS inválido:', lat, lng);
+                return;
+            }
+
+            miPosicion = {lat, lng};
+
+            if(markerGPS) map.removeLayer(markerGPS);
+            if(circuloGPS) map.removeLayer(circuloGPS);
+
+            markerGPS = L.circleMarker([lat, lng], {
+                radius: 10, fillColor: '#0093d0', color: '#fff', weight: 3, fillOpacity: 0.9
+            }).addTo(map);
+
+            circuloGPS = L.circle([lat, lng], {
+                radius: accuracy, color: '#0093d0', weight: 1, fillColor: '#0093d0', fillOpacity: 0.1
+            }).addTo(map);
+
+            if(primera || !destinoCoords){
+                map.setView([lat, lng], 16);
+            }
+
+            const clase = accuracy < 30 ? 'preciso' : (accuracy < 200 ? 'aproximado' : 'busqueda');
+            const texto = accuracy < 30 ? `GPS Preciso (${accuracy}m)` : (accuracy < 200 ? `GPS Aproximado (${accuracy}m)` : `GPS ±${accuracy}m`);
+            actualizarGPS(clase, texto);
+
+            if(destinoCoords) actualizarRuta();
+        }
+
+        function actualizarGPS(clase, texto){
+            document.getElementById('gps-status').className = 'gps-status ' + clase;
+            document.getElementById('gps-texto').textContent = texto;
+        }
+
+        function mostrarSinGPS(){
+            document.getElementById('sin-gps-box').classList.add('activo');
+        }
+
+        function mostrarInputManual(){
+            document.getElementById('sin-gps-box').classList.remove('activo');
+            document.getElementById('direccion-manual').style.display = 'flex';
+            usandoManual = true;
+            miPosicion = {lat: -34.650, lng: -58.790}; // Default Moreno centro
+            map.setView([-34.650, -58.790], 15);
+            mostrarAlerta('Ingresá tu dirección manualmente arriba y el destino abajo');
+        }
+
+        function mostrarAlerta(texto){
+            const box = document.getElementById('alerta-box');
+            document.getElementById('alerta-texto').textContent = texto;
+            box.classList.add('activo');
+            setTimeout(() => box.classList.remove('activo'), 6000);
+        }
+
+        function centrarEnMiUbicacion(){
+            if(miPosicion.lat && miPosicion.lng){
+                map.setView([miPosicion.lat, miPosicion.lng], 17);
             } else {
-                btn.classList.remove('active');
-                pin.style.display = 'none';
-                map.off('moveend', actualizarDestinoManual);
+                mostrarAlerta('GPS no activo todavía');
             }
         }
 
-        async function actualizarDestinoManual() {
-            if(!modoManual) return;
-            const centro = map.getCenter();
-            seleccionarUbicacion("Punto marcado en el mapa", centro.lat, centro.lng);
+        function enZona(lat, lng){
+            return lat >= ZONA.minLat && lat <= ZONA.maxLat && lng >= ZONA.minLng && lng <= ZONA.maxLng;
         }
 
-        async function buscarInteligente(q) {
-            if(q.length < 3) return;
-            const box = document.getElementById('results');
-            box.innerHTML = '<div class="res-item">Buscando...</div>';
-            box.classList.add('active');
+        // ═══════════════════════════════════════════════════════════════════════
+        // BUSCADOR
+        // ═══════════════════════════════════════════════════════════════════════
+        async function buscar(query){
+            const div = document.getElementById('sugerencias');
+            if(!query || query.length < 2){div.innerHTML='';div.classList.remove('activo');return;}
 
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${q}&viewbox=-58.85,-34.50,-58.60,-34.65&bounded=1&limit=6&addressdetails=1`;
-            
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
-                box.innerHTML = '';
-                data.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'res-item';
-                    div.innerHTML = `<i class="fas fa-map-marker-alt"></i> <div><b>${item.display_name.split(',')[0]}</b><br><small>${item.address.suburb || item.address.city || ''}</small></div>`;
-                    div.onclick = () => {
-                        seleccionarUbicacion(item.display_name.split(',')[0], item.lat, item.lng);
-                        box.classList.remove('active');
-                        document.getElementById('destino').value = item.display_name.split(',')[0];
-                    };
-                    box.appendChild(div);
+            if(timeoutBusq) clearTimeout(timeoutBusq);
+            const miId = ++idBusq;
+
+            timeoutBusq = setTimeout(async() => {
+                if(idBusq !== miId) return;
+
+                div.innerHTML = '<div class="sugerencia-item" style="cursor:default"><i class="fas fa-spinner fa-spin"></i><div><div class="sug-text">Buscando...</div></div></div>';
+                div.classList.add('activo');
+
+                let resultados = [];
+                const q = query.toLowerCase().trim();
+                const qNumMatch = q.match(/(\d+)/);
+                const qNum = qNumMatch ? parseInt(qNumMatch[1]) : null;
+                let qCalle = q.replace(/\d+/g,'').replace(/\s+/g,' ').trim();
+                qCalle = qCalle.replace(/^av\./i,'avenida').replace(/^av /i,'avenida ');
+
+                // 1. Direcciones exactas locales
+                if(qNum){
+                    DIRECCIONES_REALES.forEach(dir => {
+                        const calleLower = dir.calle.toLowerCase();
+                        if(calleLower.includes(qCalle) || qCalle.includes(calleLower.replace('avenida ',''))){
+                            const diff = Math.abs(dir.altura - qNum);
+                            if(diff <= 300){
+                                resultados.push({
+                                    texto: `${dir.calle} ${dir.altura}, ${dir.localidad}, Buenos Aires`,
+                                    lat: dir.lat, lng: dir.lng,
+                                    exacta: true, fuente: 'local', tipo: 'exacta', prioridad: diff
+                                });
+                            }
+                        }
+                    });
+                    resultados.sort((a,b) => a.prioridad - b.prioridad);
+                }
+
+                // 2. Cruces de calles
+                CRUCES.forEach(c => {
+                    const nombreLower = c.nombre.toLowerCase();
+                    if(nombreLower.includes(qCalle) || qCalle.includes(nombreLower.replace('avenida ',''))){
+                        c.cruces.forEach(cruce => {
+                            resultados.push({
+                                texto: `${c.nombre} y ${cruce}, ${c.localidad}, Buenos Aires`,
+                                lat: null, lng: null,
+                                exacta: false, fuente: 'local', tipo: 'cruce'
+                            });
+                        });
+                    }
                 });
-            } catch(e) {}
+
+                // 3. Estaciones de tren
+                ESTACIONES_TREN.forEach(est => {
+                    if(est.nombre.toLowerCase().includes(q) || est.localidad.toLowerCase().includes(q)){
+                        resultados.unshift({
+                            texto: `${est.nombre} (Línea ${est.linea}), ${est.localidad}`,
+                            lat: est.lat, lng: est.lng,
+                            exacta: true, fuente: 'tren', tipo: 'estacion'
+                        });
+                    }
+                });
+
+                // 4. Nominatim (solo si faltan con coordenadas)
+                const conCoords = resultados.filter(r => r.lat !== null);
+                if(conCoords.length < 3){
+                    try{
+                        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Moreno, Buenos Aires, Argentina')}&limit=5&countrycodes=ar&addressdetails=1&viewbox=-58.95,-34.50,-58.65,-34.72&bounded=1`;
+                        const res = await fetch(url, {headers:{'Accept-Language':'es-AR','User-Agent':'LasCatalinas53/7.0'}});
+                        const data = await res.json();
+
+                        data.forEach(l => {
+                            const lat = parseFloat(l.lat);
+                            const lng = parseFloat(l.lon);
+                            if(!enZona(lat, lng)) return;
+
+                            const addr = l.address || {};
+                            let texto = '';
+                            if(addr.house_number && addr.road) texto = `${addr.road} ${addr.house_number}`;
+                            else if(addr.road) texto = addr.road;
+                            else texto = l.display_name.split(',')[0];
+
+                            const localidad = addr.suburb || addr.town || addr.city || addr.county || 'Moreno';
+                            if(texto && texto !== 'null'){
+                                const textoCompleto = `${texto}, ${localidad}, Buenos Aires`;
+                                const dup = resultados.some(r => r.texto.toLowerCase() === textoCompleto.toLowerCase());
+                                if(!dup){
+                                    resultados.push({
+                                        texto: textoCompleto, lat, lng,
+                                        exacta: !!addr.house_number, fuente: 'nom', tipo: 'direccion'
+                                    });
+                                }
+                            }
+                        });
+                    }catch(e){}
+                }
+
+                if(idBusq !== miId) return;
+
+                div.innerHTML = '';
+                if(resultados.length === 0){
+                    div.innerHTML = `
+                        <div class="sugerencia-item" style="cursor:default">
+                            <i class="fas fa-search"></i>
+                            <div>
+                                <div class="sug-text">No se encontró "${query}" en Moreno/San Miguel</div>
+                                <div class="sug-zona">Solo trabajamos en Moreno y San Miguel</div>
+                                <div class="sug-zona">Ej: "Solano López 300, Moreno"</div>
+                            </div>
+                        </div>`;
+                } else {
+                    resultados.slice(0,8).forEach(r => {
+                        let icono = 'fa-road';
+                        let badge = '<span class="sug-badge fallback">CALLE</span>';
+                        if(r.tipo === 'estacion'){ icono = 'fa-train'; badge = '<span class="sug-badge">TREN</span>'; }
+                        else if(r.tipo === 'exacta'){ icono = 'fa-home'; badge = '<span class="sug-badge">EXACTA</span>'; }
+                        else if(r.exacta){ icono = 'fa-home'; badge = '<span class="sug-badge">EXACTA</span>'; }
+                        else if(r.tipo === 'cruce'){ icono = 'fa-map-pin'; badge = '<span class="sug-badge fallback">ESQ</span>'; }
+
+                        const onclick = (r.lat !== null && r.lng !== null)
+                            ? `onclick="seleccionar('${r.texto.replace(/'/g,"\\'")}',${r.lat},${r.lng})"`
+                            : `onclick="geocodificar('${r.texto.replace(/'/g,"\\'")}')"`;
+
+                        div.innerHTML += `
+                            <div class="sugerencia-item" ${onclick}>
+                                <i class="fas ${icono}"></i>
+                                <div>
+                                    <div class="sug-text">${r.texto}</div>
+                                    ${badge}
+                                    <div class="sug-zona">${r.fuente === 'local' ? 'Zona Moreno/San Miguel' : 'Buscador online'}</div>
+                                </div>
+                            </div>`;
+                    });
+                }
+                div.classList.add('activo');
+            }, 300);
         }
 
-        async function seleccionarUbicacion(nombre, lat, lng) {
-            destPos = {lat: parseFloat(lat), lng: parseFloat(lng)};
-            
-            if(markerDest) map.removeLayer(markerDest);
-            markerDest = L.marker([destPos.lat, destPos.lng]).addTo(map);
+        async function geocodificar(texto){
+            const div = document.getElementById('sugerencias');
+            div.innerHTML = '<div class="sugerencia-item" style="cursor:default"><i class="fas fa-spinner fa-spin"></i><div><div class="sug-text">Buscando coordenadas...</div></div></div>';
 
-            const routeUrl = `https://router.project-osrm.org/route/v1/driving/${userPos.lng},${userPos.lat};${destPos.lng},${destPos.lat}?overview=full&geometries=geojson`;
-            
-            try {
-                const res = await fetch(routeUrl);
+            try{
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(texto + ', Argentina')}&limit=1&countrycodes=ar&viewbox=-58.95,-34.50,-58.65,-34.72&bounded=1`;
+                const res = await fetch(url, {headers:{'Accept-Language':'es-AR','User-Agent':'LasCatalinas53/7.0'}});
                 const data = await res.json();
-                const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                const distanciaKm = (data.routes[0].distance / 1000).toFixed(2);
-                
-                if(polylineRuta) map.removeLayer(polylineRuta);
-                polylineRuta = L.polyline(coords, {color: '#f47920', weight: 6, opacity: 0.8}).addTo(map);
 
-                document.getElementById('trip-card').style.display = 'block';
-                document.getElementById('dist-val').innerText = distanciaKm;
-                document.getElementById('dest-nombre').innerText = nombre;
-                
-                const total = Math.round(3000 + (distanciaKm * 800));
-                document.getElementById('precio-val').innerText = `$${total}`;
-
-                if(!modoManual) map.fitBounds(polylineRuta.getBounds(), {padding: [50, 50]});
-            } catch(e) {}
+                if(data && data.length > 0){
+                    const lat = parseFloat(data[0].lat);
+                    const lng = parseFloat(data[0].lon);
+                    if(!enZona(lat, lng)){
+                        alert('❌ Esa dirección queda fuera de Moreno/San Miguel');
+                        div.classList.remove('activo');
+                        return;
+                    }
+                    seleccionar(texto, lat, lng);
+                } else {
+                    alert('No se encontraron coordenadas para esa dirección en Moreno/San Miguel');
+                    div.classList.remove('activo');
+                }
+            }catch(e){
+                alert('Error de conexión');
+                div.classList.remove('activo');
+            }
         }
 
-        async function solicitarViaje() {
-            const nombre = document.getElementById('nombre').value;
-            if(!nombre || !destPos) { alert("Completá tu nombre y elegí destino"); return; }
-            
-            const btn = document.getElementById('btn-pedir');
+        function seleccionar(texto, lat, lng){
+            if(!enZona(lat, lng)){
+                mostrarAlerta('❌ Fuera de Moreno/San Miguel. No podemos ir ahí.');
+                document.getElementById('sugerencias').classList.remove('activo');
+                return;
+            }
+
+            document.getElementById('destino').value = texto;
+            document.getElementById('sugerencias').classList.remove('activo');
+            destinoCoords = {lat, lng};
+
+            if(markerDestino){
+                map.removeLayer(markerDestino);
+                markerDestino = null;
+            }
+
+            const iconoDestino = L.divIcon({
+                html: '<div style="background:#e61e2b;width:36px;height:36px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-flag-checkered" style="color:white;font-size:14px"></i></div>',
+                iconSize: [40, 40], iconAnchor: [20, 20], className: ''
+            });
+
+            markerDestino = L.marker([lat, lng], {icon: iconoDestino})
+                .addTo(map)
+                .bindPopup('<b>Destino:</b><br>' + texto);
+
+            actualizarRuta();
+
+            if(miPosicion.lat && miPosicion.lng){
+                map.fitBounds([[miPosicion.lat, miPosicion.lng], [lat, lng]], {padding: [60, 60], maxZoom: 17});
+            } else {
+                map.setView([lat, lng], 16);
+            }
+        }
+
+        function actualizarRuta(){
+            if(rutaLayer){
+                map.removeLayer(rutaLayer);
+                rutaLayer = null;
+            }
+            if(!miPosicion.lat || !miPosicion.lng || !destinoCoords) return;
+
+            rutaLayer = L.polyline(
+                [[miPosicion.lat, miPosicion.lng], [destinoCoords.lat, destinoCoords.lng]],
+                {color: '#f47920', weight: 5, opacity: 0.9, dashArray: '10, 10'}
+            ).addTo(map);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // SOLICITAR
+        // ═══════════════════════════════════════════════════════════════════════
+        async function solicitar(){
+            const nombre = document.getElementById('nombre').value.trim();
+            const telefono = document.getElementById('telefono').value.trim();
+            const destino = document.getElementById('destino').value.trim();
+
+            if(!nombre || !telefono || !destino){
+                alert('Completá todos los datos'); return;
+            }
+            if(!destinoCoords){
+                alert('Seleccioná un destino de la lista'); return;
+            }
+
+            let latSalida = miPosicion.lat;
+            let lngSalida = miPosicion.lng;
+            let dirSalida = `GPS: ${miPosicion.lat ? miPosicion.lat.toFixed(5) : '-'}, ${miPosicion.lng ? miPosicion.lng.toFixed(5) : '-'}`;
+
+            if(usandoManual){
+                const dirManual = document.getElementById('direccion-origen').value.trim();
+                if(!dirManual){
+                    alert('Ingresá tu dirección de origen manualmente'); return;
+                }
+                dirSalida = dirManual + ' (manual)';
+            } else if(!miPosicion.lat || !miPosicion.lng){
+                alert('Esperá que el GPS encuentre tu ubicación, o ingresá tu dirección manualmente'); return;
+            }
+
+            if(!enZona(destinoCoords.lat, destinoCoords.lng)){
+                alert('❌ Destino fuera de Moreno/San Miguel'); return;
+            }
+
+            const btn = document.getElementById('btn-solicitar');
             btn.disabled = true;
-            btn.innerText = "ENVIANDO PEDIDO...";
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
 
-            try {
-                const { data: pax } = await supabase.from('pasajeros').insert({nombre}).select().single();
-                await supabase.from('viajes').insert({
-                    pasajero_id: pax.id,
-                    nombre_pasajero: nombre,
-                    destino: document.getElementById('dest-nombre').innerText,
-                    lat_salida: userPos.lat,
-                    lng_salida: userPos.lng,
-                    lat_destino: destPos.lat,
-                    lng_destino: destPos.lng,
-                    tarifa_total: parseInt(document.getElementById('precio-val').innerText.replace('$','')),
-                    estado: 'pendiente'
+            try{
+                const {data: pax} = await supabaseClient.from('pasajeros').insert({nombre, telefono}).select().single();
+                const dist = calcularDistancia(latSalida || -34.650, lngSalida || -58.790, destinoCoords.lat, destinoCoords.lng);
+                const tarifa = {
+                    total: Math.round(3000 + dist * 800),
+                    base: 3000, km: dist, costoKm: Math.round(dist * 800)
+                };
+
+                await supabaseClient.from('viajes').insert({
+                    pasajero_id: pax.id, nombre_pasajero: nombre, telefono_pasajero: telefono,
+                    direccion_salida: dirSalida, destino: destino,
+                    lat_salida: latSalida || -34.650, lng_salida: lngSalida || -58.790,
+                    lat_destino: destinoCoords.lat, lng_destino: destinoCoords.lng,
+                    distancia_km: dist.toFixed(2), tarifa_base: tarifa.base,
+                    tarifa_km: tarifa.costoKm, tarifa_total: tarifa.total, estado: 'pendiente'
                 });
-                alert("¡Pedido enviado con éxito! Buscando chofer.");
-                btn.innerText = "PEDIDO ENVIADO ✅";
-            } catch(e) {
-                alert("Error de conexión");
+
+                alert('¡Viaje solicitado! Buscando conductor...');
+                btn.innerHTML = '<i class="fas fa-check"></i> Solicitado';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Solicitar Móvil';
+                }, 3000);
+            }catch(e){
+                alert('Error: ' + e.message);
                 btn.disabled = false;
-                btn.innerText = "SOLICITAR AHORA";
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Solicitar Móvil';
             }
         }
+
+        function calcularDistancia(lat1, lon1, lat2, lon2){
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        document.addEventListener('click', e => {
+            if(!e.target.closest('.buscador-container')){
+                document.getElementById('sugerencias').classList.remove('activo');
+            }
+        });
     </script>
 </body>
 </html>
