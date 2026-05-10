@@ -3,197 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Conductor - Barrio Las Catalinas</title>
+    <title>App Conductor - Barrio Las Catalinas</title>
     
-    <!-- Leaflet para el Mapa -->
+    <!-- Mantenemos tus librerías originales -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        :root { --primario: #2ecc71; --oscuro: #27ae60; --alerta: #e74c3c; }
-        body { margin: 0; font-family: sans-serif; background: #f4f4f4; }
-        #map { height: 60vh; width: 100%; }
+        /* Mantenemos tu estilo visual exacto */
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #map { height: 100vh; width: 100%; position: absolute; z-index: 1; }
         
-        .panel-conductor { padding: 15px; background: white; border-top-left-radius: 20px; border-top-right-radius: 20px; position: relative; margin-top: -20px; z-index: 1000; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); }
-        
-        .estado-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .badge { padding: 5px 10px; border-radius: 15px; font-weight: bold; font-size: 0.8em; }
-        .online { background: #d4edda; color: #155724; }
-        .offline { background: #f8d7da; color: #721c24; }
-
-        .btn-grande { width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 1.1em; font-weight: bold; color: white; cursor: pointer; margin-top: 10px; }
-        .btn-espera { background: var(--primario); }
-        .btn-cancelar { background: var(--alerta); }
-
-        /* Tarjeta de Pedido Entrante */
-        #pedido-entrante { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.9); z-index: 9999; display: none;
-            color: white; padding: 20px; box-sizing: border-box; text-align: center;
+        .interfaz-conductor {
+            position: absolute; bottom: 0; width: 100%; z-index: 10;
+            background: white; border-radius: 20px 20px 0 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+            padding: 20px; box-sizing: border-box;
         }
-        .info-pedido { background: #333; padding: 20px; border-radius: 15px; margin-top: 50px; }
-        .activo { display: block !important; }
+
+        .btn-estado {
+            width: 100%; padding: 15px; border: none; border-radius: 12px;
+            font-size: 18px; font-weight: bold; color: white; margin-bottom: 10px;
+        }
+        .online { background-color: #2ecc71; }
+        .offline { background-color: #95a5a6; }
+
+        #alerta-pedido {
+            display: none; position: fixed; top: 20%; left: 5%; width: 90%;
+            background: #2c3e50; color: white; padding: 20px;
+            border-radius: 15px; z-index: 100; text-align: center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .detalles-viaje { text-align: left; background: #34495e; padding: 10px; border-radius: 10px; margin: 15px 0; }
+        .btn-aceptar { background: #2ecc71; color: white; width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 18px; }
+        .btn-rechazar { background: #e74c3c; color: white; width: 100%; padding: 10px; border: none; border-radius: 10px; margin-top: 10px; }
         
-        .datos-viaje { text-align: left; margin: 20px 0; border-left: 4px solid var(--primario); padding-left: 15px; }
-        .precio-tag { font-size: 2em; color: var(--primario); font-weight: bold; }
+        .precio-grande { font-size: 24px; color: #2ecc71; font-weight: bold; display: block; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
 
-    <div id="pedido-entrante">
-        <h2>¡NUEVO VIAJE!</h2>
-        <div class="info-pedido">
-            <div class="precio-tag" id="p-precio">$0.00</div>
-            <div class="datos-viaje">
-                <p><strong>Pasajero:</strong> <span id="p-nombre">...</span></p>
-                <p><strong>Desde:</strong> <span id="p-direccion">...</span></p>
-                <p><strong>Hacia:</strong> <span id="p-destino">...</span></p>
-            </div>
-            <button class="btn-grande btn-espera" onclick="aceptarViaje()">ACEPTAR VIAJE</button>
-            <button class="btn-grande btn-cancelar" onclick="rechazarViaje()">RECHAZAR</button>
+    <!-- Tu panel de alerta actualizado -->
+    <div id="alerta-pedido">
+        <h3>¡Nuevo Pedido!</h3>
+        <div class="detalles-viaje">
+            <span class="precio-grande" id="monto-pedido">$0.00</span>
+            <p><strong>Pasajero:</strong> <span id="nombre-p">...</span></p>
+            <p><strong>Recoger en:</strong> <span id="origen-p">...</span></p>
+            <p><strong>Destino:</strong> <span id="destino-p">...</span></p>
+        </div>
+        <button class="btn-aceptar" onclick="aceptarViaje()">ACEPTAR VIAJE</button>
+        <button class="btn-rechazar" onclick="cerrarAlerta()">RECHAZAR</button>
+    </div>
+
+    <!-- Tu interfaz de control -->
+    <div class="interfaz-conductor">
+        <button id="btn-conexion" class="btn-estado offline" onclick="cambiarEstado()">CONECTARSE</button>
+        <div id="info-servicio" style="text-align: center; color: #7f8c8d;">
+            Estás desconectado. Conéctate para recibir viajes.
         </div>
     </div>
 
-    <div class="panel-conductor">
-        <div class="estado-box">
-            <div>
-                <strong>Mi Estado:</strong> 
-                <span id="status-label" class="badge offline">DESCONECTADO</span>
-            </div>
-            <button id="btn-toggle" onclick="toggleConexion()" style="padding: 5px 15px; border-radius: 10px;">Conectar</button>
-        </div>
-        <div id="panel-stats">
-            <p style="margin: 0; color: #666; font-size: 0.9em;">Esperando solicitudes en el barrio...</p>
-        </div>
-    </div>
-
-    <audio id="alarma" src="https://assets.mixkit.co/active_storage/sfx/2561/2561-preview.mp3"></audio>
+    <audio id="sonido-alerta" src="https://assets.mixkit.co/active_storage/sfx/2561/2561-preview.mp3"></audio>
 
     <script>
-        // CONFIGURACIÓN SUPABASE (Asegúrate que coincidan con tu proyecto)
-        const URL_SB = "TU_URL_DE_SUPABASE";
-        const KEY_SB = "TU_KEY_DE_SUPABASE";
-        const supabase = window.supabase.createClient(URL_SB, KEY_SB);
+        // Configuración de tu proyecto
+        const SB_URL = "TU_URL_DE_SUPABASE";
+        const SB_KEY = "TU_KEY_DE_SUPABASE";
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
-        let map, miMarcador, rutaLayer;
-        let miPosicion = { lat: -34.61, lng: -58.75 }; // Coordenadas base Trujui/Moreno
-        let estaOnline = false;
+        let map, markerChofer, markerPasajero;
+        let estaConectado = false;
         let pedidoActual = null;
+        let miUbicacion = { lat: -34.61, lng: -58.75 };
 
-        // Iniciar Mapa
-        function initMap() {
-            map = L.map('map', { zoomControl: false }).setView([miPosicion.lat, miPosicion.lng], 15);
+        // Inicializar tu mapa
+        function init() {
+            map = L.map('map', { zoomControl: false }).setView([miUbicacion.lat, miUbicacion.lng], 15);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            miMarcador = L.marker([miPosicion.lat, miPosicion.lng]).addTo(map).bindPopup("Tú");
+            markerChofer = L.circleMarker([miUbicacion.lat, miUbicacion.lng], {
+                color: '#2ecc71', radius: 10, fillOpacity: 1
+            }).addTo(map);
+            
+            rastrearUbicacion();
         }
 
-        // GPS con alta precisión para celular
-        function trackGPS() {
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(pos => {
-                    miPosicion.lat = pos.coords.latitude;
-                    miPosicion.lng = pos.coords.longitude;
-                    
-                    const latlng = [miPosicion.lat, miPosicion.lng];
-                    miMarcador.setLatLng(latlng);
-                    if (!pedidoActual) map.panTo(latlng);
-
-                    if (estaOnline) actualizarUbicaciónDB();
-                }, err => console.log(err), { enableHighAccuracy: true, maximumAge: 3000 });
-            }
+        // GPS optimizado para tu Motorola
+        function rastrearUbicacion() {
+            navigator.geolocation.watchPosition(pos => {
+                miUbicacion.lat = pos.coords.latitude;
+                miUbicacion.lng = pos.coords.longitude;
+                
+                markerChofer.setLatLng([miUbicacion.lat, miUbicacion.lng]);
+                
+                if (estaConectado) {
+                    actualizarPosicionDB();
+                }
+            }, null, { enableHighAccuracy: true, maximumAge: 3000 });
         }
 
-        async function actualizarUbicaciónDB() {
-            // Actualizamos la tabla 'conductores' para que el pasajero nos vea
+        async function actualizarPosicionDB() {
             await supabase.from('conductores').upsert({
-                id_conductor: 'CHOFER_01', // ID fijo por ahora para pruebas
-                lat: miPosicion.lat,
-                lng: miPosicion.lng,
-                ultima_conexion: new Date()
+                id_conductor: 'CHOFER_PROVISORIO', 
+                lat: miUbicacion.lat,
+                lng: miUbicacion.lng,
+                ultima_act: new Date()
             });
         }
 
-        function toggleConexion() {
-            estaOnline = !estaOnline;
-            const label = document.getElementById('status-label');
-            const btn = document.getElementById('btn-toggle');
-            
-            if (estaOnline) {
-                label.textContent = "EN LÍNEA";
-                label.className = "badge online";
-                btn.textContent = "Desconectar";
-                escucharPedidos();
+        function cambiarEstado() {
+            estaConectado = !estaConectado;
+            const btn = document.getElementById('btn-conexion');
+            const info = document.getElementById('info-servicio');
+
+            if (estaConectado) {
+                btn.textContent = "EN LÍNEA (ESPERANDO)";
+                btn.className = "btn-estado online";
+                info.textContent = "Buscando pasajeros en Las Catalinas...";
+                escucharNuevosViajes();
             } else {
-                label.textContent = "DESCONECTADO";
-                label.className = "badge offline";
-                btn.textContent = "Conectar";
+                btn.textContent = "CONECTARSE";
+                btn.className = "btn-estado offline";
+                info.textContent = "Estás desconectado.";
             }
         }
 
-        // Suscripción en tiempo real a la tabla 'viajes'
-        function escucharPedidos() {
+        // Esta es la parte que "escucha" a la App del Pasajero
+        function escucharNuevosViajes() {
             supabase
-                .channel('pedidos-nuevos')
+                .channel('cambios-viajes')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, payload => {
                     if (payload.new.estado === 'pendiente') {
-                        lanzarAlerta(payload.new);
+                        mostrarAlerta(payload.new);
                     }
                 })
                 .subscribe();
         }
 
-        function lanzarAlerta(viaje) {
+        function mostrarAlerta(viaje) {
             pedidoActual = viaje;
-            document.getElementById('p-nombre').textContent = viaje.nombre_pasajero;
-            document.getElementById('p-direccion').textContent = viaje.direccion_salida;
-            document.getElementById('p-destino').textContent = viaje.destino;
-            document.getElementById('p-precio').textContent = `$${viaje.precio}`;
+            document.getElementById('monto-pedido').textContent = `$${viaje.precio}`;
+            document.getElementById('nombre-p').textContent = viaje.nombre_pasajero;
+            document.getElementById('origen-p').textContent = viaje.direccion_salida;
+            document.getElementById('destino-p').textContent = viaje.destino || "No especificado";
             
-            document.getElementById('pedido-entrante').classList.add('activo');
-            document.getElementById('alarma').play();
+            document.getElementById('alerta-pedido').style.display = 'block';
+            document.getElementById('sonido-alerta').play();
         }
 
         async function aceptarViaje() {
+            // Actualizamos el viaje en la DB para que el pasajero sepa que vas
             const { error } = await supabase
                 .from('viajes')
-                .update({ estado: 'en_camino', conductor_id: 'CHOFER_01' })
+                .update({ 
+                    estado: 'en_camino', 
+                    conductor_id: 'CHOFER_PROVISORIO' 
+                })
                 .eq('id', pedidoActual.id);
 
             if (!error) {
-                document.getElementById('pedido-entrante').classList.remove('activo');
-                document.getElementById('alarma').pause();
-                trazarRuta(pedidoActual);
-                alert("¡Viaje aceptado! Dirígete al punto de encuentro.");
+                document.getElementById('alerta-pedido').style.display = 'none';
+                document.getElementById('sonido-alerta').pause();
+                
+                // Dibujar marcador del pasajero en tu mapa
+                if (markerPasajero) map.removeLayer(markerPasajero);
+                markerPasajero = L.marker([pedidoActual.lat_salida, pedidoActual.lng_salida]).addTo(map)
+                    .bindPopup("Recoger aquí").openPopup();
+                
+                map.flyTo([pedidoActual.lat_salida, pedidoActual.lng_salida], 16);
+                alert("Viaje aceptado. El pasajero ya puede ver tu ubicación.");
             }
         }
 
-        function rechazarViaje() {
-            document.getElementById('pedido-entrante').classList.remove('activo');
-            document.getElementById('alarma').pause();
+        function cerrarAlerta() {
+            document.getElementById('alerta-pedido').style.display = 'none';
+            document.getElementById('sonido-alerta').pause();
             pedidoActual = null;
         }
 
-        function trazarRuta(viaje) {
-            if (rutaLayer) map.removeLayer(rutaLayer);
-            
-            // Trazamos una línea simple entre chofer y pasajero para empezar
-            rutaLayer = L.polyline([
-                [miPosicion.lat, miPosicion.lng],
-                [viaje.lat_salida, viaje.lng_salida]
-            ], {color: 'red', weight: 5}).addTo(map);
-            
-            map.fitBounds(rutaLayer.getBounds(), {padding: [50, 50]});
-        }
-
-        window.onload = () => {
-            initMap();
-            trackGPS();
-        };
+        window.onload = init;
     </script>
 </body>
 </html>
