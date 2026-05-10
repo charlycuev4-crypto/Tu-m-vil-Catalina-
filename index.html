@@ -512,109 +512,230 @@
             {calle1:"Avenida Urquiza", calle2:"Pueyrredón", localidad:"San Miguel", lat:-34.5450, lng:-58.7240},
             {calle1:"Avenida Urquiza", calle2:"Las Heras", localidad:"San Miguel", lat:-34.5460, lng:-58.7260}
         ];
-// ═══════════════════════════════════════════════════════════════════════
-// ACTUALIZACIÓN: DIBUJAR RUTA POR CALLES
-// ═══════════════════════════════════════════════════════════════════════
+    <script>
+        // ═══════════════════════════════════════════════════════════════════════
+        // VARIABLES GLOBALES (Asegurate que estén todas)
+        // ═══════════════════════════════════════════════════════════════════════
+        let map, markerGPS, circuloGPS, markerDestino, lineaRuta;
+        let miPosicion = { lat: null, lng: null };
+        let destinoCoords = null;
+        let gpsActivo = false;
+        let usandoManual = false;
+        let idBusq = 0;
+        let timeoutBusq = null;
+        let watchIdGPS = null;
+        let viajeActual = null;
+        let supabaseClient;
 
-async function dibujarRutaPorCalles() {
-    if (!miPosicion || !destinoCoords) return;
-
-    // URL de OSRM (Servicio de ruteo gratuito)
-    const url = `https://router.project-osrm.org/route/v1/driving/${miPosicion.lng},${miPosicion.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson`;
-
-    try {
-        const respuesta = await fetch(url);
-        const datos = await respuesta.json();
-
-        if (datos.code !== 'Ok') throw new Error('No se pudo encontrar una ruta por calles');
-
-        const coordinates = datos.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
-
-        if (lineaRuta) mapa.removeLayer(lineaRuta);
-
-        // Dibujamos la línea siguiendo las calles
-        lineaRuta = L.polyline(coordinates, {
-            color: '#2ecc71', // Verde suave para la ruta
-            weight: 5,
-            opacity: 0.7,
-            lineCap: 'round',
-            lineJoin: 'round'
-        }).addTo(mapa);
-
-        // Ajustar el mapa para que se vea toda la ruta
-        mapa.fitBounds(lineaRuta.getBounds(), { padding: [50, 50] });
-
-    } catch (error) {
-        console.error('Error ruteo:', error);
-        // Si falla OSRM, usamos línea recta punteada como respaldo
-        if (lineaRuta) mapa.removeLayer(lineaRuta);
-        lineaRuta = L.polyline([miPosicion, destinoCoords], {
-            color: '#e74c3c',
-            dashArray: '10, 10',
-            weight: 3
-        }).addTo(mapa);
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// CORRECCIÓN: HISTORIAL DE VIAJES (Error de columna creado_en)
-// ═══════════════════════════════════════════════════════════════════════
-
-async function mostrarHistorial() {
-    const telefono = document.getElementById('telefono').value.trim();
-    if (!telefono) {
-        mostrarAlerta('Ingresá tu teléfono primero');
-        return;
-    }
-    
-    try {
-        // Probamos con 'created_at' que es el estándar de Supabase
-        const { data, error } = await supabaseClient
-            .from('viajes')
-            .select('*')
-            .eq('telefono_pasajero', telefono)
-            .order('created_at', { ascending: false }) // Cambiado de creado_en a created_at
-            .limit(10);
+        // ═══════════════════════════════════════════════════════════════════════
+        // INICIALIZACIÓN
+        // ═══════════════════════════════════════════════════════════════════════
         
-        if (error) throw error;
-        
-        if (!data || data.length === 0) {
-            mostrarAlerta('No tenés viajes anteriores');
-            return;
-        }
-        
-        let html = '<div style="max-height:300px;overflow-y:auto">';
-        data.forEach(v => {
-            // Usamos created_at para la fecha
-            const fecha = v.created_at ? new Date(v.created_at).toLocaleDateString('es-AR') : 'S/F';
-            const estado = v.estado === 'completado' ? '✅' : v.estado === 'cancelado' ? '❌' : '🕐';
-            html += `
-                <div style="padding:12px;border-bottom:1px solid #eee">
-                    <div style="font-weight:600">${estado} ${v.destino}</div>
-                    <div style="font-size:.8rem;color:var(--gris)">${fecha} • $${v.tarifa_total?.toLocaleString('es-AR') || '-'}</div>
-                </div>`;
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Inicializar Supabase
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            
+            // MAPA: Corregido para evitar cuadros grises al inicio
+            map = L.map('map', {zoomControl: false, attributionControl: false})
+                .setView([-34.6510, -58.7880], 13); // Centrado inicial en Base Catalinas
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                keepBuffer: 2 // Mejora la carga de cuadros laterales
+            }).addTo(map);
+
+            // Marcador de Base
+            const iconoCatalinas = L.divIcon({
+                html: '<div class="pin-catalinas"><i class="fas fa-plus"></i></div>',
+                iconSize: [46, 46],
+                iconAnchor: [23, 46],
+                className: ''
+            });
+            L.marker([-34.6510, -58.7880], {icon: iconoCatalinas}).addTo(map);
+
+            iniciarGPS();
+            inicializarSlideButton();
         });
-        html += '</div>';
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // GPS Y RUTEO POR CALLES (OSRM) - CORREGIDO
+        // ═══════════════════════════════════════════════════════════════════════
         
-        // Crear modal (el resto del código del modal sigue igual)
-        const modal = document.createElement('div');
-        modal.className = 'modal-hist';
-        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:3000;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px';
-        modal.innerHTML = `
-            <div style="background:white;border-radius:20px;width:100%;max-width:400px;max-height:80vh;overflow:hidden">
-                <div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
-                    <h3 style="margin:0;font-size:1.1rem">📋 Historial de viajes</h3>
-                    <button onclick="this.closest('.modal-hist').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer">×</button>
-                </div>
-                ${html}
-            </div>`;
-        document.body.appendChild(modal);
+        function iniciarGPS() {
+            if (!navigator.geolocation) {
+                actualizarGPS('error', 'GPS no soportado');
+                return;
+            }
+            actualizarGPS('buscando', 'Buscando GPS...');
+
+            navigator.geolocation.getCurrentPosition(
+                pos => { actualizarGPSPos(pos, true); },
+                err => { 
+                    console.log("Error GPS inicial:", err);
+                    actualizarGPS('error', 'GPS demorado');
+                },
+                {enableHighAccuracy: true, timeout: 10000}
+            );
+
+            watchIdGPS = navigator.geolocation.watchPosition(
+                pos => { actualizarGPSPos(pos, false); },
+                err => {},
+                {enableHighAccuracy: true, maximumAge: 10000}
+            );
+        }
+
+        function actualizarGPSPos(position, primera) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            miPosicion = {lat, lng};
+
+            if (markerGPS) map.removeLayer(markerGPS);
+            markerGPS = L.circleMarker([lat, lng], {
+                radius: 8, fillColor: '#007AFF', color: '#fff', weight: 2, fillOpacity: 1
+            }).addTo(map);
+
+            if (primera) map.setView([lat, lng], 16);
+            actualizarGPS('preciso', 'GPS Activo');
+            
+            // Si el usuario ya eligió destino, refrescar la ruta por calles
+            if (destinoCoords) actualizarRuta();
+        }
+
+        async function actualizarRuta() {
+            // VALIDACIÓN CRÍTICA: Si no hay GPS o Destino, no intentar dibujar (evita mapa gris)
+            if (!miPosicion.lat || !destinoCoords) return;
+
+            try {
+                // LLAMADA A OSRM PARA RUTA POR CALLES
+                const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${miPosicion.lng},${miPosicion.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson`);
+                const data = await response.json();
+
+                if (lineaRuta) map.removeLayer(lineaRuta);
+
+                if (data.code === 'Ok') {
+                    // RUTA POR CALLES: Extraemos coordenadas del ruteador
+                    const coordenadas = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                    lineaRuta = L.polyline(coordenadas, {
+                        color: '#f47920', 
+                        weight: 6, 
+                        opacity: 0.8,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    }).addTo(map);
+                } else {
+                    // FALLBACK: Si falla OSRM, tiramos línea recta punteada para no romper el mapa
+                    lineaRuta = L.polyline([[miPosicion.lat, miPosicion.lng], [destinoCoords.lat, destinoCoords.lng]], {
+                        color: '#f47920', dashArray: '10, 15', weight: 4
+                    }).addTo(map);
+                }
+
+                // Ajustar zoom para mostrar ambos puntos
+                map.fitBounds(lineaRuta.getBounds(), {padding: [50, 50]});
+
+            } catch (error) {
+                console.error("Error en ruteo:", error);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // HISTORIAL CORREGIDO (Usa created_at de Supabase)
+        // ═══════════════════════════════════════════════════════════════════════
         
-    } catch (e) {
-        console.error(e);
-        mostrarAlerta('Error al cargar historial. Verifica la conexión.');
-    }
-        }        // ═══════════════════════════════════════════════════════════════════════
+        async function mostrarHistorial() {
+            const telefono = document.getElementById('telefono').value.trim();
+            if (!telefono) {
+                mostrarAlerta('Ingresá tu teléfono primero');
+                return;
+            }
+            
+            try {
+                // CORRECCIÓN: 'created_at' es la columna nativa de Supabase
+                const {data, error} = await supabaseClient
+                    .from('viajes')
+                    .select('*')
+                    .eq('telefono_pasajero', telefono)
+                    .order('created_at', {ascending: false})
+                    .limit(8);
+                
+                if (error) throw error;
+                
+                let html = '<div style="max-height:350px;overflow-y:auto;padding:10px">';
+                if (!data || data.length === 0) {
+                    html += '<p style="text-align:center;color:#999">No tenés viajes aún</p>';
+                } else {
+                    data.forEach(v => {
+                        const fecha = new Date(v.created_at).toLocaleDateString('es-AR');
+                        const status = v.estado === 'completado' ? '✅' : '🕐';
+                        html += `
+                            <div style="padding:15px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center">
+                                <div>
+                                    <div style="font-weight:700;font-size:.9rem">${status} ${v.destino}</div>
+                                    <div style="font-size:.75rem;color:#888">${fecha}</div>
+                                </div>
+                                <div style="font-weight:800;color:var(--verde)">$${v.tarifa_total}</div>
+                            </div>`;
+                    });
+                }
+                html += '</div>';
+                
+                const modal = document.createElement('div');
+                modal.className = 'modal-hist';
+                modal.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:20px';
+                modal.innerHTML = `
+                    <div style="background:white;border-radius:25px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.3)">
+                        <div style="padding:20px;background:#f8f8f8;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
+                            <h3 style="margin:0;font-size:1.1rem">Mis Viajes</h3>
+                            <button onclick="this.closest('.modal-hist').remove()" style="border:none;background:none;font-size:1.5rem;color:#ccc">×</button>
+                        </div>
+                        ${html}
+                    </div>`;
+                document.body.appendChild(modal);
+                
+            } catch (e) {
+                console.error(e);
+                mostrarAlerta('Error al cargar historial');
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // BUSCADOR Y SELECCIÓN (Sin cambios drásticos, solo integración)
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        function seleccionar(texto, lat, lng) {
+            if (!enZona(lat, lng)) {
+                mostrarAlerta('❌ Fuera de zona (Moreno/San Miguel)');
+                return;
+            }
+            document.getElementById('destino').value = texto;
+            document.getElementById('sugerencias').classList.remove('activo');
+            destinoCoords = {lat, lng};
+
+            if (markerDestino) map.removeLayer(markerDestino);
+            const iconoDestino = L.divIcon({
+                html: '<div class="pin-destino"><i class="fas fa-flag-checkered"></i></div>',
+                iconSize: [42, 42], iconAnchor: [21, 42]
+            });
+            markerDestino = L.marker([lat, lng], {icon: iconoDestino}).addTo(map);
+
+            actualizarRuta();
+        }
+
+        // [Mantené tus funciones de normalizarTexto, enZona, calcularDistancia, etc. debajo]
+        function normalizarTexto(t) { return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+        function enZona(lat, lng) { return lat < -34.50 && lat > -34.72 && lng > -58.88 && lng < -58.68; }
+        function calcularDistancia(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2-lat1) * Math.PI / 180;
+            const dLon = (lon2-lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        // El resto de tus funciones de solicitud, alertas y slide button siguen igual...
+        // [Copiá el resto de tu código de Solicitar(), mostrarEstadoViaje(), etc.]
+
+    </script>
+            // ═══════════════════════════════════════════════════════════════════════
         // PARTE 3: FUNCIONALIDADES EXTRA
         // ═══════════════════════════════════════════════════════════════════════
 
@@ -955,5 +1076,3 @@ async function mostrarHistorial() {
     </script>
 </body>
 </html>
-
-        
