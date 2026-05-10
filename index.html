@@ -13,12 +13,10 @@
         
         #map{position:absolute;top:0;left:0;height:100%;width:100%;z-index:1}
 
-        /* Contenedores UI */
         .overlay{position:absolute;z-index:1000;pointer-events:none;width:100%;display:flex;flex-direction:column;padding:12px}
         .top-ui{top:0;pointer-events:auto}
         .bottom-ui{bottom:0;pointer-events:auto;background:var(--blanco);border-radius:24px 24px 0 0;padding:20px;box-shadow:0 -5px 20px rgba(0,0,0,0.1)}
 
-        /* Buscador Avanzado */
         .search-box{background:var(--blanco);border-radius:15px;padding:8px;box-shadow:var(--sombra);display:flex;flex-direction:column;gap:5px}
         .input-row{display:flex;align-items:center;padding:10px;background:#f0f2f5;border-radius:10px;gap:10px}
         .input-row input{border:none;background:transparent;width:100%;outline:none;font-size:16px}
@@ -27,18 +25,15 @@
         .results-list.active{display:block}
         .res-item{padding:12px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:10px;font-size:14px}
 
-        /* Botones Flotantes */
         .map-tools{position:absolute;right:15px;bottom:32%;display:flex;flex-direction:column;gap:10px;pointer-events:auto}
         .tool-btn{width:50px;height:50px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:var(--sombra);border:none;color:var(--celeste);font-size:1.2rem}
         .tool-btn.active{background:var(--naranja);color:white}
 
-        /* Info de Viaje */
         .trip-info{display:none;margin-bottom:15px;background:#fff8f3;padding:12px;border-radius:12px;border:1px solid var(--naranja)}
         .trip-info b{color:var(--naranja);font-size:1.2rem}
 
         .btn-confirmar{width:100%;padding:16px;background:var(--rojo);color:white;border:none;border-radius:15px;font-weight:800;font-size:1.1rem;box-shadow:0 4px 15px rgba(230,30,43,0.3)}
         
-        /* Indicador de "Punto Manual" */
         .center-marker{position:absolute;top:50%;left:50%;transform:translate(-50%, -100%);z-index:2;display:none;pointer-events:none}
         .center-marker i{font-size:40px;color:var(--rojo);text-shadow:0 2px 5px rgba(0,0,0,0.3)}
     </style>
@@ -66,7 +61,7 @@
     </div>
 
     <div class="map-tools">
-        <button class="tool-btn" id="btn-manual" onclick="toggleModoManual()" title="Elegir en el mapa">
+        <button class="tool-btn" id="btn-manual" onclick="toggleModoManual()">
             <i class="fas fa-hand-pointer"></i>
         </button>
         <button class="tool-btn" onclick="centrarGPS()">
@@ -94,15 +89,13 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let map, markerGPS, markerDest, polylineRuta;
-        let userPos = {lat: -34.5847, lng: -58.7482}; // Trujui default
+        let userPos = {lat: -34.5847, lng: -58.7482}; 
         let destPos = null;
         let modoManual = false;
 
-        // Inicializar mapa
         map = L.map('map', {zoomControl: false, attributionControl: false}).setView([userPos.lat, userPos.lng], 15);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // GPS Real
         navigator.geolocation.watchPosition(p => {
             userPos = {lat: p.coords.latitude, lng: p.coords.longitude};
             if(!markerGPS) {
@@ -114,7 +107,6 @@
 
         function centrarGPS() { map.flyTo([userPos.lat, userPos.lng], 17); }
 
-        // MODO MANUAL: Elegir moviendo el mapa
         function toggleModoManual() {
             modoManual = !modoManual;
             const btn = document.getElementById('btn-manual');
@@ -123,7 +115,6 @@
             if(modoManual) {
                 btn.classList.add('active');
                 pin.style.display = 'block';
-                document.getElementById('destino').placeholder = "Mové el mapa hasta el destino...";
                 map.on('moveend', actualizarDestinoManual);
             } else {
                 btn.classList.remove('active');
@@ -135,24 +126,15 @@
         async function actualizarDestinoManual() {
             if(!modoManual) return;
             const centro = map.getCenter();
-            // Reverse Geocoding simple para saber qué calle es
-            try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${centro.lat}&lon=${centro.lng}`);
-                const data = await res.json();
-                seleccionarUbicacion(data.display_name.split(',')[0], centro.lat, centro.lng);
-            } catch(e) {
-                seleccionarUbicacion("Punto en el mapa", centro.lat, centro.lng);
-            }
+            seleccionarUbicacion("Punto marcado en el mapa", centro.lat, centro.lng);
         }
 
-        // BUSCADOR INTELIGENTE (Filtro Moreno/San Miguel)
         async function buscarInteligente(q) {
             if(q.length < 3) return;
             const box = document.getElementById('results');
             box.innerHTML = '<div class="res-item">Buscando...</div>';
             box.classList.add('active');
 
-            // Buscamos con sesgo hacia las coordenadas de Trujui
             const url = `https://nominatim.openstreetmap.org/search?format=json&q=${q}&viewbox=-58.85,-34.50,-58.60,-34.65&bounded=1&limit=6&addressdetails=1`;
             
             try {
@@ -173,14 +155,12 @@
             } catch(e) {}
         }
 
-        // RUTEADOR POR CALLES (OSRM)
         async function seleccionarUbicacion(nombre, lat, lng) {
             destPos = {lat: parseFloat(lat), lng: parseFloat(lng)};
             
             if(markerDest) map.removeLayer(markerDest);
             markerDest = L.marker([destPos.lat, destPos.lng]).addTo(map);
 
-            // Llamada al motor de ruteo OSRM para no cruzar por encima de las casas
             const routeUrl = `https://router.project-osrm.org/route/v1/driving/${userPos.lng},${userPos.lat};${destPos.lng},${destPos.lat}?overview=full&geometries=geojson`;
             
             try {
@@ -192,19 +172,15 @@
                 if(polylineRuta) map.removeLayer(polylineRuta);
                 polylineRuta = L.polyline(coords, {color: '#f47920', weight: 6, opacity: 0.8}).addTo(map);
 
-                // Mostrar Info y Precio
                 document.getElementById('trip-card').style.display = 'block';
                 document.getElementById('dist-val').innerText = distanciaKm;
                 document.getElementById('dest-nombre').innerText = nombre;
                 
-                // Cálculo de Tarifa ($3000 base + $800 por km)
                 const total = Math.round(3000 + (distanciaKm * 800));
                 document.getElementById('precio-val').innerText = `$${total}`;
 
-                map.fitBounds(polylineRuta.getBounds(), {padding: [50, 50]});
-            } catch(e) {
-                console.error("Error en ruteo:", e);
-            }
+                if(!modoManual) map.fitBounds(polylineRuta.getBounds(), {padding: [50, 50]});
+            } catch(e) {}
         }
 
         async function solicitarViaje() {
@@ -228,7 +204,7 @@
                     tarifa_total: parseInt(document.getElementById('precio-val').innerText.replace('$','')),
                     estado: 'pendiente'
                 });
-                alert("¡Pedido enviado con éxito! Buscando chofer en Las Catalinas.");
+                alert("¡Pedido enviado con éxito! Buscando chofer.");
                 btn.innerText = "PEDIDO ENVIADO ✅";
             } catch(e) {
                 alert("Error de conexión");
