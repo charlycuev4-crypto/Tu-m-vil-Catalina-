@@ -5,146 +5,155 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Viajes Moreno</title>
     
-    <!-- Leaflet CSS -->
+    <!-- CSS de Leaflet (Mapa) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
-        :root { --primary: #2563eb; }
-        body { font-family: sans-serif; margin: 0; padding: 0; background: #f1f5f9; }
+        :root { --blue: #2563eb; --bg: #f1f5f9; }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); color: #1e293b; }
         
-        /* Ajuste para que el mapa siempre se vea */
-        #map { height: 300px; width: 100%; background: #e0e7ff; position: relative; }
+        /* Contenedor del Mapa */
+        #map { height: 350px; width: 100%; background: #cbd5e1; }
         
-        .container { padding: 15px; }
-        .card { 
-            background: white; padding: 20px; border-radius: 15px; 
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            margin-top: -30px; position: relative; z-index: 1000;
+        .main-card { 
+            margin: -20px 15px 20px; background: white; padding: 20px; 
+            border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            position: relative; z-index: 1000;
         }
         
-        .input-group { margin-bottom: 15px; }
-        label { font-size: 14px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px; }
+        h2 { margin: 0 0 20px 0; font-size: 22px; text-align: center; }
+        
+        .input-box { margin-bottom: 15px; }
+        label { display: block; font-size: 12px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
         input { 
-            width: 100%; padding: 12px; border: 2px solid #e2e8f0; 
-            border-radius: 10px; font-size: 16px; outline: none; box-sizing: border-box;
+            width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; 
+            font-size: 16px; box-sizing: border-box; outline: none;
         }
-        input:focus { border-color: var(--primary); }
+        input:focus { border-color: var(--blue); }
 
-        button { 
-            width: 100%; padding: 16px; background: var(--primary); 
-            color: white; border: none; border-radius: 10px; 
-            font-weight: bold; font-size: 16px; transition: 0.3s;
+        /* Botón Principal */
+        #btn-solicitar { 
+            width: 100%; padding: 18px; background: var(--blue); color: white; 
+            border: none; border-radius: 12px; font-weight: bold; font-size: 18px;
+            margin-top: 10px; cursor: pointer;
         }
-        button:disabled { background: #cbd5e1; cursor: not-allowed; }
+        #btn-solicitar:disabled { background: #94a3b8; }
 
-        .price-info { 
-            text-align: center; margin: 10px 0; font-weight: bold; 
-            color: #16a34a; display: none; font-size: 18px;
+        /* Sugerencias */
+        .res-busqueda { 
+            background: white; border: 1px solid #e2e8f0; border-top: none; 
+            max-height: 200px; overflow-y: auto; border-radius: 0 0 12px 12px; 
         }
-
-        .suggestions {
-            background: white; border: 1px solid #ddd; max-height: 200px; 
-            overflow-y: auto; border-radius: 0 0 10px 10px;
+        .item-sug { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        
+        .precio-box { 
+            text-align: center; color: #059669; font-size: 20px; 
+            font-weight: 800; margin: 15px 0; display: none;
         }
-        .sug-item { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
 
-<div class="container">
-    <div class="card">
-        <h2 style="margin:0 0 15px 0; font-size: 20px;">¿A dónde vamos?</h2>
-        
-        <div class="input-group">
-            <label>Recogida</label>
-            <input type="text" id="origen" placeholder="Buscando tu ubicación..." readonly>
-        </div>
-
-        <div class="input-group">
-            <label>Destino (Moreno / San Miguel)</label>
-            <input type="text" id="destino" placeholder="Ej: Murillo y España" autocomplete="off">
-            <div id="lista-sug" class="suggestions"></div>
-        </div>
-
-        <div id="precio" class="price-info"></div>
-        
-        <button id="btn-solicitar" disabled>Solicitar Viaje</button>
+<div class="main-card">
+    <h2>Solicitar Viaje</h2>
+    
+    <div class="input-box">
+        <label>Punto de Recogida</label>
+        <input type="text" id="origen" value="Detectando tu ubicación..." readonly>
     </div>
+
+    <div class="input-box">
+        <label>Destino (Moreno / San Miguel)</label>
+        <input type="text" id="destino" placeholder="Ej: Murillo 124 o Cruce Castelar" autocomplete="off">
+        <div id="lista-sug" class="res-busqueda"></div>
+    </div>
+
+    <div id="precio" class="precio-box"></div>
+    
+    <button id="btn-solicitar" disabled>PEDIR MÓVIL</button>
 </div>
 
-<!-- Scripts al final para asegurar carga -->
+<!-- LIBRERÍAS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // 1. CONFIGURACIÓN (Pon tus llaves aquí)
-    const SB_URL = "TU_URL";
-    const SB_KEY = "TU_KEY";
-    const supabase = libsupabase.createClient(SB_URL, SB_KEY);
+    // --- 1. CONFIGURACIÓN ---
+    const SB_URL = "TU_URL_AQUÍ";
+    const SB_KEY = "TU_KEY_AQUÍ";
+    
+    // Inicialización segura de Supabase
+    const { createClient } = window['@supabase/supabase-js'];
+    const supabase = createClient(SB_URL, SB_KEY);
 
-    let map, markerO, markerD, routeL;
-    let coordsO = null, coordsD = null;
+    let map, markerO, markerD, ruta;
+    let coordsO, coordsD;
 
-    // 2. INICIALIZAR MAPA CON FALLBACK
-    function init() {
-        // Centro Moreno por defecto si el GPS falla al inicio
-        map = L.map('map').setView([-34.648, -58.791], 14);
+    // --- 2. MAPA ---
+    function iniciarMapa() {
+        // Por defecto en Moreno Centro por si falla el GPS
+        map = L.map('map', { zoomControl: false }).setView([-34.648, -58.791], 14);
+        
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // Forzar detección de ubicación
+        // Pedir GPS
         map.locate({setView: true, maxZoom: 16});
 
         map.on('locationfound', (e) => {
             coordsO = [e.latlng.lat, e.latlng.lng];
             if(markerO) map.removeLayer(markerO);
             markerO = L.marker(coordsO).addTo(map).bindPopup("Estás aquí").openPopup();
-            document.getElementById('origen').value = "Mi ubicación detectada ✅";
+            document.getElementById('origen').value = "Mi ubicación actual ✅";
         });
 
         map.on('locationerror', () => {
-            alert("Por favor, activa el GPS y recarga la página.");
-            document.getElementById('origen').value = "GPS no detectado";
+            document.getElementById('origen').value = "GPS no disponible (Escribe origen)";
+            document.getElementById('origen').readOnly = false;
         });
     }
 
-    // 3. BUSCADOR CON FILTRO LOCAL (Murillo, La Pinta, etc.)
-    const inputD = document.getElementById('destino');
-    const lista = document.getElementById('lista-sug');
+    // --- 3. BUSCADOR INTELIGENTE ---
+    const inputDestino = document.getElementById('destino');
+    const sugerencias = document.getElementById('lista-sug');
 
-    inputD.addEventListener('input', async () => {
-        const val = inputD.value;
-        if(val.length < 3) { lista.innerHTML = ""; return; }
+    inputDestino.addEventListener('input', async () => {
+        const busqueda = inputDestino.value;
+        if(busqueda.length < 3) { sugerencias.innerHTML = ""; return; }
 
-        // Buscamos forzando la zona Moreno/San Miguel
-        const query = `${val}, Moreno, Buenos Aires, Argentina`;
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
-        const data = await res.json();
-
-        lista.innerHTML = data.map(i => `
-            <div class="sug-item" onclick="setDestino(${i.lat}, ${i.lon}, '${i.display_name}')">
-                ${i.display_name}
-            </div>
-        `).join('');
+        // El truco para Moreno: añadimos el contexto a la búsqueda
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${busqueda}, Moreno, Buenos Aires&limit=4`;
+        
+        try {
+            const r = await fetch(url);
+            const datos = await r.json();
+            sugerencias.innerHTML = datos.map(i => `
+                <div class="item-sug" onclick="elegirDestino(${i.lat}, ${i.lon}, '${i.display_name}')">
+                    ${i.display_name}
+                </div>
+            `).join('');
+        } catch(e) { console.log("Error busqueda"); }
     });
 
-    async function setDestino(lat, lon, nombre) {
+    function elegirDestino(lat, lon, nombre) {
         coordsD = [lat, lon];
-        inputD.value = nombre;
-        lista.innerHTML = "";
+        inputDestino.value = nombre;
+        sugerencias.innerHTML = "";
         
         if(markerD) map.removeLayer(markerD);
-        markerD = L.marker(coordsD, {icon: L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-            iconSize: [25, 41], iconAnchor: [12, 41]
-        })}).addTo(map);
+        markerD = L.marker(coordsD, {
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                iconSize: [25, 41], iconAnchor: [12, 41]
+            })
+        }).addTo(map);
 
-        trazar();
+        calcularRuta();
     }
 
-    // 4. TRAZADO REAL (OSRM - NO LÍNEA RECTA)
-    async function trazar() {
+    // --- 4. RUTA POR CALLES (NO LÍNEA RECTA) ---
+    async function calcularRuta() {
         if(!coordsO || !coordsD) return;
 
         const url = `https://router.project-osrm.org/route/v1/driving/${coordsO[1]},${coordsO[0]};${coordsD[1]},${coordsD[0]}?overview=full&geometries=geojson`;
@@ -153,24 +162,25 @@
         const data = await res.json();
 
         if(data.routes.length > 0) {
-            const r = data.routes[0];
-            if(routeL) map.removeLayer(routeL);
+            const camino = data.routes[0];
+            if(ruta) map.removeLayer(ruta);
             
-            routeL = L.geoJSON(r.geometry, {style: {color: '#2563eb', weight: 6}}).addTo(map);
-            map.fitBounds(routeL.getBounds());
+            ruta = L.geoJSON(camino.geometry, {style: {color: '#2563eb', weight: 7}}).addTo(map);
+            map.fitBounds(ruta.getBounds(), {padding: [50, 50]});
 
-            // Precio base $600 + $350 por KM
-            const kms = r.distance / 1000;
-            const final = 600 + (kms * 350);
+            // Tarifa: $600 Base + $400 por KM
+            const dist = camino.distance / 1000;
+            const total = 600 + (dist * 400);
             
-            const p = document.getElementById('precio');
-            p.innerText = `Total: $${Math.round(final)}`;
-            p.style.display = "block";
+            const pBox = document.getElementById('precio');
+            pBox.innerText = `VALOR: $${Math.round(total)}`;
+            pBox.style.display = "block";
             document.getElementById('btn-solicitar').disabled = false;
         }
     }
 
-    window.onload = init;
+    // Ejecutar al cargar
+    window.onload = iniciarMapa;
 </script>
 </body>
 </html>
