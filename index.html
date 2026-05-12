@@ -33,7 +33,6 @@
         .sugerencia-item .sug-zona{font-size:.75rem;color:var(--gris);margin-top:2px}
         .sugerencia-item .sug-badge{font-size:.65rem;color:#fff;background:var(--verde);padding:1px 6px;border-radius:8px;margin-top:3px;display:inline-block}
         .sugerencia-item .sug-badge.fallback{background:var(--naranja)}
-        .sugerencia-item .sug-badge.error{background:var(--rojo)}
         .btn-principal{width:100%;padding:16px;background:var(--rojo);color:white;border:none;border-radius:16px;font-size:1.1rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;box-shadow:0 6px 20px rgba(230,30,43,0.35);display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px}
         .estado-viaje{display:none}
         .estado-viaje.activo{display:block;animation:slideUp .4s ease}
@@ -64,7 +63,7 @@
             <div class="buscador-container" style="position:relative">
                 <div class="input-row">
                     <i class="fas fa-search" style="color:var(--rojo)"></i>
-                    <input type="text" id="destino" placeholder="Ej: Pereira 234, Moreno" autocomplete="off" oninput="buscar(this.value)">
+                    <input type="text" id="destino" placeholder="Ej: Murillo 243, Moreno" autocomplete="off" oninput="buscar(this.value)">
                 </div>
                 <div class="sugerencias" id="sugerencias"></div>
             </div>
@@ -101,7 +100,7 @@
         function centrarEnMiUbicacion(){map.setView([miPosicion.lat,miPosicion.lng],16);}
 
         // ═══════════════════════════════════════════════════
-        // BUSCADOR V4 - CORREGIDO: descarta sin coordenadas
+        // BUSCADOR V3 - SIMPLE Y ROBUSTO
         // ═══════════════════════════════════════════════════
         async function buscar(query){
             const div = document.getElementById('sugerencias');
@@ -111,22 +110,23 @@
             const miId = ++idBusq;
             
             timeoutBusq = setTimeout(async()=>{
-                if(idBusq!==miId)return;
+                if(idBusq!==miId)return; // Otro query se ejecutó después
                 
                 div.innerHTML='<div class="sugerencia-item" style="cursor:default"><i class="fas fa-spinner fa-spin"></i><div><div class="sug-text">Buscando...</div></div></div>';
                 div.classList.add('activo');
                 
                 let resultados = [];
                 
-                // === INTENTO 1: Nominatim (lugares conocidos, direcciones con coordenadas) ===
+                // === INTENTO 1: Nominatim (mejor para lugares conocidos) ===
                 try{
                     const url=`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query+', Moreno, Buenos Aires, Argentina')}&limit=8&countrycodes=ar&addressdetails=1`;
-                    const res=await fetch(url,{headers:{'Accept-Language':'es-AR','User-Agent':'LasCatalinas53/4.0'}});
+                    const res=await fetch(url,{headers:{'Accept-Language':'es-AR','User-Agent':'LasCatalinas53/3.0'}});
                     const data=await res.json();
                     
                     data.forEach(l=>{
                         const addr=l.address||{};
                         const lat=parseFloat(l.lat),lng=parseFloat(l.lon);
+                        // Solo Moreno/San Miguel
                         const name=l.display_name.toLowerCase();
                         if(!name.includes('moreno')&&!name.includes('san miguel'))return;
                         
@@ -136,13 +136,13 @@
                         else texto=l.display_name.split(',')[0];
                         
                         const localidad=addr.suburb||addr.town||addr.city||'Moreno';
-                        if(texto&&texto!=='null'&&texto!=='NULL'){
+                        if(texto&&texto!=='null'){
                             resultados.push({texto:texto+', '+localidad+', Buenos Aires',lat,lng,exacta:!!addr.house_number,fuente:'nom'});
                         }
                     });
                 }catch(e){console.log('Nominatim error:',e)}
                 
-                // === INTENTO 2: Georef (SOLO si tiene coordenadas válidas) ===
+                // === INTENTO 2: Georef (si Nominatim no dio nada o poco) ===
                 if(resultados.length<2){
                     try{
                         const url=`https://apis.datos.gob.ar/georef/api/v2.0/direcciones?direccion=${encodeURIComponent(query)}&departamento=moreno&provincia=buenos%20aires&max=5`;
@@ -151,20 +151,15 @@
                         
                         if(data.direcciones){
                             data.direcciones.forEach(d=>{
-                                // ← CORRECCIÓN CLAVE: Solo si tiene coordenadas válidas
-                                if(!d.ubicacion||!d.ubicacion.lat||!d.ubicacion.lon)return;
-                                if(d.ubicacion.lat===null||d.ubicacion.lon===null)return;
-                                
-                                const lat=parseFloat(d.ubicacion.lat);
-                                const lng=parseFloat(d.ubicacion.lon);
-                                if(isNaN(lat)||isNaN(lng))return;
-                                
-                                const calle=d.calle?d.calle.nombre:'';
+                                if(!d.ubicacion||!d.calle)return;
+                                const lat=parseFloat(d.ubicacion.lat),lng=parseFloat(d.ubicacion.lon);
+                                const calle=d.calle.nombre||'';
                                 const altura=(d.altura&&d.altura.valor)?' '+d.altura.valor:'';
                                 const loc=d.localidad_censal?d.localidad_censal.nombre:'Moreno';
                                 
                                 if(calle&&calle!=='null'&&calle!=='NULL'){
                                     const texto=calle+altura+', '+loc+', Buenos Aires';
+                                    // Evitar duplicados
                                     const dup=resultados.some(r=>r.texto.toLowerCase()===texto.toLowerCase());
                                     if(!dup)resultados.push({texto,lat,lng,exacta:!!altura, fuente:'geo'});
                                 }
@@ -173,21 +168,12 @@
                     }catch(e){console.log('Georef error:',e)}
                 }
                 
-                if(idBusq!==miId)return;
+                if(idBusq!==miId)return; // Query cambió mientras buscábamos
                 
                 // Mostrar resultados
                 div.innerHTML='';
                 if(resultados.length===0){
-                    div.innerHTML=`
-                        <div class="sugerencia-item" style="cursor:default">
-                            <i class="fas fa-search"></i>
-                            <div>
-                                <div class="sug-text">No se encontró "${query}"</div>
-                                <div class="sug-zona">La calle puede tener otro nombre oficial</div>
-                                <div class="sug-zona">Probá: "Pereira 234, Moreno" (sin "Maestro")</div>
-                                <div class="sug-zona">O buscá en Google Maps primero</div>
-                            </div>
-                        </div>`;
+                    div.innerHTML=`<div class="sugerencia-item" style="cursor:default"><i class="fas fa-search"></i><div><div class="sug-text">Sin resultados para "${query}"</div><div class="sug-zona">Probá: "Calle Número, Localidad"</div></div></div>`;
                 }else{
                     resultados.slice(0,6).forEach(r=>{
                         const badge=r.exacta?'<span class="sug-badge">EXACTA</span>':'<span class="sug-badge fallback">CALLE</span>';
@@ -206,6 +192,7 @@
             if(rutaLayer)map.removeLayer(rutaLayer);
             L.marker([lat,lng],{icon:L.divIcon({html:'<div style="background:#28a745;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-flag-checkered" style="color:white;font-size:12px"></i></div>',iconSize:[36,36],iconAnchor:[18,18]})}).addTo(map).bindPopup('<b>Destino:</b><br>'+texto);
             
+            // Ruta simple
             rutaLayer=L.polyline([[miPosicion.lat,miPosicion.lng],[lat,lng]],{color:'#f47920',weight:5,opacity:.9}).addTo(map);
             map.fitBounds([[miPosicion.lat,miPosicion.lng],[lat,lng]],{padding:[50,50]});
         }
