@@ -3,1211 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Las Catalinas #53</title>
+    <title>Viajes Moreno</title>
+    
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <style>
-        :root{
-            --naranja:#f47920;
-            --celeste:#0093d0;
-            --rojo:#e61e2b;
-            --verde:#34c759;
-            --verde-oscuro:#30b350;
-            --fondo:#f2f2f7;
-            --blanco:#ffffff;
-            --texto:#1c1c1e;
-            --gris:#8e8e93;
-            --gris-claro:#c7c7cc;
-            --sombra:0 4px 20px rgba(0,0,0,0.12);
-            --sombra-arriba:0 -8px 30px rgba(0,0,0,0.15)
+        :root { --primary: #2563eb; }
+        body { font-family: sans-serif; margin: 0; padding: 0; background: #f1f5f9; }
+        
+        /* Ajuste para que el mapa siempre se vea */
+        #map { height: 300px; width: 100%; background: #e0e7ff; position: relative; }
+        
+        .container { padding: 15px; }
+        .card { 
+            background: white; padding: 20px; border-radius: 15px; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            margin-top: -30px; position: relative; z-index: 1000;
         }
-        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-        body,html{margin:0;padding:0;height:100%;width:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:var(--fondo);color:var(--texto);overflow:hidden;-webkit-font-smoothing:antialiased}
+        
+        .input-group { margin-bottom: 15px; }
+        label { font-size: 14px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px; }
+        input { 
+            width: 100%; padding: 12px; border: 2px solid #e2e8f0; 
+            border-radius: 10px; font-size: 16px; outline: none; box-sizing: border-box;
+        }
+        input:focus { border-color: var(--primary); }
 
-        /* MAPA - ocupa toda la pantalla arriba */
-        #map{position:absolute;top:0;left:0;height:100%;width:100%;z-index:1;background:#e5e5e5}
+        button { 
+            width: 100%; padding: 16px; background: var(--primary); 
+            color: white; border: none; border-radius: 10px; 
+            font-weight: bold; font-size: 16px; transition: 0.3s;
+        }
+        button:disabled { background: #cbd5e1; cursor: not-allowed; }
 
-        /* HEADER FLOTANTE */
-        .header{position:absolute;top:16px;left:16px;right:16px;z-index:1000;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
-        .menu-btn{background:var(--blanco);color:var(--texto);width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;border:none;box-shadow:var(--sombra);font-size:1.1rem}
-        .logo-tag{background:var(--blanco);padding:10px 18px;border-radius:25px;font-weight:800;color:var(--celeste);font-size:.85rem;box-shadow:var(--sombra);pointer-events:auto;display:flex;align-items:center;gap:6px}
-        .logo-tag i{color:var(--naranja)}
+        .price-info { 
+            text-align: center; margin: 10px 0; font-weight: bold; 
+            color: #16a34a; display: none; font-size: 18px;
+        }
 
-        /* GPS STATUS */
-        .gps-status{position:absolute;top:72px;right:16px;z-index:1000;background:var(--blanco);padding:8px 14px;border-radius:20px;font-size:.75rem;font-weight:700;box-shadow:var(--sombra);display:flex;align-items:center;gap:6px}
-        .gps-status.preciso{color:var(--verde);border:2px solid var(--verde)}
-        .gps-status.aproximado{color:var(--naranja);border:2px solid var(--naranja)}
-        .gps-status.error{color:var(--rojo);border:2px solid var(--rojo)}
-        .gps-status.buscando{color:var(--celeste);border:2px solid var(--celeste)}
-
-        /* BOTÓN UBICACIÓN */
-        .btn-mi-ubicacion{position:absolute;bottom:42%;right:16px;z-index:1000;width:48px;height:48px;background:var(--blanco);border:none;border-radius:50%;box-shadow:var(--sombra);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--celeste);font-size:1.2rem}
-
-        /* PANEL INFERIOR REDONDEADO */
-        .panel{position:absolute;bottom:0;left:0;right:0;z-index:1000;background:var(--blanco);border-radius:24px 24px 0 0;box-shadow:var(--sombra-arriba);padding:16px 20px 28px;transition:all .3s ease}
-        .panel-handle{width:36px;height:5px;background:var(--gris-claro);border-radius:3px;margin:0 auto 16px}
-
-        /* FORMULARIO DE PEDIDO */
-        .formulario-pedido{display:block}
-        .input-row{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--fondo);border-radius:16px;border:2px solid transparent;transition:all .2s;margin-bottom:10px}
-        .input-row:focus-within{border-color:var(--verde);background:#f0fff4}
-        .input-row i{width:24px;text-align:center;font-size:1.1rem;color:var(--gris)}
-        .input-row input{flex:1;border:none;background:transparent;font-size:1rem;outline:none;color:var(--texto)}
-        .input-row input::placeholder{color:var(--gris-claro)}
-
-        /* BUSCADOR CON SUGERENCIAS ARRIBA */
-        .buscador-container{position:relative}
-        .sugerencias{position:absolute;bottom:calc(100% + 8px);left:0;right:0;background:var(--blanco);border-radius:20px;box-shadow:0 -8px 30px rgba(0,0,0,0.12);max-height:280px;overflow-y:auto;z-index:1500;display:none;padding:8px 0}
-        .sugerencias.activo{display:block}
-        .sugerencia-item{padding:14px 18px;cursor:pointer;border-bottom:1px solid #f2f2f7;display:flex;align-items:center;gap:12px;transition:background .15s}
-        .sugerencia-item:last-child{border-bottom:none}
-        .sugerencia-item:active{background:var(--fondo)}
-        .sugerencia-item i{color:var(--gris);font-size:1rem;width:24px;text-align:center}
-        .sugerencia-item .sug-text{font-size:.95rem;font-weight:600;color:var(--texto)}
-        .sugerencia-item .sug-zona{font-size:.8rem;color:var(--gris);margin-top:2px}
-        .sugerencia-item .sug-badge{font-size:.7rem;color:#fff;background:var(--verde);padding:3px 10px;border-radius:10px;margin-left:auto;font-weight:700}
-
-        /* BOTÓN SOLICITAR VERDE (estilo imagen) */
-        .btn-solicitar{width:100%;padding:18px;background:var(--verde);color:white;border:none;border-radius:16px;font-size:1.1rem;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(52,199,89,0.3);display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;transition:all .2s}
-        .btn-solicitar:active{transform:scale(.97);background:var(--verde-oscuro)}
-        .btn-solicitar:disabled{background:var(--gris-claro);box-shadow:none;cursor:not-allowed}
-
-        /* ====== PANTALLA DE VIAJE ACTIVO (estilo imagen/video) ====== */
-        .estado-viaje{display:none}
-        .estado-viaje.activo{display:block}
-
-        /* Tarjeta del móvil */
-        .tarjeta-movil{display:flex;align-items:center;gap:16px;padding:16px;background:var(--fondo);border-radius:20px;margin-bottom:16px}
-        .foto-auto{width:80px;height:56px;background:var(--gris-claro);border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .foto-auto img{width:100%;height:100%;object-fit:cover}
-        .foto-auto i{font-size:1.8rem;color:var(--gris)}
-        .info-movil{flex:1}
-        .movil-titulo{font-size:1.25rem;font-weight:800;margin-bottom:4px}
-        .movil-sub{font-size:.95rem;color:var(--gris)}
-        .circulo-estado{width:48px;height:48px;background:var(--verde);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(52,199,89,0.3)}
-        .circulo-estado i{color:white;font-size:1.3rem}
-
-        /* Tiempo de llegada grande */
-        .tiempo-box{text-align:center;padding:20px 0}
-        .tiempo-numero{font-size:3.5rem;font-weight:800;color:var(--texto);line-height:1}
-        .tiempo-label{font-size:1rem;color:var(--gris);margin-top:8px;font-weight:500}
-
-        /* Detalles del viaje */
-        .detalles-viaje{background:var(--fondo);border-radius:16px;padding:16px;margin-bottom:16px}
-        .detalle-fila{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #e5e5ea}
-        .detalle-fila:last-child{border-bottom:none}
-        .detalle-label{font-size:.9rem;color:var(--gris)}
-        .detalle-valor{font-size:.95rem;font-weight:700;color:var(--texto)}
-
-        /* Botón deslizar verde (estilo imagen) */
-        .slide-container{position:relative;width:100%;height:60px;background:var(--verde);border-radius:30px;overflow:hidden;margin-top:8px}
-        .slide-text{position:absolute;top:0;left:0;right:0;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:1rem;pointer-events:none;letter-spacing:.5px}
-        .slide-btn{position:absolute;top:4px;left:4px;width:52px;height:52px;background:white;border-radius:50%;cursor:grab;box-shadow:0 2px 10px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;color:var(--verde);font-size:1.3rem;touch-action:none;z-index:10}
-        .slide-btn:active{cursor:grabbing}
-        .slide-btn.completo{left:calc(100% - 56px);transition:left .3s ease}
-
-        /* Botón cancelar */
-        .btn-cancelar{width:100%;padding:14px;background:transparent;color:var(--rojo);border:2px solid var(--rojo);border-radius:16px;font-size:1rem;font-weight:700;cursor:pointer;margin-top:12px;transition:all .2s}
-        .btn-cancelar:active{background:rgba(230,30,43,0.05)}
-
-        /* ALERTAS */
-        .alerta-box{position:absolute;top:120px;left:16px;right:16px;z-index:1000;background:#fff9e6;border:2px solid #ffc107;border-radius:16px;padding:12px 16px;font-size:.85rem;color:#856404;display:none;align-items:center;gap:10px;box-shadow:var(--sombra)}
-        .alerta-box.activo{display:flex}
-        .alerta-box i{color:#ffc107;font-size:1.2rem}
-
-        /* SIN GPS */
-        .sin-gps-box{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2000;background:var(--blanco);padding:24px;border-radius:24px;box-shadow:var(--sombra);text-align:center;display:none;width:90%;max-width:320px}
-        .sin-gps-box.activo{display:block}
-        .sin-gps-box i{font-size:3rem;color:var(--rojo);margin-bottom:12px}
-        .sin-gps-box h3{margin:0 0 8px;font-size:1.1rem}
-        .sin-gps-box p{margin:0 0 16px;font-size:.9rem;color:var(--gris);line-height:1.4}
-        .sin-gps-box button{background:var(--verde);color:white;border:none;padding:14px 28px;border-radius:14px;cursor:pointer;font-weight:700;font-size:1rem;width:100%}
-
-        /* Marcador Las Catalinas */
-        .pin-catalinas{background:var(--rojo);width:40px;height:40px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center}
-        .pin-catalinas i{transform:rotate(45deg);color:white;font-size:14px}
-
-        /* Marcador destino */
-        .pin-destino{background:var(--verde);width:36px;height:36px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center}
-        .pin-destino i{color:white;font-size:14px}
+        .suggestions {
+            background: white; border: 1px solid #ddd; max-height: 200px; 
+            overflow-y: auto; border-radius: 0 0 10px 10px;
+        }
+        .sug-item { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 14px; }
     </style>
 </head>
 <body>
-    <div id="map"></div>
-    
-    <!-- HEADER -->
-    <div class="header">
-        <button class="menu-btn" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
-        <div class="logo-tag"><i class="fas fa-taxi"></i> LAS CATALINAS #53</div>
-    </div>
-    
-    <!-- GPS -->
-    <div class="gps-status buscando" id="gps-status">
-        <i class="fas fa-satellite-dish"></i><span id="gps-texto">Buscando GPS...</span>
-    </div>
-    
-    <!-- ALERTA -->
-    <div class="alerta-box" id="alerta-box">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span id="alerta-texto"></span>
-    </div>
-    
-    <!-- SIN GPS -->
-    <div class="sin-gps-box" id="sin-gps-box">
-        <i class="fas fa-map-marker-alt"></i>
-        <h3>GPS no disponible</h3>
-        <p>No podemos detectar tu ubicación. Ingresá tu dirección manualmente para pedir el móvil.</p>
-        <button onclick="mostrarInputManual()">Ingresar dirección manual</button>
-    </div>
-    
-    <!-- BOTÓN UBICACIÓN -->
-    <button class="btn-mi-ubicacion" onclick="centrarEnMiUbicacion()"><i class="fas fa-crosshairs"></i></button>
 
-    <!-- PANEL -->
-    <div class="panel" id="panel">
-        <div class="panel-handle"></div>
+<div id="map"></div>
+
+<div class="container">
+    <div class="card">
+        <h2 style="margin:0 0 15px 0; font-size: 20px;">¿A dónde vamos?</h2>
         
-        <!-- FORMULARIO -->
-        <div class="formulario-pedido" id="formulario-pedido">
-            <div class="input-row"><i class="fas fa-user"></i><input type="text" id="nombre" placeholder="¿Cómo te llamás?"></div>
-            <div class="input-row"><i class="fas fa-phone"></i><input type="tel" id="telefono" placeholder="Teléfono"></div>
-            
-            <div class="buscador-container">
-                <div class="sugerencias" id="sugerencias"></div>
-                <div class="input-row">
-                    <i class="fas fa-search" style="color:var(--gris)"></i>
-                    <input type="text" id="destino" placeholder="¿A dónde vas? Ej: Solano López 500" autocomplete="off" oninput="buscar(this.value)">
-                </div>
-            </div>
-            
-            <div class="input-row" id="direccion-manual" style="display:none">
-                <i class="fas fa-home" style="color:var(--naranja)"></i>
-                <input type="text" id="direccion-origen" placeholder="¿Dónde estás? Ej: Trujui, Moreno" autocomplete="off">
-            </div>
-            
-            <button class="btn-solicitar" id="btn-solicitar" onclick="solicitar()">
-                <i class="fas fa-paper-plane"></i> Solicitar Móvil
-            </button>
+        <div class="input-group">
+            <label>Recogida</label>
+            <input type="text" id="origen" placeholder="Buscando tu ubicación..." readonly>
         </div>
 
-        <!-- ESTADO DEL VIAJE (estilo imagen/video) -->
-        <div class="estado-viaje" id="estado-viaje">
-            <!-- Tarjeta del móvil -->
-            <div class="tarjeta-movil">
-                <div class="foto-auto" id="foto-auto">
-                    <i class="fas fa-car"></i>
-                </div>
-                <div class="info-movil">
-                    <div class="movil-titulo">Tu Móvil</div>
-                    <div class="movil-sub" id="movil-sub">Buscando conductor...</div>
-                </div>
-                <div class="circulo-estado" id="circulo-estado">
-                    <i class="fas fa-search" id="icono-estado"></i>
-                </div>
-            </div>
-
-            <!-- Tiempo -->
-            <div class="tiempo-box">
-                <div class="tiempo-numero" id="tiempo-numero">--</div>
-                <div class="tiempo-label" id="tiempo-label">minutos</div>
-            </div>
-
-            <!-- Detalles -->
-            <div class="detalles-viaje">
-                <div class="detalle-fila">
-                    <span class="detalle-label">Destino</span>
-                    <span class="detalle-valor" id="detalle-destino">-</span>
-                </div>
-                <div class="detalle-fila">
-                    <span class="detalle-label">Distancia</span>
-                    <span class="detalle-valor" id="detalle-distancia">-</span>
-                </div>
-                <div class="detalle-fila">
-                    <span class="detalle-label">Tarifa estimada</span>
-                    <span class="detalle-valor" id="detalle-tarifa">-</span>
-                </div>
-            </div>
-
-            <!-- Botón deslizar para cancelar -->
-            <div class="slide-container" id="slide-container">
-                <div class="slide-text">Deslizá para cancelar</div>
-                <div class="slide-btn" id="slide-btn"><i class="fas fa-arrow-right"></i></div>
-            </div>
-            
-            <button class="btn-cancelar" id="btn-cancelar-simple" onclick="cancelarViaje()">
-                <i class="fas fa-times"></i> Cancelar viaje
-            </button>
+        <div class="input-group">
+            <label>Destino (Moreno / San Miguel)</label>
+            <input type="text" id="destino" placeholder="Ej: Murillo y España" autocomplete="off">
+            <div id="lista-sug" class="suggestions"></div>
         </div>
+
+        <div id="precio" class="price-info"></div>
+        
+        <button id="btn-solicitar" disabled>Solicitar Viaje</button>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        // ═══════════════════════════════════════════════════════════════════════
-        // CONFIGURACIÓN
-        // ═══════════════════════════════════════════════════════════════════════
-        const SUPABASE_URL='https://efryvjjunfeoxhekvwza.supabase.co';
-        const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
+<!-- Scripts al final para asegurar carga -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        // ZONA: todo Moreno, todo San Miguel, y alrededores (incluye Trujui, La Reja, etc.)
-        const ZONA = {
-            minLat: -34.720, maxLat: -34.520,
-            minLng: -58.880, maxLng: -58.680
-        };
+<script>
+    // 1. CONFIGURACIÓN (Pon tus llaves aquí)
+    const SB_URL = "TU_URL";
+    const SB_KEY = "TU_KEY";
+    const supabase = libsupabase.createClient(SB_URL, SB_KEY);
 
-        let supabaseClient, map, miPosicion={lat:null,lng:null}, destinoCoords=null,
-            rutaLayer=null, markerDestino=null, markerGPS=null, circuloGPS=null,
-            markerCatalinas=null, timeoutBusq=null, idBusq=0, watchIdGPS=null,
-            gpsActivo=false, usandoManual=false, viajeActual=null;
+    let map, markerO, markerD, routeL;
+    let coordsO = null, coordsD = null;
 
-        // ═══════════════════════════════════════════════════════════════════════
-        // BASE DE DATOS - CALLES CON COORDENADAS
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        function calcularDistancia(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        }
+    // 2. INICIALIZAR MAPA CON FALLBACK
+    function init() {
+        // Centro Moreno por defecto si el GPS falla al inicio
+        map = L.map('map').setView([-34.648, -58.791], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        function generarPuntos(calle, localidad, latInicio, lngInicio, latFin, lngFin, pasoMetros) {
-            const puntos = [];
-            const distTotal = calcularDistancia(latInicio, lngInicio, latFin, lngFin);
-            const pasos = Math.max(2, Math.floor(distTotal * 1000 / pasoMetros));
-            for(let i = 0; i <= pasos; i++) {
-                const fraccion = i / pasos;
-                const lat = latInicio + (latFin - latInicio) * fraccion;
-                const lng = lngInicio + (lngFin - lngInicio) * fraccion;
-                const alturaAprox = Math.round(100 + (i * 50));
-                puntos.push({
-                    calle: calle, altura: alturaAprox, localidad: localidad,
-                    lat: parseFloat(lat.toFixed(5)), lng: parseFloat(lng.toFixed(5))
-                });
-            }
-            return puntos;
-        }
+        // Forzar detección de ubicación
+        map.locate({setView: true, maxZoom: 16});
 
-        function enZona(lat, lng) {
-            if (!lat || !lng) return false;
-            return lat >= ZONA.minLat && lat <= ZONA.maxLat && lng >= ZONA.minLng && lng <= ZONA.maxLng;
-        }
-
-        function normalizarTexto(texto) {
-            return texto.toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^\w\s]/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
-
-        // MORENO
-        const CALLES_MORENO = [
-            ...generarPuntos("Solano López", "Moreno", -34.6508, -58.7895, -34.6522, -58.7874, 50),
-            ...generarPuntos("Avenida Moreno", "Moreno", -34.6502, -58.7911, -34.6540, -58.7840, 50),
-            ...generarPuntos("Avenida Libertador", "Moreno", -34.6530, -58.7850, -34.6560, -58.7820, 50),
-            ...generarPuntos("Avenida San Martín", "Moreno", -34.6520, -58.7920, -34.6550, -58.7950, 50),
-            ...generarPuntos("Avenida Alcorta", "Moreno", -34.6540, -58.7880, -34.6560, -58.7860, 50),
-            ...generarPuntos("Avenida Piovano", "Moreno", -34.6510, -58.7950, -34.6525, -58.7965, 50),
-            ...generarPuntos("Avenida Bartolomé Mitre", "Moreno", -34.6480, -58.7930, -34.6495, -58.7945, 50),
-            ...generarPuntos("Avenida Rivadavia", "Moreno", -34.6490, -58.7960, -34.6505, -58.7975, 50),
-            ...generarPuntos("Intendente Corvalán", "Moreno", -34.6570, -58.7920, -34.6585, -58.7935, 50),
-            ...generarPuntos("Deán Funes", "Moreno", -34.6550, -58.7940, -34.6565, -58.7955, 50),
-            ...generarPuntos("Juan B. Alberdi", "Moreno", -34.6530, -58.7960, -34.6545, -58.7975, 50),
-            ...generarPuntos("Pavón", "Moreno", -34.6520, -58.7980, -34.6530, -58.7990, 50),
-            ...generarPuntos("Merlo", "Moreno", -34.6600, -58.7900, -34.6610, -58.7910, 50),
-            ...generarPuntos("De los Inmigrantes", "Moreno", -34.6560, -58.8000, -34.6570, -58.8010, 50),
-            ...generarPuntos("Nemesio Álvarez", "Moreno", -34.6580, -58.7950, -34.6590, -58.7960, 50),
-            ...generarPuntos("Dr. Vera", "Moreno", -34.6590, -58.7920, -34.6600, -58.7930, 50),
-            ...generarPuntos("Asconapé", "Moreno", -34.6600, -58.7940, -34.6610, -58.7950, 50),
-            ...generarPuntos("Balbi", "Moreno", -34.6610, -58.7960, -34.6620, -58.7970, 50),
-            ...generarPuntos("Tomás Edison", "Moreno", -34.6620, -58.7980, -34.6630, -58.7990, 50),
-            ...generarPuntos("Bernardo de Irigoyen", "Moreno", -34.6630, -58.8000, -34.6640, -58.8010, 50),
-            ...generarPuntos("Intendente Gnecco", "Moreno", -34.6640, -58.8020, -34.6650, -58.8030, 50),
-            ...generarPuntos("El Ceibo", "Moreno", -34.6650, -58.8040, -34.6660, -58.8050, 50),
-            ...generarPuntos("Calle 6", "Moreno", -34.6510, -58.7900, -34.6520, -58.7880, 50),
-            ...generarPuntos("Pedro de Mendoza", "Moreno", -34.6490, -58.7880, -34.6510, -58.7860, 50),
-            ...generarPuntos("Jacobo Watt", "Moreno", -34.6500, -58.7920, -34.6520, -58.7940, 50),
-            ...generarPuntos("Lamadrid", "Moreno", -34.6530, -58.7930, -34.6550, -58.7950, 50),
-            ...generarPuntos("Fray Luis de León", "Moreno", -34.6480, -58.7850, -34.6500, -58.7870, 50),
-            ...generarPuntos("Don Bosco", "Moreno", -34.6490, -58.7840, -34.6510, -58.7860, 50),
-            ...generarPuntos("Doctor René Favaloro", "Moreno", -34.6500, -58.7830, -34.6520, -58.7850, 50),
-            ...generarPuntos("Ricardo Güiraldes", "Moreno", -34.6510, -58.7820, -34.6520, -58.7840, 50),
-            ...generarPuntos("Nini Marshall", "Moreno", -34.6470, -58.7860, -34.6490, -58.7880, 50),
-            ...generarPuntos("Francisco de Vitoria", "Moreno", -34.6480, -58.7870, -34.6500, -58.7890, 50),
-            ...generarPuntos("Aristóbulo del Valle", "Moreno", -34.6520, -58.7910, -34.6530, -58.7890, 50),
-            ...generarPuntos("Sarmiento", "Moreno", -34.6490, -58.7900, -34.6510, -58.7920, 50),
-            ...generarPuntos("Belgrano", "Moreno", -34.6500, -58.7890, -34.6520, -58.7910, 50),
-            ...generarPuntos("25 de Mayo", "Moreno", -34.6510, -58.7880, -34.6530, -58.7900, 50),
-            ...generarPuntos("9 de Julio", "Moreno", -34.6520, -58.7870, -34.6540, -58.7890, 50),
-            ...generarPuntos("Paso", "Moreno", -34.6530, -58.7860, -34.6550, -58.7880, 50),
-            ...generarPuntos("Misiones", "Moreno", -34.6540, -58.7850, -34.6560, -58.7870, 50),
-            ...generarPuntos("Entre Ríos", "Moreno", -34.6550, -58.7840, -34.6570, -58.7860, 50),
-            ...generarPuntos("Santa Fe", "Moreno", -34.6560, -58.7830, -34.6580, -58.7850, 50),
-            ...generarPuntos("Córdoba", "Moreno", -34.6570, -58.7820, -34.6590, -58.7840, 50),
-            ...generarPuntos("La Rioja", "Moreno", -34.6580, -58.7810, -34.6600, -58.7830, 50),
-            ...generarPuntos("San Juan", "Moreno", -34.6590, -58.7800, -34.6610, -58.7820, 50),
-            ...generarPuntos("Catamarca", "Moreno", -34.6600, -58.7790, -34.6620, -58.7810, 50),
-            ...generarPuntos("Tucumán", "Moreno", -34.6610, -58.7780, -34.6630, -58.7800, 50),
-            ...generarPuntos("Salta", "Moreno", -34.6620, -58.7770, -34.6640, -58.7790, 50),
-            ...generarPuntos("Jujuy", "Moreno", -34.6630, -58.7760, -34.6650, -58.7780, 50),
-            ...generarPuntos("Formosa", "Moreno", -34.6640, -58.7750, -34.6660, -58.7770, 50),
-            ...generarPuntos("Chaco", "Moreno", -34.6650, -58.7740, -34.6670, -58.7760, 50),
-            ...generarPuntos("Trujui", "Moreno", -34.6680, -58.7900, -34.6700, -58.7920, 50),
-            ...generarPuntos("La Reja", "Moreno", -34.6370, -58.8280, -34.6390, -58.8300, 50),
-            ...generarPuntos("Paso del Rey", "Moreno", -34.6420, -58.8200, -34.6440, -58.8220, 50),
-            ...generarPuntos("Cuartel V", "Moreno", -34.6650, -58.8100, -34.6670, -58.8120, 50),
-            ...generarPuntos("Francisco Álvarez", "Moreno", -34.6250, -58.8400, -34.6270, -58.8420, 50),
-            ...generarPuntos("Moreno Norte", "Moreno", -34.6450, -58.7850, -34.6470, -58.7870, 50),
-            ...generarPuntos("Moreno Sur", "Moreno", -34.6550, -58.7950, -34.6570, -58.7970, 50),
-            ...generarPuntos("Barrio Parque", "Moreno", -34.6480, -58.7920, -34.6500, -58.7940, 50),
-            ...generarPuntos("Villa Bosch", "Moreno", -34.6520, -58.8000, -34.6540, -58.8020, 50),
-            ...generarPuntos("Barrio San Juan", "Moreno", -34.6530, -58.7980, -34.6550, -58.8000, 50),
-            ...generarPuntos("Barrio San Martín", "Moreno", -34.6540, -58.7960, -34.6560, -58.7980, 50),
-            ...generarPuntos("Barrio Lamadrid", "Moreno", -34.6560, -58.7940, -34.6580, -58.7960, 50),
-            ...generarPuntos("Barrio Gnecco", "Moreno", -34.6570, -58.7920, -34.6590, -58.7940, 50),
-            ...generarPuntos("Barrio El Ceibo", "Moreno", -34.6580, -58.7900, -34.6600, -58.7920, 50),
-            {calle:"La Catalina", altura:0, localidad:"Moreno", lat:-34.6510, lng:-58.7880}
-        ];
-
-        // SAN MIGUEL
-        const CALLES_SAN_MIGUEL = [
-            ...generarPuntos("Avenida Presidente Perón", "San Miguel", -34.5400, -58.7100, -34.5460, -58.7160, 50),
-            ...generarPuntos("Avenida Balbín", "San Miguel", -34.5420, -58.7150, -34.5460, -58.7190, 50),
-            ...generarPuntos("Avenida Sáenz Peña", "San Miguel", -34.5380, -58.7080, -34.5420, -58.7120, 50),
-            ...generarPuntos("Avenida Urquiza", "San Miguel", -34.5410, -58.7200, -34.5430, -58.7220, 50),
-            ...generarPuntos("Güemes", "San Miguel", -34.5440, -58.7120, -34.5455, -58.7135, 50),
-            ...generarPuntos("Rodríguez Peña", "San Miguel", -34.5450, -58.7140, -34.5465, -58.7155, 50),
-            ...generarPuntos("Alem", "San Miguel", -34.5460, -58.7160, -34.5475, -58.7175, 50),
-            ...generarPuntos("Pueyrredón", "San Miguel", -34.5470, -58.7180, -34.5485, -58.7195, 50),
-            ...generarPuntos("Las Heras", "San Miguel", -34.5480, -58.7200, -34.5495, -58.7215, 50),
-            ...generarPuntos("Belgrano", "San Miguel", -34.5430, -58.7100, -34.5440, -58.7110, 50),
-            ...generarPuntos("Sarmiento", "San Miguel", -34.5410, -58.7120, -34.5420, -58.7130, 50),
-            ...generarPuntos("Congreso", "San Miguel", -34.5420, -58.7140, -34.5430, -58.7150, 50),
-            ...generarPuntos("Terrazas de San Miguel", "San Miguel", -34.5350, -58.7050, -34.5360, -58.7060, 50),
-            ...generarPuntos("Muñiz", "San Miguel", -34.5350, -58.7010, -34.5360, -58.7020, 50),
-            ...generarPuntos("Paz", "San Miguel", -34.5450, -58.7250, -34.5460, -58.7260, 50),
-            ...generarPuntos("Sarmiento Norte", "San Miguel", -34.5390, -58.7110, -34.5400, -58.7120, 50),
-            ...generarPuntos("Mitre", "San Miguel", -34.5400, -58.7130, -34.5410, -58.7140, 50),
-            ...generarPuntos("Rivadavia", "San Miguel", -34.5410, -58.7150, -34.5420, -58.7160, 50),
-            ...generarPuntos("Moreno", "San Miguel", -34.5420, -58.7170, -34.5430, -58.7180, 50),
-            ...generarPuntos("España", "San Miguel", -34.5430, -58.7190, -34.5440, -58.7200, 50),
-            ...generarPuntos("Italia", "San Miguel", -34.5440, -58.7210, -34.5450, -58.7220, 50),
-            ...generarPuntos("Francia", "San Miguel", -34.5450, -58.7230, -34.5460, -58.7240, 50),
-            ...generarPuntos("Inglaterra", "San Miguel", -34.5460, -58.7250, -34.5470, -58.7260, 50),
-            ...generarPuntos("Bolivia", "San Miguel", -34.5390, -58.7090, -34.5400, -58.7100, 50),
-            ...generarPuntos("Paraguay", "San Miguel", -34.5400, -58.7110, -34.5410, -58.7120, 50),
-            ...generarPuntos("Brasil", "San Miguel", -34.5410, -58.7130, -34.5420, -58.7140, 50),
-            ...generarPuntos("Chile", "San Miguel", -34.5420, -58.7150, -34.5430, -58.7160, 50),
-            ...generarPuntos("Perú", "San Miguel", -34.5430, -58.7170, -34.5440, -58.7180, 50),
-            ...generarPuntos("Colombia", "San Miguel", -34.5440, -58.7190, -34.5450, -58.7200, 50),
-            ...generarPuntos("Ecuador", "San Miguel", -34.5450, -58.7210, -34.5460, -58.7220, 50),
-            ...generarPuntos("Venezuela", "San Miguel", -34.5460, -58.7230, -34.5470, -58.7240, 50),
-            ...generarPuntos("Barrio San Miguel Centro", "San Miguel", -34.5420, -58.7110, -34.5430, -58.7120, 50),
-            ...generarPuntos("Barrio Belgrano", "San Miguel", -34.5410, -58.7100, -34.5420, -58.7110, 50),
-            ...generarPuntos("Barrio Sarmiento", "San Miguel", -34.5400, -58.7120, -34.5410, -58.7130, 50),
-            ...generarPuntos("Barrio Congreso", "San Miguel", -34.5410, -58.7140, -34.5420, -58.7150, 50),
-            ...generarPuntos("Barrio Las Heras", "San Miguel", -34.5470, -58.7200, -34.5480, -58.7210, 50),
-            ...generarPuntos("Barrio Pueyrredón", "San Miguel", -34.5460, -58.7180, -34.5470, -58.7190, 50),
-            ...generarPuntos("Barrio Alem", "San Miguel", -34.5450, -58.7160, -34.5460, -58.7170, 50),
-            ...generarPuntos("Barrio Rodríguez Peña", "San Miguel", -34.5440, -58.7140, -34.5450, -58.7150, 50),
-            ...generarPuntos("Barrio Güemes", "San Miguel", -34.5430, -58.7120, -34.5440, -58.7130, 50),
-            ...generarPuntos("Barrio Balbín", "San Miguel", -34.5420, -58.7150, -34.5430, -58.7160, 50),
-            ...generarPuntos("Barrio Perón", "San Miguel", -34.5410, -58.7100, -34.5420, -58.7110, 50),
-            ...generarPuntos("Barrio Sáenz Peña", "San Miguel", -34.5390, -58.7080, -34.5400, -58.7090, 50),
-            ...generarPuntos("Barrio Urquiza", "San Miguel", -34.5410, -58.7200, -34.5420, -58.7210, 50),
-            ...generarPuntos("Campo de Mayo", "San Miguel", -34.5330, -58.7330, -34.5340, -58.7340, 50),
-            ...generarPuntos("General Lemos", "San Miguel", -34.5560, -58.7230, -34.5570, -58.7240, 50),
-            ...generarPuntos("Teniente Agneta", "San Miguel", -34.5450, -58.7250, -34.5460, -58.7260, 50)
-        ];
-
-        const TODAS_LAS_CALLES = [...CALLES_MORENO, ...CALLES_SAN_MIGUEL];
-
-        const REFERENCIAS = [
-            {nombre:"Estación Moreno", tipo:"tren", linea:"Sarmiento", localidad:"Moreno", lat:-34.6570, lng:-58.7900},
-            {nombre:"Estación La Reja", tipo:"tren", linea:"Sarmiento", localidad:"Moreno", lat:-34.6370, lng:-58.8280},
-            {nombre:"Estación General Rodríguez", tipo:"tren", linea:"Sarmiento", localidad:"Moreno", lat:-34.6080, lng:-58.9440},
-            {nombre:"Estación San Miguel", tipo:"tren", linea:"San Martín", localidad:"San Miguel", lat:-34.5430, lng:-58.7120},
-            {nombre:"Estación Muñiz", tipo:"tren", linea:"San Martín", localidad:"San Miguel", lat:-34.5350, lng:-58.7010},
-            {nombre:"Estación General Lemos", tipo:"tren", linea:"Urquiza", localidad:"San Miguel", lat:-34.5560, lng:-58.7230},
-            {nombre:"Estación Campo de Mayo", tipo:"tren", linea:"Urquiza", localidad:"San Miguel", lat:-34.5330, lng:-58.7330},
-            {nombre:"Estación Teniente Agneta", tipo:"tren", linea:"Urquiza", localidad:"San Miguel", lat:-34.5450, lng:-58.7250},
-            {nombre:"Hospital Mariano Moreno", tipo:"hospital", localidad:"Moreno", lat:-34.6520, lng:-58.7900},
-            {nombre:"Hospital San Juan de Dios", tipo:"hospital", localidad:"San Miguel", lat:-34.5430, lng:-58.7120},
-            {nombre:"Plaza Moreno", tipo:"plaza", localidad:"Moreno", lat:-34.6510, lng:-58.7910},
-            {nombre:"Plaza San Miguel", tipo:"plaza", localidad:"San Miguel", lat:-34.5430, lng:-58.7120},
-            {nombre:"Colegio Nacional Moreno", tipo:"colegio", localidad:"Moreno", lat:-34.6500, lng:-58.7920},
-            {nombre:"Colegio San Miguel", tipo:"colegio", localidad:"San Miguel", lat:-34.5420, lng:-58.7130},
-            {nombre:"Carrefour Moreno", tipo:"supermercado", localidad:"Moreno", lat:-34.6530, lng:-58.7890},
-            {nombre:"Día San Miguel", tipo:"supermercado", localidad:"San Miguel", lat:-34.5440, lng:-58.7110},
-            {nombre:"Coto Moreno", tipo:"supermercado", localidad:"Moreno", lat:-34.6510, lng:-58.7880},
-            {nombre:"Vea San Miguel", tipo:"supermercado", localidad:"San Miguel", lat:-34.5450, lng:-58.7100},
-            {nombre:"Banco Nación Moreno", tipo:"banco", localidad:"Moreno", lat:-34.6510, lng:-58.7910},
-            {nombre:"Banco Provincia San Miguel", tipo:"banco", localidad:"San Miguel", lat:-34.5430, lng:-58.7130},
-            {nombre:"Comisaría Moreno", tipo:"comisaria", localidad:"Moreno", lat:-34.6520, lng:-58.7930},
-            {nombre:"Comisaría San Miguel", tipo:"comisaria", localidad:"San Miguel", lat:-34.5440, lng:-58.7140}
-        ];
-
-        const ESQUINAS = [
-            {calle1:"Solano López", calle2:"Avenida Moreno", localidad:"Moreno", lat:-34.6510, lng:-58.7900},
-            {calle1:"Solano López", calle2:"Avenida Libertador", localidad:"Moreno", lat:-34.6515, lng:-58.7880},
-            {calle1:"Solano López", calle2:"Avenida San Martín", localidad:"Moreno", lat:-34.6512, lng:-58.7915},
-            {calle1:"Solano López", calle2:"Avenida Alcorta", localidad:"Moreno", lat:-34.6518, lng:-58.7870},
-            {calle1:"Solano López", calle2:"Avenida Piovano", localidad:"Moreno", lat:-34.6508, lng:-58.7920},
-            {calle1:"Solano López", calle2:"Avenida Rivadavia", localidad:"Moreno", lat:-34.6505, lng:-58.7930},
-            {calle1:"Solano López", calle2:"Avenida Bartolomé Mitre", localidad:"Moreno", lat:-34.6502, lng:-58.7940},
-            {calle1:"Avenida Moreno", calle2:"Avenida Libertador", localidad:"Moreno", lat:-34.6520, lng:-58.7865},
-            {calle1:"Avenida Moreno", calle2:"Avenida San Martín", localidad:"Moreno", lat:-34.6515, lng:-58.7915},
-            {calle1:"Avenida Moreno", calle2:"Avenida Alcorta", localidad:"Moreno", lat:-34.6510, lng:-58.7880},
-            {calle1:"Avenida Moreno", calle2:"Avenida Piovano", localidad:"Moreno", lat:-34.6508, lng:-58.7930},
-            {calle1:"Avenida Moreno", calle2:"Avenida Rivadavia", localidad:"Moreno", lat:-34.6505, lng:-58.7945},
-            {calle1:"Avenida Moreno", calle2:"Avenida Bartolomé Mitre", localidad:"Moreno", lat:-34.6502, lng:-58.7955},
-            {calle1:"Avenida Moreno", calle2:"Intendente Corvalán", localidad:"Moreno", lat:-34.6530, lng:-58.7900},
-            {calle1:"Avenida Moreno", calle2:"Deán Funes", localidad:"Moreno", lat:-34.6525, lng:-58.7920},
-            {calle1:"Avenida Moreno", calle2:"Juan B. Alberdi", localidad:"Moreno", lat:-34.6520, lng:-58.7940},
-            {calle1:"Avenida Libertador", calle2:"Avenida San Martín", localidad:"Moreno", lat:-34.6535, lng:-58.7900},
-            {calle1:"Avenida Libertador", calle2:"Avenida Alcorta", localidad:"Moreno", lat:-34.6540, lng:-58.7870},
-            {calle1:"Avenida Libertador", calle2:"Avenida Piovano", localidad:"Moreno", lat:-34.6535, lng:-58.7920},
-            {calle1:"Avenida Libertador", calle2:"Avenida Rivadavia", localidad:"Moreno", lat:-34.6530, lng:-58.7930},
-            {calle1:"Avenida Libertador", calle2:"Avenida Bartolomé Mitre", localidad:"Moreno", lat:-34.6525, lng:-58.7940},
-            {calle1:"Avenida Libertador", calle2:"Intendente Corvalán", localidad:"Moreno", lat:-34.6550, lng:-58.7890},
-            {calle1:"Avenida Libertador", calle2:"Deán Funes", localidad:"Moreno", lat:-34.6545, lng:-58.7910},
-            {calle1:"Avenida Libertador", calle2:"Juan B. Alberdi", localidad:"Moreno", lat:-34.6540, lng:-58.7930},
-            {calle1:"Avenida San Martín", calle2:"Avenida Alcorta", localidad:"Moreno", lat:-34.6535, lng:-58.7880},
-            {calle1:"Avenida San Martín", calle2:"Avenida Piovano", localidad:"Moreno", lat:-34.6530, lng:-58.7930},
-            {calle1:"Avenida San Martín", calle2:"Avenida Rivadavia", localidad:"Moreno", lat:-34.6525, lng:-58.7940},
-            {calle1:"Avenida San Martín", calle2:"Avenida Bartolomé Mitre", localidad:"Moreno", lat:-34.6520, lng:-58.7950},
-            {calle1:"Avenida San Martín", calle2:"Intendente Corvalán", localidad:"Moreno", lat:-34.6545, lng:-58.7900},
-            {calle1:"Avenida San Martín", calle2:"Deán Funes", localidad:"Moreno", lat:-34.6540, lng:-58.7920},
-            {calle1:"Avenida San Martín", calle2:"Juan B. Alberdi", localidad:"Moreno", lat:-34.6535, lng:-58.7940},
-            {calle1:"Avenida Presidente Perón", calle2:"Avenida Sáenz Peña", localidad:"San Miguel", lat:-34.5400, lng:-58.7100},
-            {calle1:"Avenida Presidente Perón", calle2:"Avenida Balbín", localidad:"San Miguel", lat:-34.5420, lng:-58.7150},
-            {calle1:"Avenida Presidente Perón", calle2:"Avenida Urquiza", localidad:"San Miguel", lat:-34.5430, lng:-58.7200},
-            {calle1:"Avenida Presidente Perón", calle2:"Güemes", localidad:"San Miguel", lat:-34.5440, lng:-58.7120},
-            {calle1:"Avenida Presidente Perón", calle2:"Rodríguez Peña", localidad:"San Miguel", lat:-34.5450, lng:-58.7140},
-            {calle1:"Avenida Presidente Perón", calle2:"Alem", localidad:"San Miguel", lat:-34.5460, lng:-58.7160},
-            {calle1:"Avenida Presidente Perón", calle2:"Pueyrredón", localidad:"San Miguel", lat:-34.5470, lng:-58.7180},
-            {calle1:"Avenida Presidente Perón", calle2:"Las Heras", localidad:"San Miguel", lat:-34.5480, lng:-58.7200},
-            {calle1:"Avenida Presidente Perón", calle2:"Belgrano", localidad:"San Miguel", lat:-34.5430, lng:-58.7100},
-            {calle1:"Avenida Presidente Perón", calle2:"Sarmiento", localidad:"San Miguel", lat:-34.5410, lng:-58.7120},
-            {calle1:"Avenida Presidente Perón", calle2:"Congreso", localidad:"San Miguel", lat:-34.5420, lng:-58.7140},
-            {calle1:"Avenida Balbín", calle2:"Avenida Sáenz Peña", localidad:"San Miguel", lat:-34.5410, lng:-58.7110},
-            {calle1:"Avenida Balbín", calle2:"Avenida Urquiza", localidad:"San Miguel", lat:-34.5420, lng:-58.7210},
-            {calle1:"Avenida Balbín", calle2:"Güemes", localidad:"San Miguel", lat:-34.5430, lng:-58.7130},
-            {calle1:"Avenida Balbín", calle2:"Rodríguez Peña", localidad:"San Miguel", lat:-34.5440, lng:-58.7150},
-            {calle1:"Avenida Balbín", calle2:"Alem", localidad:"San Miguel", lat:-34.5450, lng:-58.7170},
-            {calle1:"Avenida Balbín", calle2:"Pueyrredón", localidad:"San Miguel", lat:-34.5460, lng:-58.7190},
-            {calle1:"Avenida Balbín", calle2:"Las Heras", localidad:"San Miguel", lat:-34.5470, lng:-58.7210},
-            {calle1:"Avenida Balbín", calle2:"Congreso", localidad:"San Miguel", lat:-34.5430, lng:-58.7150},
-            {calle1:"Avenida Sáenz Peña", calle2:"Avenida Urquiza", localidad:"San Miguel", lat:-34.5390, lng:-58.7150},
-            {calle1:"Avenida Sáenz Peña", calle2:"Güemes", localidad:"San Miguel", lat:-34.5400, lng:-58.7090},
-            {calle1:"Avenida Sáenz Peña", calle2:"Rodríguez Peña", localidad:"San Miguel", lat:-34.5410, lng:-58.7110},
-            {calle1:"Avenida Sáenz Peña", calle2:"Alem", localidad:"San Miguel", lat:-34.5420, lng:-58.7130},
-            {calle1:"Avenida Sáenz Peña", calle2:"Belgrano", localidad:"San Miguel", lat:-34.5390, lng:-58.7100},
-            {calle1:"Avenida Sáenz Peña", calle2:"Sarmiento", localidad:"San Miguel", lat:-34.5380, lng:-58.7120},
-            {calle1:"Avenida Urquiza", calle2:"Güemes", localidad:"San Miguel", lat:-34.5420, lng:-58.7180},
-            {calle1:"Avenida Urquiza", calle2:"Rodríguez Peña", localidad:"San Miguel", lat:-34.5430, lng:-58.7200},
-            {calle1:"Avenida Urquiza", calle2:"Alem", localidad:"San Miguel", lat:-34.5440, lng:-58.7220},
-            {calle1:"Avenida Urquiza", calle2:"Pueyrredón", localidad:"San Miguel", lat:-34.5450, lng:-58.7240},
-            {calle1:"Avenida Urquiza", calle2:"Las Heras", localidad:"San Miguel", lat:-34.5460, lng:-58.7260}
-        ];// ═══════════════════════════════════════════════════════════════════════
-// ZONA MORENO - Todo lo que está al OESTE de Av. Martín García
-// Incluye: Las Catalinas, Trujui, Santa Brígida, Haras Trujui, Villanueva,
-// Las Catonas, Las Flores, San Carlos, Moreno Centro, Estación Moreno, etc.
-// ═══════════════════════════════════════════════════════════════════════
-
-const ZONA_MORENO = {
-    // Centro de Moreno
-    centro: [
-        { calle: 'Bartolomé Mitre', altura: 100, lat: -34.6510, lng: -58.7910, localidad: 'Moreno Centro' },
-        { calle: 'Bartolomé Mitre', altura: 500, lat: -34.6520, lng: -58.7930, localidad: 'Moreno Centro' },
-        { calle: 'Bartolomé Mitre', altura: 1000, lat: -34.6530, lng: -58.7950, localidad: 'Moreno Centro' },
-        { calle: 'Belgrano', altura: 100, lat: -34.6505, lng: -58.7905, localidad: 'Moreno Centro' },
-        { calle: 'Belgrano', altura: 500, lat: -34.6515, lng: -58.7925, localidad: 'Moreno Centro' },
-        { calle: 'Moreno', altura: 100, lat: -34.6512, lng: -58.7912, localidad: 'Moreno Centro' },
-        { calle: 'Sarmiento', altura: 100, lat: -34.6508, lng: -58.7908, localidad: 'Moreno Centro' },
-        { calle: 'Sarmiento', altura: 500, lat: -34.6518, lng: -58.7928, localidad: 'Moreno Centro' },
-        { calle: 'España', altura: 100, lat: -34.6515, lng: -58.7915, localidad: 'Moreno Centro' },
-        { calle: 'Dorrego', altura: 100, lat: -34.6520, lng: -58.7920, localidad: 'Moreno Centro' },
-        { calle: 'Vicente López', altura: 100, lat: -34.6500, lng: -58.7890, localidad: 'Moreno Centro' },
-        { calle: 'Intendente Pagano', altura: 100, lat: -34.6530, lng: -58.7930, localidad: 'Moreno Centro' },
-        { calle: 'Saavedra', altura: 100, lat: -34.6510, lng: -58.7900, localidad: 'Moreno Centro' },
-        { calle: 'Hipólito Yrigoyen', altura: 100, lat: -34.6510, lng: -58.7900, localidad: 'Moreno Centro' },
-        { calle: 'Alberdi', altura: 100, lat: -34.6510, lng: -58.7900, localidad: 'Moreno Centro' },
-        { calle: 'Florencio Sánchez', altura: 100, lat: -34.6540, lng: -58.7940, localidad: 'Moreno Centro' },
-        { calle: 'Marcos Sastre', altura: 100, lat: -34.6550, lng: -58.7950, localidad: 'Moreno Centro' },
-        { calle: 'Carlos Pellegrini', altura: 100, lat: -34.6525, lng: -58.7925, localidad: 'Moreno Centro' },
-        { calle: 'Rivadavia', altura: 100, lat: -34.6535, lng: -58.7935, localidad: 'Moreno Centro' },
-        { calle: 'Juan B. Alberdi', altura: 100, lat: -34.6545, lng: -58.7945, localidad: 'Moreno Centro' },
-        { calle: 'Entre Ríos', altura: 100, lat: -34.6555, lng: -58.7955, localidad: 'Moreno Centro' },
-        { calle: 'Laprida', altura: 100, lat: -34.6560, lng: -58.7960, localidad: 'Moreno Centro' },
-    ],
-
-    // Avenidas principales de Moreno
-    avenidas: [
-        { calle: 'Av. del Libertador', altura: 100, lat: -34.6500, lng: -58.7850, localidad: 'Moreno' },
-        { calle: 'Av. del Libertador', altura: 500, lat: -34.6520, lng: -58.7870, localidad: 'Moreno' },
-        { calle: 'Av. del Libertador', altura: 1000, lat: -34.6550, lng: -58.7900, localidad: 'Moreno' },
-        { calle: 'Av. del Libertador', altura: 2000, lat: -34.6600, lng: -58.7950, localidad: 'Moreno' },
-        { calle: 'Av. Gral. José de San Martín', altura: 100, lat: -34.6450, lng: -58.7800, localidad: 'Moreno' },
-        { calle: 'Av. Gral. José de San Martín', altura: 500, lat: -34.6470, lng: -58.7820, localidad: 'Moreno' },
-        { calle: 'Av. Amancio Alcorta', altura: 100, lat: -34.6520, lng: -58.7880, localidad: 'Moreno' },
-        { calle: 'Av. Pedro Martínez Melo', altura: 100, lat: -34.6530, lng: -58.7890, localidad: 'Moreno' },
-        { calle: 'Av. Francisco Piovano', altura: 100, lat: -34.6540, lng: -58.7900, localidad: 'Moreno' },
-        { calle: 'Av. del Trabajo', altura: 100, lat: -34.6480, lng: -58.7840, localidad: 'Moreno' },
-        { calle: 'Av. Santiago Derqui', altura: 100, lat: -34.6570, lng: -58.7920, localidad: 'Moreno' },
-        { calle: 'Av. Nemesio Álvarez', altura: 100, lat: -34.6580, lng: -58.7930, localidad: 'Moreno' },
-        { calle: 'Int. Juan Francisco Aguilar', altura: 100, lat: -34.6590, lng: -58.7940, localidad: 'Moreno' },
-        { calle: 'Av. de las Montoneras', altura: 100, lat: -34.6510, lng: -58.7880, localidad: 'Moreno' },
-    ],
-
-    // Las Catalinas (base de la remisería + barrio con manzanas)
-    las_catalinas: [
-        // Base de la remisería
-        { calle: 'Las Catalinas', altura: 53, lat: -34.6510, lng: -58.7880, localidad: 'Las Catalinas', nota: 'Base remisería' },
-        
-        // Manzanas y casas (direcciones sin calle tradicional)
-        { tipo: 'manzana', manzana: 'M1', casa: '1', lat: -34.6505, lng: -58.7875, localidad: 'Las Catalinas', nota: 'Manzana 1, Casa 1' },
-        { tipo: 'manzana', manzana: 'M1', casa: '10', lat: -34.6507, lng: -58.7877, localidad: 'Las Catalinas', nota: 'Manzana 1, Casa 10' },
-        { tipo: 'manzana', manzana: 'M2', casa: '1', lat: -34.6510, lng: -58.7880, localidad: 'Las Catalinas', nota: 'Manzana 2, Casa 1' },
-        { tipo: 'manzana', manzana: 'M2', casa: '20', lat: -34.6512, lng: -58.7882, localidad: 'Las Catalinas', nota: 'Manzana 2, Casa 20' },
-        { tipo: 'manzana', manzana: 'M3', casa: '1', lat: -34.6515, lng: -58.7885, localidad: 'Las Catalinas', nota: 'Manzana 3, Casa 1' },
-        { tipo: 'manzana', manzana: 'M3', casa: '30', lat: -34.6517, lng: -58.7887, localidad: 'Las Catalinas', nota: 'Manzana 3, Casa 30' },
-        { tipo: 'manzana', manzana: 'M4', casa: '1', lat: -34.6520, lng: -58.7890, localidad: 'Las Catalinas', nota: 'Manzana 4, Casa 1' },
-        { tipo: 'manzana', manzana: 'M4', casa: '40', lat: -34.6522, lng: -58.7892, localidad: 'Las Catalinas', nota: 'Manzana 4, Casa 40' },
-        { tipo: 'manzana', manzana: 'M5', casa: '1', lat: -34.6525, lng: -58.7895, localidad: 'Las Catalinas', nota: 'Manzana 5, Casa 1' },
-        { tipo: 'manzana', manzana: 'M5', casa: '54', lat: -34.6527, lng: -58.7897, localidad: 'Las Catalinas', nota: 'Manzana 5, Casa 54' },
-        { tipo: 'manzana', manzana: 'M6', casa: '1', lat: -34.6530, lng: -58.7900, localidad: 'Las Catalinas', nota: 'Manzana 6, Casa 1' },
-        { tipo: 'manzana', manzana: 'M6', casa: '60', lat: -34.6532, lng: -58.7902, localidad: 'Las Catalinas', nota: 'Manzana 6, Casa 60' },
-        
-        // Calles del barrio si las hay
-        { calle: 'Av. de las Montoneras', altura: 1500, lat: -34.6510, lng: -58.7880, localidad: 'Las Catalinas' },
-    ],
-
-    // Trujui - Barrios y calles principales
-    trujui: [
-        // Barrio Santa Brígida (Trujui)
-        { calle: 'Bartolomé Murillo', altura: 100, lat: -34.5642, lng: -58.7708, localidad: 'Santa Brígida', barrio: 'Trujui' },
-        { calle: 'Bartolomé Murillo', altura: 145, lat: -34.5645, lng: -58.7710, localidad: 'Santa Brígida', barrio: 'Trujui' },
-        { calle: 'Bartolomé Murillo', altura: 200, lat: -34.5650, lng: -58.7715, localidad: 'Santa Brígida', barrio: 'Trujui' },
-        { calle: 'Bartolomé Murillo', altura: 300, lat: -34.5660, lng: -58.7725, localidad: 'Santa Brígida', barrio: 'Trujui' },
-        { calle: 'Bartolomé Murillo', altura: 500, lat: -34.5680, lng: -58.7745, localidad: 'Santa Brígida', barrio: 'Trujui' },
-        
-        // Prado (cambia de nombre al cruzar, pero es la misma calle)
-        { calle: 'Prado', altura: 100, lat: -34.5650, lng: -58.7700, localidad: 'Santa Brígida', barrio: 'Trujui' },
-        { calle: 'Prado', altura: 224, lat: -34.5655, lng: -58.7705, localidad: 'Santa Brígida', barrio: 'Trujui' },
-        { calle: 'Prado', altura: 300, lat: -34.5660, lng: -58.7710, localidad: 'Santa Brígida', barrio: 'Trujui' },
-        { calle: 'Prado', altura: 500, lat: -34.5680, lng: -58.7730, localidad: 'Santa Brígida', barrio: 'Trujui' },
-        
-        // Otras calles de Santa Brígida
-        { calle: 'Belisario Roldán', altura: 100, lat: -34.5640, lng: -58.7710, localidad: 'Santa Brígida', barrio: 'Trujui' },
-        { calle: 'Boulogne', altura: 100, lat: -34.5650, lng: -58.7720, localidad: 'Santa Brígida', barrio: 'Trujui' },
-        { calle: 'Niceto Vega', altura: 100, lat: -34.5660, lng: -58.7730, localidad: 'Santa Brígida', barrio: 'Trujui' },
-        { calle: 'Onas', altura: 100, lat: -34.5670, lng: -58.7740, localidad: 'Santa Brígida', barrio: 'Trujui' },
-        { calle: 'Bartolomé Hidalgo', altura: 100, lat: -34.5680, lng: -58.7750, localidad: 'Santa Brígida', barrio: 'Trujui' },
-        
-        // Barrio Villanueva / Villanueva Nuevo
-        { calle: 'Villanueva', altura: 100, lat: -34.5833, lng: -58.7656, localidad: 'Villanueva', barrio: 'Trujui' },
-        { calle: 'Villanueva', altura: 500, lat: -34.5850, lng: -58.7670, localidad: 'Villanueva', barrio: 'Trujui' },
-        
-        // Barrio Haras Trujui
-        { calle: 'Haras Trujui', altura: 100, lat: -34.5679, lng: -58.7730, localidad: 'Haras Trujui', barrio: 'Trujui' },
-        
-        // Barrio Las Catonas
-        { calle: 'Las Catonas', altura: 100, lat: -34.6163, lng: -58.7592, localidad: 'Las Catonas', barrio: 'Trujui' },
-        { calle: 'Las Catonas', altura: 500, lat: -34.6180, lng: -58.7610, localidad: 'Las Catonas', barrio: 'Trujui' },
-        
-        // Barrio Las Flores
-        { calle: 'Las Flores', altura: 100, lat: -34.6022, lng: -58.7517, localidad: 'Las Flores', barrio: 'Trujui' },
-        
-        // Barrio San Carlos
-        { calle: 'San Carlos', altura: 100, lat: -34.6100, lng: -58.7550, localidad: 'San Carlos', barrio: 'Trujui' },
-        
-        // Barrio Cruce Castelar
-        { calle: 'Cruce Castelar', altura: 100, lat: -34.5847, lng: -58.7487, localidad: 'Cruce Castelar', barrio: 'Trujui' },
-        
-        // Barrio 3 de diciembre
-        { calle: '3 de diciembre', altura: 100, lat: -34.6136, lng: -58.7536, localidad: '3 de diciembre', barrio: 'Trujui' },
-        
-        // Barrio Cuatro Vientos
-        { calle: 'Cuatro Vientos', altura: 100, lat: -34.5975, lng: -58.7617, localidad: 'Cuatro Vientos', barrio: 'Trujui' },
-        
-        // Barrio La Fortuna
-        { calle: 'La Fortuna', altura: 100, lat: -34.5827, lng: -58.7561, localidad: 'La Fortuna', barrio: 'Trujui' },
-        
-        // Barrio Los Paraísos
-        { calle: 'Los Paraísos', altura: 100, lat: -34.5796, lng: -58.7498, localidad: 'Los Paraísos', barrio: 'Trujui' },
-        
-        // Barrio Parque Trujui
-        { calle: 'Parque Trujui', altura: 100, lat: -34.5885, lng: -58.7437, localidad: 'Parque Trujui', barrio: 'Trujui' },
-        
-        // Barrio Santa Paula
-        { calle: 'Santa Paula', altura: 100, lat: -34.5893, lng: -58.7557, localidad: 'Santa Paula', barrio: 'Trujui' },
-        
-        // Barrio San Ambrosio
-        { calle: 'San Ambrosio', altura: 100, lat: -34.5951, lng: -58.7314, localidad: 'San Ambrosio', barrio: 'Trujui' },
-        
-        // Barrio San Cayetano
-        { calle: 'San Cayetano', altura: 100, lat: -34.6020, lng: -58.7679, localidad: 'San Cayetano', barrio: 'Trujui' },
-        
-        // Barrio La Granja
-        { calle: 'La Granja', altura: 100, lat: -34.6004, lng: -58.7451, localidad: 'La Granja', barrio: 'Trujui' },
-        
-        // Barrio Lomas Verdes
-        { calle: 'Lomas Verdes', altura: 100, lat: -34.5777, lng: -58.7607, localidad: 'Lomas Verdes', barrio: 'Trujui' },
-        
-        // Barrio Lomas de Mariló
-        { calle: 'Lomas de Mariló', altura: 100, lat: -34.6041, lng: -58.7343, localidad: 'Lomas de Mariló', barrio: 'Trujui' },
-        
-        // Barrio Los Mirasoles
-        { calle: 'Los Mirasoles', altura: 100, lat: -34.6062, lng: -58.7475, localidad: 'Los Mirasoles', barrio: 'Trujui' },
-        
-        // Barrio Los Granados
-        { calle: 'Los Granados', altura: 100, lat: -34.6046, lng: -58.7499, localidad: 'Los Granados', barrio: 'Trujui' },
-        
-        // Barrio Los Limones
-        { calle: 'Los Limones', altura: 100, lat: -34.6049, lng: -58.7569, localidad: 'Los Limones', barrio: 'Trujui' },
-        
-        // Barrio El Reencuentro
-        { calle: 'El Reencuentro', altura: 100, lat: -34.5835, lng: -58.7727, localidad: 'El Reencuentro', barrio: 'Trujui' },
-        
-        // Barrio La Fortuna (otra entrada)
-        { calle: 'La Fortuna', altura: 200, lat: -34.5827, lng: -58.7561, localidad: 'La Fortuna', barrio: 'Trujui' },
-    ],
-
-    // Paso del Rey
-    paso_del_rey: [
-        { calle: 'Paso del Rey', altura: 100, lat: -34.6420, lng: -58.8200, localidad: 'Paso del Rey' },
-        { calle: 'Paso del Rey', altura: 500, lat: -34.6440, lng: -58.8220, localidad: 'Paso del Rey' },
-    ],
-
-    // La Reja
-    la_reja: [
-        { calle: 'La Reja', altura: 100, lat: -34.6370, lng: -58.8280, localidad: 'La Reja' },
-    ],
-
-    // Cuartel V
-    cuartel_v: [
-        { calle: 'Cuartel V', altura: 100, lat: -34.6650, lng: -58.8100, localidad: 'Cuartel V' },
-    ],
-
-    // Francisco Álvarez
-    francisco_alvarez: [
-        { calle: 'Francisco Álvarez', altura: 100, lat: -34.6250, lng: -58.8400, localidad: 'Francisco Álvarez' },
-    ],
-};
-
-// Combinar todo en un array plano para el buscador
-const CALLES_MORENO = [
-    ...ZONA_MORENO.centro,
-    ...ZONA_MORENO.avenidas,
-    ...ZONA_MORENO.las_catalinas,
-    ...ZONA_MORENO.trujui,
-    ...ZONA_MORENO.paso_del_rey,
-    ...ZONA_MORENO.la_reja,
-    ...ZONA_MORENO.cuartel_v,
-    ...ZONA_MORENO.francisco_alvarez,
-];
-// ═══════════════════════════════════════════════════════════════════════
-// ZONA SAN MIGUEL - Todo lo que está al ESTE de Av. Martín García
-// Incluye: Martín García, Santa María, Bella Vista, Muñiz, 
-// San Miguel Centro, etc.
-// ═══════════════════════════════════════════════════════════════════════
-
-const ZONA_SAN_MIGUEL = {
-    // Av. Martín García (límite entre Moreno y San Miguel)
-    limite: [
-        { calle: 'Av. Martín García', altura: 100, lat: -34.5950, lng: -58.7500, localidad: 'Límite Moreno-San Miguel', nota: 'Límite entre Moreno y San Miguel' },
-        { calle: 'Av. Martín García', altura: 500, lat: -34.5970, lng: -58.7520, localidad: 'Límite Moreno-San Miguel', nota: 'Límite entre Moreno y San Miguel' },
-        { calle: 'Av. Martín García', altura: 1000, lat: -34.6000, lng: -58.7550, localidad: 'Límite Moreno-San Miguel', nota: 'Límite entre Moreno y San Miguel' },
-        { calle: 'Av. Martín García', altura: 2000, lat: -34.6050, lng: -58.7600, localidad: 'Límite Moreno-San Miguel', nota: 'Límite entre Moreno y San Miguel' },
-    ],
-
-    // San Miguel Centro
-    centro: [
-        { calle: 'Sarmiento', altura: 100, lat: -34.5430, lng: -58.7120, localidad: 'San Miguel Centro' },
-        { calle: 'Sarmiento', altura: 500, lat: -34.5450, lng: -58.7140, localidad: 'San Miguel Centro' },
-        { calle: 'Mitre', altura: 100, lat: -34.5420, lng: -58.7110, localidad: 'San Miguel Centro' },
-        { calle: 'Belgrano', altura: 100, lat: -34.5410, lng: -58.7100, localidad: 'San Miguel Centro' },
-        { calle: 'Rivadavia', altura: 100, lat: -34.5440, lng: -58.7130, localidad: 'San Miguel Centro' },
-        { calle: 'España', altura: 100, lat: -34.5400, lng: -58.7090, localidad: 'San Miguel Centro' },
-        { calle: 'Paunero', altura: 100, lat: -34.5460, lng: -58.7150, localidad: 'San Miguel Centro' },
-        { calle: 'Callao', altura: 100, lat: -34.5470, lng: -58.7160, localidad: 'San Miguel Centro' },
-        { calle: 'Urquiza', altura: 100, lat: -34.5480, lng: -58.7170, localidad: 'San Miguel Centro' },
-        { calle: 'Italia', altura: 100, lat: -34.5490, lng: -58.7180, localidad: 'San Miguel Centro' },
-        { calle: 'Rodríguez Peña', altura: 100, lat: -34.5500, lng: -58.7190, localidad: 'San Miguel Centro' },
-        { calle: 'Muñoz', altura: 100, lat: -34.5510, lng: -58.7200, localidad: 'San Miguel Centro' },
-    ],
-
-    // Santa María (barrios)
-    santa_maria: [
-        { calle: 'Santa María', altura: 100, lat: -34.5500, lng: -58.7050, localidad: 'Santa María' },
-        { calle: 'Santa Brígida', altura: 100, lat: -34.5520, lng: -58.7070, localidad: 'Santa María', barrio: 'Santa Brígida' },
-        { calle: 'Trujuy', altura: 100, lat: -34.5530, lng: -58.7080, localidad: 'Santa María', barrio: 'Trujuy' },
-        { calle: 'La Estrella', altura: 100, lat: -34.5540, lng: -58.7090, localidad: 'Santa María', barrio: 'La Estrella' },
-        { calle: 'La Gloria', altura: 100, lat: -34.5550, lng: -58.7100, localidad: 'Santa María', barrio: 'La Gloria' },
-        { calle: 'Los Paraísos', altura: 100, lat: -34.5560, lng: -58.7110, localidad: 'Santa María', barrio: 'Los Paraísos' },
-        { calle: 'La Guarida', altura: 100, lat: -34.5570, lng: -58.7120, localidad: 'Santa María', barrio: 'La Guarida' },
-        { calle: 'Mitre', altura: 100, lat: -34.5580, lng: -58.7130, localidad: 'Santa María', barrio: 'Mitre' },
-        { calle: 'San Ignacio', altura: 100, lat: -34.5590, lng: -58.7140, localidad: 'Santa María', barrio: 'San Ignacio' },
-        { calle: 'San Antonio', altura: 100, lat: -34.5600, lng: -58.7150, localidad: 'Santa María', barrio: 'San Antonio' },
-        { calle: 'Constantini', altura: 100, lat: -34.5610, lng: -58.7160, localidad: 'Santa María', barrio: 'Constantini' },
-        { calle: 'Colibrí', altura: 100, lat: -34.5620, lng: -58.7170, localidad: 'Santa María', barrio: 'Colibrí' },
-        { calle: 'Don Alfonso', altura: 100, lat: -34.5630, lng: -58.7180, localidad: 'Santa María', barrio: 'Don Alfonso' },
-        { calle: 'Colegio Máximo', altura: 100, lat: -34.5640, lng: -58.7190, localidad: 'Santa María', barrio: 'Colegio Máximo' },
-        { calle: 'Parque San Miguel', altura: 100, lat: -34.5650, lng: -58.7200, localidad: 'Santa María', barrio: 'Parque San Miguel' },
-        { calle: 'La Manuelita', altura: 100, lat: -34.5660, lng: -58.7210, localidad: 'Santa María', barrio: 'La Manuelita' },
-        { calle: 'Bello Horizonte', altura: 100, lat: -34.5670, lng: -58.7220, localidad: 'Santa María', barrio: 'Bello Horizonte' },
-        { calle: 'Parque San Ignacio', altura: 100, lat: -34.5680, lng: -58.7230, localidad: 'Santa María', barrio: 'Parque San Ignacio' },
-        { calle: 'Macabi', altura: 100, lat: -34.5690, lng: -58.7240, localidad: 'Santa María', barrio: 'Macabi' },
-        { calle: 'Cuartel Segundo Cc.', altura: 100, lat: -34.5700, lng: -58.7250, localidad: 'Santa María', barrio: 'Cuartel Segundo Cc.' },
-        { calle: 'Altos de San José', altura: 100, lat: -34.5710, lng: -58.7260, localidad: 'Santa María', barrio: 'Altos de San José' },
-    ],
-
-    // Bella Vista
-    bella_vista: [
-        { calle: 'Bella Vista', altura: 100, lat: -34.5330, lng: -58.6670, localidad: 'Bella Vista' },
-        { calle: 'Mariló', altura: 100, lat: -34.5350, lng: -58.6700, localidad: 'Bella Vista', barrio: 'Mariló' },
-        { calle: 'Lomas de Mariló', altura: 100, lat: -34.5360, lng: -58.6710, localidad: 'Bella Vista', barrio: 'Lomas de Mariló' },
-        { calle: 'Barrufaldi', altura: 100, lat: -34.5370, lng: -58.6720, localidad: 'Bella Vista', barrio: 'Barrufaldi' },
-        { calle: 'Hogar Obrero', altura: 100, lat: -34.5380, lng: -58.6730, localidad: 'Bella Vista', barrio: 'Hogar Obrero' },
-        { calle: 'Mattaldi', altura: 100, lat: -34.5390, lng: -58.6740, localidad: 'Bella Vista', barrio: 'Mattaldi' },
-        { calle: 'Barrio Ingeniero Matías Gandulfo', altura: 100, lat: -34.5400, lng: -58.6750, localidad: 'Bella Vista', barrio: 'Ingeniero Matías Gandulfo' },
-        { calle: 'Barrio Pasman', altura: 100, lat: -34.5410, lng: -58.6760, localidad: 'Bella Vista', barrio: 'Pasman' },
-        { calle: 'Barrio Rafael Obligado', altura: 100, lat: -34.5420, lng: -58.6770, localidad: 'Bella Vista', barrio: 'Rafael Obligado' },
-    ],
-
-    // Muñiz
-    muniz: [
-        { calle: 'Muñiz', altura: 100, lat: -34.5330, lng: -58.7000, localidad: 'Muñiz' },
-        { calle: 'Av. Pte. J. D. Perón', altura: 100, lat: -34.5340, lng: -58.7010, localidad: 'Muñiz' },
-        { calle: 'Las Heras', altura: 100, lat: -34.5350, lng: -58.7020, localidad: 'Muñiz' },
-        { calle: 'Maestro Ángel D\'Elía', altura: 100, lat: -34.5360, lng: -58.7030, localidad: 'Muñiz' },
-        { calle: 'Conesa', altura: 100, lat: -34.5370, lng: -58.7040, localidad: 'Muñiz' },
-        { calle: 'Av. León Gallardo', altura: 100, lat: -34.5380, lng: -58.7050, localidad: 'Muñiz' },
-        { calle: 'Cornelio Saavedra', altura: 100, lat: -34.5390, lng: -58.7060, localidad: 'Muñiz' },
-    ],
-};
-
-// Combinar todo
-const CALLES_SAN_MIGUEL = [
-    ...ZONA_SAN_MIGUEL.limite,
-    ...ZONA_SAN_MIGUEL.centro,
-    ...ZONA_SAN_MIGUEL.santa_maria,
-    ...ZONA_SAN_MIGUEL.bella_vista,
-    ...ZONA_SAN_MIGUEL.muniz,
-];
-// ═══════════════════════════════════════════════════════════════════════
-// PUNTOS DE REFERENCIA - Estaciones, hospitales, plazas, etc.
-// ═══════════════════════════════════════════════════════════════════════
-
-const REFERENCIAS = [
-    // Estaciones de tren
-    { nombre: 'Estación Moreno', tipo: 'tren', linea: 'Sarmiento', lat: -34.6500, lng: -58.7900, localidad: 'Moreno' },
-    { nombre: 'Estación Paso del Rey', tipo: 'tren', linea: 'Sarmiento', lat: -34.6420, lng: -58.8200, localidad: 'Paso del Rey' },
-    { nombre: 'Estación San Miguel', tipo: 'tren', linea: 'Sarmiento', lat: -34.5430, lng: -58.7120, localidad: 'San Miguel' },
-    { nombre: 'Estación Muñiz', tipo: 'tren', linea: 'San Martín', lat: -34.5330, lng: -58.7000, localidad: 'Muñiz' },
-    { nombre: 'Estación Bella Vista', tipo: 'tren', linea: 'San Martín', lat: -34.5330, lng: -58.6670, localidad: 'Bella Vista' },
-    { nombre: 'Estación Barrufaldi', tipo: 'tren', linea: 'Urquiza', lat: -34.5350, lng: -58.6700, localidad: 'Bella Vista' },
-    
-    // Hospitales
-    { nombre: 'Hospital Mariano y Luciano de la Vega', tipo: 'hospital', lat: -34.6550, lng: -58.7950, localidad: 'Moreno' },
-    
-    // Plazas
-    { nombre: 'Plaza del ferrocarril', tipo: 'plaza', lat: -34.6510, lng: -58.7910, localidad: 'Moreno Centro' },
-    { nombre: 'Plaza San Miguel', tipo: 'plaza', lat: -34.5430, lng: -58.7120, localidad: 'San Miguel Centro' },
-    { nombre: 'Plaza de las Carretas', tipo: 'plaza', lat: -34.5330, lng: -58.7000, localidad: 'Muñiz' },
-    
-    // Colegios
-    { nombre: 'Colegio Almafuerte', tipo: 'colegio', lat: -34.5330, lng: -58.6670, localidad: 'Bella Vista' },
-    { nombre: 'Colegio Jesús María', tipo: 'colegio', lat: -34.5340, lng: -58.6680, localidad: 'Bella Vista' },
-    
-    // Supermercados
-    { nombre: 'Supermercado Día', tipo: 'supermercado', lat: -34.6510, lng: -58.7910, localidad: 'Moreno Centro' },
-    
-    // Comisarías
-    { nombre: 'Comisaría Moreno 8°', tipo: 'comisaria', lat: -34.6163, lng: -58.7592, localidad: 'Las Catonas' },
-    
-    // Zonas generales
-    { nombre: 'Centro de Moreno', tipo: 'zona', lat: -34.6510, lng: -58.7910, localidad: 'Moreno' },
-    { nombre: 'Centro de San Miguel', tipo: 'zona', lat: -34.5430, lng: -58.7120, localidad: 'San Miguel' },
-    { nombre: 'Moreno Norte', tipo: 'zona', lat: -34.6450, lng: -58.7850, localidad: 'Moreno' },
-    { nombre: 'Moreno Sur', tipo: 'zona', lat: -34.6550, lng: -58.7950, localidad: 'Moreno' },
-    { nombre: 'San Miguel Centro', tipo: 'zona', lat: -34.5420, lng: -58.7110, localidad: 'San Miguel' },
-    { nombre: 'Terrazas de San Miguel', tipo: 'zona', lat: -34.5350, lng: -58.7050, localidad: 'San Miguel' },
-    { nombre: 'La Reja', tipo: 'zona', lat: -34.6370, lng: -58.8280, localidad: 'Moreno' },
-    { nombre: 'Paso del Rey', tipo: 'zona', lat: -34.6420, lng: -58.8200, localidad: 'Moreno' },
-    { nombre: 'Trujui', tipo: 'zona', lat: -34.5847, lng: -58.7487, localidad: 'Moreno' },
-    { nombre: 'Cuartel V', tipo: 'zona', lat: -34.6650, lng: -58.8100, localidad: 'Moreno' },
-    { nombre: 'Francisco Álvarez', tipo: 'zona', lat: -34.6250, lng: -58.8400, localidad: 'Moreno' },
-    { nombre: 'Cruce Castelar', tipo: 'zona', lat: -34.5847, lng: -58.7487, localidad: 'Trujui' },
-    { nombre: 'Santa Brígida', tipo: 'zona', lat: -34.5642, lng: -58.7708, localidad: 'Trujui' },
-    { nombre: 'Villanueva', tipo: 'zona', lat: -34.5833, lng: -58.7656, localidad: 'Trujui' },
-    { nombre: 'Haras Trujui', tipo: 'zona', lat: -34.5679, lng: -58.7730, localidad: 'Trujui' },
-    { nombre: 'Las Catonas', tipo: 'zona', lat: -34.6163, lng: -58.7592, localidad: 'Trujui' },
-    { nombre: 'Las Flores', tipo: 'zona', lat: -34.6022, lng: -58.7517, localidad: 'Trujui' },
-    { nombre: 'San Carlos', tipo: 'zona', lat: -34.6100, lng: -58.7550, localidad: 'Trujui' },
-    { nombre: 'Muñiz', tipo: 'zona', lat: -34.5330, lng: -58.7000, localidad: 'San Miguel' },
-    { nombre: 'Bella Vista', tipo: 'zona', lat: -34.5330, lng: -58.6670, localidad: 'San Miguel' },
-    { nombre: 'Santa María', tipo: 'zona', lat: -34.5500, lng: -58.7050, localidad: 'San Miguel' },
-];
-    // Al inicio de tu app.js, después de cargar los archivos JS
-const TODAS_LAS_CALLES = [
-    ...CALLES_MORENO,
-    ...CALLES_SAN_MIGUEL
-];
-
-// Esquinas principales (intersecciones conocidas)
-const ESQUINAS = [
-    { calle1: 'Av. del Libertador', calle2: 'Bartolomé Mitre', lat: -34.6510, lng: -58.7880, localidad: 'Moreno Centro' },
-    { calle1: 'Av. del Libertador', calle2: 'Belgrano', lat: -34.6505, lng: -58.7875, localidad: 'Moreno Centro' },
-    { calle1: 'Bartolomé Mitre', calle2: 'Belgrano', lat: -34.6510, lng: -58.7910, localidad: 'Moreno Centro' },
-    { calle1: 'Bartolomé Murillo', calle2: 'Prado', lat: -34.5650, lng: -58.7700, localidad: 'Santa Brígida', barrio: 'Trujui' },
-    { calle1: 'Bartolomé Murillo', calle2: 'Belisario Roldán', lat: -34.5645, lng: -58.7710, localidad: 'Santa Brígida', barrio: 'Trujui' },
-    { calle1: 'Sarmiento', calle2: 'Mitre', lat: -34.5430, lng: -58.7120, localidad: 'San Miguel Centro' },
-    { calle1: 'Av. Martín García', calle2: 'Bartolomé Murillo', lat: -34.5650, lng: -58.7500, localidad: 'Límite Moreno-San Miguel' },
-    { calle1: 'Av. Martín García', calle2: 'Prado', lat: -34.5660, lng: -58.7510, localidad: 'Límite Moreno-San Miguel' },
-];
-                // ═══════════════════════════════════════════════════════════════════════
-        // PARTE 3: FUNCIONALIDADES EXTRA
-        // ═══════════════════════════════════════════════════════════════════════
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // CHAT CON CONDUCTOR (simulado)
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        function toggleChat() {
-            if (!viajeActual) {
-                mostrarAlerta('No tenés un viaje activo');
-                return;
-            }
-            const chatBox = document.getElementById('chat-box');
-            if (chatBox) {
-                chatBox.classList.toggle('activo');
-            } else {
-                crearChatBox();
-            }
-        }
-
-        function crearChatBox() {
-            const chat = document.createElement('div');
-            chat.id = 'chat-box';
-            chat.className = 'chat-box';
-            chat.innerHTML = `
-                <div class="chat-header">
-                    <i class="fas fa-comments"></i> Chat con conductor
-                    <button onclick="document.getElementById('chat-box').classList.remove('activo')" style="background:none;border:none;color:white;float:right;font-size:1.2rem">×</button>
-                </div>
-                <div class="chat-messages" id="chat-messages">
-                    <div class="chat-msg chat-msg-ellos">
-                        <div class="chat-bubble">Hola, ya estoy en camino. Llego en 4 minutos.</div>
-                        <div class="chat-time">Ahora</div>
-                    </div>
-                </div>
-                <div class="chat-input">
-                    <input type="text" id="chat-texto" placeholder="Escribí un mensaje..." onkeypress="if(event.key==='Enter')enviarMensaje()">
-                    <button onclick="enviarMensaje()"><i class="fas fa-paper-plane"></i></button>
-                </div>
-            `;
-            document.body.appendChild(chat);
-            
-            // Estilos del chat
-            const style = document.createElement('style');
-            style.textContent = `
-                .chat-box{position:fixed;bottom:0;left:0;right:0;z-index:2000;background:white;border-radius:20px 20px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.15);display:none;flex-direction:column;height:60vh;max-height:500px}
-                .chat-box.activo{display:flex}
-                .chat-header{background:var(--verde);color:white;padding:14px 18px;font-weight:700;font-size:1rem;border-radius:20px 20px 0 0;display:flex;align-items:center;gap:8px}
-                .chat-messages{flex:1;overflow-y:auto;padding:16px;background:#f8f8f8}
-                .chat-msg{margin-bottom:12px;display:flex;flex-direction:column}
-                .chat-msg-yo{align-items:flex-end}
-                .chat-msg-ellos{align-items:flex-start}
-                .chat-bubble{max-width:80%;padding:10px 14px;border-radius:18px;font-size:.9rem;line-height:1.3}
-                .chat-msg-yo .chat-bubble{background:var(--verde);color:white;border-bottom-right-radius:4px}
-                .chat-msg-ellos .chat-bubble{background:white;color:var(--texto);border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
-                .chat-time{font-size:.7rem;color:var(--gris);margin-top:4px}
-                .chat-input{display:flex;padding:12px;background:white;border-top:1px solid #eee}
-                .chat-input input{flex:1;border:none;background:#f0f0f0;padding:10px 14px;border-radius:20px;font-size:.9rem;outline:none;margin-right:8px}
-                .chat-input button{background:var(--verde);color:white;border:none;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
-            `;
-            document.head.appendChild(style);
-            
-            setTimeout(() => chat.classList.add('activo'), 100);
-        }
-
-        function enviarMensaje() {
-            const input = document.getElementById('chat-texto');
-            const texto = input.value.trim();
-            if (!texto) return;
-            
-            const msgs = document.getElementById('chat-messages');
-            msgs.innerHTML += `
-                <div class="chat-msg chat-msg-yo">
-                    <div class="chat-bubble">${texto}</div>
-                    <div class="chat-time">Ahora</div>
-                </div>`;
-            input.value = '';
-            msgs.scrollTop = msgs.scrollHeight;
-            
-            // Simular respuesta del conductor
-            setTimeout(() => {
-                msgs.innerHTML += `
-                    <div class="chat-msg chat-msg-ellos">
-                        <div class="chat-bubble">Perfecto, ya casi llego. Estoy en ${document.getElementById('detalle-destino').textContent}</div>
-                        <div class="chat-time">Ahora</div>
-                    </div>`;
-                msgs.scrollTop = msgs.scrollHeight;
-            }, 2000);
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // HISTORIAL DE VIAJES
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        async function mostrarHistorial() {
-            const telefono = document.getElementById('telefono').value.trim();
-            if (!telefono) {
-                mostrarAlerta('Ingresá tu teléfono primero');
-                return;
-            }
-            
-            try {
-                const {data, error} = await supabaseClient
-                    .from('viajes')
-                    .select('*')
-                    .eq('telefono_pasajero', telefono)
-                    .order('creado_en', {ascending: false})
-                    .limit(10);
-                
-                if (error) throw error;
-                
-                if (!data || data.length === 0) {
-                    mostrarAlerta('No tenés viajes anteriores');
-                    return;
-                }
-                
-                let html = '<div style="max-height:300px;overflow-y:auto">';
-                data.forEach(v => {
-                    const fecha = new Date(v.creado_en).toLocaleDateString('es-AR');
-                    const estado = v.estado === 'completado' ? '✅' : v.estado === 'cancelado' ? '❌' : '🕐';
-                    html += `
-                        <div style="padding:12px;border-bottom:1px solid #eee">
-                            <div style="font-weight:600">${estado} ${v.destino}</div>
-                            <div style="font-size:.8rem;color:var(--gris)">${fecha} • $${v.tarifa_total?.toLocaleString('es-AR') || '-'}</div>
-                        </div>`;
-                });
-                html += '</div>';
-                
-                // Modal simple
-                const modal = document.createElement('div');
-                modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:3000;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px';
-                modal.innerHTML = `
-                    <div style="background:white;border-radius:20px;width:100%;max-width:400px;max-height:80vh;overflow:hidden">
-                        <div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
-                            <h3 style="margin:0;font-size:1.1rem">📋 Historial de viajes</h3>
-                            <button onclick="this.closest('.modal-hist').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer">×</button>
-                        </div>
-                        ${html}
-                    </div>`;
-                modal.className = 'modal-hist';
-                document.body.appendChild(modal);
-                
-            } catch (e) {
-                mostrarAlerta('Error al cargar historial');
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // COMPARTIR UBICACIÓN EN TIEMPO REAL
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        function compartirUbicacion() {
-            if (!miPosicion.lat || !miPosicion.lng) {
-                mostrarAlerta('GPS no disponible para compartir');
-                return;
-            }
-            
-            const url = `https://www.google.com/maps?q=${miPosicion.lat},${miPosicion.lng}`;
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Mi ubicación - Las Catalinas #53',
-                    text: 'Estoy aquí, vení a buscarme:',
-                    url: url
-                });
-            } else {
-                // Copiar al portapapeles
-                navigator.clipboard.writeText(url).then(() => {
-                    mostrarAlerta('📍 Link de ubicación copiado al portapapeles');
-                }).catch(() => {
-                    prompt('Copiá este link:', url);
-                });
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // CALIFICAR CONDUCTOR (después del viaje)
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        function mostrarCalificacion() {
-            const modal = document.createElement('div');
-            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:3000;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px';
-            modal.innerHTML = `
-                <div style="background:white;border-radius:24px;width:100%;max-width:350px;padding:24px;text-align:center">
-                    <div style="font-size:3rem;margin-bottom:8px">🚕</div>
-                    <h3 style="margin:0 0 8px">¿Cómo fue tu viaje?</h3>
-                    <p style="color:var(--gris);margin:0 0 20px">Calificá a tu conductor</p>
-                    <div style="display:flex;justify-content:center;gap:8px;margin-bottom:20px;font-size:2rem" id="estrellas">
-                        <span onclick="calificar(1)" style="cursor:pointer">⭐</span>
-                        <span onclick="calificar(2)" style="cursor:pointer">⭐</span>
-                        <span onclick="calificar(3)" style="cursor:pointer">⭐</span>
-                        <span onclick="calificar(4)" style="cursor:pointer">⭐</span>
-                        <span onclick="calificar(5)" style="cursor:pointer">⭐</span>
-                    </div>
-                    <textarea id="comentario" placeholder="Comentario opcional..." style="width:100%;padding:12px;border-radius:12px;border:1px solid #ddd;resize:none;height:80px;margin-bottom:16px;font-family:inherit"></textarea>
-                    <button onclick="enviarCalificacion()" style="width:100%;padding:14px;background:var(--verde);color:white;border:none;border-radius:14px;font-weight:700;font-size:1rem;cursor:pointer">Enviar calificación</button>
-                    <button onclick="this.closest('.modal-calif').remove()" style="width:100%;padding:12px;background:transparent;color:var(--gris);border:none;font-size:.9rem;cursor:pointer;margin-top:8px">Saltar</button>
-                </div>`;
-            modal.className = 'modal-calif';
-            document.body.appendChild(modal);
-        }
-
-        let calificacionEstrellas = 0;
-        function calificar(n) {
-            calificacionEstrellas = n;
-            const estrellas = document.querySelectorAll('#estrellas span');
-            estrellas.forEach((e, i) => {
-                e.style.opacity = i < n ? '1' : '0.3';
-            });
-        }
-
-        function enviarCalificacion() {
-            const comentario = document.getElementById('comentario').value;
-            console.log('Calificación:', calificacionEstrellas, 'Comentario:', comentario);
-            document.querySelector('.modal-calif').remove();
-            mostrarAlerta('¡Gracias por tu calificación! ⭐');
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // NOTIFICACIONES PUSH (simuladas)
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        function solicitarNotificaciones() {
-            if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        mostrarAlerta('✅ Notificaciones activadas');
-                    }
-                });
-            }
-        }
-
-        function enviarNotificacion(titulo, cuerpo) {
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(titulo, {
-                    body: cuerpo,
-                    icon: '🚕',
-                    badge: '🚕'
-                });
-            }
-        }
-
-        // Ejemplo: notificar cuando el conductor está cerca
-        function notificarConductorCerca() {
-            enviarNotificacion('Tu móvil está cerca', 'El conductor llegará en 1 minuto');
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // MENÚ LATERAL
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        function toggleMenu() {
-            let menu = document.getElementById('menu-lateral');
-            if (!menu) {
-                menu = document.createElement('div');
-                menu.id = 'menu-lateral';
-                menu.innerHTML = `
-                    <div style="position:fixed;top:0;left:0;bottom:0;width:280px;z-index:2500;background:white;box-shadow:4px 0 20px rgba(0,0,0,0.15);padding:20px;transform:translateX(-100%);transition:transform .3s" id="menu-contenido">
-                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:30px;padding-bottom:20px;border-bottom:2px solid #f0f0f0">
-                            <div style="width:50px;height:50px;background:var(--verde);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.5rem">🚕</div>
-                            <div>
-                                <div style="font-weight:800">Las Catalinas #53</div>
-                                <div style="font-size:.8rem;color:var(--gris)">Remises de confianza</div>
-                            </div>
-                        </div>
-                        <div style="display:flex;flex-direction:column;gap:8px">
-                            <button onclick="mostrarHistorial();cerrarMenu()" style="display:flex;align-items:center;gap:12px;padding:14px;background:#f8f8f8;border:none;border-radius:12px;font-size:1rem;cursor:pointer;text-align:left">
-                                <i class="fas fa-history" style="color:var(--celeste);width:24px"></i> Historial de viajes
-                            </button>
-                            <button onclick="compartirUbicacion();cerrarMenu()" style="display:flex;align-items:center;gap:12px;padding:14px;background:#f8f8f8;border:none;border-radius:12px;font-size:1rem;cursor:pointer;text-align:left">
-                                <i class="fas fa-share-alt" style="color:var(--verde);width:24px"></i> Compartir ubicación
-                            </button>
-                            <button onclick="toggleChat();cerrarMenu()" style="display:flex;align-items:center;gap:12px;padding:14px;background:#f8f8f8;border:none;border-radius:12px;font-size:1rem;cursor:pointer;text-align:left">
-                                <i class="fas fa-comments" style="color:var(--naranja);width:24px"></i> Chat con conductor
-                            </button>
-                            <button onclick="solicitarNotificaciones();cerrarMenu()" style="display:flex;align-items:center;gap:12px;padding:14px;background:#f8f8f8;border:none;border-radius:12px;font-size:1rem;cursor:pointer;text-align:left">
-                                <i class="fas fa-bell" style="color:var(--rojo);width:24px"></i> Notificaciones
-                            </button>
-                            <div style="margin-top:20px;padding-top:20px;border-top:1px solid #eee">
-                                <div style="font-size:.8rem;color:var(--gris);line-height:1.6">
-                                    <div style="font-weight:700;color:var(--texto);margin-bottom:4px">Zona de cobertura</div>
-                                    • Moreno y alrededores<br>
-                                    • San Miguel y alrededores<br>
-                                    • Trujui, La Reja, Paso del Rey<br>
-                                    • Cuartel V, Francisco Álvarez
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:2400;background:rgba(0,0,0,0.3);display:none" id="menu-overlay" onclick="cerrarMenu()"></div>
-                `;
-                document.body.appendChild(menu);
-            }
-            
-            const contenido = document.getElementById('menu-contenido');
-            const overlay = document.getElementById('menu-overlay');
-            contenido.style.transform = 'translateX(0)';
-            overlay.style.display = 'block';
-        }
-
-        function cerrarMenu() {
-            const contenido = document.getElementById('menu-contenido');
-            const overlay = document.getElementById('menu-overlay');
-            if (contenido) contenido.style.transform = 'translateX(-100%)';
-            if (overlay) overlay.style.display = 'none';
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // UTILIDADES Y EVENTOS
-        // ═══════════════════════════════════════════════════════════════════════
-        
-        // Cerrar sugerencias al tocar fuera
-        document.addEventListener('click', e => {
-            if (!e.target.closest('.buscador-container')) {
-                document.getElementById('sugerencias').classList.remove('activo');
-            }
+        map.on('locationfound', (e) => {
+            coordsO = [e.latlng.lat, e.latlng.lng];
+            if(markerO) map.removeLayer(markerO);
+            markerO = L.marker(coordsO).addTo(map).bindPopup("Estás aquí").openPopup();
+            document.getElementById('origen').value = "Mi ubicación detectada ✅";
         });
 
-        // Prevenir envío con Enter
-        document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('keypress', e => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (input.id === 'destino' && destinoCoords) {
-                        document.getElementById('nombre').focus();
-                    } else if (input.id === 'telefono') {
-                        solicitar();
-                    }
-                }
-            });
+        map.on('locationerror', () => {
+            alert("Por favor, activa el GPS y recarga la página.");
+            document.getElementById('origen').value = "GPS no detectado";
         });
+    }
 
-        // Detectar si es iPhone para ajustes
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isIOS) {
-            document.body.classList.add('ios');
+    // 3. BUSCADOR CON FILTRO LOCAL (Murillo, La Pinta, etc.)
+    const inputD = document.getElementById('destino');
+    const lista = document.getElementById('lista-sug');
+
+    inputD.addEventListener('input', async () => {
+        const val = inputD.value;
+        if(val.length < 3) { lista.innerHTML = ""; return; }
+
+        // Buscamos forzando la zona Moreno/San Miguel
+        const query = `${val}, Moreno, Buenos Aires, Argentina`;
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+        const data = await res.json();
+
+        lista.innerHTML = data.map(i => `
+            <div class="sug-item" onclick="setDestino(${i.lat}, ${i.lon}, '${i.display_name}')">
+                ${i.display_name}
+            </div>
+        `).join('');
+    });
+
+    async function setDestino(lat, lon, nombre) {
+        coordsD = [lat, lon];
+        inputD.value = nombre;
+        lista.innerHTML = "";
+        
+        if(markerD) map.removeLayer(markerD);
+        markerD = L.marker(coordsD, {icon: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41]
+        })}).addTo(map);
+
+        trazar();
+    }
+
+    // 4. TRAZADO REAL (OSRM - NO LÍNEA RECTA)
+    async function trazar() {
+        if(!coordsO || !coordsD) return;
+
+        const url = `https://router.project-osrm.org/route/v1/driving/${coordsO[1]},${coordsO[0]};${coordsD[1]},${coordsD[0]}?overview=full&geometries=geojson`;
+        
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if(data.routes.length > 0) {
+            const r = data.routes[0];
+            if(routeL) map.removeLayer(routeL);
+            
+            routeL = L.geoJSON(r.geometry, {style: {color: '#2563eb', weight: 6}}).addTo(map);
+            map.fitBounds(routeL.getBounds());
+
+            // Precio base $600 + $350 por KM
+            const kms = r.distance / 1000;
+            const final = 600 + (kms * 350);
+            
+            const p = document.getElementById('precio');
+            p.innerText = `Total: $${Math.round(final)}`;
+            p.style.display = "block";
+            document.getElementById('btn-solicitar').disabled = false;
         }
-    </script>
+    }
+
+    window.onload = init;
+</script>
 </body>
 </html>
-
