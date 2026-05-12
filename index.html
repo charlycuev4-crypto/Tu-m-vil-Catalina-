@@ -1,1 +1,779 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pasajero - Las Catalinas #53</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        :root{--naranja:#f47920;--celeste:#0093d0;--rojo:#e61e2b;--verde:#28a745;--fondo:#f0f2f5;--blanco:#fff;--texto:#1a1a1a;--gris:#666;--sombra:0 2px 12px rgba(0,0,0,0.15)}
+        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        body,html{margin:0;padding:0;height:100%;width:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--fondo);color:var(--texto);overflow:hidden}
+        #map{position:absolute;top:0;left:0;height:72%;width:100%;z-index:1;background:#e5e5e5}
+        .header{position:absolute;top:12px;left:12px;right:12px;z-index:1000;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+        .menu-btn{background:var(--blanco);color:var(--naranja);width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;border:none;box-shadow:var(--sombra);font-size:1.2rem}
+        .logo-tag{background:var(--blanco);padding:10px 18px;border-radius:25px;border:2px solid var(--celeste);font-weight:800;color:var(--celeste);font-size:.85rem;box-shadow:var(--sombra);pointer-events:auto}
+        .gps-status{position:absolute;top:70px;right:12px;z-index:1000;background:var(--blanco);padding:6px 12px;border-radius:20px;font-size:.75rem;font-weight:600;box-shadow:var(--sombra);display:flex;align-items:center;gap:6px}
+        .gps-status.preciso{color:var(--verde);border:2px solid var(--verde)}
+        .gps-status.aproximado{color:var(--naranja);border:2px solid var(--naranja)}
+        .gps-status.error{color:var(--rojo);border:2px solid var(--rojo)}
+        .btn-mi-ubicacion{position:absolute;bottom:30%;right:15px;z-index:1000;width:50px;height:50px;background:var(--blanco);border:none;border-radius:50%;box-shadow:var(--sombra);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--celeste);font-size:1.3rem}
+        .panel{position:absolute;bottom:0;left:0;right:0;z-index:1000;background:var(--blanco);border-radius:24px 24px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.15);padding:15px 20px 25px;max-height:35vh;overflow-y:auto}
+        .panel-handle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 12px}
+        .input-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--fondo);border-radius:14px;border:2px solid transparent;transition:all .2s;margin-bottom:8px}
+        .input-row:focus-within{border-color:var(--naranja);background:#fff8f3}
+        .input-row i{width:24px;text-align:center;font-size:1.1rem;color:var(--celeste)}
+        .input-row input{flex:1;border:none;background:transparent;font-size:1rem;outline:none;color:var(--texto)}
+        .buscador-container{position:relative}
+        .sugerencias{position:absolute;top:100%;left:0;right:0;background:var(--blanco);border-radius:14px;box-shadow:0 8px 25px rgba(0,0,0,0.15);max-height:250px;overflow-y:auto;z-index:1500;display:none;margin-top:5px}
+        .sugerencias.activo{display:block}
+        .sugerencia-item{padding:12px 16px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:10px}
+        .sugerencia-item:last-child{border-bottom:none}
+        .sugerencia-item:hover{background:var(--fondo)}
+        .sugerencia-item .sug-text{font-size:.9rem;font-weight:500}
+        .sugerencia-item .sug-zona{font-size:.75rem;color:var(--gris);margin-top:2px}
+        .sugerencia-item .sug-badge{font-size:.65rem;color:#fff;background:var(--verde);padding:1px 6px;border-radius:8px;margin-top:3px;display:inline-block}
+        .sugerencia-item .sug-badge.fallback{background:var(--naranja)}
+        .sugerencia-item .sug-badge.hospital{background:#dc3545}
+        .sugerencia-item .sug-badge.escuela{background:#6f42c1}
+        .sugerencia-item .sug-badge.plaza{background:#20c997}
+        .sugerencia-item .sug-badge.tren{background:#0d6efd}
+        .sugerencia-item .sug-badge.cruce{background:#fd7e14}
+        .btn-principal{width:100%;padding:16px;background:var(--rojo);color:white;border:none;border-radius:16px;font-size:1.1rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;box-shadow:0 6px 20px rgba(230,30,43,0.35);display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px}
+        .btn-principal:disabled{background:#ccc;box-shadow:none;cursor:not-allowed}
+        .alerta-box{position:absolute;top:120px;left:12px;right:12px;z-index:1000;background:#fff3cd;border:2px solid #ffc107;border-radius:12px;padding:10px 14px;font-size:.8rem;color:#856404;display:none;align-items:center;gap:8px}
+        .alerta-box.activo{display:flex}
+        .alerta-box i{color:#ffc107;font-size:1.1rem}
+        .sin-gps-box{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2000;background:white;padding:20px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.3);text-align:center;display:none;width:90%;max-width:300px}
+        .sin-gps-box.activo{display:block}
+        .sin-gps-box h3{margin:0 0 10px;color:var(--rojo)}
+        .sin-gps-box p{margin:0 0 15px;font-size:.9rem;color:var(--gris)}
+        .sin-gps-box button{background:var(--celeste);color:white;border:none;padding:10px 20px;border-radius:10px;cursor:pointer;font-weight:600}
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="header">
+        <button class="menu-btn"><i class="fas fa-bars"></i></button>
+        <div class="logo-tag">🚕 LAS CATALINAS #53</div>
+    </div>
+    <div class="gps-status busqueda" id="gps-status">
+        <i class="fas fa-satellite-dish"></i><span id="gps-texto">Buscando GPS...</span>
+    </div>
+    <div class="alerta-box" id="alerta-box">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="alerta-texto"></span>
+    </div>
+    <div class="sin-gps-box" id="sin-gps-box">
+        <h3><i class="fas fa-map-marker-alt"></i> GPS no disponible</h3>
+        <p>Tu celular no está enviando la ubicación. Podés igual pedir un móvil ingresando tu dirección manualmente.</p>
+        <button onclick="mostrarInputManual()">Ingresar dirección manual</button>
+    </div>
+    <button class="btn-mi-ubicacion" onclick="centrarEnMiUbicacion()"><i class="fas fa-crosshairs"></i></button>
 
+    <div class="panel">
+        <div class="panel-handle"></div>
+        <div id="formulario-pedido">
+            <div class="input-row"><i class="fas fa-user"></i><input type="text" id="nombre" placeholder="¿Cómo te llamás?"></div>
+            <div class="input-row"><i class="fas fa-phone"></i><input type="tel" id="telefono" placeholder="Teléfono"></div>
+            <div class="buscador-container">
+                <div class="input-row">
+                    <i class="fas fa-search" style="color:var(--rojo)"></i>
+                    <input type="text" id="destino" placeholder="Ej: Solano López y Libertador, Moreno" autocomplete="off" oninput="buscar(this.value)">
+                </div>
+                <div class="sugerencias" id="sugerencias"></div>
+            </div>
+            <div class="input-row" id="direccion-manual" style="display:none">
+                <i class="fas fa-home" style="color:var(--naranja)"></i>
+                <input type="text" id="direccion-origen" placeholder="¿Dónde estás? Ej: Solano López 500, Moreno">
+            </div>
+            <button class="btn-principal" id="btn-solicitar" onclick="solicitar()"><i class="fas fa-paper-plane"></i> Solicitar Móvil</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const SUPABASE_URL='https://efryvjjunfeoxhekvwza.supabase.co';
+        const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
+
+        // ZONA: Moreno y San Miguel (aprox)
+        const ZONA = {minLat:-34.72, maxLat:-34.50, minLng:-58.95, maxLng:-58.65};
+
+        let supabaseClient, map, miPosicion={lat:null,lng:null}, destinoCoords=null, 
+            rutaLayer=null, markerDestino=null, markerGPS=null, circuloGPS=null,
+            timeoutBusq=null, idBusq=0, watchIdGPS=null, gpsActivo=false, usandoManual=false;
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // BASE DE DATOS LOCAL INTELIGENTE - MORENO Y SAN MIGUEL
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        // HOSPITALES
+        const HOSPITALES = [
+            {nombre:"Hospital Marzetti", direccion:"Avenida Libertador 3499", localidad:"Moreno", lat:-34.6572, lng:-58.7820, tipo:"hospital"},
+            {nombre:"Hospital Dr. Carlos A. Carrillo", direccion:"Avenida Bartolomé Mitre 2495", localidad:"Moreno", lat:-34.6505, lng:-58.7930, tipo:"hospital"},
+            {nombre:"Hospital Municipal de Moreno", direccion:"Avenida Moreno 2200", localidad:"Moreno", lat:-34.6510, lng:-58.7905, tipo:"hospital"},
+            {nombre:"Hospital de San Miguel", direccion:"Avenida Presidente Perón 1066", localidad:"San Miguel", lat:-34.5415, lng:-58.7115, tipo:"hospital"},
+            {nombre:"Hospital Zonal de San Miguel", direccion:"Avenida Sáenz Peña 850", localidad:"San Miguel", lat:-34.5395, lng:-58.7090, tipo:"hospital"},
+            {nombre:"Hospital Muñiz", direccion:"Avenida Sáenz Peña 1700", localidad:"San Miguel", lat:-34.5360, lng:-58.7030, tipo:"hospital"},
+            {nombre:"Hospital Trujui", direccion:"Ruta 23 y Carlos Pellegrini", localidad:"Trujui", lat:-34.5850, lng:-58.7600, tipo:"hospital"},
+            {nombre:"Hospital La Reja", direccion:"Colectora Acceso Oeste", localidad:"La Reja", lat:-34.6375, lng:-58.8250, tipo:"hospital"}
+        ];
+
+        // ESCUELAS
+        const ESCUELAS = [
+            {nombre:"Escuela Normal Superior Dr. Ricardo Levene", direccion:"Avenida Moreno 229", localidad:"Moreno", lat:-34.6503, lng:-58.7908, tipo:"escuela"},
+            {nombre:"Escuela Técnica N° 1", direccion:"Avenida Libertador 1800", localidad:"Moreno", lat:-34.6540, lng:-58.7840, tipo:"escuela"},
+            {nombre:"Escuela Media N° 2", direccion:"Avenida San Martín 800", localidad:"Moreno", lat:-34.6535, lng:-58.7935, tipo:"escuela"},
+            {nombre:"Colegio San Alfonso", direccion:"Avenida Alcorta 1200", localidad:"Moreno", lat:-34.6555, lng:-58.7870, tipo:"escuela"},
+            {nombre:"Escuela Primaria N° 1", direccion:"Avenida Moreno 100", localidad:"Moreno", lat:-34.6500, lng:-58.7910, tipo:"escuela"},
+            {nombre:"Escuela N° 13 de San Miguel", direccion:"Calle Belgrano 500", localidad:"San Miguel", lat:-34.5430, lng:-58.7150, tipo:"escuela"},
+            {nombre:"Escuela Técnica San Miguel", direccion:"Avenida Presidente Perón 1500", localidad:"San Miguel", lat:-34.5435, lng:-58.7130, tipo:"escuela"},
+            {nombre:"Escuela N° 24", direccion:"Avenida Balbín 800", localidad:"San Miguel", lat:-34.5440, lng:-58.7170, tipo:"escuela"},
+            {nombre:"Escuela Güemes", direccion:"Calle Güemes 300", localidad:"San Miguel", lat:-34.5445, lng:-58.7125, tipo:"escuela"}
+        ];
+
+        // PLAZAS
+        const PLAZAS = [
+            {nombre:"Plaza San Martín", direccion:"Avenida Moreno y Rivadavia", localidad:"Moreno", lat:-34.6500, lng:-58.7950, tipo:"plaza"},
+            {nombre:"Plaza Mitre", direccion:"Avenida Pte. Perón y Belgrano", localidad:"San Miguel", lat:-34.5420, lng:-58.7140, tipo:"plaza"},
+            {nombre:"Plaza San Miguel", direccion:"Calle Belgrano y Sáenz Peña", localidad:"San Miguel", lat:-34.5425, lng:-58.7135, tipo:"plaza"},
+            {nombre:"Plaza de la Constitución", direccion:"Avenida Libertador y Moreno", localidad:"Moreno", lat:-34.6515, lng:-58.7885, tipo:"plaza"},
+            {nombre:"Plaza Trujui", direccion:"Ruta 23 y Carlos Pellegrini", localidad:"Trujui", lat:-34.5855, lng:-58.7590, tipo:"plaza"},
+            {nombre:"Plaza Paso del Rey", direccion:"Avenida Rivadavia y Carlos Pellegrini", localidad:"Paso del Rey", lat:-34.6650, lng:-58.7650, tipo:"plaza"}
+        ];
+
+        // ESTACIONES DE TREN
+        const ESTACIONES_TREN = [
+            {nombre:"Estación Moreno", linea:"Sarmiento", direccion:"Avenida Moreno y Bartolomé Mitre", localidad:"Moreno", lat:-34.6570, lng:-58.7900, tipo:"tren"},
+            {nombre:"Estación La Reja", linea:"Sarmiento", direccion:"Colectora Acceso Oeste", localidad:"La Reja", lat:-34.6370, lng:-58.8280, tipo:"tren"},
+            {nombre:"Estación General Rodríguez", linea:"Sarmiento", direccion:"Ruta 7 y Acceso Oeste", localidad:"General Rodríguez", lat:-34.6080, lng:-58.9440, tipo:"tren"},
+            {nombre:"Estación Paso del Rey", linea:"Sarmiento", direccion:"Avenida Rivadavia y Carlos Pellegrini", localidad:"Paso del Rey", lat:-34.6650, lng:-58.7650, tipo:"tren"},
+            {nombre:"Estación San Miguel", linea:"San Martín", direccion:"Avenida Pte. Perón y Sáenz Peña", localidad:"San Miguel", lat:-34.5430, lng:-58.7120, tipo:"tren"},
+            {nombre:"Estación Muñiz", linea:"San Martín", direccion:"Avenida Sáenz Peña 1700", localidad:"San Miguel", lat:-34.5350, lng:-58.7010, tipo:"tren"},
+            {nombre:"Estación General Lemos", linea:"Urquiza", direccion:"Avenida Urquiza y Güemes", localidad:"San Miguel", lat:-34.5560, lng:-58.7230, tipo:"tren"},
+            {nombre:"Estación Campo de Mayo", linea:"Urquiza", direccion:"Avenida Urquiza 3500", localidad:"San Miguel", lat:-34.5330, lng:-58.7330, tipo:"tren"},
+            {nombre:"Estación Teniente Agneta", linea:"Urquiza", direccion:"Avenida Urquiza 2800", localidad:"San Miguel", lat:-34.5450, lng:-58.7250, tipo:"tren"},
+            {nombre:"Estación Trujui", linea:"Sarmiento", direccion:"Ruta 23 y Carlos Pellegrini", localidad:"Trujui", lat:-34.5850, lng:-58.7600, tipo:"tren"},
+            {nombre:"Estación Francisco Álvarez", linea:"Sarmiento", direccion:"Ruta 7 y Carlos Pellegrini", localidad:"Francisco Álvarez", lat:-34.6150, lng:-58.8750, tipo:"tren"}
+        ];
+
+        // CRUCES IMPORTANTES (esquinas con nombre propio)
+        const CRUCES_IMPORTANTES = [
+            {nombre:"Cruce Castelar", direccion:"Avenida Libertador y Martínez Melo", localidad:"Moreno", lat:-34.5847, lng:-58.7487, tipo:"cruce"},
+            {nombre:"Cruce Derqui", direccion:"Ruta 23 y Carlos Pellegrini", localidad:"Moreno", lat:-34.5850, lng:-58.7600, tipo:"cruce"},
+            {nombre:"Cruce Vía Trillini", direccion:"Avenida Pte. Perón y Balbín", localidad:"San Miguel", lat:-34.5420, lng:-58.7160, tipo:"cruce"},
+            {nombre:"Cruce Centro San Miguel", direccion:"Avenida Pte. Perón y Sáenz Peña", localidad:"San Miguel", lat:-34.5410, lng:-58.7100, tipo:"cruce"},
+            {nombre:"Cruce Moreno Centro", direccion:"Avenida Moreno y Libertador", localidad:"Moreno", lat:-34.6510, lng:-58.7880, tipo:"cruce"},
+            {nombre:"Cruce La Reja", direccion:"Acceso Oeste y Carlos Pellegrini", localidad:"La Reja", lat:-34.6375, lng:-58.8250, tipo:"cruce"},
+            {nombre:"Cruce Paso del Rey", direccion:"Avenida Rivadavia y Carlos Pellegrini", localidad:"Paso del Rey", lat:-34.6650, lng:-58.7650, tipo:"cruce"}
+        ];
+
+        // DIRECCIONES REALES CON ALTURAS
+        const DIRECCIONES_REALES = [
+            // MORENO CENTRO
+            {calle:"Solano López", altura:100, localidad:"Moreno", lat:-34.6508, lng:-58.7895},
+            {calle:"Solano López", altura:200, localidad:"Moreno", lat:-34.6510, lng:-58.7892},
+            {calle:"Solano López", altura:300, localidad:"Moreno", lat:-34.6512, lng:-58.7889},
+            {calle:"Solano López", altura:400, localidad:"Moreno", lat:-34.6514, lng:-58.7886},
+            {calle:"Solano López", altura:500, localidad:"Moreno", lat:-34.6516, lng:-58.7883},
+            {calle:"Solano López", altura:600, localidad:"Moreno", lat:-34.6518, lng:-58.7880},
+            {calle:"Solano López", altura:700, localidad:"Moreno", lat:-34.6520, lng:-58.7877},
+            {calle:"Solano López", altura:800, localidad:"Moreno", lat:-34.6522, lng:-58.7874},
+            
+            {calle:"Avenida Moreno", altura:100, localidad:"Moreno", lat:-34.6502, lng:-58.7911},
+            {calle:"Avenida Moreno", altura:229, localidad:"Moreno", lat:-34.6505, lng:-58.7908},
+            {calle:"Avenida Moreno", altura:500, localidad:"Moreno", lat:-34.6510, lng:-58.7900},
+            {calle:"Avenida Moreno", altura:800, localidad:"Moreno", lat:-34.6515, lng:-58.7890},
+            {calle:"Avenida Moreno", altura:1000, localidad:"Moreno", lat:-34.6520, lng:-58.7880},
+            {calle:"Avenida Moreno", altura:1500, localidad:"Moreno", lat:-34.6530, lng:-58.7860},
+            {calle:"Avenida Moreno", altura:2000, localidad:"Moreno", lat:-34.6540, lng:-58.7840},
+            {calle:"Avenida Moreno", altura:2500, localidad:"Moreno", lat:-34.6550, lng:-58.7820},
+            
+            {calle:"Avenida Libertador", altura:100, localidad:"Moreno", lat:-34.6530, lng:-58.7850},
+            {calle:"Avenida Libertador", altura:500, localidad:"Moreno", lat:-34.6540, lng:-58.7840},
+            {calle:"Avenida Libertador", altura:1000, localidad:"Moreno", lat:-34.6550, lng:-58.7830},
+            {calle:"Avenida Libertador", altura:1500, localidad:"Moreno", lat:-34.6560, lng:-58.7820},
+            {calle:"Avenida Libertador", altura:2000, localidad:"Moreno", lat:-34.6570, lng:-58.7810},
+            {calle:"Avenida Libertador", altura:2500, localidad:"Moreno", lat:-34.6580, lng:-58.7800},
+            {calle:"Avenida Libertador", altura:3000, localidad:"Moreno", lat:-34.6590, lng:-58.7790},
+            {calle:"Avenida Libertador", altura:3499, localidad:"Moreno", lat:-34.6572, lng:-58.7820},
+            
+            {calle:"Avenida San Martín", altura:100, localidad:"Moreno", lat:-34.6520, lng:-58.7920},
+            {calle:"Avenida San Martín", altura:500, localidad:"Moreno", lat:-34.6530, lng:-58.7930},
+            {calle:"Avenida San Martín", altura:800, localidad:"Moreno", lat:-34.6535, lng:-58.7935},
+            {calle:"Avenida San Martín", altura:1000, localidad:"Moreno", lat:-34.6540, lng:-58.7940},
+            {calle:"Avenida San Martín", altura:1500, localidad:"Moreno", lat:-34.6550, lng:-58.7950},
+            
+            {calle:"Avenida Alcorta", altura:100, localidad:"Moreno", lat:-34.6540, lng:-58.7880},
+            {calle:"Avenida Alcorta", altura:500, localidad:"Moreno", lat:-34.6550, lng:-58.7870},
+            {calle:"Avenida Alcorta", altura:1000, localidad:"Moreno", lat:-34.6560, lng:-58.7860},
+            {calle:"Avenida Alcorta", altura:1200, localidad:"Moreno", lat:-34.6555, lng:-58.7870},
+            {calle:"Avenida Alcorta", altura:1500, localidad:"Moreno", lat:-34.6570, lng:-58.7850},
+            
+            {calle:"Avenida Piovano", altura:100, localidad:"Moreno", lat:-34.6510, lng:-58.7950},
+            {calle:"Avenida Piovano", altura:500, localidad:"Moreno", lat:-34.6520, lng:-58.7960},
+            {calle:"Avenida Piovano", altura:1000, localidad:"Moreno", lat:-34.6530, lng:-58.7970},
+            
+            {calle:"Avenida Bartolomé Mitre", altura:100, localidad:"Moreno", lat:-34.6480, lng:-58.7930},
+            {calle:"Avenida Bartolomé Mitre", altura:500, localidad:"Moreno", lat:-34.6490, lng:-58.7940},
+            {calle:"Avenida Bartolomé Mitre", altura:1000, localidad:"Moreno", lat:-34.6500, lng:-58.7950},
+            {calle:"Avenida Bartolomé Mitre", altura:1500, localidad:"Moreno", lat:-34.6510, lng:-58.7960},
+            {calle:"Avenida Bartolomé Mitre", altura:2000, localidad:"Moreno", lat:-34.6520, lng:-58.7970},
+            {calle:"Avenida Bartolomé Mitre", altura:2495, localidad:"Moreno", lat:-34.6505, lng:-58.7930},
+            
+            {calle:"Avenida Rivadavia", altura:100, localidad:"Moreno", lat:-34.6490, lng:-58.7960},
+            {calle:"Avenida Rivadavia", altura:500, localidad:"Moreno", lat:-34.6500, lng:-58.7970},
+            {calle:"Avenida Rivadavia", altura:1000, localidad:"Moreno", lat:-34.6510, lng:-58.7980},
+            {calle:"Avenida Rivadavia", altura:1500, localidad:"Moreno", lat:-34.6520, lng:-58.7990},
+            
+            {calle:"Intendente Corvalán", altura:100, localidad:"Moreno", lat:-34.6570, lng:-58.7920},
+            {calle:"Intendente Corvalán", altura:500, localidad:"Moreno", lat:-34.6580, lng:-58.7930},
+            {calle:"Intendente Corvalán", altura:1000, localidad:"Moreno", lat:-34.6590, lng:-58.7940},
+            
+            {calle:"Deán Funes", altura:100, localidad:"Moreno", lat:-34.6550, lng:-58.7940},
+            {calle:"Deán Funes", altura:500, localidad:"Moreno", lat:-34.6560, lng:-58.7950},
+            {calle:"Deán Funes", altura:1000, localidad:"Moreno", lat:-34.6570, lng:-58.7960},
+            
+            {calle:"Juan B. Alberdi", altura:100, localidad:"Moreno", lat:-34.6530, lng:-58.7960},
+            {calle:"Juan B. Alberdi", altura:500, localidad:"Moreno", lat:-34.6540, lng:-58.7970},
+            {calle:"Juan B. Alberdi", altura:1000, localidad:"Moreno", lat:-34.6550, lng:-58.7980},
+            
+            {calle:"Pavón", altura:100, localidad:"Moreno", lat:-34.6520, lng:-58.7980},
+            {calle:"Pavón", altura:500, localidad:"Moreno", lat:-34.6530, lng:-58.7990},
+            
+            {calle:"Merlo", altura:100, localidad:"Moreno", lat:-34.6600, lng:-58.7900},
+            {calle:"Merlo", altura:500, localidad:"Moreno", lat:-34.6610, lng:-58.7910},
+            
+            {calle:"De los Inmigrantes", altura:100, localidad:"Moreno", lat:-34.6560, lng:-58.8000},
+            {calle:"De los Inmigrantes", altura:500, localidad:"Moreno", lat:-34.6570, lng:-58.8010},
+            
+            {calle:"Nemesio Álvarez", altura:100, localidad:"Moreno", lat:-34.6580, lng:-58.7950},
+            {calle:"Nemesio Álvarez", altura:500, localidad:"Moreno", lat:-34.6590, lng:-58.7960},
+            
+            {calle:"Dr. Vera", altura:100, localidad:"Moreno", lat:-34.6590, lng:-58.7920},
+            {calle:"Dr. Vera", altura:500, localidad:"Moreno", lat:-34.6600, lng:-58.7930},
+            
+            {calle:"Asconapé", altura:100, localidad:"Moreno", lat:-34.6600, lng:-58.7940},
+            {calle:"Asconapé", altura:500, localidad:"Moreno", lat:-34.6610, lng:-58.7950},
+            
+            {calle:"Balbi", altura:100, localidad:"Moreno", lat:-34.6610, lng:-58.7960},
+            {calle:"Balbi", altura:500, localidad:"Moreno", lat:-34.6620, lng:-58.7970},
+            
+            {calle:"Tomás Edison", altura:100, localidad:"Moreno", lat:-34.6620, lng:-58.7980},
+            {calle:"Tomás Edison", altura:500, localidad:"Moreno", lat:-34.6630, lng:-58.7990},
+            
+            {calle:"Bernardo de Irigoyen", altura:100, localidad:"Moreno", lat:-34.6630, lng:-58.8000},
+            {calle:"Bernardo de Irigoyen", altura:500, localidad:"Moreno", lat:-34.6640, lng:-58.8010},
+            
+            {calle:"Intendente Gnecco", altura:100, localidad:"Moreno", lat:-34.6640, lng:-58.8020},
+            {calle:"Intendente Gnecco", altura:500, localidad:"Moreno", lat:-34.6650, lng:-58.8030},
+            
+            {calle:"El Ceibo", altura:100, localidad:"Moreno", lat:-34.6650, lng:-58.8040},
+            {calle:"El Ceibo", altura:500, localidad:"Moreno", lat:-34.6660, lng:-58.8050},
+            
+            // ZONA NORTE MORENO (Trujui, La Reja, etc.)
+            {calle:"Ruta 23", altura:100, localidad:"Trujui", lat:-34.5850, lng:-58.7600},
+            {calle:"Ruta 23", altura:500, localidad:"Trujui", lat:-34.5860, lng:-58.7610},
+            {calle:"Ruta 23", altura:1000, localidad:"Trujui", lat:-34.5870, lng:-58.7620},
+            
+            {calle:"Carlos Pellegrini", altura:100, localidad:"Trujui", lat:-34.5840, lng:-58.7580},
+            {calle:"Carlos Pellegrini", altura:500, localidad:"Trujui", lat:-34.5850, lng:-58.7590},
+            {calle:"Carlos Pellegrini", altura:1000, localidad:"Trujui", lat:-34.5860, lng:-58.7600},
+            
+            {calle:"Colectora Acceso Oeste", altura:100, localidad:"La Reja", lat:-34.6370, lng:-58.8240},
+            {calle:"Colectora Acceso Oeste", altura:500, localidad:"La Reja", lat:-34.6380, lng:-58.8250},
+            {calle:"Colectora Acceso Oeste", altura:1000, localidad:"La Reja", lat:-34.6390, lng:-58.8260},
+            
+            {calle:"Avenida del Libertador", altura:100, localidad:"Cruce Castelar", lat:-34.5840, lng:-58.7480},
+            {calle:"Avenida del Libertador", altura:500, localidad:"Cruce Castelar", lat:-34.5850, lng:-58.7490},
+            {calle:"Avenida del Libertador", altura:1000, localidad:"Cruce Castelar", lat:-34.5860, lng:-58.7500},
+            
+            {calle:"Martínez Melo", altura:100, localidad:"Cruce Castelar", lat:-34.5830, lng:-58.7470},
+            {calle:"Martínez Melo", altura:500, localidad:"Cruce Castelar", lat:-34.5840, lng:-58.7480},
+            
+            // SAN MIGUEL
+            {calle:"Avenida Presidente Perón", altura:100, localidad:"San Miguel", lat:-34.5400, lng:-58.7100},
+            {calle:"Avenida Presidente Perón", altura:500, localidad:"San Miguel", lat:-34.5410, lng:-58.7110},
+            {calle:"Avenida Presidente Perón", altura:1000, localidad:"San Miguel", lat:-34.5420, lng:-58.7120},
+            {calle:"Avenida Presidente Perón", altura:1066, localidad:"San Miguel", lat:-34.5415, lng:-58.7115},
+            {calle:"Avenida Presidente Perón", altura:1500, localidad:"San Miguel", lat:-34.5430, lng:-58.7130},
+            {calle:"Avenida Presidente Perón", altura:2000, localidad:"San Miguel", lat:-34.5440, lng:-58.7140},
+            {calle:"Avenida Presidente Perón", altura:2500, localidad:"San Miguel", lat:-34.5450, lng:-58.7150},
+            
+            {calle:"Avenida Balbín", altura:100, localidad:"San Miguel", lat:-34.5420, lng:-58.7150},
+            {calle:"Avenida Balbín", altura:500, localidad:"San Miguel", lat:-34.5430, lng:-58.7160},
+            {calle:"Avenida Balbín", altura:800, localidad:"San Miguel", lat:-34.5440, lng:-58.7170},
+            {calle:"Avenida Balbín", altura:1000, localidad:"San Miguel", lat:-34.5440, lng:-58.7170},
+            {calle:"Avenida Balbín", altura:1500, localidad:"San Miguel", lat:-34.5450, lng:-58.7180},
+            
+            {calle:"Avenida Sáenz Peña", altura:100, localidad:"San Miguel", lat:-34.5380, lng:-58.7080},
+            {calle:"Avenida Sáenz Peña", altura:500, localidad:"San Miguel", lat:-34.5390, lng:-58.7090},
+            {calle:"Avenida Sáenz Peña", altura:850, localidad:"San Miguel", lat:-34.5395, lng:-58.7090},
+            {calle:"Avenida Sáenz Peña", altura:1000, localidad:"San Miguel", lat:-34.5400, lng:-58.7100},
+            {calle:"Avenida Sáenz Peña", altura:1500, localidad:"San Miguel", lat:-34.5410, lng:-58.7110},
+            {calle:"Avenida Sáenz Peña", altura:1700, localidad:"San Miguel", lat:-34.5360, lng:-58.7030},
+            
+            {calle:"Avenida Urquiza", altura:100, localidad:"San Miguel", lat:-34.5410, lng:-58.7200},
+            {calle:"Avenida Urquiza", altura:500, localidad:"San Miguel", lat:-34.5420, lng:-58.7210},
+            {calle:"Avenida Urquiza", altura:1000, localidad:"San Miguel", lat:-34.5430, lng:-58.7220},
+            {calle:"Avenida Urquiza", altura:1500, localidad:"San Miguel", lat:-34.5440, lng:-58.7230},
+            {calle:"Avenida Urquiza", altura:2000, localidad:"San Miguel", lat:-34.5450, lng:-58.7240},
+            {calle:"Avenida Urquiza", altura:2800, localidad:"San Miguel", lat:-34.5450, lng:-58.7250},
+            {calle:"Avenida Urquiza", altura:3500, localidad:"San Miguel", lat:-34.5330, lng:-58.7330},
+            
+            {calle:"Calle Güemes", altura:100, localidad:"San Miguel", lat:-34.5440, lng:-58.7120},
+            {calle:"Calle Güemes", altura:300, localidad:"San Miguel", lat:-34.5445, lng:-58.7125},
+            {calle:"Calle Güemes", altura:500, localidad:"San Miguel", lat:-34.5450, lng:-58.7130},
+            {calle:"Calle Güemes", altura:1000, localidad:"San Miguel", lat:-34.5460, lng:-58.7140},
+            
+            {calle:"Calle Rodríguez Peña", altura:100, localidad:"San Miguel", lat:-34.5450, lng:-58.7140},
+            {calle:"Calle Rodríguez Peña", altura:500, localidad:"San Miguel", lat:-34.5460, lng:-58.7150},
+            {calle:"Calle Rodríguez Peña", altura:1000, localidad:"San Miguel", lat:-34.5470, lng:-58.7160},
+            
+            {calle:"Calle Alem", altura:100, localidad:"San Miguel", lat:-34.5460, lng:-58.7160},
+            {calle:"Calle Alem", altura:500, localidad:"San Miguel", lat:-34.5470, lng:-58.7170},
+            {calle:"Calle Alem", altura:1000, localidad:"San Miguel", lat:-34.5480, lng:-58.7180},
+            
+            {calle:"Calle Pueyrredón", altura:100, localidad:"San Miguel", lat:-34.5470, lng:-58.7180},
+            {calle:"Calle Pueyrredón", altura:500, localidad:"San Miguel", lat:-34.5480, lng:-58.7190},
+            {calle:"Calle Pueyrredón", altura:1000, localidad:"San Miguel", lat:-34.5490, lng:-58.7200},
+            
+            {calle:"Calle Las Heras", altura:100, localidad:"San Miguel", lat:-34.5480, lng:-58.7200},
+            {calle:"Calle Las Heras", altura:500, localidad:"San Miguel", lat:-34.5490, lng:-58.7210},
+            {calle:"Calle Las Heras", altura:1000, localidad:"San Miguel", lat:-34.5500, lng:-58.7220},
+            
+            {calle:"Calle Belgrano", altura:100, localidad:"San Miguel", lat:-34.5420, lng:-58.7140},
+            {calle:"Calle Belgrano", altura:500, localidad:"San Miguel", lat:-34.5430, lng:-58.7150},
+            {calle:"Calle Belgrano", altura:1000, localidad:"San Miguel", lat:-34.5440, lng:-58.7160},
+            
+            {calle:"Calle Maestro Ángel D'Elía", altura:100, localidad:"San Miguel", lat:-34.5475, lng:-58.7190},
+            {calle:"Calle Maestro Ángel D'Elía", altura:500, localidad:"San Miguel", lat:-34.5485, lng:-58.7200},
+            
+            {calle:"Calle Sgto. Cabral", altura:100, localidad:"San Miguel", lat:-34.5485, lng:-58.7210},
+            {calle:"Calle Sgto. Cabral", altura:500, localidad:"San Miguel", lat:-34.5495, lng:-58.7220},
+            
+            {calle:"Calle Paunero", altura:100, localidad:"San Miguel", lat:-34.5435, lng:-58.7155},
+            {calle:"Calle Paunero", altura:500, localidad:"San Miguel", lat:-34.5445, lng:-58.7165}
+        ];
+
+        // CRUCES DE CALLES (para búsqueda por esquina)
+        const CRUCES_CALLES = [
+            {calle:"Solano López", localidad:"Moreno", cruces:["Avenida Moreno","Avenida Libertador","Avenida San Martín","Avenida Alcorta","Avenida Piovano","Avenida Rivadavia","Avenida Bartolomé Mitre"]},
+            {calle:"Avenida Moreno", localidad:"Moreno", cruces:["Solano López","Avenida Libertador","Avenida San Martín","Avenida Alcorta","Avenida Piovano","Avenida Rivadavia","Avenida Bartolomé Mitre","Intendente Corvalán","Deán Funes","Juan B. Alberdi","Pavón"]},
+            {calle:"Avenida Libertador", localidad:"Moreno", cruces:["Avenida Moreno","Avenida San Martín","Avenida Alcorta","Avenida Piovano","Avenida Rivadavia","Avenida Bartolomé Mitre","Solano López","Intendente Corvalán","Deán Funes","Martínez Melo"]},
+            {calle:"Avenida San Martín", localidad:"Moreno", cruces:["Avenida Moreno","Avenida Libertador","Avenida Alcorta","Avenida Piovano","Avenida Rivadavia","Avenida Bartolomé Mitre","Solano López","Intendente Corvalán"]},
+            {calle:"Avenida Alcorta", localidad:"Moreno", cruces:["Avenida Moreno","Avenida Libertador","Avenida San Martín","Avenida Piovano","Avenida Bartolomé Mitre","Solano López"]},
+            {calle:"Avenida Piovano", localidad:"Moreno", cruces:["Avenida Moreno","Avenida Libertador","Avenida San Martín","Avenida Alcorta","Avenida Rivadavia","Avenida Bartolomé Mitre","Solano López"]},
+            {calle:"Avenida Bartolomé Mitre", localidad:"Moreno", cruces:["Avenida Moreno","Avenida Libertador","Avenida San Martín","Avenida Alcorta","Avenida Piovano","Avenida Rivadavia"]},
+            {calle:"Avenida Rivadavia", localidad:"Moreno", cruces:["Avenida Moreno","Avenida Libertador","Avenida San Martín","Avenida Piovano","Avenida Bartolomé Mitre","Solano López"]},
+            {calle:"Intendente Corvalán", localidad:"Moreno", cruces:["Avenida Moreno","Avenida Libertador","Avenida San Martín","Avenida Alcorta","Avenida Piovano"]},
+            {calle:"Deán Funes", localidad:"Moreno", cruces:["Avenida Moreno","Avenida Libertador","Avenida San Martín","Avenida Alcorta","Avenida Piovano","Avenida Rivadavia"]},
+            {calle:"Juan B. Alberdi", localidad:"Moreno", cruces:["Avenida Moreno","Avenida Libertador","Avenida San Martín","Avenida Alcorta","Avenida Piovano","Avenida Rivadavia"]},
+            {calle:"Pavón", localidad:"Moreno", cruces:["Avenida Moreno","Avenida Libertador","Avenida San Martín","Avenida Alcorta","Avenida Piovano","Avenida Rivadavia"]},
+            {calle:"Ruta 23", localidad:"Trujui", cruces:["Carlos Pellegrini","Acceso Oeste","Avenida del Libertador"]},
+            {calle:"Carlos Pellegrini", localidad:"Trujui", cruces:["Ruta 23","Acceso Oeste","Avenida del Libertador"]},
+            {calle:"Avenida del Libertador", localidad:"Cruce Castelar", cruces:["Martínez Melo","Ruta 23","Carlos Pellegrini"]},
+            {calle:"Calle Güemes", localidad:"San Miguel", cruces:["Avenida Presidente Perón","Avenida Balbín","Avenida Sáenz Peña","Avenida Urquiza"]},
+            {calle:"Calle Rodríguez Peña", localidad:"San Miguel", cruces:["Avenida Presidente Perón","Avenida Balbín","Avenida Sáenz Peña","Avenida Urquiza"]},
+            {calle:"Calle Alem", localidad:"San Miguel", cruces:["Avenida Presidente Perón","Avenida Balbín","Avenida Sáenz Peña","Avenida Urquiza"]},
+            {calle:"Avenida Presidente Perón", localidad:"San Miguel", cruces:["Avenida Sáenz Peña","Avenida Urquiza","Avenida Balbín","Calle Güemes","Calle Rodríguez Peña","Calle Alem"]},
+            {calle:"Avenida Balbín", localidad:"San Miguel", cruces:["Avenida Presidente Perón","Avenida Sáenz Peña","Avenida Urquiza","Calle Güemes","Calle Rodríguez Peña"]},
+            {calle:"Avenida Sáenz Peña", localidad:"San Miguel", cruces:["Avenida Presidente Perón","Avenida Balbín","Avenida Urquiza","Calle Güemes","Calle Rodríguez Peña"]},
+            {calle:"Avenida Urquiza", localidad:"San Miguel", cruces:["Avenida Presidente Perón","Avenida Balbín","Avenida Sáenz Peña","Calle Güemes","Calle Rodríguez Peña"]},
+            {calle:"Calle Belgrano", localidad:"San Miguel", cruces:["Avenida Presidente Perón","Avenida Sáenz Peña","Calle Paunero"]},
+            {calle:"Calle Pueyrredón", localidad:"San Miguel", cruces:["Avenida Presidente Perón","Avenida Balbín","Avenida Sáenz Peña","Avenida Urquiza"]},
+            {calle:"Calle Las Heras", localidad:"San Miguel", cruces:["Avenida Presidente Perón","Avenida Balbín","Avenida Sáenz Peña","Avenida Urquiza"]}
+        ];
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // INICIALIZACIÓN
+        // ═══════════════════════════════════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', async () => {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            map = L.map('map',{zoomControl:false,attributionControl:false}).setView([-34.650,-58.790],14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+            iniciarGPS();
+        });
+
+        function iniciarGPS(){
+            if(!navigator.geolocation){
+                mostrarSinGPS();
+                return;
+            }
+
+            // Intento 1: Alta precisión
+            navigator.geolocation.getCurrentPosition(
+                pos => { gpsActivo = true; actualizarGPSPos(pos, true); },
+                err => {
+                    // Intento 2: Estándar
+                    navigator.geolocation.getCurrentPosition(
+                        pos => { gpsActivo = true; actualizarGPSPos(pos, true); },
+                        err2 => {
+                            // Intento 3: Última conocida
+                            navigator.geolocation.getCurrentPosition(
+                                pos => { gpsActivo = true; actualizarGPSPos(pos, true); },
+                                err3 => {
+                                    actualizarGPS('error','GPS bloqueado');
+                                    mostrarSinGPS();
+                                },
+                                {enableHighAccuracy:false, timeout:5000, maximumAge:600000}
+                            );
+                        },
+                        {enableHighAccuracy:false, timeout:10000, maximumAge:300000}
+                    );
+                },
+                {enableHighAccuracy:true, timeout:20000, maximumAge:0}
+            );
+
+            if(watchIdGPS) navigator.geolocation.clearWatch(watchIdGPS);
+            watchIdGPS = navigator.geolocation.watchPosition(
+                pos => { gpsActivo = true; actualizarGPSPos(pos, false); },
+                err => {},
+                {enableHighAccuracy:true, maximumAge:10000, timeout:30000}
+            );
+        }
+
+        function actualizarGPSPos(position, primera){
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const accuracy = Math.round(position.coords.accuracy);
+
+            // Validar coordenadas razonables (Argentina)
+            if(lat > -30 || lat < -55 || lng < -75 || lng > -50){
+                console.log('GPS inválido:', lat, lng);
+                return;
+            }
+
+            miPosicion = {lat, lng};
+
+            if(markerGPS) map.removeLayer(markerGPS);
+            if(circuloGPS) map.removeLayer(circuloGPS);
+
+            markerGPS = L.circleMarker([lat, lng], {
+                radius: 10, fillColor: '#0093d0', color: '#fff', weight: 3, fillOpacity: 0.9
+            }).addTo(map);
+
+            circuloGPS = L.circle([lat, lng], {
+                radius: accuracy, color: '#0093d0', weight: 1, fillColor: '#0093d0', fillOpacity: 0.1
+            }).addTo(map);
+
+            if(primera || !destinoCoords){
+                map.setView([lat, lng], 16);
+            }
+
+            const clase = accuracy < 30 ? 'preciso' : (accuracy < 200 ? 'aproximado' : 'busqueda');
+            const texto = accuracy < 30 ? `GPS Preciso (${accuracy}m)` : (accuracy < 200 ? `GPS Aproximado (${accuracy}m)` : `GPS ±${accuracy}m`);
+            actualizarGPS(clase, texto);
+
+            if(destinoCoords) actualizarRuta();
+        }
+
+        function actualizarGPS(clase, texto){
+            document.getElementById('gps-status').className = 'gps-status ' + clase;
+            document.getElementById('gps-texto').textContent = texto;
+        }
+
+        function mostrarSinGPS(){
+            document.getElementById('sin-gps-box').classList.add('activo');
+        }
+
+        function mostrarInputManual(){
+            document.getElementById('sin-gps-box').classList.remove('activo');
+            document.getElementById('direccion-manual').style.display = 'flex';
+            usandoManual = true;
+            miPosicion = {lat: -34.650, lng: -58.790}; // Default Moreno centro
+            map.setView([-34.650, -58.790], 15);
+            mostrarAlerta('Ingresá tu dirección manualmente arriba y el destino abajo');
+        }
+
+        function mostrarAlerta(texto){
+            const box = document.getElementById('alerta-box');
+            document.getElementById('alerta-texto').textContent = texto;
+            box.classList.add('activo');
+            setTimeout(() => box.classList.remove('activo'), 6000);
+        }
+
+        function centrarEnMiUbicacion(){
+            if(miPosicion.lat && miPosicion.lng){
+                map.setView([miPosicion.lat, miPosicion.lng], 17);
+            } else {
+                mostrarAlerta('GPS no activo todavía');
+            }
+        }
+
+        function enZona(lat, lng){
+            return lat >= ZONA.minLat && lat <= ZONA.maxLat && lng >= ZONA.minLng && lng <= ZONA.maxLng;
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // BUSCADOR INTELIGENTE
+        // ═══════════════════════════════════════════════════════════════════════
+        async function buscar(query){
+            const div = document.getElementById('sugerencias');
+            if(!query || query.length < 2){div.innerHTML='';div.classList.remove('activo');return;}
+
+            if(timeoutBusq) clearTimeout(timeoutBusq);
+            const miId = ++idBusq;
+
+            timeoutBusq = setTimeout(async() => {
+                if(idBusq !== miId) return;
+
+                div.innerHTML = '<div class="sugerencia-item" style="cursor:default"><i class="fas fa-spinner fa-spin"></i><div><div class="sug-text">Buscando...</div></div></div>';
+                div.classList.add('activo');
+
+                let resultados = [];
+                const q = query.toLowerCase().trim();
+                const qNumMatch = q.match(/(\d+)/);
+                const qNum = qNumMatch ? parseInt(qNumMatch[1]) : null;
+                let qCalle = q.replace(/\d+/g,'').replace(/\s+/g,' ').trim();
+                qCalle = qCalle.replace(/^av\./i,'avenida').replace(/^av /i,'avenida ').replace(/^est\./i,'estacion').replace(/^est /i,'estacion ');
+
+                // 1. BÚSQUEDA POR TIPO DE LUGAR (hospital, escuela, plaza, tren, cruce)
+                const tiposBusqueda = [
+                    {palabras:['hospital','sanatorio','clinica','clínica','maternidad','centro medico','centro médico'], tipo:'hospital', data:HOSPITALES},
+                    {palabras:['escuela','colegio','instituto','liceo','primaria','secundaria','tecnica','técnica','normal'], tipo:'escuela', data:ESCUELAS},
+                    {palabras:['plaza','parque','plazoleta','paseo'], tipo:'plaza', data:PLAZAS},
+                    {palabras:['tren','estacion','estación','ferrocarril','ffcc','fc'], tipo:'tren', data:ESTACIONES_TREN},
+                    {palabras:['cruce','esquina','interseccion','intersección','cruce castelar','cruce derqui'], tipo:'cruce', data:CRUCES_IMPORTANTES}
+                ];
+
+                for(let tb of tiposBusqueda){
+                    for(let palabra of tb.palabras){
+                        if(q.includes(palabra)){
+                            tb.data.forEach(item => {
+                                const nombreLower = item.nombre.toLowerCase();
+                                const dirLower = item.direccion ? item.direccion.toLowerCase() : '';
+                                const locLower = item.localidad ? item.localidad.toLowerCase() : '';
+                                
+                                // Si coincide con la búsqueda o es búsqueda general del tipo
+                                if(nombreLower.includes(q.replace(palabra,'').trim()) || 
+                                   dirLower.includes(q) || 
+                                   locLower.includes(q) ||
+                                   q.trim() === palabra){
+                                    resultados.push({
+                                        texto: `${item.nombre}${item.direccion ? ' - ' + item.direccion : ''}, ${item.localidad}`,
+                                        lat: item.lat, lng: item.lng,
+                                        exacta: true, fuente: 'local', tipo: tb.tipo,
+                                        prioridad: 0
+                                    });
+                                }
+                            });
+                        }
+                    }
+                }
+
+                // 2. BÚSQUEDA DE DIRECCIONES EXACTAS CON ALTURA
+                if(qNum){
+                    DIRECCIONES_REALES.forEach(dir => {
+                        const calleLower = dir.calle.toLowerCase();
+                        const calleSinAv = calleLower.replace('avenida ','');
+                        const qSinAv = qCalle.replace('avenida ','');
+                        
+                        if(calleLower.includes(qCalle) || qCalle.includes(calleSinAv) || 
+                           calleSinAv.includes(qSinAv) || qSinAv.includes(calleSinAv)){
+                            const diff = Math.abs(dir.altura - qNum);
+                            if(diff <= 400){
+                                resultados.push({
+                                    texto: `${dir.calle} ${dir.altura}, ${dir.localidad}, Buenos Aires`,
+                                    lat: dir.lat, lng: dir.lng,
+                                    exacta: true, fuente: 'local', tipo: 'exacta', prioridad: diff
+                                });
+                            }
+                        }
+                    });
+                    resultados.sort((a,b) => (a.prioridad || 999) - (b.prioridad || 999));
+                }
+
+                // 3. BÚSQUEDA DE CRUCES DE CALLES (esquinas)
+                // Detectar patrones como "calle y calle" o "calle e calle"
+                const patronCruce = q.match(/(.+?)\s+(y|e|and)\s+(.+)/i);
+                if(patronCruce){
+                    const calle1 = patronCruce[1].trim().toLowerCase().replace(/^av\./i,'avenida').replace(/^av /i,'avenida ');
+                    const calle2 = patronCruce[3].trim().toLowerCase().replace(/^av\./i,'avenida').replace(/^av /i,'avenida ');
+                    
+                    CRUCES_CALLES.forEach(c => {
+                        const nombreLower = c.calle.toLowerCase();
+                        const nombreSinAv = nombreLower.replace('avenida ','');
+                        
+                        if(nombreLower.includes(calle1) || nombreSinAv.includes(calle1) || calle1.includes(nombreSinAv)){
+                            c.cruces.forEach(cruce => {
+                                const cruceLower = cruce.toLowerCase();
+                                const cruceSinAv = cruceLower.replace('avenida ','');
+                                
+                                if(cruceLower.includes(calle2) || cruceSinAv.includes(calle2) || calle2.includes(cruceSinAv)){
+                                    // Calcular coordenadas promedio aproximadas
+                                    const dir1 = DIRECCIONES_REALES.find(d => d.calle.toLowerCase() === c.calle.toLowerCase());
+                                    const dir2 = DIRECCIONES_REALES.find(d => d.calle.toLowerCase() === cruce.toLowerCase());
+                                    let lat = null, lng = null;
+                                    if(dir1 && dir2){
+                                        lat = (dir1.lat + dir2.lat) / 2;
+                                        lng = (dir1.lng + dir2.lng) / 2;
+                                    }
+                                    
+                                    resultados.unshift({
+                                        texto: `${c.calle} y ${cruce}, ${c.localidad}, Buenos Aires`,
+                                        lat: lat, lng: lng,
+                                        exacta: false, fuente: 'local', tipo: 'cruce',
+                                        prioridad: -10 // Alta prioridad
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // 4. BÚSQUEDA DE CRUCES IMPORTANTES POR NOMBRE
+                CRUCES_IMPORTANTES.forEach(cruce => {
+                    const nombreLower = cruce.nombre.toLowerCase();
+                    const dirLower = cruce.direccion.toLowerCase();
+                    if(nombreLower.includes(q) || dirLower.includes(q) || q.includes(nombreLower.replace('cruce ',''))){
+                        resultados.unshift({
+                            texto: `${cruce.nombre} (${cruce.direccion}), ${cruce.localidad}`,
+                            lat: cruce.lat, lng: cruce.lng,
+                            exacta: true, fuente: 'local', tipo: 'cruce', prioridad: -20
+                        });
+                    }
+                });
+
+                // 5. BÚSQUEDA DE ESTACIONES DE TREN POR NOMBRE
+                ESTACIONES_TREN.forEach(est => {
+                    const nombreLower = est.nombre.toLowerCase();
+                    const lineaLower = est.linea.toLowerCase();
+                    const locLower = est.localidad.toLowerCase();
+                    if(nombreLower.includes(q) || lineaLower.includes(q) || locLower.includes(q) ||
+                       q.includes('estacion') || q.includes('tren')){
+                        resultados.push({
+                            texto: `${est.nombre} (Línea ${est.linea}), ${est.localidad}`,
+                            lat: est.lat, lng: est.lng,
+                            exacta: true, fuente: 'local', tipo: 'tren', prioridad: -15
+                        });
+                    }
+                });
+
+                // 6. BÚSQUEDA DE CALLES SIN ALTURA (sugerir alturas conocidas)
+                if(!qNum && qCalle.length > 3){
+                    const callesEncontradas = new Set();
+                    DIRECCIONES_REALES.forEach(dir => {
+                        const calleLower = dir.calle.toLowerCase();
+                        const calleSinAv = calleLower.replace('avenida ','');
+                        const qSinAv = qCalle.replace('avenida ','');
+                        
+                        if((calleLower.includes(qCalle) || qCalle.includes(calleSinAv) || 
+                            calleSinAv.includes(qSinAv)) && !callesEncontradas.has(dir.calle)){
+                            callesEncontradas.add(dir.calle);
+                            // Encontrar altura media de la calle
+                            const alturas = DIRECCIONES_REALES.filter(d => d.calle === dir.calle).map(d => d.altura);
+                            const alturaMedia = alturas.length > 0 ? alturas[Math.floor(alturas.length/2)] : 500;
+                            
+                            resultados.push({
+                                texto: `${dir.calle} ${alturaMedia}, ${dir.localidad}, Buenos Aires`,
+                                lat: dir.lat, lng: dir.lng,
+                                exacta: false, fuente: 'local', tipo: 'calle', prioridad: 100
+                            });
+                        }
+                    });
+                }
+
+                // 7. Nominatim (solo si faltan con coordenadas)
+                const conCoords = resultados.filter(r => r.lat !== null);
+                if(conCoords.length < 5){
+                    try{
+                        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Moreno, Buenos Aires, Argentina')}&limit=5&countrycodes=ar&addressdetails=1&viewbox=-58.95,-34.50,-58.65,-34.72&bounded=1`;
+                        const res = await fetch(url, {headers:{'Accept-Language':'es-AR','User-Agent':'LasCatalinas53/7.0'}});
+                        const data = await res.json();
+
+                        data.forEach(l => {
+                            const lat = parseFloat(l.lat);
+                            const lng = parseFloat(l.lon);
+                            if(!enZona(lat, lng)) return;
+
+                            const addr = l.address || {};
+                            let texto = '';
+                            if(addr.house_number && addr.road) texto = `${addr.road} ${addr.house_number}`;
+                            else if(addr.road) texto = addr.road;
+                            else texto = l.display_name.split(',')[0];
+
+                            const localidad = addr.suburb || addr.town || addr.city || addr.county || 'Moreno';
+                            if(texto && texto !== 'null'){
+                                const textoCompleto = `${texto}, ${localidad}, Buenos Aires`;
+                                const dup = resultados.some(r => r.texto.toLowerCase() === textoCompleto.toLowerCase());
+                                if(!dup){
+                                    resultados.push({
+                                        texto: textoCompleto, lat, lng,
+                                        exacta: !!addr.house_number, fuente: 'nom', tipo: 'direccion'
+                                    });
+                                }
+                            }
+                        });
+                    }catch(e){}
+                }
+
+                if(idBusq !== miId) return;
+
+                div.innerHTML = '';
+                if(resultados.length === 0){
+                    div.innerHTML = `
+                        <div class="sugerencia-item" style="cursor:default">
+                            <i class="fas fa-search"></i>
+                            <div>
+                                <div class="sug-text">No se encontró "${query}" en Moreno/San Miguel</div>
+                                <div class="sug-zona">Solo trabajamos en Moreno y San Miguel</div>
+                                <div class="sug-zona">Ej: "Solano López 300, Moreno" o "Hospital Marzetti"</div>
+                            </div>
+                        </div>`;
+                } else {
+                    // Ordenar por prioridad
+                    resultados.sort((a,b) => (a.prioridad || 0) - (b.prioridad || 0));
+                    
+                    resultados.slice(0,8).forEach(r => {
+                        let icono = 'fa-road';
+                        let badgeClass = 'fallback';
+                        let badgeText = 'CALLE';
+                        
+                        if(r.tipo === 'estacion' || r.tipo === 'tren'){ 
+                            icono = 'fa-train'; 
+                            badgeClass = 'tren'; 
+                            badgeText = 'TREN'; 
+                        }
+                        else if(r.tipo === 'hospital'){ 
+                            icono = 'fa-hospital'; 
+                            badgeClass = 'hospital'; 
+                            badgeText = 'HOSPITAL'; 
+                        }
+                        else if(r.tipo === 'escuela'){ 
+                            icono = 'fa-school'; 
+                            badgeClass = 'escuela'; 
+                            badgeText = 'ESCUELA'; 
+                        }
+                        else if(r.tipo === 'plaza'){ 
+                            icono = 'fa-tree'; 
+                            badgeClass = 'plaza'; 
+                            badgeText = 'PLAZA'; 
+                        }
+                        else if(r.tipo === 'cruce'){ 
+                            icono = 'fa-map-pin'; 
+                            badgeClass = 'cruce'; 
+                            badgeText = 'ESQ'; 
+                        }
+                        else if(r.tipo === 'exacta'){ 
+                            icono = 'fa-home'; 
+                            badgeClass = ''; 
+                            badgeText = 'EXACTA'; 
+                        }
+                        else if(r.exacta){ 
+                            icono = 'fa-home'; 
+                            badgeClass = ''; 
+                            badgeText = 'EXACTA'; 
+                        }
+
+                        const onclick = (r.lat !== null && r.lng !== null)
+                            ? `onclick="seleccionar('${r.texto.replace(/'/g,"\\'")}',${r.lat},${r.lng})"`
+                            : `onclick="geocodificar('${r.texto.replace(/'/g,"\\'")}')"`;
+
+                        div.innerHTML += `
+                            <div class="sugerencia-item" ${onclick}>
+                                <i class="fas ${icono}"></i>
+                                <div>
+                                    <div
