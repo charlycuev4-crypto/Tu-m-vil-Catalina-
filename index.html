@@ -3,184 +3,606 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Viajes Moreno</title>
-    
-    <!-- CSS de Leaflet (Mapa) -->
+    <title>Pasajero - Las Catalinas #53</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <style>
-        :root { --blue: #2563eb; --bg: #f1f5f9; }
-        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); color: #1e293b; }
-        
-        /* Contenedor del Mapa */
-        #map { height: 350px; width: 100%; background: #cbd5e1; }
-        
-        .main-card { 
-            margin: -20px 15px 20px; background: white; padding: 20px; 
-            border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            position: relative; z-index: 1000;
-        }
-        
-        h2 { margin: 0 0 20px 0; font-size: 22px; text-align: center; }
-        
-        .input-box { margin-bottom: 15px; }
-        label { display: block; font-size: 12px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
-        input { 
-            width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; 
-            font-size: 16px; box-sizing: border-box; outline: none;
-        }
-        input:focus { border-color: var(--blue); }
-
-        /* Botón Principal */
-        #btn-solicitar { 
-            width: 100%; padding: 18px; background: var(--blue); color: white; 
-            border: none; border-radius: 12px; font-weight: bold; font-size: 18px;
-            margin-top: 10px; cursor: pointer;
-        }
-        #btn-solicitar:disabled { background: #94a3b8; }
-
-        /* Sugerencias */
-        .res-busqueda { 
-            background: white; border: 1px solid #e2e8f0; border-top: none; 
-            max-height: 200px; overflow-y: auto; border-radius: 0 0 12px 12px; 
-        }
-        .item-sug { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-        
-        .precio-box { 
-            text-align: center; color: #059669; font-size: 20px; 
-            font-weight: 800; margin: 15px 0; display: none;
-        }
+        :root{--naranja:#f47920;--celeste:#0093d0;--rojo:#e61e2b;--verde:#28a745;--fondo:#f0f2f5;--blanco:#fff;--texto:#1a1a1a;--gris:#666;--sombra:0 2px 12px rgba(0,0,0,0.15)}
+        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        body,html{margin:0;padding:0;height:100%;width:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--fondo);color:var(--texto);overflow:hidden}
+        #map{position:absolute;top:0;left:0;height:72%;width:100%;z-index:1;background:#e5e5e5}
+        .header{position:absolute;top:12px;left:12px;right:12px;z-index:1000;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+        .menu-btn{background:var(--blanco);color:var(--naranja);width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;border:none;box-shadow:var(--sombra);font-size:1.2rem}
+        .logo-tag{background:var(--blanco);padding:10px 18px;border-radius:25px;border:2px solid var(--celeste);font-weight:800;color:var(--celeste);font-size:.85rem;box-shadow:var(--sombra);pointer-events:auto}
+        .gps-status{position:absolute;top:70px;right:12px;z-index:1000;background:var(--blanco);padding:6px 12px;border-radius:20px;font-size:.75rem;font-weight:600;box-shadow:var(--sombra);display:flex;align-items:center;gap:6px}
+        .gps-status.preciso{color:var(--verde);border:2px solid var(--verde)}
+        .gps-status.aproximado{color:var(--naranja);border:2px solid var(--naranja)}
+        .gps-status.busqueda{color:var(--gris);border:2px solid var(--gris)}
+        .btn-mi-ubicacion{position:absolute;bottom:30%;right:15px;z-index:1000;width:50px;height:50px;background:var(--blanco);border:none;border-radius:50%;box-shadow:var(--sombra);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--celeste);font-size:1.3rem}
+        .panel{position:absolute;bottom:0;left:0;right:0;z-index:1000;background:var(--blanco);border-radius:24px 24px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.15);padding:15px 20px 25px;max-height:35vh;overflow-y:auto}
+        .panel-handle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 12px}
+        .input-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--fondo);border-radius:14px;border:2px solid transparent;transition:all .2s;margin-bottom:8px}
+        .input-row:focus-within{border-color:var(--naranja);background:#fff8f3}
+        .input-row i{width:24px;text-align:center;font-size:1.1rem;color:var(--celeste)}
+        .input-row input{flex:1;border:none;background:transparent;font-size:1rem;outline:none;color:var(--texto)}
+        .buscador-container{position:relative}
+        .sugerencias{position:absolute;top:100%;left:0;right:0;background:var(--blanco);border-radius:14px;box-shadow:0 8px 25px rgba(0,0,0,0.15);max-height:250px;overflow-y:auto;z-index:1500;display:none;margin-top:5px}
+        .sugerencias.activo{display:block}
+        .sugerencia-item{padding:12px 16px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:10px}
+        .sugerencia-item:last-child{border-bottom:none}
+        .sugerencia-item:hover{background:var(--fondo)}
+        .sugerencia-item .sug-text{font-size:.9rem;font-weight:500}
+        .sugerencia-item .sug-zona{font-size:.75rem;color:var(--gris);margin-top:2px}
+        .sugerencia-item .sug-badge{font-size:.65rem;color:#fff;background:var(--verde);padding:1px 6px;border-radius:8px;margin-top:3px;display:inline-block}
+        .sugerencia-item .sug-badge.fallback{background:var(--naranja)}
+        .sugerencia-item .sug-badge.error{background:var(--rojo)}
+        .btn-principal{width:100%;padding:16px;background:var(--rojo);color:white;border:none;border-radius:16px;font-size:1.1rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;box-shadow:0 6px 20px rgba(230,30,43,0.35);display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px}
+        .btn-principal:disabled{background:#ccc;box-shadow:none;cursor:not-allowed}
+        .estado-viaje{display:none}
+        .estado-viaje.activo{display:block;animation:slideUp .4s ease}
+        @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+        .spinner{width:40px;height:40px;border:4px solid #eee;border-top-color:var(--naranja);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .tarifa-box{background:linear-gradient(135deg,var(--naranja),#ff9a44);border-radius:14px;padding:14px;margin:12px 0;color:white;text-align:center}
+        .tarifa-box .precio{font-size:1.8rem;font-weight:800;margin:5px 0}
+        .btn-secundario{width:100%;padding:12px;background:transparent;color:var(--gris);border:2px solid #ddd;border-radius:14px;font-size:.95rem;font-weight:600;cursor:pointer;margin-top:8px}
+        .ubicacion-actual{position:absolute;bottom:30%;left:15px;z-index:1000;background:var(--blanco);padding:8px 12px;border-radius:12px;font-size:.75rem;box-shadow:var(--sombra);max-width:200px;display:none}
+        .ubicacion-actual.activo{display:block}
+        .ubicacion-actual i{color:var(--celeste);margin-right:5px}
     </style>
 </head>
 <body>
-
-<div id="map"></div>
-
-<div class="main-card">
-    <h2>Solicitar Viaje</h2>
-    
-    <div class="input-box">
-        <label>Punto de Recogida</label>
-        <input type="text" id="origen" value="Detectando tu ubicación..." readonly>
+    <div id="map"></div>
+    <div class="header">
+        <button class="menu-btn"><i class="fas fa-bars"></i></button>
+        <div class="logo-tag">🚕 LAS CATALINAS #53</div>
     </div>
-
-    <div class="input-box">
-        <label>Destino (Moreno / San Miguel)</label>
-        <input type="text" id="destino" placeholder="Ej: Murillo 124 o Cruce Castelar" autocomplete="off">
-        <div id="lista-sug" class="res-busqueda"></div>
+    <div class="gps-status busqueda" id="gps-status">
+        <i class="fas fa-satellite-dish"></i><span id="gps-texto">Buscando GPS...</span>
     </div>
+    <div class="ubicacion-actual" id="ubicacion-actual">
+        <i class="fas fa-map-marker-alt"></i><span id="ubicacion-texto">-</span>
+    </div>
+    <button class="btn-mi-ubicacion" onclick="centrarEnMiUbicacion()"><i class="fas fa-crosshairs"></i></button>
 
-    <div id="precio" class="precio-box"></div>
-    
-    <button id="btn-solicitar" disabled>PEDIR MÓVIL</button>
-</div>
-
-<!-- LIBRERÍAS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
-    // --- 1. CONFIGURACIÓN ---
-    const SB_URL = "TU_URL_AQUÍ";
-    const SB_KEY = "TU_KEY_AQUÍ";
-    
-    // Inicialización segura de Supabase
-    const { createClient } = window['@supabase/supabase-js'];
-    const supabase = createClient(SB_URL, SB_KEY);
-
-    let map, markerO, markerD, ruta;
-    let coordsO, coordsD;
-
-    // --- 2. MAPA ---
-    function iniciarMapa() {
-        // Por defecto en Moreno Centro por si falla el GPS
-        map = L.map('map', { zoomControl: false }).setView([-34.648, -58.791], 14);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-        // Pedir GPS
-        map.locate({setView: true, maxZoom: 16});
-
-        map.on('locationfound', (e) => {
-            coordsO = [e.latlng.lat, e.latlng.lng];
-            if(markerO) map.removeLayer(markerO);
-            markerO = L.marker(coordsO).addTo(map).bindPopup("Estás aquí").openPopup();
-            document.getElementById('origen').value = "Mi ubicación actual ✅";
-        });
-
-        map.on('locationerror', () => {
-            document.getElementById('origen').value = "GPS no disponible (Escribe origen)";
-            document.getElementById('origen').readOnly = false;
-        });
-    }
-
-    // --- 3. BUSCADOR INTELIGENTE ---
-    const inputDestino = document.getElementById('destino');
-    const sugerencias = document.getElementById('lista-sug');
-
-    inputDestino.addEventListener('input', async () => {
-        const busqueda = inputDestino.value;
-        if(busqueda.length < 3) { sugerencias.innerHTML = ""; return; }
-
-        // El truco para Moreno: añadimos el contexto a la búsqueda
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${busqueda}, Moreno, Buenos Aires&limit=4`;
-        
-        try {
-            const r = await fetch(url);
-            const datos = await r.json();
-            sugerencias.innerHTML = datos.map(i => `
-                <div class="item-sug" onclick="elegirDestino(${i.lat}, ${i.lon}, '${i.display_name}')">
-                    ${i.display_name}
+    <div class="panel">
+        <div class="panel-handle"></div>
+        <div id="formulario-pedido">
+            <div class="input-row"><i class="fas fa-user"></i><input type="text" id="nombre" placeholder="¿Cómo te llamás?"></div>
+            <div class="input-row"><i class="fas fa-phone"></i><input type="tel" id="telefono" placeholder="Teléfono"></div>
+            <div class="buscador-container">
+                <div class="input-row">
+                    <i class="fas fa-search" style="color:var(--rojo)"></i>
+                    <input type="text" id="destino" placeholder="Ej: Solano López 500, Moreno" autocomplete="off" oninput="buscar(this.value)">
                 </div>
-            `).join('');
-        } catch(e) { console.log("Error busqueda"); }
-    });
+                <div class="sugerencias" id="sugerencias"></div>
+            </div>
+            <button class="btn-principal" id="btn-solicitar" onclick="solicitar()"><i class="fas fa-paper-plane"></i> Solicitar Móvil</button>
+        </div>
+    </div>
 
-    function elegirDestino(lat, lon, nombre) {
-        coordsD = [lat, lon];
-        inputDestino.value = nombre;
-        sugerencias.innerHTML = "";
-        
-        if(markerD) map.removeLayer(markerD);
-        markerD = L.marker(coordsD, {
-            icon: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-                iconSize: [25, 41], iconAnchor: [12, 41]
-            })
-        }).addTo(map);
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // ═══════════════════════════════════════════════════════════════════════
+        // CONFIGURACIÓN
+        // ═══════════════════════════════════════════════════════════════════════
+        const SUPABASE_URL='https://efryvjjunfeoxhekvwza.supabase.co';
+        const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
 
-        calcularRuta();
-    }
+        let supabaseClient, map, miPosicion={lat:-34.564,lng:-58.770}, destinoCoords=null, 
+            rutaLayer=null, markerDestino=null, markerGPS=null, circuloGPS=null,
+            timeoutBusq=null, idBusq=0, watchIdGPS=null;
 
-    // --- 4. RUTA POR CALLES (NO LÍNEA RECTA) ---
-    async function calcularRuta() {
-        if(!coordsO || !coordsD) return;
+        // ═══════════════════════════════════════════════════════════════════════
+        // BASE DE DATOS LOCAL - Calles principales Moreno/San Miguel
+        // ═══════════════════════════════════════════════════════════════════════
+        const CALLES_PRINCIPALES = [
+            // Avenidas principales Moreno
+            {nombre:"Avenida Libertador", tipo:"avenida", localidad:"Moreno", cruces:["Piovano","Alcorta","San Martín","Rivadavia","Bartolomé Mitre","Italia"]},
+            {nombre:"Avenida San Martín", tipo:"avenida", localidad:"Moreno", cruces:["Piovano","Alcorta","Libertador","Rivadavia","Bartolomé Mitre"]},
+            {nombre:"Avenida Alcorta", tipo:"avenida", localidad:"Moreno", cruces:["Libertador","San Martín","Piovano","Bartolomé Mitre"]},
+            {nombre:"Avenida Piovano", tipo:"avenida", localidad:"Moreno", cruces:["Libertador","San Martín","Alcorta","Rivadavia","Bartolomé Mitre"]},
+            {nombre:"Avenida Bartolomé Mitre", tipo:"avenida", localidad:"Moreno", cruces:["Libertador","San Martín","Alcorta","Piovano","Rivadavia"]},
+            {nombre:"Avenida Rivadavia", tipo:"avenida", localidad:"Moreno", cruces:["Libertador","San Martín","Piovano","Bartolomé Mitre"]},
+            {nombre:"Avenida Italia", tipo:"avenida", localidad:"Moreno", cruces:["Libertador","Piovano","Bartolomé Mitre"]},
 
-        const url = `https://router.project-osrm.org/route/v1/driving/${coordsO[1]},${coordsO[0]};${coordsD[1]},${coordsD[0]}?overview=full&geometries=geojson`;
-        
-        const res = await fetch(url);
-        const data = await res.json();
+            // Calles principales Moreno
+            {nombre:"Solano López", tipo:"calle", localidad:"Moreno", cruces:["Libertador","San Martín","Alcorta","Piovano","Rivadavia","Bartolomé Mitre"]},
+            {nombre:"Intendente Corvalán", tipo:"calle", localidad:"Moreno", cruces:["Libertador","San Martín","Alcorta","Piovano"]},
+            {nombre:"Deán Funes", tipo:"calle", localidad:"Moreno", cruces:["Libertador","San Martín","Alcorta","Piovano","Rivadavia"]},
+            {nombre:"Juan B. Alberdi", tipo:"calle", localidad:"Moreno", cruces:["Libertador","San Martín","Alcorta","Piovano","Rivadavia"]},
+            {nombre:"Pavón", tipo:"calle", localidad:"Moreno", cruces:["Libertador","San Martín","Alcorta","Piovano","Rivadavia"]},
+            {nombre:"De los Inmigrantes", tipo:"calle", localidad:"Moreno", cruces:["Piovano","Alcorta","Bartolomé Mitre"]},
+            {nombre:"Merlo", tipo:"calle", localidad:"Moreno", cruces:["Libertador","Alcorta","Rivadavia"]},
+            {nombre:"Nemesio Álvarez", tipo:"calle", localidad:"Moreno", cruces:["Libertador","San Martín","Piovano","Rivadavia"]},
+            {nombre:"Dr. Vera", tipo:"calle", localidad:"Moreno", cruces:["Alcorta","Piovano","Bartolomé Mitre","Rivadavia"]},
+            {nombre:"Asconapé", tipo:"calle", localidad:"Moreno", cruces:["Alcorta","Piovano","Bartolomé Mitre","Rivadavia"]},
+            {nombre:"Balbi", tipo:"calle", localidad:"Moreno", cruces:["Piovano","Bartolomé Mitre","Rivadavia"]},
+            {nombre:"Tomás Edison", tipo:"calle", localidad:"Moreno", cruces:["Libertador","Alcorta","Rivadavia"]},
+            {nombre:"Bernardo de Irigoyen", tipo:"calle", localidad:"Moreno", cruces:["Libertador","Alcorta","Rivadavia"]},
+            {nombre:"Intendente Gnecco", tipo:"calle", localidad:"Moreno", cruces:["Piovano","Alcorta","Bartolomé Mitre","Rivadavia"]},
+            {nombre:"El Ceibo", tipo:"calle", localidad:"Moreno", cruces:["Piovano","Alcorta","Bartolomé Mitre","Rivadavia"]},
 
-        if(data.routes.length > 0) {
-            const camino = data.routes[0];
-            if(ruta) map.removeLayer(ruta);
-            
-            ruta = L.geoJSON(camino.geometry, {style: {color: '#2563eb', weight: 7}}).addTo(map);
-            map.fitBounds(ruta.getBounds(), {padding: [50, 50]});
+            // Avenidas San Miguel
+            {nombre:"Avenida Presidente Perón", tipo:"avenida", localidad:"San Miguel", cruces:["Sáenz Peña","Urquiza","Muñiz","Balbín"]},
+            {nombre:"Avenida Balbín", tipo:"avenida", localidad:"San Miguel", cruces:["Perón","Sáenz Peña","Urquiza","Muñiz"]},
+            {nombre:"Avenida Sáenz Peña", tipo:"avenida", localidad:"San Miguel", cruces:["Perón","Balbín","Urquiza","Muñiz"]},
+            {nombre:"Avenida Urquiza", tipo:"avenida", localidad:"San Miguel", cruces:["Perón","Balbín","Sáenz Peña","Muñiz"]},
+            {nombre:"Avenida Muñiz", tipo:"avenida", localidad:"San Miguel", cruces:["Perón","Balbín","Sáenz Peña","Urquiza"]},
 
-            // Tarifa: $600 Base + $400 por KM
-            const dist = camino.distance / 1000;
-            const total = 600 + (dist * 400);
-            
-            const pBox = document.getElementById('precio');
-            pBox.innerText = `VALOR: $${Math.round(total)}`;
-            pBox.style.display = "block";
-            document.getElementById('btn-solicitar').disabled = false;
+            // Calles San Miguel
+            {nombre:"Guemes", tipo:"calle", localidad:"San Miguel", cruces:["Perón","Balbín","Sáenz Peña","Urquiza"]},
+            {nombre:"Rodríguez Peña", tipo:"calle", localidad:"San Miguel", cruces:["Perón","Balbín","Sáenz Peña","Urquiza"]},
+            {nombre:"Alem", tipo:"calle", localidad:"San Miguel", cruces:["Perón","Balbín","Sáenz Peña","Urquiza"]},
+            {nombre:"Pueyrredón", tipo:"calle", localidad:"San Miguel", cruces:["Perón","Balbín","Sáenz Peña","Urquiza"]},
+            {nombre:"Las Heras", tipo:"calle", localidad:"San Miguel", cruces:["Perón","Balbín","Sáenz Peña","Urquiza"]}
+        ];
+
+        const ESTACIONES_TREN = [
+            {nombre:"Estación Moreno", linea:"Sarmiento", localidad:"Moreno", lat:-34.657,lng:-58.790},
+            {nombre:"Estación La Reja", linea:"Sarmiento", localidad:"Moreno", lat:-34.637,lng:-58.828},
+            {nombre:"Estación General Rodríguez", linea:"Sarmiento", localidad:"Moreno", lat:-34.608,lng:-58.944},
+            {nombre:"Estación San Miguel", linea:"San Martín", localidad:"San Miguel", lat:-34.543,lng:-58.712},
+            {nombre:"Estación Muñiz", linea:"San Martín", localidad:"San Miguel", lat:-34.535,lng:-58.701},
+            {nombre:"Estación General Lemos", linea:"Urquiza", localidad:"San Miguel", lat:-34.556,lng:-58.723},
+            {nombre:"Estación Campo de Mayo", linea:"Urquiza", localidad:"San Miguel", lat:-34.533,lng:-58.733},
+            {nombre:"Estación Teniente Agneta", linea:"Urquiza", localidad:"San Miguel", lat:-34.545,lng:-58.725},
+            {nombre:"Estación Sáenz Peña", linea:"San Martín", localidad:"Tres de Febrero/San Miguel", lat:-34.604,lng:-58.572}
+        ];
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // INICIALIZACIÓN
+        // ═══════════════════════════════════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', async () => {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            map = L.map('map',{zoomControl:false,attributionControl:false}).setView([-34.564,-58.770],14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+
+            // Iniciar GPS con seguimiento en vivo
+            iniciarGPSReal();
+        });
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // GPS REAL - Seguimiento en vivo
+        // ═══════════════════════════════════════════════════════════════════════
+        function iniciarGPSReal(){
+            if(!navigator.geolocation){
+                actualizarGPS('aproximado','GPS no disponible');
+                return;
+            }
+
+            // Primera posición rápida
+            navigator.geolocation.getCurrentPosition(
+                pos => actualizarPosicionGPS(pos, true),
+                err => {
+                    console.log('GPS inicial error:', err);
+                    actualizarGPS('aproximado','GPS Aproximado');
+                },
+                {enableHighAccuracy:true, timeout:15000, maximumAge:0}
+            );
+
+            // Seguimiento continuo en vivo
+            watchIdGPS = navigator.geolocation.watchPosition(
+                pos => actualizarPosicionGPS(pos, false),
+                err => {
+                    console.log('GPS watch error:', err);
+                    actualizarGPS('aproximado','GPS Aproximado');
+                },
+                {enableHighAccuracy:true, maximumAge:5000, timeout:20000}
+            );
         }
-    }
 
-    // Ejecutar al cargar
-    window.onload = iniciarMapa;
-</script>
+        function actualizarPosicionGPS(position, esPrimera){
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const accuracy = Math.round(position.coords.accuracy);
+
+            miPosicion = {lat, lng};
+
+            // Actualizar marcador GPS
+            if(markerGPS) map.removeLayer(markerGPS);
+            if(circuloGPS) map.removeLayer(circuloGPS);
+
+            markerGPS = L.circleMarker([lat, lng], {
+                radius: 8,
+                fillColor: '#0093d0',
+                color: '#fff',
+                weight: 3,
+                fillOpacity: 0.9
+            }).addTo(map);
+
+            // Círculo de precisión
+            circuloGPS = L.circle([lat, lng], {
+                radius: accuracy,
+                color: '#0093d0',
+                weight: 1,
+                fillColor: '#0093d0',
+                fillOpacity: 0.1
+            }).addTo(map);
+
+            // Si es primera vez o si no hay destino, centrar mapa
+            if(esPrimera || !destinoCoords){
+                map.setView([lat, lng], 16);
+            }
+
+            // Actualizar texto GPS
+            const clase = accuracy < 20 ? 'preciso' : (accuracy < 100 ? 'aproximado' : 'busqueda');
+            const texto = accuracy < 20 ? `GPS Preciso (${accuracy}m)` : `GPS ±${accuracy}m`;
+            actualizarGPS(clase, texto);
+
+            // Mostrar ubicación actual en texto
+            document.getElementById('ubicacion-actual').classList.add('activo');
+            document.getElementById('ubicacion-texto').textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+
+            // Si hay destino, actualizar ruta desde nueva posición
+            if(destinoCoords){
+                actualizarRuta();
+            }
+        }
+
+        function actualizarGPS(clase, texto){
+            const e = document.getElementById('gps-status');
+            const t = document.getElementById('gps-texto');
+            e.className = 'gps-status ' + clase;
+            t.textContent = texto;
+        }
+
+        function centrarEnMiUbicacion(){
+            if(miPosicion.lat && miPosicion.lng){
+                map.setView([miPosicion.lat, miPosicion.lng], 17);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // BUSCADOR V5 - Inteligente con base local + Nominatim + Georef
+        // ═══════════════════════════════════════════════════════════════════════
+        async function buscar(query){
+            const div = document.getElementById('sugerencias');
+            if(!query || query.length < 2){div.innerHTML='';div.classList.remove('activo');if(timeoutBusq)clearTimeout(timeoutBusq);return;}
+
+            if(timeoutBusq) clearTimeout(timeoutBusq);
+            const miId = ++idBusq;
+
+            timeoutBusq = setTimeout(async() => {
+                if(idBusq !== miId) return;
+
+                div.innerHTML = '<div class="sugerencia-item" style="cursor:default"><i class="fas fa-spinner fa-spin"></i><div><div class="sug-text">Buscando en Moreno y San Miguel...</div></div></div>';
+                div.classList.add('activo');
+
+                let resultados = [];
+                const q = query.toLowerCase().trim();
+                const qNum = q.match(/\d+/) ? parseInt(q.match(/\d+/)[0]) : null;
+
+                // === FASE 1: Búsqueda local rápida (calles principales) ===
+                CALLES_PRINCIPALES.forEach(calle => {
+                    const nombreLower = calle.nombre.toLowerCase();
+                    if(nombreLower.includes(q) || q.includes(nombreLower.replace('avenida ','').replace('av. ',''))){
+                        // Si escribió número, sugerir dirección exacta
+                        if(qNum){
+                            resultados.push({
+                                texto: `${calle.nombre} ${qNum}, ${calle.localidad}, Buenos Aires`,
+                                lat: null, lng: null,
+                                exacta: true,
+                                fuente: 'local',
+                                tipo: 'direccion_exacta'
+                            });
+                        }
+                        // Sugerir cruces de calles
+                        calle.cruces.forEach(cruce => {
+                            resultados.push({
+                                texto: `${calle.nombre} y ${cruce}, ${calle.localidad}, Buenos Aires`,
+                                lat: null, lng: null,
+                                exacta: false,
+                                fuente: 'local',
+                                tipo: 'cruce'
+                            });
+                        });
+                    }
+                });
+
+                // === FASE 2: Estaciones de tren ===
+                ESTACIONES_TREN.forEach(est => {
+                    if(est.nombre.toLowerCase().includes(q) || est.localidad.toLowerCase().includes(q)){
+                        resultados.unshift({
+                            texto: `${est.nombre} (${est.linea}), ${est.localidad}`,
+                            lat: est.lat, lng: est.lng,
+                            exacta: true,
+                            fuente: 'tren',
+                            tipo: 'estacion'
+                        });
+                    }
+                });
+
+                // === FASE 3: Nominatim (búsqueda online) ===
+                try{
+                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Moreno, Buenos Aires, Argentina')}&limit=6&countrycodes=ar&addressdetails=1`;
+                    const res = await fetch(url, {headers:{'Accept-Language':'es-AR','User-Agent':'LasCatalinas53/5.0'}});
+                    const data = await res.json();
+
+                    data.forEach(l => {
+                        const addr = l.address || {};
+                        const lat = parseFloat(l.lat);
+                        const lng = parseFloat(l.lon);
+                        const name = l.display_name.toLowerCase();
+
+                        // Solo resultados de Moreno o San Miguel o zonas cercanas
+                        if(!name.includes('moreno') && !name.includes('san miguel') && 
+                           !name.includes('general rodriguez') && !name.includes('merlo') &&
+                           !name.includes('paso del rey') && !name.includes('francisco alvarez')) return;
+
+                        let texto = '';
+                        if(addr.house_number && addr.road) texto = `${addr.road} ${addr.house_number}`;
+                        else if(addr.road) texto = addr.road;
+                        else texto = l.display_name.split(',')[0];
+
+                        const localidad = addr.suburb || addr.town || addr.city || addr.county || 'Moreno';
+                        if(texto && texto !== 'null' && texto !== 'NULL'){
+                            const textoCompleto = `${texto}, ${localidad}, Buenos Aires`;
+                            // Evitar duplicados
+                            const dup = resultados.some(r => r.texto.toLowerCase() === textoCompleto.toLowerCase());
+                            if(!dup){
+                                resultados.push({
+                                    texto: textoCompleto,
+                                    lat, lng,
+                                    exacta: !!addr.house_number,
+                                    fuente: 'nom',
+                                    tipo: 'direccion'
+                                });
+                            }
+                        }
+                    });
+                }catch(e){ console.log('Nominatim error:', e); }
+
+                // === FASE 4: Georef Argentina (solo si faltan resultados) ===
+                if(resultados.filter(r => r.lat !== null).length < 3){
+                    try{
+                        const url = `https://apis.datos.gob.ar/georef/api/v2.0/direcciones?direccion=${encodeURIComponent(query)}&departamento=moreno&provincia=buenos%20aires&max=5`;
+                        const res = await fetch(url);
+                        const data = await res.json();
+
+                        if(data.direcciones){
+                            data.direcciones.forEach(d => {
+                                if(!d.ubicacion || !d.ubicacion.lat || !d.ubicacion.lon) return;
+                                if(d.ubicacion.lat === null || d.ubicacion.lon === null) return;
+
+                                const lat = parseFloat(d.ubicacion.lat);
+                                const lng = parseFloat(d.ubicacion.lon);
+                                if(isNaN(lat) || isNaN(lng)) return;
+
+                                const calle = d.calle ? d.calle.nombre : '';
+                                const altura = (d.altura && d.altura.valor) ? ' ' + d.altura.valor : '';
+                                const loc = d.localidad_censal ? d.localidad_censal.nombre : 'Moreno';
+
+                                if(calle && calle !== 'null' && calle !== 'NULL'){
+                                    const texto = `${calle}${altura}, ${loc}, Buenos Aires`;
+                                    const dup = resultados.some(r => r.texto.toLowerCase() === texto.toLowerCase());
+                                    if(!dup){
+                                        resultados.push({
+                                            texto,
+                                            lat, lng,
+                                            exacta: !!altura,
+                                            fuente: 'geo',
+                                            tipo: 'direccion'
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    }catch(e){ console.log('Georef error:', e); }
+                }
+
+                if(idBusq !== miId) return;
+
+                // Mostrar resultados
+                div.innerHTML = '';
+                if(resultados.length === 0){
+                    div.innerHTML = `
+                        <div class="sugerencia-item" style="cursor:default">
+                            <i class="fas fa-search"></i>
+                            <div>
+                                <div class="sug-text">No se encontró "${query}"</div>
+                                <div class="sug-zona">Probá con: número + calle + localidad</div>
+                                <div class="sug-zona">Ej: "Solano López 500, Moreno"</div>
+                                <div class="sug-zona">O buscá una estación de tren</div>
+                            </div>
+                        </div>`;
+                } else {
+                    // Mostrar máximo 8 resultados, priorizando exactos
+                    resultados.sort((a,b) => (b.exacta?1:0) - (a.exacta?1:0));
+                    resultados.slice(0,8).forEach(r => {
+                        let icono = 'fa-road';
+                        let badge = '<span class="sug-badge fallback">CALLE</span>';
+
+                        if(r.tipo === 'estacion'){ icono = 'fa-train'; badge = '<span class="sug-badge">TREN</span>'; }
+                        else if(r.exacta){ icono = 'fa-home'; badge = '<span class="sug-badge">EXACTA</span>'; }
+                        else if(r.tipo === 'cruce'){ icono = 'fa-map-pin'; badge = '<span class="sug-badge fallback">ESQ</span>'; }
+
+                        // Para direcciones locales sin coordenadas, necesitamos geocodificar después
+                        const onclick = (r.lat !== null && r.lng !== null) 
+                            ? `onclick="seleccionar('${r.texto.replace(/'/g,"\'")}',${r.lat},${r.lng})"`
+                            : `onclick="geocodificarYSeleccionar('${r.texto.replace(/'/g,"\'")}')"`;
+
+                        div.innerHTML += `
+                            <div class="sugerencia-item" ${onclick}>
+                                <i class="fas ${icono}"></i>
+                                <div>
+                                    <div class="sug-text">${r.texto}</div>
+                                    ${badge}
+                                    <div class="sug-zona">${r.fuente === 'local' ? 'Zona Moreno/San Miguel' : (r.fuente === 'tren' ? 'Línea ' + r.tipo : 'Buscador online')}</div>
+                                </div>
+                            </div>`;
+                    });
+                }
+                div.classList.add('activo');
+            }, 400);
+        }
+
+        // Geocodificar direcciones locales que no tienen coordenadas precargadas
+        async function geocodificarYSeleccionar(texto){
+            const div = document.getElementById('sugerencias');
+            div.innerHTML = '<div class="sugerencia-item" style="cursor:default"><i class="fas fa-spinner fa-spin"></i><div><div class="sug-text">Obteniendo coordenadas...</div></div></div>';
+
+            try{
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(texto + ', Argentina')}&limit=1&countrycodes=ar`;
+                const res = await fetch(url, {headers:{'Accept-Language':'es-AR','User-Agent':'LasCatalinas53/5.0'}});
+                const data = await res.json();
+
+                if(data && data.length > 0){
+                    seleccionar(texto, parseFloat(data[0].lat), parseFloat(data[0].lon));
+                } else {
+                    alert('No se pudieron obtener coordenadas para esta dirección. Probá con otra calle o número.');
+                    div.classList.remove('activo');
+                }
+            }catch(e){
+                alert('Error de conexión al buscar coordenadas');
+                div.classList.remove('activo');
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // SELECCIONAR DESTINO - Limpia anterior, crea nuevo
+        // ═══════════════════════════════════════════════════════════════════════
+        function seleccionar(texto, lat, lng){
+            document.getElementById('destino').value = texto;
+            document.getElementById('sugerencias').classList.remove('activo');
+
+            // Guardar nuevas coordenadas
+            destinoCoords = {lat, lng};
+
+            // Limpiar marcador anterior
+            if(markerDestino){
+                map.removeLayer(markerDestino);
+                markerDestino = null;
+            }
+
+            // Crear nuevo marcador de destino
+            const iconoDestino = L.divIcon({
+                html: '<div style="background:#e61e2b;width:36px;height:36px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-flag-checkered" style="color:white;font-size:14px"></i></div>',
+                iconSize: [40, 40],
+                iconAnchor: [20, 20],
+                className: ''
+            });
+
+            markerDestino = L.marker([lat, lng], {icon: iconoDestino})
+                .addTo(map)
+                .bindPopup('<b>Destino:</b><br>' + texto);
+
+            // Actualizar ruta desde posición GPS actual
+            actualizarRuta();
+
+            // Ajustar mapa para ver origen y destino
+            if(miPosicion.lat && miPosicion.lng){
+                map.fitBounds(
+                    [[miPosicion.lat, miPosicion.lng], [lat, lng]],
+                    {padding: [60, 60], maxZoom: 17}
+                );
+            } else {
+                map.setView([lat, lng], 16);
+            }
+        }
+
+        function actualizarRuta(){
+            // Limpiar ruta anterior
+            if(rutaLayer){
+                map.removeLayer(rutaLayer);
+                rutaLayer = null;
+            }
+
+            // Solo dibujar si tenemos ambas posiciones
+            if(!miPosicion.lat || !miPosicion.lng || !destinoCoords) return;
+
+            // Dibujar línea recta (ruta aproximada)
+            rutaLayer = L.polyline(
+                [[miPosicion.lat, miPosicion.lng], [destinoCoords.lat, destinoCoords.lng]],
+                {color: '#f47920', weight: 5, opacity: 0.9, dashArray: '10, 10'}
+            ).addTo(map);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // SOLICITAR VIAJE
+        // ═══════════════════════════════════════════════════════════════════════
+        async function solicitar(){
+            const nombre = document.getElementById('nombre').value.trim();
+            const telefono = document.getElementById('telefono').value.trim();
+            const destino = document.getElementById('destino').value.trim();
+
+            if(!nombre || !telefono || !destino){
+                alert('Completá todos los datos');
+                return;
+            }
+            if(!destinoCoords){
+                alert('Seleccioná un destino de la lista o esperá que cargue');
+                return;
+            }
+            if(!miPosicion.lat || !miPosicion.lng){
+                alert('Esperá que el GPS encuentre tu ubicación');
+                return;
+            }
+
+            const btn = document.getElementById('btn-solicitar');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+
+            try{
+                const {data: pax} = await supabaseClient.from('pasajeros')
+                    .insert({nombre, telefono})
+                    .select()
+                    .single();
+
+                const dist = calcularDistancia(miPosicion.lat, miPosicion.lng, destinoCoords.lat, destinoCoords.lng);
+                const tarifa = {
+                    total: Math.round(3000 + dist * 800),
+                    base: 3000,
+                    km: dist,
+                    costoKm: Math.round(dist * 800)
+                };
+
+                await supabaseClient.from('viajes').insert({
+                    pasajero_id: pax.id,
+                    nombre_pasajero: nombre,
+                    telefono_pasajero: telefono,
+                    direccion_salida: `GPS: ${miPosicion.lat.toFixed(5)}, ${miPosicion.lng.toFixed(5)}`,
+                    destino: destino,
+                    lat_salida: miPosicion.lat,
+                    lng_salida: miPosicion.lng,
+                    lat_destino: destinoCoords.lat,
+                    lng_destino: destinoCoords.lng,
+                    distancia_km: dist.toFixed(2),
+                    tarifa_base: tarifa.base,
+                    tarifa_km: tarifa.costoKm,
+                    tarifa_total: tarifa.total,
+                    estado: 'pendiente'
+                });
+
+                alert('¡Viaje solicitado! Buscando conductor cercano...');
+                btn.innerHTML = '<i class="fas fa-check"></i> Solicitado';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Solicitar Móvil';
+                }, 3000);
+
+            }catch(e){
+                alert('Error al enviar: ' + e.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Solicitar Móvil';
+            }
+        }
+
+        function calcularDistancia(lat1, lon1, lat2, lon2){
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        // Cerrar sugerencias al tocar fuera
+        document.addEventListener('click', e => {
+            if(!e.target.closest('.buscador-container')){
+                document.getElementById('sugerencias').classList.remove('activo');
+            }
+        });
+    </script>
 </body>
 </html>
