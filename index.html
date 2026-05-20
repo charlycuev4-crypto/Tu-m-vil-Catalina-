@@ -36,12 +36,21 @@
         .gps-status.error { color: var(--rojo); border: 2px solid var(--rojo); }
         .gps-status.buscando { color: var(--celeste); border: 2px solid var(--celeste); }
 
-        .btn-mi-ubicacion { position: absolute; bottom: 42%; right: 12px; z-index: 1000; width: 48px; height: 48px; background: var(--blanco); border: none; border-radius: 50%; box-shadow: var(--sombra); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--celeste); font-size: 1.2rem; }
+        .btn-mi-ubicacion { position: absolute; bottom: 80px; right: 12px; z-index: 1000; width: 48px; height: 48px; background: var(--blanco); border: none; border-radius: 50%; box-shadow: var(--sombra); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--celeste); font-size: 1.2rem; }
 
-        .panel { position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000; border-radius: 24px 24px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,0.15); overflow: hidden; display: flex; flex-direction: column; max-height: 55vh; }
+        /* ═══════════════════════════════════════════════════ */
+        /* PANEL COLAPSABLE */
+        /* ═══════════════════════════════════════════════════ */
+        .panel { position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000; border-radius: 24px 24px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,0.15); overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s ease; max-height: 60vh; }
+        .panel.colapsado { max-height: 50px; }
+        .panel.colapsado .panel-celeste { display: none; }
+        .panel.colapsado .panel-rojo { display: none; }
+        .panel.colapsado .flecha-colapsar { transform: rotate(180deg); }
 
-        .panel-celeste { background: linear-gradient(180deg, var(--celeste-60) 0%, rgba(0,147,208,0.30) 100%); backdrop-filter: blur(10px); padding: 16px 20px 12px; flex: 1.5; overflow-y: auto; min-height: 0; }
-        .panel-celeste .panel-handle { width: 36px; height: 5px; background: rgba(255,255,255,0.5); border-radius: 3px; margin: 0 auto 12px; }
+        .flecha-colapsar { width: 100%; height: 50px; background: linear-gradient(180deg, var(--celeste-60) 0%, rgba(0,147,208,0.30) 100%); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.3s; }
+        .flecha-colapsar i { color: white; font-size: 1.5rem; }
+
+        .panel-celeste { background: linear-gradient(180deg, var(--celeste-60) 0%, rgba(0,147,208,0.30) 100%); backdrop-filter: blur(10px); padding: 12px 20px 12px; flex: 1.5; overflow-y: auto; min-height: 0; }
 
         .panel-rojo { background: linear-gradient(180deg, var(--rojo-40) 0%, rgba(230,30,43,0.20) 100%); backdrop-filter: blur(10px); padding: 12px 20px 28px; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
 
@@ -61,15 +70,19 @@
         .sugerencia-item .sug-text { font-size: .9rem; font-weight: 600; color: var(--texto); }
         .sugerencia-item .sug-zona { font-size: .75rem; color: var(--gris); margin-top: 2px; }
 
-        .selfie-section { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(255,255,255,0.85); border-radius: 14px; margin-bottom: 8px; }
-        .selfie-preview { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--celeste), var(--celeste-claro)); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.3rem; flex-shrink: 0; overflow: hidden; }
-        .selfie-preview img { width: 100%; height: 100%; object-fit: cover; }
-        .selfie-info { flex: 1; }
-        .selfie-info .titulo { font-size: .85rem; font-weight: 600; color: var(--texto); }
-        .selfie-info .sub { font-size: .75rem; color: var(--gris); }
-        .btn-selfie { padding: 8px 14px; background: var(--celeste); color: white; border: none; border-radius: 10px; font-size: .8rem; font-weight: 600; cursor: pointer; }
-        .btn-selfie:active { background: var(--celeste-claro); }
-        #input-selfie { display: none; }
+        /* Ubicación manual */
+        .btn-ubicacion-manual { width: 100%; padding: 12px; background: rgba(255,255,255,0.9); color: var(--celeste); border: 2px dashed var(--celeste); border-radius: 14px; font-size: .95rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px; transition: all .2s; }
+        .btn-ubicacion-manual:active { background: var(--celeste); color: white; }
+
+        .modo-manual { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 2000; background: rgba(0,0,0,0.7); }
+        .modo-manual.activo { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .modo-manual .instruccion { color: white; font-size: 1.2rem; font-weight: 700; text-align: center; padding: 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .modo-manual .pin-central { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 2001; pointer-events: none; }
+        .modo-manual .pin-central i { color: var(--rojo); font-size: 3rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)); }
+        .modo-manual .botones-manual { position: absolute; bottom: 30px; left: 20px; right: 20px; display: flex; gap: 10px; z-index: 2001; }
+        .modo-manual .botones-manual button { flex: 1; padding: 16px; border: none; border-radius: 16px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+        .btn-cancelar-manual { background: var(--gris); color: white; }
+        .btn-confirmar-manual { background: var(--verde); color: white; }
 
         .ruta-preview-box { background: rgba(255,255,255,0.9); border-radius: 14px; padding: 12px; margin-bottom: 8px; border-left: 4px solid var(--celeste); }
         .ruta-preview-box .fila { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
@@ -112,8 +125,6 @@
 
         .pin-destino { background: var(--rojo); width: 44px; height: 44px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 15px rgba(230,30,43,0.4); display: flex; align-items: center; justify-content: center; animation: pulse 1.5s infinite; }
         .pin-destino i { color: white; font-size: 18px; }
-        .pin-origen { background: var(--celeste); width: 40px; height: 40px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; }
-        .pin-origen i { color: white; font-size: 16px; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     </style>
 </head>
@@ -135,10 +146,22 @@
 
     <button class="btn-mi-ubicacion" onclick="centrarEnMiUbicacion()"><i class="fas fa-crosshairs"></i></button>
 
-    <div class="panel" id="panel">
-        <div class="panel-celeste" id="panel-celeste">
-            <div class="panel-handle"></div>
+    <!-- MODO MANUAL -->
+    <div class="modo-manual" id="modo-manual">
+        <div class="instruccion">Mové el mapa para ubicar el pin<br>en tu destino exacto</div>
+        <div class="pin-central"><i class="fas fa-map-marker-alt"></i></div>
+        <div class="botones-manual">
+            <button class="btn-cancelar-manual" onclick="cancelarManual()">Cancelar</button>
+            <button class="btn-confirmar-manual" onclick="confirmarManual()">Confirmar</button>
+        </div>
+    </div>
 
+    <div class="panel" id="panel">
+        <div class="flecha-colapsar" id="flecha-colapsar" onclick="togglePanel()">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+
+        <div class="panel-celeste" id="panel-celeste">
             <div class="formulario-pedido" id="formulario-pedido">
                 <div class="input-row"><i class="fas fa-user"></i><input type="text" id="nombre" placeholder="¿Cómo te llamás?"></div>
                 <div class="input-row"><i class="fas fa-phone"></i><input type="tel" id="telefono" placeholder="Teléfono"></div>
@@ -151,21 +174,13 @@
                     </div>
                 </div>
 
+                <button class="btn-ubicacion-manual" onclick="activarModoManual()">
+                    <i class="fas fa-map-pin"></i> Ubicación manual (sin número de calle)
+                </button>
+
                 <div class="input-row" id="direccion-origen-row" style="display:none">
                     <i class="fas fa-home" style="color:var(--naranja)"></i>
                     <input type="text" id="direccion-origen" placeholder="GPS detectando..." readonly>
-                </div>
-
-                <div class="selfie-section" id="selfie-section">
-                    <div class="selfie-preview" id="selfie-preview"><i class="fas fa-camera"></i></div>
-                    <div class="selfie-info">
-                        <div class="titulo">Tu foto de perfil</div>
-                        <div class="sub">Sacate una selfie para el conductor</div>
-                    </div>
-                    <button class="btn-selfie" onclick="document.getElementById('input-selfie').click()">
-                        <i class="fas fa-camera"></i> Sacar
-                    </button>
-                    <input type="file" id="input-selfie" accept="image/*" capture="user" onchange="procesarSelfie(this)">
                 </div>
 
                 <div id="ruta-preview" style="display:none">
@@ -220,7 +235,8 @@
         let supabaseClient, map, miPosicion = {lat:null,lng:null}, destinoCoords = null, origenCoords = null;
         let rutaLayer = null, markerDestino = null, markerGPS = null;
         let timeoutBusq = null, viajeActual = null, canalViaje = null;
-        let distanciaKm = 0, tiempoMin = 0, selfieData = null;
+        let distanciaKm = 0, tiempoMin = 0;
+        let panelColapsado = false;
 
         document.addEventListener('DOMContentLoaded', async () => {
             try {
@@ -234,6 +250,59 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '' }).addTo(map);
         }
 
+        // PANEL COLAPSABLE
+        function togglePanel() {
+            const panel = document.getElementById('panel');
+            panelColapsado = !panelColapsado;
+            if (panelColapsado) {
+                panel.classList.add('colapsado');
+            } else {
+                panel.classList.remove('colapsado');
+            }
+        }
+
+        function colapsarPanel() {
+            panelColapsado = true;
+            document.getElementById('panel').classList.add('colapsado');
+        }
+
+        function expandirPanel() {
+            panelColapsado = false;
+            document.getElementById('panel').classList.remove('colapsado');
+        }
+
+        // MODO MANUAL
+        function activarModoManual() {
+            document.getElementById('modo-manual').classList.add('activo');
+            colapsarPanel();
+        }
+
+        function cancelarManual() {
+            document.getElementById('modo-manual').classList.remove('activo');
+            expandirPanel();
+        }
+
+        function confirmarManual() {
+            const center = map.getCenter();
+            destinoCoords = { lat: center.lat, lng: center.lng };
+            const texto = document.getElementById('destino').value || 'Ubicación manual';
+            document.getElementById('destino').value = texto;
+
+            document.getElementById('modo-manual').classList.remove('activo');
+
+            // Mostrar pin destino
+            if (markerDestino) map.removeLayer(markerDestino);
+            const icono = L.divIcon({
+                html: '<div class="pin-destino"><i class="fas fa-map-marker-alt"></i></div>',
+                iconSize: [48, 48], iconAnchor: [24, 24], className: ''
+            });
+            markerDestino = L.marker([center.lat, center.lng], { icon: icono }).addTo(map).bindPopup(`<b>Destino:</b><br>${texto}`).openPopup();
+
+            if (origenCoords) {
+                calcularRutaOSRM(origenCoords.lat, origenCoords.lng, center.lat, center.lng);
+            }
+        }
+
         function iniciarGPS() {
             if (!navigator.geolocation) { actualizarEstadoGPS('error', 'GPS no disponible'); return; }
             actualizarEstadoGPS('buscando', 'Buscando GPS...');
@@ -244,7 +313,7 @@
                     actualizarEstadoGPS('preciso', 'GPS preciso');
                     map.setView([miPosicion.lat, miPosicion.lng], 16);
                     const icono = L.divIcon({
-                        html: '<div class="pin-origen"><i class="fas fa-user"></i></div>',
+                        html: '<div style="background:linear-gradient(135deg,#0093d0,#4db8e8);width:40px;height:40px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="color:white;font-size:16px;"></i></div>',
                         iconSize: [44, 44], iconAnchor: [22, 22]
                     });
                     markerGPS = L.marker([miPosicion.lat, miPosicion.lng], { icon: icono }).addTo(map);
@@ -276,14 +345,15 @@
         }
         function centrarEnMiUbicacion() { if (miPosicion.lat && map) map.setView([miPosicion.lat, miPosicion.lng], 16); }
 
-        // GEOCODIFICACIÓN PHOTON
+        // GEOCODIFICACIÓN PHOTON - zona oeste completa
         async function buscarDireccion(texto) {
             clearTimeout(timeoutBusq);
             const sugerencias = document.getElementById('sugerencias');
             if (!texto || texto.length < 3) { sugerencias.classList.remove('activo'); return; }
             timeoutBusq = setTimeout(async () => {
                 try {
-                    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(texto + ', Moreno, Argentina')}&limit=5&lang=es`;
+                    // Buscar en zona oeste de Buenos Aires: Moreno, San Miguel, Trujui, Santa Brigida, etc.
+                    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(texto)}&lat=-34.65&lon=-58.79&limit=8&lang=es`;
                     const res = await fetch(url);
                     const data = await res.json();
                     let html = '';
@@ -293,15 +363,17 @@
                             const coords = f.geometry.coordinates;
                             const nombre = props.name || '';
                             const calle = props.street || '';
-                            const ciudad = props.city || props.town || props.village || '';
-                            const direccion = nombre + (calle && nombre !== calle ? `, ${calle}` : '');
+                            const housenumber = props.housenumber || '';
+                            const ciudad = props.city || props.town || props.village || props.district || '';
+                            const direccion = housenumber ? `${calle || nombre} ${housenumber}` : (nombre || calle);
                             const fullDir = direccion + (ciudad ? `, ${ciudad}` : '');
+                            if (!direccion) return;
                             html += `<div class="sugerencia-item" onclick="seleccionarDestino('${fullDir.replace(/'/g, "\'")}', ${coords[1]}, ${coords[0]})">
                                 <i class="fas fa-map-marker-alt"></i>
-                                <div><div class="sug-text">${direccion}</div><div class="sug-zona">${ciudad || 'Argentina'}</div></div>
+                                <div><div class="sug-text">${direccion}</div><div class="sug-zona">${ciudad || 'Zona Oeste, Buenos Aires'}</div></div>
                             </div>`;
                         });
-                    } else { html = '<div class="sugerencia-item" style="color:var(--gris)"><i class="fas fa-info-circle"></i><div>No se encontraron resultados</div></div>'; }
+                    } else { html = '<div class="sugerencia-item" style="color:var(--gris)"><i class="fas fa-info-circle"></i><div>No se encontraron resultados. Probá con "Ubicación manual"</div></div>'; }
                     sugerencias.innerHTML = html;
                     sugerencias.classList.add('activo');
                 } catch (e) { console.error('Error buscando:', e); }
@@ -313,25 +385,23 @@
             document.getElementById('sugerencias').classList.remove('activo');
             destinoCoords = { lat, lng };
 
-            // Limpiar marcador anterior
             if (markerDestino) map.removeLayer(markerDestino);
-
-            // Nuevo marcador destino con animación pulse
             const icono = L.divIcon({
                 html: '<div class="pin-destino"><i class="fas fa-map-marker-alt"></i></div>',
                 iconSize: [48, 48], iconAnchor: [24, 24], className: ''
             });
             markerDestino = L.marker([lat, lng], { icon: icono }).addTo(map).bindPopup(`<b>Destino:</b><br>${direccion}`).openPopup();
 
-            // ZOOM al destino - centrado entre origen y destino
             if (origenCoords) {
                 const bounds = L.latLngBounds([[origenCoords.lat, origenCoords.lng], [lat, lng]]);
                 map.fitBounds(bounds, { padding: [80, 80], maxZoom: 16 });
                 await calcularRutaOSRM(origenCoords.lat, origenCoords.lng, lat, lng);
             } else {
-                // Si no hay origen, zoom directo al destino
                 map.setView([lat, lng], 16);
             }
+
+            // Colapsar panel automáticamente
+            colapsarPanel();
         }
 
         async function reverseGeocode(lat, lng) {
@@ -389,35 +459,7 @@
         }
         function calcularTarifa(km) { const total = TARIFA_BASE + (km * TARIFA_POR_KM); return { total: Math.round(total), base: TARIFA_BASE, km: km, costoKm: Math.round(km * TARIFA_POR_KM) }; }
 
-        // SELFIE - comprimir antes de enviar
-        async function procesarSelfie(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            // Comprimir imagen para no consumir memoria
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 400;
-                    const scale = MAX_WIDTH / img.width;
-                    canvas.width = MAX_WIDTH;
-                    canvas.height = img.height * scale;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    // Comprimir a JPEG 70% calidad
-                    selfieData = canvas.toDataURL('image/jpeg', 0.7);
-                    document.getElementById('selfie-preview').innerHTML = `<img src="${selfieData}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-                    document.querySelector('.selfie-info .titulo').textContent = '¡Foto lista!';
-                    document.querySelector('.selfie-info .sub').textContent = 'El conductor te va a reconocer';
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // SOLICITAR VIAJE (RPC con foto incluida)
+        // SOLICITAR VIAJE
         async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value.trim();
             const telefono = document.getElementById('telefono').value.trim();
@@ -437,8 +479,7 @@
                     p_lat_salida: origenCoords.lat, p_lng_salida: origenCoords.lng,
                     p_lat_destino: destinoCoords.lat, p_lng_destino: destinoCoords.lng,
                     p_tarifa_total: calcularTarifa(distanciaKm).total,
-                    p_distancia_km: parseFloat(distanciaKm.toFixed(2)),
-                    p_foto_pasajero: selfieData || null
+                    p_distancia_km: parseFloat(distanciaKm.toFixed(2))
                 });
                 if (error) throw error;
 
@@ -452,6 +493,7 @@
                 document.getElementById('detalle-destino').textContent = destinoTexto;
                 document.getElementById('detalle-tarifa').textContent = `$${calcularTarifa(distanciaKm).total.toLocaleString()}`;
 
+                expandirPanel();
                 escucharViaje(data);
             } catch (e) {
                 console.error('Error:', e);
@@ -510,10 +552,7 @@
             document.getElementById('btn-solicitar').innerHTML = '<i class="fas fa-paper-plane"></i> Solicitar Móvil';
             document.getElementById('btn-cancelar').style.display = 'none';
             document.getElementById('destino').value = '';
-            document.getElementById('selfie-preview').innerHTML = '<i class="fas fa-camera"></i>';
-            document.querySelector('.selfie-info .titulo').textContent = 'Tu foto de perfil';
-            document.querySelector('.selfie-info .sub').textContent = 'Sacate una selfie para el conductor';
-            selfieData = null;
+            expandirPanel();
             centrarEnMiUbicacion();
         }
 
