@@ -36,9 +36,6 @@
         .toggle-online::after { content: ''; position: absolute; width: 28px; height: 28px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.3s; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
         .toggle-online.activo::after { transform: translateX(24px); }
 
-        /* ═══════════════════════════════════════════════════ */
-        /* PANEL: 60% CELESTE / 40% ROJO */
-        /* ═══════════════════════════════════════════════════ */
         .panel { position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000; border-radius: 24px 24px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,0.15); overflow: hidden; display: flex; flex-direction: column; max-height: 30vh; }
 
         .panel-celeste { background: linear-gradient(180deg, var(--celeste-60) 0%, rgba(0,147,208,0.30) 100%); backdrop-filter: blur(10px); padding: 12px 20px 10px; flex: 1.5; overflow-y: auto; }
@@ -56,12 +53,11 @@
         .estado-espera h3 { margin: 0; font-size: 1rem; color: var(--celeste); }
         .estado-espera p { margin: 4px 0 0; color: var(--gris); font-size: 0.8rem; }
 
-        /* Pedido entrante */
         .pedido-card { display: none; background: rgba(255,255,255,0.95); border: 3px solid var(--rojo); border-radius: 20px; padding: 14px; animation: slideUp 0.4s ease; }
         .pedido-card.activo { display: block; }
         .pedido-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .pedido-header .icono { width: 45px; height: 45px; background: linear-gradient(135deg, var(--rojo), var(--rojo-claro)); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.3rem; box-shadow: 0 3px 10px rgba(230,30,43,0.3); animation: timbre 0.5s ease infinite alternate; }
-        @keyframes timbre { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+        .pedido-header .icono-timbre { width: 45px; height: 45px; background: linear-gradient(135deg, var(--rojo), var(--rojo-claro)); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.3rem; box-shadow: 0 3px 10px rgba(230,30,43,0.3); animation: timbre 0.3s ease infinite alternate; }
+        @keyframes timbre { from { transform: rotate(-8deg) scale(1); } to { transform: rotate(8deg) scale(1.1); } }
         .pedido-header h3 { margin: 0; font-size: 1.1rem; color: var(--rojo); }
         .pedido-header p { margin: 2px 0 0; color: var(--gris); font-size: 0.8rem; }
 
@@ -113,7 +109,6 @@
     </div>
 
     <div class="panel">
-        <!-- 60% CELESTE -->
         <div class="panel-celeste" id="panel-celeste">
             <div class="panel-handle"></div>
 
@@ -137,7 +132,7 @@
                         <h3>¡Nuevo pedido!</h3>
                         <p id="distancia-pedido">Calculando...</p>
                     </div>
-                    <div class="icono" style="animation: timbre 0.3s ease infinite alternate;"><i class="fas fa-bell"></i></div>
+                    <div class="icono-timbre"><i class="fas fa-bell"></i></div>
                 </div>
                 <div class="pedido-info">
                     <div class="fila"><i class="fas fa-user"></i><span id="p-nombre">-</span></div>
@@ -168,7 +163,6 @@
             </div>
         </div>
 
-        <!-- 40% ROJO - Botones -->
         <div class="panel-rojo" id="panel-rojo">
             <div class="botones-accion" id="botones-pedido" style="display:none">
                 <button class="btn btn-rechazar" onclick="rechazarPedido()"><i class="fas fa-times"></i> Rechazar</button>
@@ -206,7 +200,6 @@
                 document.getElementById('nombre-conductor').textContent = CONDUCTOR_NOMBRE;
                 document.getElementById('avatar-inicial').textContent = CONDUCTOR_NOMBRE.charAt(0).toUpperCase();
                 iniciarGPS();
-                // Inicializar audio para timbre
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
             } catch (error) { console.error('❌ Error:', error); }
         });
@@ -216,12 +209,12 @@
                 const mapDiv = document.getElementById('map');
                 if (!mapDiv) return;
                 mapDiv.style.height = window.innerHeight * 0.72 + 'px';
+                mapDiv.style.width = window.innerWidth + 'px';
                 map = L.map('map', { zoomControl: false, attributionControl: false }).setView([-34.564, -58.770], 15);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '' }).addTo(map);
             } catch (error) { console.error('❌ Error mapa:', error); }
         }
 
-        // GPS
         function iniciarGPS() {
             if (!navigator.geolocation) { console.log('GPS no disponible'); return; }
             navigator.geolocation.getCurrentPosition(
@@ -261,7 +254,7 @@
         }
         function calcularTarifa(distanciaKm) { const total = TARIFA_BASE + (distanciaKm * TARIFA_POR_KM); return { total: Math.round(total), base: TARIFA_BASE, km: distanciaKm, costoKm: Math.round(distanciaKm * TARIFA_POR_KM) }; }
 
-        // TIMBRE DE NOTIFICACIÓN
+        // TIMBRE
         function tocarTimbre() {
             try {
                 if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -273,16 +266,15 @@
                 oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
                 oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
                 oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+                oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.3);
                 gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
                 oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.5);
-                // Vibración si está disponible
+                oscillator.stop(audioContext.currentTime + 0.6);
                 if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
             } catch (e) { console.log('Error timbre:', e); }
         }
 
-        // ONLINE / OFFLINE
         async function cambiarEstado() {
             if (!supabaseClient) { alert('Error: Supabase no conectado'); return; }
             online = !online;
@@ -297,7 +289,6 @@
             else { toggle.classList.remove('activo'); texto.textContent = 'Desconectado'; texto.style.color = 'rgba(255,255,255,0.7)'; }
         }
 
-        // ESCUCHAR PEDIDOS
         function escucharPedidos() {
             if (!supabaseClient) return;
             try {
@@ -316,12 +307,9 @@
             } catch (error) { console.error('❌ Error suscribiendo:', error); }
         }
 
-        // MOSTRAR PEDIDO
         async function mostrarPedido(viaje, distancia) {
             pedidoPendiente = viaje;
             distanciaTotalKm = distancia;
-
-            // 🔊 TIMBRE
             tocarTimbre();
 
             document.getElementById('panel-stats').style.display = 'none';
@@ -332,24 +320,20 @@
             document.getElementById('p-direccion').textContent = viaje.direccion_salida || 'Sin dirección';
             document.getElementById('p-destino').textContent = viaje.direccion_destino || 'Sin destino';
             document.getElementById('p-telefono').textContent = viaje.telefono_pasajero || 'Sin teléfono';
-            document.getElementById('distancia-pedido').textContent = `A ${distancia.toFixed(1)} km`;
+            document.getElementById('distancia-pedido').textContent = `A ${distancia.toFixed(1)} km de distancia`;
 
             const tarifa = calcularTarifa(distancia);
             document.getElementById('p-tarifa').textContent = `$${tarifa.total.toLocaleString()}`;
             document.getElementById('p-detalle-tarifa').textContent = `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()}`;
 
-            // Mostrar selfie del pasajero si existe
+            // Mostrar foto del pasajero desde el campo foto_pasajero del viaje
             const selfieEl = document.getElementById('selfie-pasajero');
-            try {
-                const { data: files } = await supabaseClient.storage.from('fotos-pasajeros').list();
-                const selfieFile = files.find(f => f.name.includes(viaje.telefono_pasajero || ''));
-                if (selfieFile) {
-                    const { data: urlData } = supabaseClient.storage.from('fotos-pasajeros').getPublicUrl(selfieFile.name);
-                    selfieEl.innerHTML = `<img src="${urlData.publicUrl}" style="width:100%;height:100%;object-fit:cover;">`;
-                } else { selfieEl.innerHTML = '<i class="fas fa-user"></i>'; }
-            } catch (e) { selfieEl.innerHTML = '<i class="fas fa-user"></i>'; }
+            if (viaje.foto_pasajero) {
+                selfieEl.innerHTML = `<img src="${viaje.foto_pasajero}" style="width:100%;height:100%;object-fit:cover;">`;
+            } else {
+                selfieEl.innerHTML = '<i class="fas fa-user"></i>';
+            }
 
-            // Marcadores
             if (marcadorPasajero) map.removeLayer(marcadorPasajero);
             if (marcadorDestino) map.removeLayer(marcadorDestino);
             if (rutaLayer) map.removeLayer(rutaLayer);
@@ -375,7 +359,6 @@
             }
         }
 
-        // RUTA OSRM
         async function calcularRutaOSRM(lat1, lng1, lat2, lng2) {
             if (rutaLayer) map.removeLayer(rutaLayer);
             try {
@@ -392,7 +375,6 @@
             }
         }
 
-        // ACEPTAR / RECHAZAR
         async function aceptarPedido() {
             if (!pedidoPendiente) return;
             viajeActual = pedidoPendiente;
@@ -426,7 +408,6 @@
             if (rutaLayer) { map.removeLayer(rutaLayer); rutaLayer = null; }
         }
 
-        // ACCIONES VIAJE
         async function siguienteAccion() {
             const btn = document.getElementById('btn-accion');
             if (!viajeActual) return;
