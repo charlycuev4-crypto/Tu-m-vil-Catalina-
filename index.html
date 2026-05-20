@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -12,7 +11,6 @@
             --celeste: #0093d0;
             --celeste-claro: #4db8e8;
             --celeste-60: rgba(0,147,208,0.60);
-            --celeste-30: rgba(0,147,208,0.30);
             --rojo: #e61e2b;
             --rojo-claro: #ff4757;
             --rojo-40: rgba(230,30,43,0.40);
@@ -40,16 +38,11 @@
 
         .btn-mi-ubicacion { position: absolute; bottom: 42%; right: 12px; z-index: 1000; width: 48px; height: 48px; background: var(--blanco); border: none; border-radius: 50%; box-shadow: var(--sombra); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--celeste); font-size: 1.2rem; }
 
-        /* ═══════════════════════════════════════════════════ */
-        /* PANEL: 60% CELESTE / 40% ROJO */
-        /* ═══════════════════════════════════════════════════ */
         .panel { position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000; border-radius: 24px 24px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,0.15); overflow: hidden; display: flex; flex-direction: column; max-height: 55vh; }
 
-        /* 60% - Área celeste (info, direcciones, ruta) */
-        .panel-celeste { background: linear-gradient(180deg, var(--celeste-60) 0%, var(--celeste-30) 100%); backdrop-filter: blur(10px); padding: 16px 20px 12px; flex: 1.5; overflow-y: auto; min-height: 0; }
+        .panel-celeste { background: linear-gradient(180deg, var(--celeste-60) 0%, rgba(0,147,208,0.30) 100%); backdrop-filter: blur(10px); padding: 16px 20px 12px; flex: 1.5; overflow-y: auto; min-height: 0; }
         .panel-celeste .panel-handle { width: 36px; height: 5px; background: rgba(255,255,255,0.5); border-radius: 3px; margin: 0 auto 12px; }
 
-        /* 40% - Área roja (botones, acciones) */
         .panel-rojo { background: linear-gradient(180deg, var(--rojo-40) 0%, rgba(230,30,43,0.20) 100%); backdrop-filter: blur(10px); padding: 12px 20px 28px; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
 
         .input-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: rgba(255,255,255,0.85); border-radius: 14px; border: 2px solid transparent; transition: all .2s; margin-bottom: 8px; }
@@ -68,7 +61,6 @@
         .sugerencia-item .sug-text { font-size: .9rem; font-weight: 600; color: var(--texto); }
         .sugerencia-item .sug-zona { font-size: .75rem; color: var(--gris); margin-top: 2px; }
 
-        /* Selfie */
         .selfie-section { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(255,255,255,0.85); border-radius: 14px; margin-bottom: 8px; }
         .selfie-preview { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--celeste), var(--celeste-claro)); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.3rem; flex-shrink: 0; overflow: hidden; }
         .selfie-preview img { width: 100%; height: 100%; object-fit: cover; }
@@ -79,14 +71,12 @@
         .btn-selfie:active { background: var(--celeste-claro); }
         #input-selfie { display: none; }
 
-        /* Preview ruta */
         .ruta-preview-box { background: rgba(255,255,255,0.9); border-radius: 14px; padding: 12px; margin-bottom: 8px; border-left: 4px solid var(--celeste); }
         .ruta-preview-box .fila { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
         .ruta-preview-box .label { font-size: .8rem; color: var(--gris); }
         .ruta-preview-box .valor { font-size: 1rem; font-weight: 700; color: var(--texto); }
         .ruta-preview-box .valor.tarifa { color: var(--rojo); font-size: 1.3rem; }
 
-        /* Botones en área roja */
         .btn-solicitar { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--rojo), var(--rojo-claro)); color: white; border: none; border-radius: 16px; font-size: 1.1rem; font-weight: 800; cursor: pointer; box-shadow: 0 6px 20px rgba(230,30,43,0.3); display: flex; align-items: center; justify-content: center; gap: 10px; transition: all .2s; }
         .btn-solicitar:active { transform: scale(.97); }
         .btn-solicitar:disabled { background: var(--gris); box-shadow: none; cursor: not-allowed; }
@@ -94,9 +84,9 @@
         .btn-cancelar { width: 100%; padding: 14px; background: transparent; color: var(--rojo); border: 2px solid var(--rojo); border-radius: 16px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all .2s; }
         .btn-cancelar:active { background: rgba(230,30,43,0.05); }
 
-        /* Estado viaje */
         .estado-viaje { display: none; }
         .estado-viaje.activo { display: block; }
+
         .tarjeta-movil { display: flex; align-items: center; gap: 14px; padding: 14px; background: rgba(255,255,255,0.9); border-radius: 16px; margin-bottom: 12px; }
         .foto-auto { width: 60px; height: 50px; background: linear-gradient(135deg, var(--celeste), var(--celeste-claro)); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .foto-auto i { color: white; font-size: 1.5rem; }
@@ -120,8 +110,11 @@
         .alerta-box.activo { display: flex; }
         .alerta-box i { color: #ffc107; font-size: 1.2rem; }
 
-        .pin-destino { background: var(--verde); width: 36px; height: 36px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; }
-        .pin-destino i { color: white; font-size: 14px; }
+        .pin-destino { background: var(--rojo); width: 44px; height: 44px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 15px rgba(230,30,43,0.4); display: flex; align-items: center; justify-content: center; animation: pulse 1.5s infinite; }
+        .pin-destino i { color: white; font-size: 18px; }
+        .pin-origen { background: var(--celeste); width: 40px; height: 40px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; }
+        .pin-origen i { color: white; font-size: 16px; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -143,7 +136,6 @@
     <button class="btn-mi-ubicacion" onclick="centrarEnMiUbicacion()"><i class="fas fa-crosshairs"></i></button>
 
     <div class="panel" id="panel">
-        <!-- 60% CELESTE - Info y direcciones -->
         <div class="panel-celeste" id="panel-celeste">
             <div class="panel-handle"></div>
 
@@ -164,7 +156,6 @@
                     <input type="text" id="direccion-origen" placeholder="GPS detectando..." readonly>
                 </div>
 
-                <!-- Selfie -->
                 <div class="selfie-section" id="selfie-section">
                     <div class="selfie-preview" id="selfie-preview"><i class="fas fa-camera"></i></div>
                     <div class="selfie-info">
@@ -177,7 +168,6 @@
                     <input type="file" id="input-selfie" accept="image/*" capture="user" onchange="procesarSelfie(this)">
                 </div>
 
-                <!-- Preview ruta -->
                 <div id="ruta-preview" style="display:none">
                     <div class="ruta-preview-box">
                         <div class="fila"><span class="label">Distancia</span><span class="valor" id="preview-distancia">-- km</span></div>
@@ -187,7 +177,6 @@
                 </div>
             </div>
 
-            <!-- Estado del viaje -->
             <div class="estado-viaje" id="estado-viaje">
                 <div class="tarjeta-movil">
                     <div class="foto-auto"><i class="fas fa-car"></i></div>
@@ -211,7 +200,6 @@
             </div>
         </div>
 
-        <!-- 40% ROJO - Botones -->
         <div class="panel-rojo" id="panel-rojo">
             <button class="btn-solicitar" id="btn-solicitar" onclick="solicitarViaje()" disabled>
                 <i class="fas fa-paper-plane"></i> Solicitar Móvil
@@ -256,7 +244,7 @@
                     actualizarEstadoGPS('preciso', 'GPS preciso');
                     map.setView([miPosicion.lat, miPosicion.lng], 16);
                     const icono = L.divIcon({
-                        html: '<div style="background:linear-gradient(135deg,#0093d0,#4db8e8);width:40px;height:40px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="color:white;font-size:16px;"></i></div>',
+                        html: '<div class="pin-origen"><i class="fas fa-user"></i></div>',
                         iconSize: [44, 44], iconAnchor: [22, 22]
                     });
                     markerGPS = L.marker([miPosicion.lat, miPosicion.lng], { icon: icono }).addTo(map);
@@ -324,13 +312,26 @@
             document.getElementById('destino').value = direccion;
             document.getElementById('sugerencias').classList.remove('activo');
             destinoCoords = { lat, lng };
+
+            // Limpiar marcador anterior
             if (markerDestino) map.removeLayer(markerDestino);
+
+            // Nuevo marcador destino con animación pulse
             const icono = L.divIcon({
-                html: '<div class="pin-destino"><i class="fas fa-flag-checkered"></i></div>',
-                iconSize: [40, 40], iconAnchor: [20, 20]
+                html: '<div class="pin-destino"><i class="fas fa-map-marker-alt"></i></div>',
+                iconSize: [48, 48], iconAnchor: [24, 24], className: ''
             });
-            markerDestino = L.marker([lat, lng], { icon: icono }).addTo(map).bindPopup(`<b>Destino:</b><br>${direccion}`);
-            if (origenCoords) await calcularRutaOSRM(origenCoords.lat, origenCoords.lng, lat, lng);
+            markerDestino = L.marker([lat, lng], { icon: icono }).addTo(map).bindPopup(`<b>Destino:</b><br>${direccion}`).openPopup();
+
+            // ZOOM al destino - centrado entre origen y destino
+            if (origenCoords) {
+                const bounds = L.latLngBounds([[origenCoords.lat, origenCoords.lng], [lat, lng]]);
+                map.fitBounds(bounds, { padding: [80, 80], maxZoom: 16 });
+                await calcularRutaOSRM(origenCoords.lat, origenCoords.lng, lat, lng);
+            } else {
+                // Si no hay origen, zoom directo al destino
+                map.setView([lat, lng], 16);
+            }
         }
 
         async function reverseGeocode(lat, lng) {
@@ -358,7 +359,6 @@
                     distanciaKm = route.distance / 1000;
                     tiempoMin = Math.round(route.duration / 60);
                     rutaLayer = L.polyline(coords, { color: '#0093d0', weight: 5, opacity: 0.85, lineCap: 'round', lineJoin: 'round' }).addTo(map);
-                    map.fitBounds(L.latLngBounds(coords), { padding: [60, 60] });
                     const tarifa = calcularTarifa(distanciaKm);
                     document.getElementById('preview-distancia').textContent = `${distanciaKm.toFixed(1)} km`;
                     document.getElementById('preview-tiempo').textContent = `~${tiempoMin} min`;
@@ -389,21 +389,35 @@
         }
         function calcularTarifa(km) { const total = TARIFA_BASE + (km * TARIFA_POR_KM); return { total: Math.round(total), base: TARIFA_BASE, km: km, costoKm: Math.round(km * TARIFA_POR_KM) }; }
 
-        // SELFIE
+        // SELFIE - comprimir antes de enviar
         async function procesarSelfie(input) {
             const file = input.files[0];
             if (!file) return;
+
+            // Comprimir imagen para no consumir memoria
             const reader = new FileReader();
             reader.onload = (e) => {
-                selfieData = e.target.result;
-                document.getElementById('selfie-preview').innerHTML = `<img src="${selfieData}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-                document.querySelector('.selfie-info .titulo').textContent = '¡Foto lista!';
-                document.querySelector('.selfie-info .sub').textContent = 'El conductor te va a reconocer';
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 400;
+                    const scale = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    // Comprimir a JPEG 70% calidad
+                    selfieData = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById('selfie-preview').innerHTML = `<img src="${selfieData}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+                    document.querySelector('.selfie-info .titulo').textContent = '¡Foto lista!';
+                    document.querySelector('.selfie-info .sub').textContent = 'El conductor te va a reconocer';
+                };
+                img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
 
-        // SOLICITAR VIAJE (RPC + selfie)
+        // SOLICITAR VIAJE (RPC con foto incluida)
         async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value.trim();
             const telefono = document.getElementById('telefono').value.trim();
@@ -415,17 +429,6 @@
             document.getElementById('btn-solicitar').disabled = true;
             document.getElementById('btn-solicitar').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
 
-            let fotoUrl = null;
-            // Subir selfie si existe
-            if (selfieData) {
-                try {
-                    const blob = await fetch(selfieData).then(r => r.blob());
-                    const fileName = `selfie_${Date.now()}_${telefono}.jpg`;
-                    const { data, error } = await supabaseClient.storage.from('fotos-pasajeros').upload(fileName, blob, { contentType: 'image/jpeg' });
-                    if (!error) fotoUrl = supabaseClient.storage.from('fotos-pasajeros').getPublicUrl(fileName).data.publicUrl;
-                } catch (e) { console.log('Error subiendo selfie:', e); }
-            }
-
             try {
                 const { data, error } = await supabaseClient.rpc('crear_viaje', {
                     p_nombre: nombre, p_telefono: telefono,
@@ -434,13 +437,12 @@
                     p_lat_salida: origenCoords.lat, p_lng_salida: origenCoords.lng,
                     p_lat_destino: destinoCoords.lat, p_lng_destino: destinoCoords.lng,
                     p_tarifa_total: calcularTarifa(distanciaKm).total,
-                    p_distancia_km: parseFloat(distanciaKm.toFixed(2))
+                    p_distancia_km: parseFloat(distanciaKm.toFixed(2)),
+                    p_foto_pasajero: selfieData || null
                 });
                 if (error) throw error;
 
-                viajeActual = { id: data, estado: 'pendiente', fotoUrl: fotoUrl };
-
-                // Cambiar panel
+                viajeActual = { id: data, estado: 'pendiente' };
                 document.getElementById('formulario-pedido').style.display = 'none';
                 document.getElementById('estado-viaje').classList.add('activo');
                 document.getElementById('btn-solicitar').style.display = 'none';
@@ -459,7 +461,6 @@
             }
         }
 
-        // ESCUCHAR VIAJE
         function escucharViaje(viajeId) {
             if (canalViaje) canalViaje.unsubscribe();
             canalViaje = supabaseClient.channel('viaje-' + viajeId)
@@ -477,28 +478,11 @@
             const tiempoLabel = document.getElementById('tiempo-label');
 
             switch (viaje.estado) {
-                case 'pendiente':
-                    titulo.textContent = 'Buscando conductor...'; sub.textContent = 'Esperá un momento';
-                    icono.className = 'fas fa-search'; circulo.style.background = 'var(--celeste)';
-                    tiempoNum.textContent = '--'; break;
-                case 'aceptado':
-                    titulo.textContent = '¡Conductor asignado!'; sub.textContent = 'Juan Pérez • Fiat Siena • ABC123';
-                    icono.className = 'fas fa-car'; circulo.style.background = 'var(--verde)';
-                    tiempoNum.textContent = '5'; tiempoLabel.textContent = 'minutos aprox.';
-                    mostrarAlerta('¡Tu móvil está en camino! 🚕'); break;
-                case 'en_camino':
-                    titulo.textContent = 'Conductor en camino'; sub.textContent = 'Llegando a tu ubicación';
-                    icono.className = 'fas fa-road'; circulo.style.background = 'var(--naranja)';
-                    tiempoNum.textContent = '2'; break;
-                case 'completado':
-                    titulo.textContent = 'Viaje completado'; sub.textContent = '¡Gracias por viajar con nosotros!';
-                    icono.className = 'fas fa-check'; circulo.style.background = 'var(--verde)';
-                    tiempoNum.textContent = '✓'; tiempoLabel.textContent = 'Llegaste a destino';
-                    setTimeout(() => resetearApp(), 3000); break;
-                case 'cancelado':
-                    titulo.textContent = 'Viaje cancelado'; sub.textContent = 'Podés solicitar otro';
-                    icono.className = 'fas fa-times'; circulo.style.background = 'var(--rojo)';
-                    setTimeout(() => resetearApp(), 2000); break;
+                case 'pendiente': titulo.textContent = 'Buscando conductor...'; sub.textContent = 'Esperá un momento'; icono.className = 'fas fa-search'; circulo.style.background = 'var(--celeste)'; tiempoNum.textContent = '--'; break;
+                case 'aceptado': titulo.textContent = '¡Conductor asignado!'; sub.textContent = 'Juan Pérez • Fiat Siena • ABC123'; icono.className = 'fas fa-car'; circulo.style.background = 'var(--verde)'; tiempoNum.textContent = '5'; tiempoLabel.textContent = 'minutos aprox.'; mostrarAlerta('¡Tu móvil está en camino! 🚕'); break;
+                case 'en_camino': titulo.textContent = 'Conductor en camino'; sub.textContent = 'Llegando a tu ubicación'; icono.className = 'fas fa-road'; circulo.style.background = 'var(--naranja)'; tiempoNum.textContent = '2'; break;
+                case 'completado': titulo.textContent = 'Viaje completado'; sub.textContent = '¡Gracias por viajar con nosotros!'; icono.className = 'fas fa-check'; circulo.style.background = 'var(--verde)'; tiempoNum.textContent = '✓'; tiempoLabel.textContent = 'Llegaste a destino'; setTimeout(() => resetearApp(), 3000); break;
+                case 'cancelado': titulo.textContent = 'Viaje cancelado'; sub.textContent = 'Podés solicitar otro'; icono.className = 'fas fa-times'; circulo.style.background = 'var(--rojo)'; setTimeout(() => resetearApp(), 2000); break;
             }
         }
 
