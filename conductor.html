@@ -61,11 +61,6 @@
         .pedido-header h3 { margin: 0; font-size: 1.1rem; color: var(--rojo); }
         .pedido-header p { margin: 2px 0 0; color: var(--gris); font-size: 0.8rem; }
 
-        /* Selfie del pasajero */
-        .selfie-pasajero { width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--celeste); overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg, var(--celeste), var(--celeste-claro)); display: flex; align-items: center; justify-content: center; }
-        .selfie-pasajero img { width: 100%; height: 100%; object-fit: cover; }
-        .selfie-pasajero i { color: white; font-size: 1.5rem; }
-
         .pedido-info { background: rgba(255,255,255,0.9); border-radius: 12px; padding: 10px; margin-bottom: 10px; border: 2px solid var(--celeste); }
         .pedido-info .fila { display: flex; align-items: center; gap: 10px; padding: 5px 0; border-bottom: 1px solid #eee; font-size: 0.85rem; }
         .pedido-info .fila:last-child { border-bottom: none; }
@@ -127,12 +122,11 @@
 
             <div class="pedido-card" id="pedido-entrante">
                 <div class="pedido-header">
-                    <div class="selfie-pasajero" id="selfie-pasajero"><i class="fas fa-user"></i></div>
+                    <div class="icono-timbre"><i class="fas fa-bell"></i></div>
                     <div>
                         <h3>¡Nuevo pedido!</h3>
                         <p id="distancia-pedido">Calculando...</p>
                     </div>
-                    <div class="icono-timbre"><i class="fas fa-bell"></i></div>
                 </div>
                 <div class="pedido-info">
                     <div class="fila"><i class="fas fa-user"></i><span id="p-nombre">-</span></div>
@@ -209,7 +203,6 @@
                 const mapDiv = document.getElementById('map');
                 if (!mapDiv) return;
                 mapDiv.style.height = window.innerHeight * 0.72 + 'px';
-                mapDiv.style.width = window.innerWidth + 'px';
                 map = L.map('map', { zoomControl: false, attributionControl: false }).setView([-34.564, -58.770], 15);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '' }).addTo(map);
             } catch (error) { console.error('❌ Error mapa:', error); }
@@ -325,14 +318,6 @@
             const tarifa = calcularTarifa(distancia);
             document.getElementById('p-tarifa').textContent = `$${tarifa.total.toLocaleString()}`;
             document.getElementById('p-detalle-tarifa').textContent = `Base $${tarifa.base.toLocaleString()} + $${tarifa.costoKm.toLocaleString()}`;
-
-            // Mostrar foto del pasajero desde el campo foto_pasajero del viaje
-            const selfieEl = document.getElementById('selfie-pasajero');
-            if (viaje.foto_pasajero) {
-                selfieEl.innerHTML = `<img src="${viaje.foto_pasajero}" style="width:100%;height:100%;object-fit:cover;">`;
-            } else {
-                selfieEl.innerHTML = '<i class="fas fa-user"></i>';
-            }
 
             if (marcadorPasajero) map.removeLayer(marcadorPasajero);
             if (marcadorDestino) map.removeLayer(marcadorDestino);
