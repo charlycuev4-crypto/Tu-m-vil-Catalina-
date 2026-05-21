@@ -160,7 +160,6 @@
         <div class="panel-celeste" id="panel-celeste">
             <div class="formulario-pedido" id="formulario-pedido">
                 <div class="input-row"><i class="fas fa-user"></i><input type="text" id="nombre" placeholder="¿Cómo te llamás?"></div>
-                <div class="input-row"><i class="fas fa-phone"></i><input type="tel" id="telefono" placeholder="Teléfono"></div>
 
                 <div class="buscador-container">
                     <div class="sugerencias" id="sugerencias"></div>
@@ -453,14 +452,13 @@
         function calcularTarifa(km) { const total = TARIFA_BASE + (km * TARIFA_POR_KM); return { total: Math.round(total), base: TARIFA_BASE, km: km, costoKm: Math.round(km * TARIFA_POR_KM) }; }
 
         // ============================================================
-        // SOLICITAR VIAJE - FIX DEFINITIVO
+        // SOLICITAR VIAJE - FIX DEFINITIVO (sin teléfono, tipos correctos)
         // ============================================================
         async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value.trim();
-            const telefono = document.getElementById('telefono').value.trim();
             const destinoTexto = document.getElementById('destino').value.trim();
 
-            if (!nombre || !telefono || !destinoCoords) { mostrarAlerta('Completá todos los campos'); return; }
+            if (!nombre || !destinoCoords) { mostrarAlerta('Completá todos los campos'); return; }
             if (!origenCoords) { mostrarAlerta('Esperá el GPS'); return; }
 
             // FIX: Asegurar que distanciaKm sea un número válido y > 0
@@ -470,18 +468,19 @@
 
             const tarifa = calcularTarifa(distanciaKm);
 
-            // FIX: Forzar tipos numéricos explícitos con parseFloat
+            // FIX: Parámetros que coinciden EXACTAMENTE con la función SQL
+            // ["p_nombre","p_direccion_salida","p_direccion_destino","p_lat_salida","p_lng_salida","p_lat_destino","p_lng_destino","p_tarifa_total","p_distancia_km"]
+            // [text, text, text, real, real, real, real, integer, real]
             const params = {
                 p_nombre: nombre,
-                p_telefono: telefono,
                 p_direccion_salida: document.getElementById('direccion-origen').value || 'Ubicación GPS',
                 p_direccion_destino: destinoTexto,
                 p_lat_salida: parseFloat(origenCoords.lat),
                 p_lng_salida: parseFloat(origenCoords.lng),
                 p_lat_destino: parseFloat(destinoCoords.lat),
                 p_lng_destino: parseFloat(destinoCoords.lng),
-                p_tarifa_total: parseFloat(tarifa.total),
-                p_distancia_km: parseFloat(distanciaKm.toFixed(2))
+                p_tarifa_total: Math.round(tarifa.total), // integer
+                p_distancia_km: parseFloat(distanciaKm.toFixed(2)) // real
             };
 
             console.log('Enviando viaje:', JSON.stringify(params));
