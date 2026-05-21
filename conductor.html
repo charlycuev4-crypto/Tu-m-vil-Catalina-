@@ -483,8 +483,8 @@
 
 <script>
 // ===== CONFIG =====
-const SUPABASE_URL = 'https://tu-proyecto.supabase.co';  // REEMPLAZAR
-const SUPABASE_KEY = 'tu-anon-key';  // REEMPLAZAR
+const SUPABASE_URL = 'https://efryvjjunfeoxhekvwsa.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
 const OSRM_URL = 'https://router.project-osrm.org/route/v1/driving/';
 const UPDATE_INTERVAL = 5000; // 5 segundos
 
@@ -511,11 +511,16 @@ function initMap() {
         attributionControl: false
     }).setView([-34.6037, -58.3816], 13);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
-        subdomains: 'abcd',
+    // Use OpenStreetMap standard tiles (more reliable than CARTO on mobile)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 20
     }).addTo(map);
+
+    // Fix map rendering on mobile
+    setTimeout(() => {
+        map.invalidateSize();
+    }, 500);
 
     // Custom locate control
     const locateBtn = L.control({position: 'topright'});
@@ -576,6 +581,11 @@ function showApp() {
     document.getElementById('app').style.display = 'flex';
     document.getElementById('driverNameDisplay').textContent = driver.nombre;
     document.getElementById('driverPlateDisplay').textContent = 'Patente: ' + driver.patente;
+
+    // Fix map size after showing app
+    setTimeout(() => {
+        map.invalidateSize();
+    }, 100);
 
     startLocationTracking();
     loadPendingTrips();
