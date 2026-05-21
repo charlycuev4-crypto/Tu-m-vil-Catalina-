@@ -38,9 +38,6 @@
 
         .btn-mi-ubicacion { position: absolute; bottom: 80px; right: 12px; z-index: 1000; width: 48px; height: 48px; background: var(--blanco); border: none; border-radius: 50%; box-shadow: var(--sombra); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--celeste); font-size: 1.2rem; }
 
-        /* ═══════════════════════════════════════════════════ */
-        /* PANEL COLAPSABLE */
-        /* ═══════════════════════════════════════════════════ */
         .panel { position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000; border-radius: 24px 24px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,0.15); overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s ease; max-height: 60vh; }
         .panel.colapsado { max-height: 50px; }
         .panel.colapsado .panel-celeste { display: none; }
@@ -70,7 +67,6 @@
         .sugerencia-item .sug-text { font-size: .9rem; font-weight: 600; color: var(--texto); }
         .sugerencia-item .sug-zona { font-size: .75rem; color: var(--gris); margin-top: 2px; }
 
-        /* Ubicación manual */
         .btn-ubicacion-manual { width: 100%; padding: 12px; background: rgba(255,255,255,0.9); color: var(--celeste); border: 2px dashed var(--celeste); border-radius: 14px; font-size: .95rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px; transition: all .2s; }
         .btn-ubicacion-manual:active { background: var(--celeste); color: white; }
 
@@ -290,7 +286,6 @@
 
             document.getElementById('modo-manual').classList.remove('activo');
 
-            // Mostrar pin destino
             if (markerDestino) map.removeLayer(markerDestino);
             const icono = L.divIcon({
                 html: '<div class="pin-destino"><i class="fas fa-map-marker-alt"></i></div>',
@@ -345,14 +340,13 @@
         }
         function centrarEnMiUbicacion() { if (miPosicion.lat && map) map.setView([miPosicion.lat, miPosicion.lng], 16); }
 
-        // GEOCODIFICACIÓN PHOTON - zona oeste completa
+        // GEOCODIFICACIÓN PHOTON
         async function buscarDireccion(texto) {
             clearTimeout(timeoutBusq);
             const sugerencias = document.getElementById('sugerencias');
             if (!texto || texto.length < 3) { sugerencias.classList.remove('activo'); return; }
             timeoutBusq = setTimeout(async () => {
                 try {
-                    // Buscar en zona oeste de Buenos Aires: Moreno, San Miguel, Trujui, Santa Brigida, etc.
                     const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(texto)}&lat=-34.65&lon=-58.79&limit=8&lang=es`;
                     const res = await fetch(url);
                     const data = await res.json();
@@ -400,7 +394,6 @@
                 map.setView([lat, lng], 16);
             }
 
-            // Colapsar panel automáticamente
             colapsarPanel();
         }
 
@@ -459,7 +452,9 @@
         }
         function calcularTarifa(km) { const total = TARIFA_BASE + (km * TARIFA_POR_KM); return { total: Math.round(total), base: TARIFA_BASE, km: km, costoKm: Math.round(km * TARIFA_POR_KM) }; }
 
-        // SOLICITAR VIAJE
+        // ============================================================
+        // SOLICITAR VIAJE - FIX DEFINITIVO
+        // ============================================================
         async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value.trim();
             const telefono = document.getElementById('telefono').value.trim();
@@ -468,20 +463,43 @@
             if (!nombre || !telefono || !destinoCoords) { mostrarAlerta('Completá todos los campos'); return; }
             if (!origenCoords) { mostrarAlerta('Esperá el GPS'); return; }
 
+            // FIX: Asegurar que distanciaKm sea un número válido y > 0
+            if (!distanciaKm || distanciaKm <= 0) {
+                distanciaKm = 0.1; // mínimo 100 metros
+            }
+
+            const tarifa = calcularTarifa(distanciaKm);
+
+            // FIX: Forzar tipos numéricos explícitos con parseFloat
+            const params = {
+                p_nombre: nombre,
+                p_telefono: telefono,
+                p_direccion_salida: document.getElementById('direccion-origen').value || 'Ubicación GPS',
+                p_direccion_destino: destinoTexto,
+                p_lat_salida: parseFloat(origenCoords.lat),
+                p_lng_salida: parseFloat(origenCoords.lng),
+                p_lat_destino: parseFloat(destinoCoords.lat),
+                p_lng_destino: parseFloat(destinoCoords.lng),
+                p_tarifa_total: parseFloat(tarifa.total),
+                p_distancia_km: parseFloat(distanciaKm.toFixed(2))
+            };
+
+            console.log('Enviando viaje:', JSON.stringify(params));
+
             document.getElementById('btn-solicitar').disabled = true;
             document.getElementById('btn-solicitar').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
 
             try {
-                const { data, error } = await supabaseClient.rpc('crear_viaje', {
-                    p_nombre: nombre, p_telefono: telefono,
-                    p_direccion_salida: document.getElementById('direccion-origen').value || 'Ubicación GPS',
-                    p_direccion_destino: destinoTexto,
-                    p_lat_salida: origenCoords.lat, p_lng_salida: origenCoords.lng,
-                    p_lat_destino: destinoCoords.lat, p_lng_destino: destinoCoords.lng,
-                    p_tarifa_total: calcularTarifa(distanciaKm).total,
-                    p_distancia_km: parseFloat(distanciaKm.toFixed(2))
-                });
-                if (error) throw error;
+                const { data, error } = await supabaseClient.rpc('crear_viaje', params);
+
+                if (error) {
+                    console.error('Supabase RPC error:', error);
+                    throw new Error(error.message || error.code || 'Error en Supabase');
+                }
+
+                if (!data) {
+                    throw new Error('No se recibió ID del viaje');
+                }
 
                 viajeActual = { id: data, estado: 'pendiente' };
                 document.getElementById('formulario-pedido').style.display = 'none';
@@ -491,13 +509,14 @@
 
                 document.getElementById('detalle-origen').textContent = document.getElementById('direccion-origen').value || 'Tu ubicación';
                 document.getElementById('detalle-destino').textContent = destinoTexto;
-                document.getElementById('detalle-tarifa').textContent = `$${calcularTarifa(distanciaKm).total.toLocaleString()}`;
+                document.getElementById('detalle-tarifa').textContent = `$${tarifa.total.toLocaleString()}`;
 
                 expandirPanel();
                 escucharViaje(data);
             } catch (e) {
-                console.error('Error:', e);
-                mostrarAlerta('Error al solicitar. Intentá de nuevo.');
+                console.error('Error completo:', e);
+                const mensajeError = e.message || 'Error al solicitar. Intentá de nuevo.';
+                mostrarAlerta(mensajeError);
                 document.getElementById('btn-solicitar').disabled = false;
                 document.getElementById('btn-solicitar').innerHTML = '<i class="fas fa-paper-plane"></i> Solicitar Móvil';
             }
@@ -521,7 +540,7 @@
 
             switch (viaje.estado) {
                 case 'pendiente': titulo.textContent = 'Buscando conductor...'; sub.textContent = 'Esperá un momento'; icono.className = 'fas fa-search'; circulo.style.background = 'var(--celeste)'; tiempoNum.textContent = '--'; break;
-                case 'aceptado': titulo.textContent = '¡Conductor asignado!'; sub.textContent = 'Juan Pérez • Fiat Siena • ABC123'; icono.className = 'fas fa-car'; circulo.style.background = 'var(--verde)'; tiempoNum.textContent = '5'; tiempoLabel.textContent = 'minutos aprox.'; mostrarAlerta('¡Tu móvil está en camino! 🚕'); break;
+                case 'aceptado': titulo.textContent = '¡Conductor asignado!'; sub.textContent = (viaje.conductor_nombre || 'Conductor') + ' • Patente: ' + (viaje.conductor_patente || '-'); icono.className = 'fas fa-car'; circulo.style.background = 'var(--verde)'; tiempoNum.textContent = '5'; tiempoLabel.textContent = 'minutos aprox.'; mostrarAlerta('¡Tu móvil está en camino! 🚕'); break;
                 case 'en_camino': titulo.textContent = 'Conductor en camino'; sub.textContent = 'Llegando a tu ubicación'; icono.className = 'fas fa-road'; circulo.style.background = 'var(--naranja)'; tiempoNum.textContent = '2'; break;
                 case 'completado': titulo.textContent = 'Viaje completado'; sub.textContent = '¡Gracias por viajar con nosotros!'; icono.className = 'fas fa-check'; circulo.style.background = 'var(--verde)'; tiempoNum.textContent = '✓'; tiempoLabel.textContent = 'Llegaste a destino'; setTimeout(() => resetearApp(), 3000); break;
                 case 'cancelado': titulo.textContent = 'Viaje cancelado'; sub.textContent = 'Podés solicitar otro'; icono.className = 'fas fa-times'; circulo.style.background = 'var(--rojo)'; setTimeout(() => resetearApp(), 2000); break;
@@ -532,7 +551,7 @@
             if (!viajeActual) return;
             if (!confirm('¿Cancelar este viaje?')) return;
             try {
-                await supabaseClient.rpc('actualizar_estado_viaje', { p_viaje_id: viajeActual.id, p_estado: 'cancelado' });
+                await supabaseClient.rpc('actualizar_estado_viaje', { p_viaje_id: viajeActual.id, p_nuevo_estado: 'cancelado' });
                 if (canalViaje) canalViaje.unsubscribe();
                 resetearApp();
             } catch (e) { mostrarAlerta('Error al cancelar'); }
