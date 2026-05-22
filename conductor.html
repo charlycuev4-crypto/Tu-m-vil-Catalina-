@@ -246,6 +246,8 @@ const SUPABASE_URL = 'https://efryvjjunfeoxhekvwsa.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
 const OSRM_URL = 'https://router.project-osrm.org/route/v1/driving/';
 const UPDATE_INTERVAL = 5000;
+const POLLING_INTERVAL = 3000;
+const REALTIME_RETRY_INTERVAL = 30000;
 
 let supabase, map, driver = null, currentTrip = null;
 let pendingTrips = [], tripHistory = [];
@@ -255,6 +257,9 @@ let realtimeChannel = null, activeTab = 'pending';
 let routeLayer = null, markers = {};
 let isOnline = true, earningsToday = 0, tripsToday = 0;
 let debugLogs = [], gpsReady = false;
+let pollInterval = null;
+let realtimeConnected = false;
+let realtimeRetryTimer = null;
 
 function log(level, msg, data) {
     const time = new Date().toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
@@ -363,12 +368,12 @@ function showApp() {
     document.getElementById('driverPlateDisplay').textContent = 'Patente: ' + driver.patente;
     setTimeout(() => map.invalidateSize(), 100);
     startLocationTracking();
-    // Cargar viajes después de un pequeño delay para asegurar que todo está listo
+    
     setTimeout(() => {
         loadPendingTrips();
         setupRealtime();
         loadTripHistory();
-    }, 500);
+    }, 1000);
 }
 
 function startLocationTracking() {
@@ -388,7 +393,6 @@ function startLocationTracking() {
         },
         (err) => {
             log('warn', 'GPS error:', err.message);
-            // No mostrar toast para evitar spam, solo log
         },
         { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
     );
@@ -422,44 +426,123 @@ function centerOnDriver() {
     if (driver.lat) map.setView([driver.lat, driver.lng], 17);
 }
 
-// ===== REALTIME =====
+// ===== REALTIME - CORREGIDO CON POLLING FALLBACK =====
 function setupRealtime() {
     log('info', 'Setting up realtime...');
+    
+    setupRealtimeChannel();
+    
+    setTimeout(() => {
+        if (!realtimeConnected) {
+            log('warn', 'Realtime no conectó, activando polling fallback');
+            startPolling();
+        }
+    }, 5000);
+    
+    if (realtimeRetryTimer) clearInterval(realtimeRetryTimer);
+    realtimeRetryTimer = setInterval(() => {
+        if (!realtimeConnected && !currentTrip && isOnline) {
+            log('info', 'Reintentando conexión Realtime...');
+            setupRealtimeChannel();
+        }
+    }, REALTIME_RETRY_INTERVAL);
+}
+
+function setupRealtimeChannel() {
+    if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+    }
+
     realtimeChannel = supabase
         .channel('conductor-viajes')
         .on('postgres_changes', {
-            event: 'INSERT', schema: 'public', table: 'viajes', filter: 'estado=eq.pendiente'
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'viajes', 
+            filter: 'estado=eq.pendiente'
         }, (payload) => {
             const trip = payload.new;
             log('info', 'Realtime INSERT:', trip.id);
-            // Mostrar TODOS los viajes nuevos, sin filtro de distancia inicialmente
-            pendingTrips.unshift(trip);
-            updatePendingCount();
-            showToast('new-trip', '¡Nuevo viaje!', `${trip.nombre_pasajero || 'Pasajero'} - $${trip.tarifa_total || 0}`);
-            playNotificationSound();
-            renderPanel();
-            addTripMarker(trip);
+            handleNewTrip(trip);
         })
         .on('postgres_changes', {
-            event: 'UPDATE', schema: 'public', table: 'viajes'
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'viajes'
         }, (payload) => {
             const trip = payload.new;
             log('info', 'Realtime UPDATE:', trip.id, trip.estado);
-            if (currentTrip && trip.id === currentTrip.id) {
-                currentTrip = trip;
-                if (trip.estado === 'completado' || trip.estado === 'cancelado') endCurrentTrip();
-            }
-            if (trip.estado !== 'pendiente') {
-                pendingTrips = pendingTrips.filter(t => t.id !== trip.id);
-                updatePendingCount();
-                removeTripMarker(trip.id);
-                renderPanel();
-            }
+            handleTripUpdate(trip);
         })
-        .subscribe((status) => {
+        .subscribe((status, err) => {
             log('info', 'Realtime status:', status);
-            showConnStatus(status === 'SUBSCRIBED', 'Realtime ' + status);
+            
+            if (status === 'SUBSCRIBED') {
+                realtimeConnected = true;
+                log('info', '✅ Realtime conectado correctamente');
+                showConnStatus(true, 'Realtime activo');
+                if (pollInterval) {
+                    stopPolling();
+                    log('info', 'Polling detenido, usando realtime');
+                    showToast('success', 'Realtime activo', 'Recibiendo viajes en tiempo real');
+                }
+            } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
+                realtimeConnected = false;
+                log('error', '❌ Realtime error:', status, err);
+                showConnStatus(false, 'Realtime falló: ' + status);
+                if (!pollInterval) startPolling();
+            } else if (status === 'RECONNECTING') {
+                log('warn', 'Realtime reconectando...');
+            }
         });
+}
+
+function handleNewTrip(trip) {
+    if (pendingTrips.find(t => t.id === trip.id)) return;
+    
+    pendingTrips.unshift(trip);
+    updatePendingCount();
+    showToast('new-trip', '¡Nuevo viaje!', `${trip.nombre_pasajero || 'Pasajero'} - $${trip.tarifa_total || 0}`);
+    playNotificationSound();
+    renderPanel();
+    addTripMarker(trip);
+}
+
+function handleTripUpdate(trip) {
+    if (currentTrip && trip.id === currentTrip.id) {
+        currentTrip = trip;
+        if (trip.estado === 'completado' || trip.estado === 'cancelado') endCurrentTrip();
+    }
+    if (trip.estado !== 'pendiente') {
+        pendingTrips = pendingTrips.filter(t => t.id !== trip.id);
+        updatePendingCount();
+        removeTripMarker(trip.id);
+        renderPanel();
+    }
+}
+
+// ===== POLLING FALLBACK =====
+function startPolling() {
+    if (pollInterval) return;
+    
+    log('info', '🔄 Iniciando polling cada 3 segundos');
+    showToast('info', 'Modo offline', 'Usando consultas periódicas (polling)');
+    
+    loadPendingTrips();
+    
+    pollInterval = setInterval(() => {
+        if (isOnline && !currentTrip) {
+            loadPendingTrips();
+        }
+    }, POLLING_INTERVAL);
+}
+
+function stopPolling() {
+    if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+        log('info', 'Polling detenido');
+    }
 }
 
 function playNotificationSound() {
@@ -488,13 +571,12 @@ function playNotificationSound() {
     } catch(e) { log('warn', 'Audio not available'); }
 }
 
-// ===== TRIPS - CORREGIDO =====
+// ===== TRIPS =====
 async function loadPendingTrips() {
     log('info', 'Loading pending trips...');
     showLoading('Buscando viajes...');
 
     try {
-        // PRIMERO: Verificar conexión con una consulta simple
         const { data: testData, error: testError } = await supabase
             .from('viajes')
             .select('count')
@@ -510,7 +592,6 @@ async function loadPendingTrips() {
 
         log('info', 'Connection OK, loading pending trips...');
 
-        // SEGUNDO: Cargar viajes pendientes
         const { data, error } = await supabase
             .from('viajes')
             .select('*')
@@ -538,9 +619,25 @@ async function loadPendingTrips() {
             });
         }
 
+        if (pollInterval && data) {
+            const currentIds = new Set(pendingTrips.map(t => t.id));
+            const newTrips = data.filter(t => !currentIds.has(t.id));
+            newTrips.forEach(trip => {
+                showToast('new-trip', '¡Nuevo viaje!', `${trip.nombre_pasajero || 'Pasajero'} - $${trip.tarifa_total || 0}`);
+                playNotificationSound();
+            });
+        }
+
         pendingTrips = data || [];
         updatePendingCount();
         renderPanel();
+        
+        Object.keys(markers).forEach(key => {
+            if (key.startsWith('trip_')) {
+                map.removeLayer(markers[key]);
+                delete markers[key];
+            }
+        });
         pendingTrips.forEach(addTripMarker);
 
     } catch (err) {
@@ -826,6 +923,14 @@ function endCurrentTrip() {
     switchTab('pending');
     renderPanel();
     centerOnDriver();
+    
+    if (isOnline) {
+        if (realtimeConnected) {
+            loadPendingTrips();
+        } else {
+            startPolling();
+        }
+    }
 }
 
 // ===== UI =====
@@ -845,7 +950,7 @@ function renderPanel() {
                 <div class="empty-state">
                     <i class="fas fa-search"></i>
                     <h3>No hay viajes pendientes</h3>
-                    <p>Los nuevos viajes aparecerán aquí en tiempo real</p>
+                    <p>${realtimeConnected ? 'Los nuevos viajes aparecerán aquí en tiempo real' : 'Consultando cada 3 segundos...'}</p>
                 </div>`;
             return;
         }
@@ -986,10 +1091,12 @@ function toggleOnlineStatus() {
         text.textContent = 'Online';
         showToast('success', 'Online', 'Estás recibiendo viajes');
         loadPendingTrips();
+        if (!realtimeConnected) setupRealtimeChannel();
     } else {
         btn.className = 'header-status status-offline';
         text.textContent = 'Offline';
         showToast('warning', 'Offline', 'No recibirás nuevos viajes');
+        stopPolling();
     }
 }
 
@@ -1023,6 +1130,8 @@ window.addEventListener('beforeunload', () => {
     if (locationUpdateInterval) clearInterval(locationUpdateInterval);
     if (tripTimerInterval) clearInterval(tripTimerInterval);
     if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+    stopPolling();
+    if (realtimeRetryTimer) clearInterval(realtimeRetryTimer);
 });
 </script>
 </body>
