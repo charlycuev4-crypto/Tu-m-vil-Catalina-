@@ -11,17 +11,17 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 15px;
+            padding: 20px;
         }
         .container { max-width: 500px; margin: 0 auto; }
-        .header { text-align: center; color: white; margin-bottom: 15px; }
-        .header h1 { font-size: 1.4rem; margin-bottom: 5px; }
-        .header p { font-size: 0.85rem; opacity: 0.9; }
+        .header { text-align: center; color: white; margin-bottom: 20px; }
+        .header h1 { font-size: 1.5rem; margin-bottom: 5px; }
+        .header p { font-size: 0.9rem; opacity: 0.9; }
 
         .card {
             background: white;
             border-radius: 16px;
-            padding: 18px;
+            padding: 20px;
             margin-bottom: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
@@ -29,20 +29,20 @@
             font-size: 1.1rem;
             font-weight: 600;
             color: #667eea;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
         }
 
-        .input-group { margin-bottom: 12px; }
+        .input-group { margin-bottom: 15px; }
         .input-group label {
             display: block;
-            font-size: 0.85rem;
-            color: #444;
+            font-size: 0.9rem;
+            color: #555;
             margin-bottom: 5px;
-            font-weight: 600;
+            font-weight: 500;
         }
         .input-group input {
             width: 100%;
-            padding: 12px;
+            padding: 12px 15px;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
             font-size: 1rem;
@@ -52,7 +52,7 @@
 
         .btn {
             width: 100%;
-            padding: 14px;
+            padding: 15px;
             border: none;
             border-radius: 12px;
             font-size: 1rem;
@@ -68,27 +68,7 @@
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             color: white;
         }
-        .btn-maps {
-            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
-            color: white;
-            box-shadow: 0 4px 10px rgba(66, 133, 244, 0.2);
-        }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* Contenedor del Mapa Embebido */
-        .mapa-contenedor {
-            width: 100%;
-            height: 240px;
-            border-radius: 12px;
-            border: 2px solid #4285f4;
-            overflow: hidden;
-            margin: 15px 0;
-        }
-        .mapa-contenedor iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .precio-box {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
@@ -98,8 +78,8 @@
             text-align: center;
             margin: 15px 0;
         }
-        .precio-box .monto { font-size: 2.3rem; font-weight: 700; }
-        .precio-box .detalle { font-size: 0.85rem; opacity: 0.9; margin-top: 5px; }
+        .precio-box .monto { font-size: 2.5rem; font-weight: 700; }
+        .precio-box .detalle { font-size: 0.9rem; opacity: 0.9; margin-top: 5px; }
 
         .status-box {
             background: #f8f9fa;
@@ -108,16 +88,15 @@
             margin: 15px 0;
             text-align: center;
         }
-        .status-box .estado { font-size: 1.1rem; font-weight: 600; color: #667eea; }
+        .status-box .estado { font-size: 1.2rem; font-weight: 600; color: #667eea; }
 
         .msg {
             padding: 12px;
             border-radius: 10px;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
             font-size: 0.9rem;
             display: none;
             text-align: center;
-            font-weight: 500;
         }
         .msg.show { display: block; }
         .msg-error { background: #ffebee; color: #c62828; }
@@ -136,7 +115,7 @@
         <div class="msg" id="msg"></div>
 
         <div class="card" id="cardDatos">
-            <div class="card-title">📝 Datos para el viaje</div>
+            <div class="card-title">📝 Datos del viaje</div>
 
             <div class="input-group">
                 <label>Tu nombre</label>
@@ -149,48 +128,35 @@
             </div>
 
             <div class="input-group">
-                <label>Dirección de destino</label>
-                <input type="text" id="destino" placeholder="Ej: Cruce Castelar, Moreno">
+                <label>Dirección de destino (Localidad y Calle)</label>
+                <input type="text" id="destino" placeholder="Ej: San Miguel, Mitre 1234">
             </div>
 
-            <button class="btn btn-maps" onclick="procesarRutaYMapa()">
-                🗺️ MOSTRAR RUTA EN EL MAPA
+            <button class="btn btn-primary" id="btnCotizar" onclick="cotizarViajeAutomatico()">
+                💰 COTIZAR VIAJE AL INSTANTE
             </button>
-
-            <div class="mapa-contenedor hidden" id="contenedorMapa">
-                <iframe id="googleMapIframe" src=""></iframe>
-            </div>
-
-            <div id="seccionKm" class="hidden" style="border-top: 2px dashed #eee; padding-top: 15px;">
-                <div class="input-group">
-                    <label style="color:#2e7d32; font-size: 0.9rem;">¿Cuántos kilómetros (km) marcó Google Maps?</label>
-                    <input type="number" id="distancia" placeholder="Ej: 5.3" min="0.1" max="99" step="0.1">
-                </div>
-                <button class="btn btn-primary" onclick="calcularPrecio()">
-                    💰 CALCULAR PRECIO VIAJE
-                </button>
-            </div>
         </div>
 
         <div class="card hidden" id="cardPrecio">
-            <div class="card-title">💰 Confirmación de Tarifa</div>
+            <div class="card-title">💸 Tu Tarifa Estimada</div>
+            
             <div class="precio-box">
                 <div class="monto" id="precioMonto">$0</div>
-                <div class="detalle" id="precioDetalle">Base $3.000 + 0km × $800</div>
+                <div class="detalle" id="precioDetalle">Calculando...</div>
             </div>
 
             <button class="btn btn-success" id="btnSolicitar" onclick="solicitarViaje()">
                 🚕 SOLICITAR MÓVIL AHORA
             </button>
             <button class="btn" onclick="volverAtras()" style="margin-top:10px; background:#f0f0f0; color:#333;">
-                ← MODIFICAR DATOS
+                ← MODIFICAR DESTINO
             </button>
         </div>
 
         <div class="card hidden" id="cardEstado">
             <div class="status-box">
                 <div class="estado" id="estadoTexto">⏳ Buscando conductor...</div>
-                <div class="info" style="font-size:0.85rem; color:#666; margin-top:5px;">Tu viaje fue solicitado a la base.</div>
+                <div style="font-size: 0.85rem; color:#666; margin-top:5px;">Tu solicitud llegó a la base central.</div>
             </div>
             <button class="btn" onclick="cancelarViaje()" style="background:#ff6b6b; color:white; margin-top:10px;">
                 ❌ CANCELAR VIAJE
@@ -204,54 +170,74 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // Coordenadas fijas estimadas de tu base central o zona operativa (Moreno / Cruce Castelar)
+        const BASE_LAT = -34.6404;
+        const BASE_LNG = -58.7145;
+
         let viajeId = null;
         let subscription = null;
         let precioCalculado = 0;
         let distanciaKm = 0;
         let destinoTexto = '';
 
-        // PROCESAR MAPA E INTENT SIMULTÁNEO (CORREGIDO Y SEGURO)
-        function procesarRutaYMapa() {
+        // COTIZACIÓN INTELIGENTE Y AUTOMÁTICA EN SEGUNDO PLANO
+        async function cotizarViajeAutomatico() {
             destinoTexto = document.getElementById('destino').value.trim();
+            const btn = document.getElementById('btnCotizar');
 
             if (!destinoTexto) {
-                mostrarMsg('Escribí una dirección de destino primero', 'error');
+                mostrarMsg('Por favor, ingresá una dirección de destino', 'error');
                 return;
             }
 
-            // 1. Cargamos la vista de confirmación en el mapa de abajo usando la URL embebida oficial
-            const encodedDest = encodeURIComponent(destinoTexto);
-            const mapaUrl = "https://maps.google.com/maps?q=" + encodedDest + "&t=&z=14&ie=UTF8&iwloc=&output=embed";
-            document.getElementById('googleMapIframe').src = mapaUrl;
+            btn.disabled = true;
+            btn.textContent = '⏳ Calculando ruta óptima...';
 
-            // Mostrar elementos ocultos en la pantalla
-            document.getElementById('contenedorMapa').classList.remove('hidden');
-            document.getElementById('seccionKm').classList.remove('hidden');
+            try {
+                // 1. Buscamos las coordenadas del destino usando el buscador gratuito de OpenStreetMap (Nominatim)
+                // Le agregamos ", Buenos Aires, Argentina" al final de forma automática para asegurar la zona correcta
+                const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destinoTexto + ', Buenos Aires, Argentina')}&limit=1`;
+                const geoRes = await fetch(geoUrl);
+                const geoData = await geoRes.json();
 
-            // 2. Abrimos la app nativa oficial de Google Maps con la ruta manejando en automóvil (travelmode=driving)
-            const appMapsUrl = "https://www.google.com/maps/dir/?api=1&destination=" + encodedDest + "&travelmode=driving";
-            window.open(appMapsUrl, '_blank');
-            
-            mostrarMsg('¡Revisá los kilómetros en la app de Google Maps y anotalos acá abajo!', 'success');
-        }
+                if (!geoData || geoData.length === 0) {
+                    throw new Error('No pudimos localizar esa dirección exacta. Probá agregando la localidad (ej: Moreno o San Miguel).');
+                }
 
-        // CALCULAR PRECIO
-        function calcularPrecio() {
-            const distancia = parseFloat(document.getElementById('distancia').value);
+                const destLat = parseFloat(geoData[0].lat);
+                const destLng = parseFloat(geoData[0].lon);
 
-            if (!distancia || distancia <= 0) {
-                mostrarMsg('Por favor, ingresá los kilómetros que viste en Maps', 'error');
-                return;
+                // 2. Usamos el motor OSRM para calcular la distancia manejando real por calles entre la base y el destino
+                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${BASE_LNG},${BASE_LAT};${destLng},${destLat}?overview=false`;
+                const osrmRes = await fetch(osrmUrl);
+                const osrmData = await osrmRes.json();
+
+                if (!osrmData.routes || osrmData.routes.length === 0) {
+                    throw new Error('No se pudo trazar una ruta en auto hasta ese lugar.');
+                }
+
+                // OSRM devuelve la distancia en metros, la pasamos a Kilómetros
+                const metros = osrmData.routes[0].distance;
+                distanciaKm = parseFloat((metros / 1000).toFixed(1));
+
+                // 3. Calculamos la tarifa de forma automática
+                precioCalculado = Math.round(3000 + (distanciaKm * 800));
+
+                // Dibujamos los datos en la pantalla de precio
+                document.getElementById('precioMonto').textContent = '$' + precioCalculado.toLocaleString('es-AR');
+                document.getElementById('precioDetalle').textContent = `Viaje de ${distanciaKm} km (Base $3.000 + $800 x km)`;
+
+                // Hacemos el cambio de pantalla automático
+                document.getElementById('cardDatos').classList.add('hidden');
+                document.getElementById('cardPrecio').classList.remove('hidden');
+
+            } catch (error) {
+                console.error(error);
+                mostrarMsg(error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '💰 COTIZAR VIAJE AL INSTANTE';
             }
-
-            distanciaKm = distancia;
-            precioCalculado = Math.round(3000 + (distancia * 800));
-
-            document.getElementById('precioMonto').textContent = '$' + precioCalculado.toLocaleString('es-AR');
-            document.getElementById('precioDetalle').textContent = 'Base $3.000 + ' + distancia + 'km × $800';
-
-            document.getElementById('cardDatos').classList.add('hidden');
-            document.getElementById('cardPrecio').classList.remove('hidden');
         }
 
         function volverAtras() {
@@ -259,24 +245,24 @@
             document.getElementById('cardDatos').classList.remove('hidden');
         }
 
-        // SOLICITAR VIAJE
+        // ENVIAR SOLICITUD A SUPABASE
         async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value.trim() || 'Pasajero';
             const telefono = document.getElementById('telefono').value.trim();
-
             const btn = document.getElementById('btnSolicitar');
+
             btn.disabled = true;
-            btn.textContent = '⏳ Enviando...';
+            btn.textContent = '⏳ Despachando móvil...';
 
             try {
                 const { data, error } = await supabaseClient.rpc('crear_viaje', {
                     p_pasajero_nombre: nombre,
                     p_pasajero_telefono: telefono,
-                    p_origen_lat: -34.640, 
-                    p_origen_lng: -58.715,
-                    p_origen_direccion: 'Ubicación actual',
-                    p_destino_lat: -34.640,
-                    p_destino_lng: -58.715,
+                    p_origen_lat: BASE_LAT, 
+                    p_origen_lng: BASE_LNG,
+                    p_origen_direccion: 'Ubicación de Origen',
+                    p_destino_lat: BASE_LAT, // valores estimados de respaldo
+                    p_destino_lng: BASE_LNG,
                     p_destino_direccion: destinoTexto,
                     p_distancia_km: distanciaKm
                 });
@@ -286,7 +272,9 @@
                 viajeId = data;
                 document.getElementById('cardPrecio').classList.add('hidden');
                 document.getElementById('cardEstado').classList.remove('hidden');
-                
+                mostrarMsg('¡Viaje solicitado! Esperando asignación.', 'success');
+
+                // Suscripción Realtime normal
                 if (subscription) subscription.unsubscribe();
                 subscription = supabaseClient
                     .channel('viaje-' + viajeId)
@@ -299,7 +287,7 @@
                     ).subscribe();
 
             } catch (e) {
-                mostrarMsg('Error: ' + e.message, 'error');
+                mostrarMsg('Error al guardar: ' + e.message, 'error');
                 btn.disabled = false;
                 btn.textContent = '🚕 SOLICITAR MÓVIL AHORA';
             }
