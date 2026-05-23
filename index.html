@@ -3,587 +3,748 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tu Móvil - Pasajero</title>
+    <title>TuMovil Las Catalinas - Pasajero</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --celeste: #0093d0;
-            --celeste-claro: #4db8e8;
-            --celeste-60: rgba(0,147,208,0.60);
-            --rojo: #e61e2b;
-            --rojo-claro: #ff4757;
-            --rojo-40: rgba(230,30,43,0.40);
-            --verde: #28a745;
-            --naranja: #f47920;
-            --blanco: #ffffff;
-            --texto: #1a1a1a;
-            --gris: #6c757d;
-            --sombra: 0 4px 20px rgba(0,0,0,0.15);
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f4f8; color: var(--texto); overflow: hidden; }
+        .header {
+            background: rgba(255,255,255,0.95);
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .header h1 { font-size: 1.4rem; color: #667eea; font-weight: 700; }
+        .header p { font-size: 0.8rem; color: #666; margin-top: 2px; }
+        .container { padding: 15px; max-width: 500px; margin: 0 auto; }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .input-group { margin-bottom: 12px; }
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: #555;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.5); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(17,153,142,0.4);
+        }
+        .btn-success:hover { transform: translateY(-2px); }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover { background: #e0e0e0; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
 
-        #map { position: absolute; top: 0; left: 0; height: 100%; width: 100%; z-index: 1; background: #e8e8e8; }
+        #map {
+            height: 250px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .price-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 15px;
+        }
+        .price-card .price-label { font-size: 0.9rem; opacity: 0.9; }
+        .price-card .price-value { font-size: 2.5rem; font-weight: 700; margin: 5px 0; }
+        .price-card .price-detail { font-size: 0.8rem; opacity: 0.9; }
 
-        .header { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
-        .logo-tag { background: var(--blanco); padding: 10px 18px; border-radius: 25px; font-weight: 800; color: var(--celeste); font-size: .9rem; box-shadow: var(--sombra); pointer-events: auto; display: flex; align-items: center; gap: 8px; }
-        .logo-tag i { color: var(--naranja); font-size: 1.1rem; }
+        .route-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+        }
+        .route-info-item {
+            text-align: center;
+            padding: 10px;
+        }
+        .route-info-item .value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+        .route-info-item .label {
+            font-size: 0.75rem;
+            color: #888;
+        }
 
-        .gps-status { position: absolute; top: 68px; right: 12px; z-index: 1000; background: var(--blanco); padding: 8px 14px; border-radius: 20px; font-size: .75rem; font-weight: 700; box-shadow: var(--sombra); display: flex; align-items: center; gap: 6px; }
-        .gps-status.preciso { color: var(--verde); border: 2px solid var(--verde); }
-        .gps-status.aproximado { color: var(--naranja); border: 2px solid var(--naranja); }
-        .gps-status.error { color: var(--rojo); border: 2px solid var(--rojo); }
-        .gps-status.buscando { color: var(--celeste); border: 2px solid var(--celeste); }
+        .status-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .status-card.active { display: block; animation: slideUp 0.3s ease; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .status-pendiente { background: #fff3cd; color: #856404; }
+        .status-aceptado { background: #d4edda; color: #155724; }
+        .status-en_camino { background: #cce5ff; color: #004085; }
+        .status-iniciado { background: #d1ecf1; color: #0c5460; }
+        .status-finalizado { background: #d4edda; color: #155724; }
 
-        .btn-mi-ubicacion { position: absolute; bottom: 80px; right: 12px; z-index: 1000; width: 48px; height: 48px; background: var(--blanco); border: none; border-radius: 50%; box-shadow: var(--sombra); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--celeste); font-size: 1.2rem; }
+        .conductor-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+        .conductor-info p { font-size: 0.85rem; color: #555; margin: 3px 0; }
 
-        .panel { position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000; border-radius: 24px 24px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,0.15); overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s ease; max-height: 60vh; }
-        .panel.colapsado { max-height: 50px; }
-        .panel.colapsado .panel-celeste { display: none; }
-        .panel.colapsado .panel-rojo { display: none; }
-        .panel.colapsado .flecha-colapsar { transform: rotate(180deg); }
+        .suggestions {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            max-height: 200px;
+            overflow-y: auto;
+            position: absolute;
+            width: calc(100% - 40px);
+            z-index: 1001;
+            display: none;
+        }
+        .suggestions.active { display: block; }
+        .suggestion-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+        }
+        .suggestion-item:hover { background: #f8f9fa; }
+        .suggestion-item:last-child { border-bottom: none; }
 
-        .flecha-colapsar { width: 100%; height: 50px; background: linear-gradient(180deg, var(--celeste-60) 0%, rgba(0,147,208,0.30) 100%); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.3s; }
-        .flecha-colapsar i { color: white; font-size: 1.5rem; }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .panel-celeste { background: linear-gradient(180deg, var(--celeste-60) 0%, rgba(0,147,208,0.30) 100%); backdrop-filter: blur(10px); padding: 12px 20px 12px; flex: 1.5; overflow-y: auto; min-height: 0; }
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 0.85rem;
+            display: none;
+        }
+        .error-msg.active { display: block; }
 
-        .panel-rojo { background: linear-gradient(180deg, var(--rojo-40) 0%, rgba(230,30,43,0.20) 100%); backdrop-filter: blur(10px); padding: 12px 20px 28px; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 0.85rem;
+            display: none;
+        }
+        .success-msg.active { display: block; }
 
-        .input-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: rgba(255,255,255,0.85); border-radius: 14px; border: 2px solid transparent; transition: all .2s; margin-bottom: 8px; }
-        .input-row:focus-within { border-color: var(--celeste); background: var(--blanco); }
-        .input-row i { width: 22px; text-align: center; font-size: 1rem; color: var(--celeste); }
-        .input-row input { flex: 1; border: none; background: transparent; font-size: .95rem; outline: none; color: var(--texto); }
-        .input-row input::placeholder { color: var(--gris); }
-
-        .buscador-container { position: relative; }
-        .sugerencias { position: absolute; bottom: calc(100% + 8px); left: 0; right: 0; background: var(--blanco); border-radius: 16px; box-shadow: 0 -8px 30px rgba(0,0,0,0.12); max-height: 220px; overflow-y: auto; z-index: 1500; display: none; }
-        .sugerencias.activo { display: block; }
-        .sugerencia-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #f2f2f7; display: flex; align-items: center; gap: 10px; }
-        .sugerencia-item:last-child { border-bottom: none; }
-        .sugerencia-item:active { background: #f8f9fa; }
-        .sugerencia-item i { color: var(--celeste); font-size: .9rem; width: 20px; text-align: center; }
-        .sugerencia-item .sug-text { font-size: .9rem; font-weight: 600; color: var(--texto); }
-        .sugerencia-item .sug-zona { font-size: .75rem; color: var(--gris); margin-top: 2px; }
-
-        .btn-ubicacion-manual { width: 100%; padding: 12px; background: rgba(255,255,255,0.9); color: var(--celeste); border: 2px dashed var(--celeste); border-radius: 14px; font-size: .95rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px; transition: all .2s; }
-        .btn-ubicacion-manual:active { background: var(--celeste); color: white; }
-
-        .modo-manual { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 2000; background: rgba(0,0,0,0.7); }
-        .modo-manual.activo { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .modo-manual .instruccion { color: white; font-size: 1.2rem; font-weight: 700; text-align: center; padding: 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-        .modo-manual .pin-central { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 2001; pointer-events: none; }
-        .modo-manual .pin-central i { color: var(--rojo); font-size: 3rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)); }
-        .modo-manual .botones-manual { position: absolute; bottom: 30px; left: 20px; right: 20px; display: flex; gap: 10px; z-index: 2001; }
-        .modo-manual .botones-manual button { flex: 1; padding: 16px; border: none; border-radius: 16px; font-size: 1rem; font-weight: 700; cursor: pointer; }
-        .btn-cancelar-manual { background: var(--gris); color: white; }
-        .btn-confirmar-manual { background: var(--verde); color: white; }
-
-        .ruta-preview-box { background: rgba(255,255,255,0.9); border-radius: 14px; padding: 12px; margin-bottom: 8px; border-left: 4px solid var(--celeste); }
-        .ruta-preview-box .fila { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
-        .ruta-preview-box .label { font-size: .8rem; color: var(--gris); }
-        .ruta-preview-box .valor { font-size: 1rem; font-weight: 700; color: var(--texto); }
-        .ruta-preview-box .valor.tarifa { color: var(--rojo); font-size: 1.3rem; }
-
-        .btn-solicitar { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--rojo), var(--rojo-claro)); color: white; border: none; border-radius: 16px; font-size: 1.1rem; font-weight: 800; cursor: pointer; box-shadow: 0 6px 20px rgba(230,30,43,0.3); display: flex; align-items: center; justify-content: center; gap: 10px; transition: all .2s; }
-        .btn-solicitar:active { transform: scale(.97); }
-        .btn-solicitar:disabled { background: var(--gris); box-shadow: none; cursor: not-allowed; }
-
-        .btn-cancelar { width: 100%; padding: 14px; background: transparent; color: var(--rojo); border: 2px solid var(--rojo); border-radius: 16px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all .2s; }
-        .btn-cancelar:active { background: rgba(230,30,43,0.05); }
-
-        .estado-viaje { display: none; }
-        .estado-viaje.activo { display: block; }
-
-        .tarjeta-movil { display: flex; align-items: center; gap: 14px; padding: 14px; background: rgba(255,255,255,0.9); border-radius: 16px; margin-bottom: 12px; }
-        .foto-auto { width: 60px; height: 50px; background: linear-gradient(135deg, var(--celeste), var(--celeste-claro)); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .foto-auto i { color: white; font-size: 1.5rem; }
-        .info-movil { flex: 1; }
-        .movil-titulo { font-size: 1.1rem; font-weight: 800; margin-bottom: 2px; }
-        .movil-sub { font-size: .85rem; color: var(--gris); }
-        .circulo-estado { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .circulo-estado i { color: white; font-size: 1.2rem; }
-
-        .tiempo-box { text-align: center; padding: 16px 0; }
-        .tiempo-numero { font-size: 3rem; font-weight: 800; color: var(--texto); line-height: 1; }
-        .tiempo-label { font-size: .9rem; color: var(--gris); margin-top: 6px; }
-
-        .detalles-viaje { background: rgba(255,255,255,0.9); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
-        .detalle-fila { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e5ea; }
-        .detalle-fila:last-child { border-bottom: none; }
-        .detalle-label { font-size: .85rem; color: var(--gris); }
-        .detalle-valor { font-size: .9rem; font-weight: 700; color: var(--texto); }
-
-        .alerta-box { position: absolute; top: 120px; left: 16px; right: 16px; z-index: 1000; background: #fff9e6; border: 2px solid #ffc107; border-radius: 16px; padding: 12px 16px; font-size: .85rem; color: #856404; display: none; align-items: center; gap: 10px; box-shadow: var(--sombra); }
-        .alerta-box.activo { display: flex; }
-        .alerta-box i { color: #ffc107; font-size: 1.2rem; }
-
-        .pin-destino { background: var(--rojo); width: 44px; height: 44px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 15px rgba(230,30,43,0.4); display: flex; align-items: center; justify-content: center; animation: pulse 1.5s infinite; }
-        .pin-destino i { color: white; font-size: 18px; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @media (max-width: 400px) {
+            .header h1 { font-size: 1.2rem; }
+            .price-card .price-value { font-size: 2rem; }
+        }
     </style>
 </head>
 <body>
-    <div id="map"></div>
-
     <div class="header">
-        <div class="logo-tag"><i class="fas fa-taxi"></i> TU MÓVIL</div>
+        <h1>🚕 TuMovil Las Catalinas</h1>
+        <p>Tu móvil, tu viaje, tu camino</p>
     </div>
 
-    <div class="gps-status buscando" id="gps-status">
-        <i class="fas fa-satellite-dish"></i><span id="gps-texto">Buscando GPS...</span>
-    </div>
+    <div class="container">
+        <!-- Mensajes -->
+        <div class="error-msg" id="errorMsg"></div>
+        <div class="success-msg" id="successMsg"></div>
 
-    <div class="alerta-box" id="alerta-box">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span id="alerta-texto"></span>
-    </div>
-
-    <button class="btn-mi-ubicacion" onclick="centrarEnMiUbicacion()"><i class="fas fa-crosshairs"></i></button>
-
-    <!-- MODO MANUAL -->
-    <div class="modo-manual" id="modo-manual">
-        <div class="instruccion">Mové el mapa para ubicar el pin<br>en tu destino exacto</div>
-        <div class="pin-central"><i class="fas fa-map-marker-alt"></i></div>
-        <div class="botones-manual">
-            <button class="btn-cancelar-manual" onclick="cancelarManual()">Cancelar</button>
-            <button class="btn-confirmar-manual" onclick="confirmarManual()">Confirmar</button>
-        </div>
-    </div>
-
-    <div class="panel" id="panel">
-        <div class="flecha-colapsar" id="flecha-colapsar" onclick="togglePanel()">
-            <i class="fas fa-chevron-down"></i>
-        </div>
-
-        <div class="panel-celeste" id="panel-celeste">
-            <div class="formulario-pedido" id="formulario-pedido">
-                <div class="input-row"><i class="fas fa-user"></i><input type="text" id="nombre" placeholder="¿Cómo te llamás?"></div>
-
-                <div class="buscador-container">
-                    <div class="sugerencias" id="sugerencias"></div>
-                    <div class="input-row">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="destino" placeholder="¿A dónde vas? Ej: Solano López 500" autocomplete="off" oninput="buscarDireccion(this.value)">
-                    </div>
-                </div>
-
-                <button class="btn-ubicacion-manual" onclick="activarModoManual()">
-                    <i class="fas fa-map-pin"></i> Ubicación manual (sin número de calle)
-                </button>
-
-                <div class="input-row" id="direccion-origen-row" style="display:none">
-                    <i class="fas fa-home" style="color:var(--naranja)"></i>
-                    <input type="text" id="direccion-origen" placeholder="GPS detectando..." readonly>
-                </div>
-
-                <div id="ruta-preview" style="display:none">
-                    <div class="ruta-preview-box">
-                        <div class="fila"><span class="label">Distancia</span><span class="valor" id="preview-distancia">-- km</span></div>
-                        <div class="fila"><span class="label">Tiempo estimado</span><span class="valor" id="preview-tiempo">-- min</span></div>
-                        <div class="fila"><span class="label">Tarifa</span><span class="valor tarifa" id="preview-tarifa">$--</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="estado-viaje" id="estado-viaje">
-                <div class="tarjeta-movil">
-                    <div class="foto-auto"><i class="fas fa-car"></i></div>
-                    <div class="info-movil">
-                        <div class="movil-titulo" id="movil-titulo">Buscando conductor...</div>
-                        <div class="movil-sub" id="movil-sub">Esperá un momento</div>
-                    </div>
-                    <div class="circulo-estado" id="circulo-estado" style="background:var(--celeste)">
-                        <i class="fas fa-search" id="icono-estado"></i>
-                    </div>
-                </div>
-                <div class="tiempo-box">
-                    <div class="tiempo-numero" id="tiempo-numero">--</div>
-                    <div class="tiempo-label" id="tiempo-label">minutos</div>
-                </div>
-                <div class="detalles-viaje">
-                    <div class="detalle-fila"><span class="detalle-label">Origen</span><span class="detalle-valor" id="detalle-origen">-</span></div>
-                    <div class="detalle-fila"><span class="detalle-label">Destino</span><span class="detalle-valor" id="detalle-destino">-</span></div>
-                    <div class="detalle-fila"><span class="detalle-label">Tarifa</span><span class="detalle-valor" id="detalle-tarifa">-</span></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="panel-rojo" id="panel-rojo">
-            <button class="btn-solicitar" id="btn-solicitar" onclick="solicitarViaje()" disabled>
-                <i class="fas fa-paper-plane"></i> Solicitar Móvil
+        <!-- Mapa -->
+        <div class="card">
+            <div class="card-title">📍 Tu ubicación</div>
+            <div id="map"></div>
+            <button class="btn btn-secondary" id="btnObtenerUbicacion" onclick="obtenerUbicacion()">
+                📍 Obtener mi ubicación
             </button>
-            <button class="btn-cancelar" id="btn-cancelar" onclick="cancelarViaje()" style="display:none">
-                <i class="fas fa-times"></i> Cancelar viaje
+        </div>
+
+        <!-- Formulario -->
+        <div class="card">
+            <div class="card-title">📝 Datos del viaje</div>
+            <div class="input-group">
+                <label>Tu nombre</label>
+                <input type="text" id="nombre" placeholder="Ej: Juan Pérez" value="Pasajero">
+            </div>
+            <div class="input-group">
+                <label>Teléfono</label>
+                <input type="tel" id="telefono" placeholder="Ej: +54 9 341 1234567">
+            </div>
+            <div class="input-group" style="position:relative;">
+                <label>Destino</label>
+                <input type="text" id="destino" placeholder="Escribí una dirección..." oninput="buscarDireccion(this.value)">
+                <div class="suggestions" id="suggestions"></div>
+            </div>
+        </div>
+
+        <!-- Información de ruta -->
+        <div class="card" id="infoRuta" style="display:none;">
+            <div class="card-title">🛣️ Información del viaje</div>
+            <div class="route-info">
+                <div class="route-info-item">
+                    <div class="value" id="distancia">0</div>
+                    <div class="label">Kilómetros</div>
+                </div>
+                <div class="route-info-item">
+                    <div class="value" id="tiempo">0</div>
+                    <div class="label">Minutos</div>
+                </div>
+            </div>
+            <button class="btn btn-secondary" id="btnVerMaps" onclick="verEnGoogleMaps()">
+                🗺️ Ver ruta en Google Maps
+            </button>
+        </div>
+
+        <!-- Precio -->
+        <div class="price-card" id="precioCard" style="display:none;">
+            <div class="price-label">Precio estimado</div>
+            <div class="price-value" id="precio">$0</div>
+            <div class="price-detail">Base $3.000 + $800 por km</div>
+        </div>
+
+        <!-- Botón solicitar -->
+        <button class="btn btn-success" id="btnSolicitar" onclick="solicitarViaje()" disabled>
+            🚕 Solicitar móvil
+        </button>
+
+        <!-- Estado del viaje -->
+        <div class="status-card" id="statusCard">
+            <div class="card-title">📱 Estado de tu viaje</div>
+            <span class="status-badge status-pendiente" id="statusBadge">Pendiente</span>
+            <p id="statusText" style="font-size:0.9rem;color:#666;margin-top:5px;">Buscando conductor...</p>
+            <div class="conductor-info" id="conductorInfo" style="display:none;">
+                <p><strong>👤 Conductor:</strong> <span id="condNombre">-</span></p>
+                <p><strong>📞 Teléfono:</strong> <span id="condTelefono">-</span></p>
+                <p><strong>🚗 Vehículo:</strong> <span id="condVehiculo">-</span></p>
+                <p><strong>🔢 Patente:</strong> <span id="condPlaca">-</span></p>
+            </div>
+            <button class="btn btn-secondary" style="margin-top:15px;" onclick="cancelarViaje()">
+                ❌ Cancelar viaje
             </button>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const SUPABASE_URL = 'https://efryvjjunfeoxhekvwza.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnl2amp1bmZlb3hoZWt2d3phIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDEyODUsImV4cCI6MjA5MzQ3NzI4NX0.FgvwONdQhv6lr772YqKHDQ2gtqjZ7f_6BO4x-7wbOwM';
-        const TARIFA_BASE = 3000, TARIFA_POR_KM = 800;
+        // ==========================================
+        // CONFIGURACIÓN SUPABASE
+        // ==========================================
+        const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
 
-        let supabaseClient, map, miPosicion = {lat:null,lng:null}, destinoCoords = null, origenCoords = null;
-        let rutaLayer = null, markerDestino = null, markerGPS = null;
-        let timeoutBusq = null, viajeActual = null, canalViaje = null;
-        let distanciaKm = 0, tiempoMin = 0;
-        let panelColapsado = false;
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                initMapa(); iniciarGPS();
-            } catch (e) { mostrarAlerta('Error de conexión'); }
-        });
+        // ==========================================
+        // VARIABLES GLOBALES
+        // ==========================================
+        let map, marker, destinoMarker, routeLine;
+        let userLat = null, userLng = null;
+        let destinoLat = null, destinoLng = null;
+        let distanciaKm = 0;
+        let viajeId = null;
+        let subscription = null;
+        let sugerenciasTimeout = null;
 
-        function initMapa() {
-            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([-34.65, -58.79], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '' }).addTo(map);
+        // ==========================================
+        // INICIALIZAR MAPA
+        // ==========================================
+        function initMap() {
+            map = L.map('map').setView([-32.944, -60.650], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
         }
 
-        // PANEL COLAPSABLE
-        function togglePanel() {
-            const panel = document.getElementById('panel');
-            panelColapsado = !panelColapsado;
-            if (panelColapsado) {
-                panel.classList.add('colapsado');
-            } else {
-                panel.classList.remove('colapsado');
+        // ==========================================
+        // OBTENER UBICACIÓN
+        // ==========================================
+        function obtenerUbicacion() {
+            const btn = document.getElementById('btnObtenerUbicacion');
+            btn.innerHTML = '<span class="loading"></span> Obteniendo...';
+            btn.disabled = true;
+
+            if (!navigator.geolocation) {
+                mostrarError('Tu navegador no soporta geolocalización');
+                btn.innerHTML = '📍 Obtener mi ubicación';
+                btn.disabled = false;
+                return;
             }
-        }
 
-        function colapsarPanel() {
-            panelColapsado = true;
-            document.getElementById('panel').classList.add('colapsado');
-        }
-
-        function expandirPanel() {
-            panelColapsado = false;
-            document.getElementById('panel').classList.remove('colapsado');
-        }
-
-        // MODO MANUAL
-        function activarModoManual() {
-            document.getElementById('modo-manual').classList.add('activo');
-            colapsarPanel();
-        }
-
-        function cancelarManual() {
-            document.getElementById('modo-manual').classList.remove('activo');
-            expandirPanel();
-        }
-
-        function confirmarManual() {
-            const center = map.getCenter();
-            destinoCoords = { lat: center.lat, lng: center.lng };
-            const texto = document.getElementById('destino').value || 'Ubicación manual';
-            document.getElementById('destino').value = texto;
-
-            document.getElementById('modo-manual').classList.remove('activo');
-
-            if (markerDestino) map.removeLayer(markerDestino);
-            const icono = L.divIcon({
-                html: '<div class="pin-destino"><i class="fas fa-map-marker-alt"></i></div>',
-                iconSize: [48, 48], iconAnchor: [24, 24], className: ''
-            });
-            markerDestino = L.marker([center.lat, center.lng], { icon: icono }).addTo(map).bindPopup(`<b>Destino:</b><br>${texto}`).openPopup();
-
-            if (origenCoords) {
-                calcularRutaOSRM(origenCoords.lat, origenCoords.lng, center.lat, center.lng);
-            }
-        }
-
-        function iniciarGPS() {
-            if (!navigator.geolocation) { actualizarEstadoGPS('error', 'GPS no disponible'); return; }
-            actualizarEstadoGPS('buscando', 'Buscando GPS...');
             navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    origenCoords = {...miPosicion};
-                    actualizarEstadoGPS('preciso', 'GPS preciso');
-                    map.setView([miPosicion.lat, miPosicion.lng], 16);
-                    const icono = L.divIcon({
-                        html: '<div style="background:linear-gradient(135deg,#0093d0,#4db8e8);width:40px;height:40px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="color:white;font-size:16px;"></i></div>',
-                        iconSize: [44, 44], iconAnchor: [22, 22]
-                    });
-                    markerGPS = L.marker([miPosicion.lat, miPosicion.lng], { icon: icono }).addTo(map);
-                    reverseGeocode(miPosicion.lat, miPosicion.lng).then(dir => {
-                        document.getElementById('direccion-origen').value = dir || 'Ubicación actual';
-                        document.getElementById('direccion-origen-row').style.display = 'flex';
-                    });
+                (position) => {
+                    userLat = position.coords.latitude;
+                    userLng = position.coords.longitude;
+
+                    if (marker) map.removeLayer(marker);
+                    marker = L.marker([userLat, userLng]).addTo(map)
+                        .bindPopup('📍 Tu ubicación').openPopup();
+                    map.setView([userLat, userLng], 15);
+
+                    btn.innerHTML = '✅ Ubicación obtenida';
+                    setTimeout(() => {
+                        btn.innerHTML = '📍 Actualizar ubicación';
+                        btn.disabled = false;
+                    }, 2000);
+
+                    verificarBotonSolicitar();
                 },
-                (err) => {
-                    actualizarEstadoGPS('error', 'GPS no disponible');
-                    document.getElementById('direccion-origen-row').style.display = 'flex';
-                    document.getElementById('direccion-origen').placeholder = 'Ingresá tu dirección';
-                    document.getElementById('direccion-origen').readOnly = false;
+                (error) => {
+                    let msg = 'No se pudo obtener tu ubicación';
+                    if (error.code === 1) msg = 'Permiso de ubicación denegado';
+                    if (error.code === 2) msg = 'Ubicación no disponible';
+                    if (error.code === 3) msg = 'Tiempo de espera agotado';
+                    mostrarError(msg);
+                    btn.innerHTML = '📍 Obtener mi ubicación';
+                    btn.disabled = false;
                 },
-                { enableHighAccuracy: true, timeout: 15000 }
-            );
-            navigator.geolocation.watchPosition(
-                (pos) => { miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude }; if (markerGPS) markerGPS.setLatLng([miPosicion.lat, miPosicion.lng]); },
-                (err) => console.log('GPS watch error:', err),
-                { enableHighAccuracy: true, maximumAge: 10000 }
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
 
-        function actualizarEstadoGPS(tipo, texto) {
-            const el = document.getElementById('gps-status');
-            const txt = document.getElementById('gps-texto');
-            el.className = 'gps-status ' + tipo;
-            txt.textContent = texto;
-        }
-        function centrarEnMiUbicacion() { if (miPosicion.lat && map) map.setView([miPosicion.lat, miPosicion.lng], 16); }
+        // ==========================================
+        // BUSCAR DIRECCIÓN (Photon geocodificación)
+        // ==========================================
+        async function buscarDireccion(query) {
+            const suggestionsDiv = document.getElementById('suggestions');
 
-        // GEOCODIFICACIÓN PHOTON
-        async function buscarDireccion(texto) {
-            clearTimeout(timeoutBusq);
-            const sugerencias = document.getElementById('sugerencias');
-            if (!texto || texto.length < 3) { sugerencias.classList.remove('activo'); return; }
-            timeoutBusq = setTimeout(async () => {
-                try {
-                    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(texto)}&lat=-34.65&lon=-58.79&limit=8&lang=es`;
-                    const res = await fetch(url);
-                    const data = await res.json();
-                    let html = '';
-                    if (data.features && data.features.length > 0) {
-                        data.features.forEach(f => {
-                            const props = f.properties;
-                            const coords = f.geometry.coordinates;
-                            const nombre = props.name || '';
-                            const calle = props.street || '';
-                            const housenumber = props.housenumber || '';
-                            const ciudad = props.city || props.town || props.village || props.district || '';
-                            const direccion = housenumber ? `${calle || nombre} ${housenumber}` : (nombre || calle);
-                            const fullDir = direccion + (ciudad ? `, ${ciudad}` : '');
-                            if (!direccion) return;
-                            html += `<div class="sugerencia-item" onclick="seleccionarDestino('${fullDir.replace(/'/g, "\'")}', ${coords[1]}, ${coords[0]})">
-                                <i class="fas fa-map-marker-alt"></i>
-                                <div><div class="sug-text">${direccion}</div><div class="sug-zona">${ciudad || 'Zona Oeste, Buenos Aires'}</div></div>
-                            </div>`;
-                        });
-                    } else { html = '<div class="sugerencia-item" style="color:var(--gris)"><i class="fas fa-info-circle"></i><div>No se encontraron resultados. Probá con "Ubicación manual"</div></div>'; }
-                    sugerencias.innerHTML = html;
-                    sugerencias.classList.add('activo');
-                } catch (e) { console.error('Error buscando:', e); }
-            }, 400);
-        }
-
-        async function seleccionarDestino(direccion, lat, lng) {
-            document.getElementById('destino').value = direccion;
-            document.getElementById('sugerencias').classList.remove('activo');
-            destinoCoords = { lat, lng };
-
-            if (markerDestino) map.removeLayer(markerDestino);
-            const icono = L.divIcon({
-                html: '<div class="pin-destino"><i class="fas fa-map-marker-alt"></i></div>',
-                iconSize: [48, 48], iconAnchor: [24, 24], className: ''
-            });
-            markerDestino = L.marker([lat, lng], { icon: icono }).addTo(map).bindPopup(`<b>Destino:</b><br>${direccion}`).openPopup();
-
-            if (origenCoords) {
-                const bounds = L.latLngBounds([[origenCoords.lat, origenCoords.lng], [lat, lng]]);
-                map.fitBounds(bounds, { padding: [80, 80], maxZoom: 16 });
-                await calcularRutaOSRM(origenCoords.lat, origenCoords.lng, lat, lng);
-            } else {
-                map.setView([lat, lng], 16);
+            if (query.length < 3) {
+                suggestionsDiv.classList.remove('active');
+                return;
             }
 
-            colapsarPanel();
-        }
+            clearTimeout(sugerenciasTimeout);
+            sugerenciasTimeout = setTimeout(async () => {
+                try {
+                    // Usar Photon para geocodificación (gratuito, sin API key)
+                    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=es`;
+                    const response = await fetch(url);
+                    const data = await response.json();
 
-        async function reverseGeocode(lat, lng) {
-            try {
-                const url = `https://photon.komoot.io/reverse?lon=${lng}&lat=${lat}&lang=es`;
-                const res = await fetch(url);
-                const data = await res.json();
-                if (data.features && data.features.length > 0) {
-                    const p = data.features[0].properties;
-                    return `${p.name || ''} ${p.street || ''}, ${p.city || p.town || ''}`.trim();
+                    suggestionsDiv.innerHTML = '';
+
+                    if (data.features && data.features.length > 0) {
+                        data.features.forEach(feature => {
+                            const props = feature.properties;
+                            const name = props.name || '';
+                            const street = props.street || '';
+                            const city = props.city || props.town || props.village || '';
+                            const state = props.state || '';
+                            const country = props.country || '';
+
+                            let displayName = name;
+                            if (street && street !== name) displayName += `, ${street}`;
+                            if (city) displayName += `, ${city}`;
+                            if (state) displayName += `, ${state}`;
+
+                            const div = document.createElement('div');
+                            div.className = 'suggestion-item';
+                            div.textContent = displayName;
+                            div.onclick = () => seleccionarDestino(
+                                displayName,
+                                feature.geometry.coordinates[1],
+                                feature.geometry.coordinates[0]
+                            );
+                            suggestionsDiv.appendChild(div);
+                        });
+                        suggestionsDiv.classList.add('active');
+                    } else {
+                        suggestionsDiv.classList.remove('active');
+                    }
+                } catch (e) {
+                    console.error('Error buscando dirección:', e);
+                    suggestionsDiv.classList.remove('active');
                 }
-            } catch (e) { return null; }
+            }, 300);
         }
 
-        // RUTAS OSRM
-        async function calcularRutaOSRM(lat1, lng1, lat2, lng2) {
-            if (rutaLayer) map.removeLayer(rutaLayer);
+        // ==========================================
+        // SELECCIONAR DESTINO
+        // ==========================================
+        function seleccionarDestino(direccion, lat, lng) {
+            document.getElementById('destino').value = direccion;
+            document.getElementById('suggestions').classList.remove('active');
+
+            destinoLat = lat;
+            destinoLng = lng;
+
+            if (destinoMarker) map.removeLayer(destinoMarker);
+            destinoMarker = L.marker([lat, lng]).addTo(map)
+                .bindPopup('🎯 Destino: ' + direccion).openPopup();
+
+            // Ajustar vista para ver ambos puntos
+            if (userLat && userLng) {
+                const bounds = L.latLngBounds(
+                    [userLat, userLng],
+                    [destinoLat, destinoLng]
+                );
+                map.fitBounds(bounds, { padding: [50, 50] });
+
+                // Calcular ruta con OSRM
+                calcularRutaOSRM();
+            } else {
+                map.setView([lat, lng], 15);
+            }
+
+            verificarBotonSolicitar();
+        }
+
+        // ==========================================
+        // CALCULAR RUTA CON OSRM (gratuito)
+        // ==========================================
+        async function calcularRutaOSRM() {
+            if (!userLat || !userLng || !destinoLat || !destinoLng) return;
+
             try {
-                const url = `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`;
-                const res = await fetch(url);
-                const data = await res.json();
+                // OSRM demo server (gratuito, para producción usar instancia propia)
+                const url = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destinoLng},${destinoLat}?overview=full&geometries=geojson`;
+                const response = await fetch(url);
+                const data = await response.json();
+
                 if (data.routes && data.routes.length > 0) {
                     const route = data.routes[0];
-                    const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
-                    distanciaKm = route.distance / 1000;
-                    tiempoMin = Math.round(route.duration / 60);
-                    rutaLayer = L.polyline(coords, { color: '#0093d0', weight: 5, opacity: 0.85, lineCap: 'round', lineJoin: 'round' }).addTo(map);
-                    const tarifa = calcularTarifa(distanciaKm);
-                    document.getElementById('preview-distancia').textContent = `${distanciaKm.toFixed(1)} km`;
-                    document.getElementById('preview-tiempo').textContent = `~${tiempoMin} min`;
-                    document.getElementById('preview-tarifa').textContent = `$${tarifa.total.toLocaleString()}`;
-                    document.getElementById('ruta-preview').style.display = 'block';
-                    document.getElementById('btn-solicitar').disabled = false;
+                    distanciaKm = (route.distance / 1000).toFixed(1);
+                    const tiempoMin = Math.round(route.duration / 60);
+
+                    // Dibujar línea de ruta
+                    if (routeLine) map.removeLayer(routeLine);
+                    routeLine = L.geoJSON(route.geometry, {
+                        style: { color: '#667eea', weight: 4, opacity: 0.8 }
+                    }).addTo(map);
+
+                    // Mostrar info
+                    document.getElementById('distancia').textContent = distanciaKm;
+                    document.getElementById('tiempo').textContent = tiempoMin;
+                    document.getElementById('infoRuta').style.display = 'block';
+
+                    // Calcular precio
+                    const precio = Math.round(3000 + (distanciaKm * 800));
+                    document.getElementById('precio').textContent = `$${precio.toLocaleString('es-AR')}`;
+                    document.getElementById('precioCard').style.display = 'block';
+
+                    verificarBotonSolicitar();
                 }
             } catch (e) {
-                console.error('Error ruta:', e);
-                distanciaKm = calcularDistanciaLinea(lat1, lng1, lat2, lng2);
-                tiempoMin = Math.round(distanciaKm * 2);
-                rutaLayer = L.polyline([[lat1, lng1], [lat2, lng2]], { color: '#0093d0', weight: 4, opacity: 0.7, dashArray: '10, 10' }).addTo(map);
-                const tarifa = calcularTarifa(distanciaKm);
-                document.getElementById('preview-distancia').textContent = `~${distanciaKm.toFixed(1)} km`;
-                document.getElementById('preview-tiempo').textContent = `~${tiempoMin} min`;
-                document.getElementById('preview-tarifa').textContent = `$${tarifa.total.toLocaleString()}`;
-                document.getElementById('ruta-preview').style.display = 'block';
-                document.getElementById('btn-solicitar').disabled = false;
+                console.error('Error calculando ruta:', e);
+                // Fallback: distancia en línea recta
+                const dist = calcularDistancia(userLat, userLng, destinoLat, destinoLng);
+                distanciaKm = dist.toFixed(1);
+                document.getElementById('distancia').textContent = distanciaKm;
+                document.getElementById('tiempo').textContent = Math.round(dist * 2); // estimado
+                document.getElementById('infoRuta').style.display = 'block';
+
+                const precio = Math.round(3000 + (distanciaKm * 800));
+                document.getElementById('precio').textContent = `$${precio.toLocaleString('es-AR')}`;
+                document.getElementById('precioCard').style.display = 'block';
             }
         }
 
-        function calcularDistanciaLinea(lat1, lng1, lat2, lng2) {
-            const R = 6371;
+        // ==========================================
+        // CALCULAR DISTANCIA EN LÍNEA RECTA (Haversine)
+        // ==========================================
+        function calcularDistancia(lat1, lng1, lat2, lng2) {
+            const R = 6371; // Radio de la Tierra en km
             const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lng2 - lng1) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
         }
-        function calcularTarifa(km) { const total = TARIFA_BASE + (km * TARIFA_POR_KM); return { total: Math.round(total), base: TARIFA_BASE, km: km, costoKm: Math.round(km * TARIFA_POR_KM) }; }
 
-        // ============================================================
-        // SOLICITAR VIAJE - FIX DEFINITIVO (sin teléfono, tipos correctos)
-        // ============================================================
-        async function solicitarViaje() {
-            const nombre = document.getElementById('nombre').value.trim();
-            const destinoTexto = document.getElementById('destino').value.trim();
+        // ==========================================
+        // VER EN GOOGLE MAPS
+        // ==========================================
+        function verEnGoogleMaps() {
+            if (!userLat || !userLng || !destinoLat || !destinoLng) return;
+            const url = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${destinoLat},${destinoLng}&travelmode=driving`;
+            window.open(url, '_blank');
+        }
 
-            if (!nombre || !destinoCoords) { mostrarAlerta('Completá todos los campos'); return; }
-            if (!origenCoords) { mostrarAlerta('Esperá el GPS'); return; }
-
-            // FIX: Asegurar que distanciaKm sea un número válido y > 0
-            if (!distanciaKm || distanciaKm <= 0) {
-                distanciaKm = 0.1; // mínimo 100 metros
+        // ==========================================
+        // VERIFICAR BOTÓN SOLICITAR
+        // ==========================================
+        function verificarBotonSolicitar() {
+            const btn = document.getElementById('btnSolicitar');
+            const destino = document.getElementById('destino').value.trim();
+            if (userLat && userLng && destinoLat && destinoLng && destino) {
+                btn.disabled = false;
+            } else {
+                btn.disabled = true;
             }
+        }
 
-            const tarifa = calcularTarifa(distanciaKm);
+        // ==========================================
+        // SOLICITAR VIAJE
+        // ==========================================
+        async function solicitarViaje() {
+            const btn = document.getElementById('btnSolicitar');
+            const nombre = document.getElementById('nombre').value || 'Pasajero';
+            const telefono = document.getElementById('telefono').value || '';
+            const destinoDireccion = document.getElementById('destino').value;
 
-            // FIX: Parámetros que coinciden EXACTAMENTE con la función SQL
-            // ["p_nombre","p_direccion_salida","p_direccion_destino","p_lat_salida","p_lng_salida","p_lat_destino","p_lng_destino","p_tarifa_total","p_distancia_km"]
-            // [text, text, text, real, real, real, real, integer, real]
-            const params = {
-                p_nombre: nombre,
-                p_direccion_salida: document.getElementById('direccion-origen').value || 'Ubicación GPS',
-                p_direccion_destino: destinoTexto,
-                p_lat_salida: parseFloat(origenCoords.lat),
-                p_lng_salida: parseFloat(origenCoords.lng),
-                p_lat_destino: parseFloat(destinoCoords.lat),
-                p_lng_destino: parseFloat(destinoCoords.lng),
-                p_tarifa_total: Math.round(tarifa.total), // integer
-                p_distancia_km: parseFloat(distanciaKm.toFixed(2)) // real
-            };
-
-            console.log('Enviando viaje:', JSON.stringify(params));
-
-            document.getElementById('btn-solicitar').disabled = true;
-            document.getElementById('btn-solicitar').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+            btn.innerHTML = '<span class="loading"></span> Solicitando...';
+            btn.disabled = true;
 
             try {
-                const { data, error } = await supabaseClient.rpc('crear_viaje', params);
+                const { data, error } = await supabase.rpc('crear_viaje', {
+                    p_pasajero_nombre: nombre,
+                    p_pasajero_telefono: telefono,
+                    p_origen_lat: userLat,
+                    p_origen_lng: userLng,
+                    p_origen_direccion: 'Ubicación actual',
+                    p_destino_lat: destinoLat,
+                    p_destino_lng: destinoLng,
+                    p_destino_direccion: destinoDireccion,
+                    p_distancia_km: parseFloat(distanciaKm)
+                });
 
-                if (error) {
-                    console.error('Supabase RPC error:', error);
-                    throw new Error(error.message || error.code || 'Error en Supabase');
-                }
+                if (error) throw error;
 
-                if (!data) {
-                    throw new Error('No se recibió ID del viaje');
-                }
+                viajeId = data;
+                mostrarExito('¡Viaje solicitado! Buscando conductor...');
 
-                viajeActual = { id: data, estado: 'pendiente' };
-                document.getElementById('formulario-pedido').style.display = 'none';
-                document.getElementById('estado-viaje').classList.add('activo');
-                document.getElementById('btn-solicitar').style.display = 'none';
-                document.getElementById('btn-cancelar').style.display = 'block';
+                // Mostrar card de estado
+                document.getElementById('statusCard').classList.add('active');
+                document.getElementById('statusBadge').textContent = 'Pendiente';
+                document.getElementById('statusBadge').className = 'status-badge status-pendiente';
+                document.getElementById('statusText').textContent = 'Buscando conductor disponible...';
 
-                document.getElementById('detalle-origen').textContent = document.getElementById('direccion-origen').value || 'Tu ubicación';
-                document.getElementById('detalle-destino').textContent = destinoTexto;
-                document.getElementById('detalle-tarifa').textContent = `$${tarifa.total.toLocaleString()}`;
+                // Suscribirse a cambios en tiempo real
+                suscribirseAViaje(viajeId);
 
-                expandirPanel();
-                escucharViaje(data);
+                btn.innerHTML = '✅ Viaje solicitado';
+
             } catch (e) {
-                console.error('Error completo:', e);
-                const mensajeError = e.message || 'Error al solicitar. Intentá de nuevo.';
-                mostrarAlerta(mensajeError);
-                document.getElementById('btn-solicitar').disabled = false;
-                document.getElementById('btn-solicitar').innerHTML = '<i class="fas fa-paper-plane"></i> Solicitar Móvil';
+                console.error('Error solicitando viaje:', e);
+                mostrarError('Error al solicitar viaje: ' + e.message);
+                btn.innerHTML = '🚕 Solicitar móvil';
+                btn.disabled = false;
             }
         }
 
-        function escucharViaje(viajeId) {
-            if (canalViaje) canalViaje.unsubscribe();
-            canalViaje = supabaseClient.channel('viaje-' + viajeId)
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes', filter: `id=eq.${viajeId}` },
-                    (payload) => { actualizarUIViaje(payload.new); })
+        // ==========================================
+        // SUSCRIBIRSE A CAMBIOS DEL VIAJE (Realtime)
+        // ==========================================
+        function suscribirseAViaje(id) {
+            if (subscription) subscription.unsubscribe();
+
+            subscription = supabase
+                .channel('viajes-' + id)
+                .on('postgres_changes', 
+                    { 
+                        event: '*', 
+                        schema: 'public', 
+                        table: 'viajes',
+                        filter: 'id=eq.' + id
+                    }, 
+                    (payload) => {
+                        actualizarEstadoViaje(payload.new);
+                    }
+                )
                 .subscribe();
         }
 
-        function actualizarUIViaje(viaje) {
-            const titulo = document.getElementById('movil-titulo');
-            const sub = document.getElementById('movil-sub');
-            const icono = document.getElementById('icono-estado');
-            const circulo = document.getElementById('circulo-estado');
-            const tiempoNum = document.getElementById('tiempo-numero');
-            const tiempoLabel = document.getElementById('tiempo-label');
+        // ==========================================
+        // ACTUALIZAR ESTADO DEL VIAJE EN UI
+        // ==========================================
+        function actualizarEstadoViaje(viaje) {
+            const badge = document.getElementById('statusBadge');
+            const text = document.getElementById('statusText');
+            const conductorInfo = document.getElementById('conductorInfo');
 
-            switch (viaje.estado) {
-                case 'pendiente': titulo.textContent = 'Buscando conductor...'; sub.textContent = 'Esperá un momento'; icono.className = 'fas fa-search'; circulo.style.background = 'var(--celeste)'; tiempoNum.textContent = '--'; break;
-                case 'aceptado': titulo.textContent = '¡Conductor asignado!'; sub.textContent = (viaje.conductor_nombre || 'Conductor') + ' • Patente: ' + (viaje.conductor_patente || '-'); icono.className = 'fas fa-car'; circulo.style.background = 'var(--verde)'; tiempoNum.textContent = '5'; tiempoLabel.textContent = 'minutos aprox.'; mostrarAlerta('¡Tu móvil está en camino! 🚕'); break;
-                case 'en_camino': titulo.textContent = 'Conductor en camino'; sub.textContent = 'Llegando a tu ubicación'; icono.className = 'fas fa-road'; circulo.style.background = 'var(--naranja)'; tiempoNum.textContent = '2'; break;
-                case 'completado': titulo.textContent = 'Viaje completado'; sub.textContent = '¡Gracias por viajar con nosotros!'; icono.className = 'fas fa-check'; circulo.style.background = 'var(--verde)'; tiempoNum.textContent = '✓'; tiempoLabel.textContent = 'Llegaste a destino'; setTimeout(() => resetearApp(), 3000); break;
-                case 'cancelado': titulo.textContent = 'Viaje cancelado'; sub.textContent = 'Podés solicitar otro'; icono.className = 'fas fa-times'; circulo.style.background = 'var(--rojo)'; setTimeout(() => resetearApp(), 2000); break;
+            badge.className = 'status-badge status-' + viaje.estado;
+
+            switch(viaje.estado) {
+                case 'pendiente':
+                    badge.textContent = 'Pendiente';
+                    text.textContent = 'Buscando conductor disponible...';
+                    break;
+                case 'aceptado':
+                    badge.textContent = 'Conductor asignado';
+                    text.textContent = 'Tu conductor está en camino';
+                    conductorInfo.style.display = 'block';
+                    document.getElementById('condNombre').textContent = viaje.conductor_nombre || 'Sin nombre';
+                    document.getElementById('condTelefono').textContent = viaje.conductor_telefono || '-';
+                    document.getElementById('condVehiculo').textContent = (viaje.vehiculo_color || '') + ' ' + (viaje.vehiculo_modelo || '');
+                    document.getElementById('condPlaca').textContent = viaje.vehiculo_placa || '-';
+                    break;
+                case 'en_camino':
+                    badge.textContent = 'En camino';
+                    text.textContent = 'El conductor se acerca a tu ubicación';
+                    break;
+                case 'iniciado':
+                    badge.textContent = 'Viaje iniciado';
+                    text.textContent = '¡Buen viaje!';
+                    break;
+                case 'finalizado':
+                    badge.textContent = 'Finalizado';
+                    text.textContent = 'Viaje completado. ¡Gracias!';
+                    document.getElementById('btnSolicitar').innerHTML = '🚕 Solicitar nuevo viaje';
+                    document.getElementById('btnSolicitar').disabled = false;
+                    if (subscription) subscription.unsubscribe();
+                    break;
+                case 'cancelado':
+                    badge.textContent = 'Cancelado';
+                    text.textContent = 'El viaje fue cancelado';
+                    document.getElementById('btnSolicitar').innerHTML = '🚕 Solicitar móvil';
+                    document.getElementById('btnSolicitar').disabled = false;
+                    if (subscription) subscription.unsubscribe();
+                    break;
             }
         }
 
+        // ==========================================
+        // CANCELAR VIAJE
+        // ==========================================
         async function cancelarViaje() {
-            if (!viajeActual) return;
-            if (!confirm('¿Cancelar este viaje?')) return;
+            if (!viajeId) return;
+
+            if (!confirm('¿Estás seguro de que querés cancelar el viaje?')) return;
+
             try {
-                await supabaseClient.rpc('actualizar_estado_viaje', { p_viaje_id: viajeActual.id, p_nuevo_estado: 'cancelado' });
-                if (canalViaje) canalViaje.unsubscribe();
-                resetearApp();
-            } catch (e) { mostrarAlerta('Error al cancelar'); }
+                const { error } = await supabase.rpc('actualizar_estado_viaje', {
+                    p_viaje_id: viajeId,
+                    p_nuevo_estado: 'cancelado'
+                });
+
+                if (error) throw error;
+
+                document.getElementById('statusCard').classList.remove('active');
+                document.getElementById('btnSolicitar').innerHTML = '🚕 Solicitar móvil';
+                document.getElementById('btnSolicitar').disabled = false;
+                viajeId = null;
+                if (subscription) subscription.unsubscribe();
+
+                mostrarExito('Viaje cancelado');
+            } catch (e) {
+                mostrarError('Error al cancelar: ' + e.message);
+            }
         }
 
-        function resetearApp() {
-            viajeActual = null;
-            if (canalViaje) canalViaje.unsubscribe();
-            if (rutaLayer) map.removeLayer(rutaLayer);
-            if (markerDestino) map.removeLayer(markerDestino);
-
-            document.getElementById('formulario-pedido').style.display = 'block';
-            document.getElementById('estado-viaje').classList.remove('activo');
-            document.getElementById('ruta-preview').style.display = 'none';
-            document.getElementById('btn-solicitar').style.display = 'block';
-            document.getElementById('btn-solicitar').disabled = true;
-            document.getElementById('btn-solicitar').innerHTML = '<i class="fas fa-paper-plane"></i> Solicitar Móvil';
-            document.getElementById('btn-cancelar').style.display = 'none';
-            document.getElementById('destino').value = '';
-            expandirPanel();
-            centrarEnMiUbicacion();
+        // ==========================================
+        // UTILIDADES
+        // ==========================================
+        function mostrarError(msg) {
+            const el = document.getElementById('errorMsg');
+            el.textContent = msg;
+            el.classList.add('active');
+            setTimeout(() => el.classList.remove('active'), 5000);
         }
 
-        function mostrarAlerta(texto) {
-            const box = document.getElementById('alerta-box');
-            document.getElementById('alerta-texto').textContent = texto;
-            box.classList.add('activo');
-            setTimeout(() => box.classList.remove('activo'), 4000);
+        function mostrarExito(msg) {
+            const el = document.getElementById('successMsg');
+            el.textContent = msg;
+            el.classList.add('active');
+            setTimeout(() => el.classList.remove('active'), 5000);
         }
 
-        document.addEventListener('click', e => {
-            if (!e.target.closest('.buscador-container')) document.getElementById('sugerencias').classList.remove('activo');
+        // Cerrar sugerencias al clickear fuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.input-group')) {
+                document.getElementById('suggestions').classList.remove('active');
+            }
         });
+
+        // ==========================================
+        // INICIALIZAR
+        // ==========================================
+        window.onload = () => {
+            initMap();
+            obtenerUbicacion();
+        };
     </script>
 </body>
 </html>
