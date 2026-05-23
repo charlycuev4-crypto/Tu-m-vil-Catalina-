@@ -1,1 +1,679 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TuMovil Las Catalinas - Conductor</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+        .header h1 { font-size: 1.5rem; margin-bottom: 5px; }
+        .header p { font-size: 0.9rem; opacity: 0.9; }
 
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #11998e;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #11998e;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        .btn-primary:active { opacity: 0.8; }
+        .btn-maps {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+        }
+        .btn-maps:active { opacity: 0.8; }
+        .btn-warning {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+            color: white;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stat-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-box .num {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #11998e;
+        }
+        .stat-box .label {
+            font-size: 0.7rem;
+            color: #888;
+        }
+
+        .viaje-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #ffc107;
+        }
+        .viaje-item.aceptado { border-left-color: #11998e; }
+        .viaje-item.en_camino { border-left-color: #17a2b8; }
+        .viaje-item.iniciado { border-left-color: #667eea; }
+
+        .viaje-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .viaje-precio {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #11998e;
+        }
+
+        .viaje-info {
+            font-size: 0.9rem;
+            color: #555;
+            margin: 5px 0;
+        }
+        .viaje-info strong { color: #333; }
+
+        .destino-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .btn-group .btn {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .msg {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        .msg.show { display: block; }
+        .msg-error { background: #ffebee; color: #c62828; }
+        .msg-success { background: #e8f5e9; color: #2e7d32; }
+
+        .hidden { display: none !important; }
+
+        .empty {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+        }
+        .empty .icon { font-size: 2.5rem; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚕 TuMovil Conductor</h1>
+            <p>Las Catalinas</p>
+        </div>
+
+        <div class="msg" id="msg"></div>
+
+        <!-- PASO 1: Registro -->
+        <div class="card" id="cardRegistro">
+            <div class="card-title">👤 Registro</div>
+
+            <div class="input-group">
+                <label>Nombre *</label>
+                <input type="text" id="nombre" placeholder="Tu nombre" value="">
+            </div>
+
+            <div class="input-group">
+                <label>Teléfono</label>
+                <input type="tel" id="telefono" placeholder="Tu teléfono" value="">
+            </div>
+
+            <div class="input-group">
+                <label>Patente *</label>
+                <input type="text" id="patente" placeholder="Patente del auto" value="">
+            </div>
+
+            <div class="input-group">
+                <label>Color del auto</label>
+                <input type="text" id="color" placeholder="Ej: Negro" value="">
+            </div>
+
+            <div class="input-group">
+                <label>Modelo</label>
+                <input type="text" id="modelo" placeholder="Ej: Ford Fiesta" value="">
+            </div>
+
+            <button class="btn btn-primary" id="btnGuardar" onclick="guardarDatos()">
+                💾 GUARDAR MIS DATOS
+            </button>
+        </div>
+
+        <!-- PASO 2: Panel Principal -->
+        <div class="hidden" id="cardPanel">
+            <!-- Estadísticas -->
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="num" id="statViajes">0</div>
+                    <div class="label">Viajes hoy</div>
+                </div>
+                <div class="stat-box">
+                    <div class="num" id="statGanancias">$0</div>
+                    <div class="label">Ganancias</div>
+                </div>
+                <div class="stat-box">
+                    <div class="num" id="statKm">0</div>
+                    <div class="label">Km</div>
+                </div>
+            </div>
+
+            <!-- Conectar -->
+            <div class="card">
+                <button class="btn btn-primary" id="btnConectar" onclick="toggleConexion()">
+                    🟢 CONECTAR PARA RECIBIR VIAJES
+                </button>
+            </div>
+
+            <!-- Viaje Activo -->
+            <div class="card hidden" id="cardActivo">
+                <div class="card-title">🚗 Viaje Activo</div>
+                <div id="viajeActivo"></div>
+            </div>
+
+            <!-- Lista de viajes -->
+            <div class="card">
+                <div class="card-title">📋 Viajes Disponibles</div>
+                <div id="listaViajes">
+                    <div class="empty">
+                        <div class="icon">📭</div>
+                        <p>No hay viajes</p>
+                        <p style="font-size:0.8rem">Conectate para recibir</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURACIÓN
+        // ==========================================
+        const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ==========================================
+        // VARIABLES
+        // ==========================================
+        let conductor = {};
+        let conectado = false;
+        let viajeActivoId = null;
+        let subscription = null;
+
+        // ==========================================
+        // INICIO - Cargar datos guardados
+        // ==========================================
+        window.onload = function() {
+            try {
+                const guardado = localStorage.getItem('tumovil_conductor');
+                if (guardado) {
+                    conductor = JSON.parse(guardado);
+                    document.getElementById('nombre').value = conductor.nombre || '';
+                    document.getElementById('telefono').value = conductor.telefono || '';
+                    document.getElementById('patente').value = conductor.placa || '';
+                    document.getElementById('color').value = conductor.color || '';
+                    document.getElementById('modelo').value = conductor.modelo || '';
+                    mostrarPanel();
+                }
+            } catch(e) {
+                console.log('No hay datos guardados');
+            }
+        };
+
+        // ==========================================
+        // GUARDAR DATOS
+        // ==========================================
+        function guardarDatos() {
+            console.log('CLICK GUARDAR');
+
+            const nombre = document.getElementById('nombre').value.trim();
+            const telefono = document.getElementById('telefono').value.trim();
+            const placa = document.getElementById('patente').value.trim();
+            const color = document.getElementById('color').value.trim();
+            const modelo = document.getElementById('modelo').value.trim();
+
+            if (!nombre) {
+                mostrarMsg('Escribí tu nombre', 'error');
+                return;
+            }
+            if (!placa) {
+                mostrarMsg('Escribí la patente', 'error');
+                return;
+            }
+
+            conductor = {
+                nombre: nombre,
+                telefono: telefono,
+                placa: placa,
+                color: color,
+                modelo: modelo,
+                id: 'cond-' + Date.now()
+            };
+
+            try {
+                localStorage.setItem('tumovil_conductor', JSON.stringify(conductor));
+                console.log('Guardado OK:', conductor);
+                mostrarMsg('¡Datos guardados!', 'success');
+                mostrarPanel();
+            } catch(e) {
+                console.error('Error guardando:', e);
+                mostrarMsg('Error al guardar', 'error');
+            }
+        }
+
+        function mostrarPanel() {
+            document.getElementById('cardRegistro').classList.add('hidden');
+            document.getElementById('cardPanel').classList.remove('hidden');
+            cargarGanancias();
+        }
+
+        // ==========================================
+        // CONECTAR / DESCONECTAR
+        // ==========================================
+        function toggleConexion() {
+            const btn = document.getElementById('btnConectar');
+
+            if (conectado) {
+                conectado = false;
+                btn.textContent = '🟢 CONECTAR PARA RECIBIR VIAJES';
+                btn.className = 'btn btn-primary';
+                if (subscription) subscription.unsubscribe();
+                mostrarMsg('Desconectado', 'success');
+            } else {
+                conectado = true;
+                btn.textContent = '🔴 DESCONECTAR';
+                btn.className = 'btn btn-warning';
+                conectarRealtime();
+                cargarViajes();
+                mostrarMsg('Conectado - Recibiendo viajes', 'success');
+            }
+        }
+
+        // ==========================================
+        // REALTIME
+        // ==========================================
+        function conectarRealtime() {
+            if (subscription) subscription.unsubscribe();
+
+            subscription = supabaseClient
+                .channel('viajes-nuevos')
+                .on('postgres_changes', 
+                    { event: 'INSERT', schema: 'public', table: 'viajes', filter: 'estado=eq.pendiente' },
+                    (payload) => {
+                        console.log('NUEVO VIAJE:', payload.new);
+                        agregarViaje(payload.new);
+                    }
+                )
+                .subscribe((status) => {
+                    console.log('Realtime status:', status);
+                });
+        }
+
+        // ==========================================
+        // CARGAR VIAJES PENDIENTES
+        // ==========================================
+        async function cargarViajes() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('viajes')
+                    .select('*')
+                    .eq('estado', 'pendiente')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const container = document.getElementById('listaViajes');
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty">
+                            <div class="icon">📭</div>
+                            <p>No hay viajes pendientes</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = '';
+                data.forEach(viaje => agregarViaje(viaje));
+
+            } catch (e) {
+                console.error('Error cargando viajes:', e);
+                mostrarMsg('Error al cargar viajes', 'error');
+            }
+        }
+
+        // ==========================================
+        // AGREGAR VIAJE A LA LISTA
+        // ==========================================
+        function agregarViaje(viaje) {
+            const container = document.getElementById('listaViajes');
+
+            // Quitar mensaje vacío si existe
+            if (container.querySelector('.empty')) {
+                container.innerHTML = '';
+            }
+
+            const div = document.createElement('div');
+            div.className = 'viaje-item';
+            div.id = 'viaje-' + viaje.id;
+
+            const precio = viaje.precio ? '$' + Math.round(viaje.precio).toLocaleString('es-AR') : 'Calculando...';
+            const distancia = viaje.distancia_km ? viaje.distancia_km + ' km' : '-';
+
+            div.innerHTML = `
+                <div class="viaje-header">
+                    <span style="font-weight:600;">🚕 Viaje #${viaje.id.slice(0,8)}</span>
+                    <span class="viaje-precio">${precio}</span>
+                </div>
+                <div class="destino-box">
+                    🎯 ${viaje.destino_direccion || 'Sin destino'}
+                </div>
+                <div class="viaje-info">
+                    <strong>👤 Pasajero:</strong> ${viaje.pasajero_nombre || '-'}<br>
+                    <strong>📞 Tel:</strong> ${viaje.pasajero_telefono || '-'}<br>
+                    <strong>📏 Distancia:</strong> ${distancia}
+                </div>
+                <button class="btn btn-primary" onclick="aceptarViaje('${viaje.id}')" style="margin-top:10px;">
+                    ✅ ACEPTAR VIAJE
+                </button>
+            `;
+
+            container.insertBefore(div, container.firstChild);
+        }
+
+        // ==========================================
+        // ACEPTAR VIAJE
+        // ==========================================
+        async function aceptarViaje(viajeId) {
+            console.log('Aceptando viaje:', viajeId);
+
+            try {
+                const { data, error } = await supabaseClient.rpc('aceptar_viaje', {
+                    p_viaje_id: viajeId,
+                    p_conductor_id: conductor.id,
+                    p_conductor_nombre: conductor.nombre,
+                    p_conductor_telefono: conductor.telefono,
+                    p_vehiculo_placa: conductor.placa,
+                    p_vehiculo_color: conductor.color,
+                    p_vehiculo_modelo: conductor.modelo
+                });
+
+                if (error) throw error;
+
+                if (data) {
+                    viajeActivoId = viajeId;
+                    mostrarMsg('¡Viaje aceptado!', 'success');
+
+                    // Ocultar lista, mostrar viaje activo
+                    document.getElementById('cardActivo').classList.remove('hidden');
+
+                    // Cargar datos del viaje
+                    const { data: viajeData } = await supabaseClient
+                        .from('viajes')
+                        .select('*')
+                        .eq('id', viajeId)
+                        .single();
+
+                    if (viajeData) {
+                        mostrarViajeActivo(viajeData);
+                    }
+
+                    // Recargar lista
+                    cargarViajes();
+
+                } else {
+                    mostrarMsg('El viaje ya fue tomado', 'error');
+                }
+            } catch (e) {
+                console.error('Error aceptando:', e);
+                mostrarMsg('Error: ' + e.message, 'error');
+            }
+        }
+
+        // ==========================================
+        // MOSTRAR VIAJE ACTIVO
+        // ==========================================
+        function mostrarViajeActivo(viaje) {
+            const container = document.getElementById('viajeActivo');
+            const precio = viaje.precio ? '$' + Math.round(viaje.precio).toLocaleString('es-AR') : '-';
+
+            let botones = '';
+
+            if (viaje.estado === 'aceptado') {
+                botones = `
+                    <div class="btn-group">
+                        <button class="btn btn-maps" onclick="irAlDestino()">
+                            🗺️ IR AL PASAJERO
+                        </button>
+                        <button class="btn btn-warning" onclick="cambiarEstado('en_camino')">
+                            📍 LLEGUÉ
+                        </button>
+                    </div>
+                `;
+            } else if (viaje.estado === 'en_camino') {
+                botones = `
+                    <div class="btn-group">
+                        <button class="btn btn-maps" onclick="irADestinoFinal()">
+                            🗺️ IR AL DESTINO
+                        </button>
+                        <button class="btn btn-success" onclick="cambiarEstado('iniciado')">
+                            ▶️ INICIAR
+                        </button>
+                    </div>
+                `;
+            } else if (viaje.estado === 'iniciado') {
+                botones = `
+                    <div class="btn-group">
+                        <button class="btn btn-maps" onclick="irADestinoFinal()">
+                            🗺️ IR AL DESTINO
+                        </button>
+                        <button class="btn btn-success" onclick="cambiarEstado('finalizado')">
+                            ✓ FINALIZAR
+                        </button>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div class="viaje-item ${viaje.estado}">
+                    <div class="viaje-header">
+                        <span style="font-weight:600;">🚕 Viaje Activo</span>
+                        <span class="viaje-precio">${precio}</span>
+                    </div>
+                    <div class="destino-box">
+                        🎯 ${viaje.destino_direccion || 'Sin destino'}
+                    </div>
+                    <div class="viaje-info">
+                        <strong>👤 Pasajero:</strong> ${viaje.pasajero_nombre || '-'}<br>
+                        <strong>📞 Tel:</strong> ${viaje.pasajero_telefono || '-'}<br>
+                        <strong>📏 Distancia:</strong> ${viaje.distancia_km || '-'} km
+                    </div>
+                    ${botones}
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // GOOGLE MAPS
+        // ==========================================
+        async function irAlDestino() {
+            try {
+                const { data } = await supabaseClient.from('viajes').select('*').eq('id', viajeActivoId).single();
+                if (data && data.destino_direccion) {
+                    const url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(data.destino_direccion);
+                    window.open(url, '_blank');
+                }
+            } catch(e) {
+                mostrarMsg('Error abriendo mapa', 'error');
+            }
+        }
+
+        async function irADestinoFinal() {
+            try {
+                const { data } = await supabaseClient.from('viajes').select('*').eq('id', viajeActivoId).single();
+                if (data && data.destino_direccion) {
+                    const url = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(data.destino_direccion);
+                    window.open(url, '_blank');
+                }
+            } catch(e) {
+                mostrarMsg('Error abriendo mapa', 'error');
+            }
+        }
+
+        // ==========================================
+        // CAMBIAR ESTADO
+        // ==========================================
+        async function cambiarEstado(nuevoEstado) {
+            try {
+                const { data, error } = await supabaseClient.rpc('actualizar_estado_viaje', {
+                    p_viaje_id: viajeActivoId,
+                    p_nuevo_estado: nuevoEstado
+                });
+
+                if (error) throw error;
+
+                const mensajes = {
+                    'en_camino': 'Llegaste al pasajero',
+                    'iniciado': 'Viaje iniciado',
+                    'finalizado': 'Viaje finalizado'
+                };
+                mostrarMsg(mensajes[nuevoEstado], 'success');
+
+                if (nuevoEstado === 'finalizado') {
+                    viajeActivoId = null;
+                    document.getElementById('cardActivo').classList.add('hidden');
+                    cargarGanancias();
+                } else {
+                    const { data: viajeData } = await supabaseClient.from('viajes').select('*').eq('id', viajeActivoId).single();
+                    if (viajeData) mostrarViajeActivo(viajeData);
+                }
+            } catch (e) {
+                mostrarMsg('Error: ' + e.message, 'error');
+            }
+        }
+
+        // ==========================================
+        // GANANCIAS
+        // ==========================================
+        async function cargarGanancias() {
+            if (!conductor.id) return;
+            try {
+                const { data, error } = await supabaseClient.rpc('obtener_ganancias_dia', {
+                    p_conductor_id: conductor.id
+                });
+                if (error) throw error;
+                if (data && data.length > 0) {
+                    const s = data[0];
+                    document.getElementById('statViajes').textContent = s.total_viajes || 0;
+                    document.getElementById('statGanancias').textContent = '$' + Math.round(s.total_ganancias || 0).toLocaleString('es-AR');
+                    document.getElementById('statKm').textContent = (s.total_km || 0).toFixed(1);
+                }
+            } catch(e) {
+                console.error('Error ganancias:', e);
+            }
+        }
+
+        // ==========================================
+        // UTILIDADES
+        // ==========================================
+        function mostrarMsg(texto, tipo) {
+            const msg = document.getElementById('msg');
+            msg.textContent = texto;
+            msg.className = 'msg msg-' + tipo + ' show';
+            setTimeout(() => msg.classList.remove('show'), 5000);
+        }
+    </script>
+</body>
+</html>
