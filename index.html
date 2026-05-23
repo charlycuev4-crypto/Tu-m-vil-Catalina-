@@ -15,8 +15,6 @@
             overflow: hidden;
             background: #1a1a2e;
         }
-
-        /* ===== 80% MAPA ===== */
         #mapa-container {
             height: 80vh;
             width: 100%;
@@ -27,8 +25,6 @@
             height: 100%;
             width: 100%;
         }
-
-        /* Overlays del mapa */
         .mapa-overlay {
             position: absolute;
             top: 10px;
@@ -51,7 +47,6 @@
         }
         .overlay-badge.activo { background: rgba(17,153,142,0.9); }
         .overlay-badge.precio { background: rgba(102,126,234,0.9); font-size: 1rem; }
-        .overlay-badge.origen { background: rgba(25,118,210,0.9); }
         .overlay-badge.buscando {
             background: rgba(255,152,0,0.9);
             animation: pulse-badge 1.5s infinite;
@@ -60,8 +55,6 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
         }
-
-        /* Botón flotante GPS */
         .btn-flotante {
             position: absolute;
             bottom: 20px;
@@ -99,8 +92,6 @@
             25% { transform: translateX(-5px); }
             75% { transform: translateX(5px); }
         }
-
-        /* Crosshair central (modo manual destino) */
         .crosshair {
             position: absolute;
             top: 50%;
@@ -112,8 +103,6 @@
             text-shadow: 0 2px 10px rgba(0,0,0,0.5);
             display: none;
         }
-
-        /* ===== 20% MENÚ ===== */
         #menu-container {
             height: 20vh;
             width: 100%;
@@ -126,7 +115,6 @@
             flex-direction: column;
             overflow: hidden;
         }
-
         .menu-handle {
             width: 40px;
             height: 4px;
@@ -135,22 +123,15 @@
             margin: 8px auto;
             flex-shrink: 0;
         }
-
         .menu-scroll {
             flex: 1;
             overflow-y: auto;
             padding: 0 15px 15px 15px;
             -webkit-overflow-scrolling: touch;
         }
-
-        .menu-seccion {
-            display: none;
-        }
+        .menu-seccion { display: none; }
         .menu-seccion.activa { display: block; }
-
-        .campo-compacto {
-            margin-bottom: 10px;
-        }
+        .campo-compacto { margin-bottom: 10px; }
         .campo-compacto label {
             display: block;
             font-size: 0.8rem;
@@ -168,12 +149,7 @@
             font-size: 1.05rem;
             transition: border-color 0.3s;
         }
-        .campo-compacto input:focus { 
-            outline: none; 
-            border-color: #667eea; 
-        }
-
-        /* Sugerencias flotantes sobre el mapa */
+        .campo-compacto input:focus { outline: none; border-color: #667eea; }
         .sugerencias-flotante {
             position: absolute;
             bottom: 21vh;
@@ -194,23 +170,11 @@
             cursor: pointer;
         }
         .sugerencia-item:hover { background: #f0f4ff; }
-        .sugerencia-item .calle { 
-            font-weight: 700; 
-            color: #333; 
-            font-size: 1rem; 
-        }
-        .sugerencia-item .zona { 
-            font-size: 0.85rem; 
-            color: #667eea; 
-            margin-top: 2px;
-        }
-        .sugerencia-item .distancia {
-            font-size: 0.75rem;
-            margin-top: 2px;
-        }
+        .sugerencia-item .calle { font-weight: 700; color: #333; font-size: 1rem; }
+        .sugerencia-item .zona { font-size: 0.85rem; color: #667eea; margin-top: 2px; }
+        .sugerencia-item .distancia { font-size: 0.75rem; margin-top: 2px; }
         .sugerencia-item .cerca { color: #2e7d32; }
         .sugerencia-item .lejos { color: #c62828; font-weight: 600; }
-
         .btn-menu {
             width: 100%;
             padding: 16px;
@@ -223,7 +187,6 @@
             margin-bottom: 10px;
         }
         .btn-menu:active { transform: scale(0.97); }
-
         .btn-verde {
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             color: white;
@@ -234,20 +197,9 @@
             color: white;
             box-shadow: 0 4px 15px rgba(102,126,234,0.3);
         }
-        .btn-gris {
-            background: #f0f0f0;
-            color: #555;
-        }
-        .btn-rojo {
-            background: #ff6b6b;
-            color: white;
-        }
-        .btn-naranja {
-            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-            color: white;
-        }
+        .btn-gris { background: #f0f0f0; color: #555; }
+        .btn-rojo { background: #ff6b6b; color: white; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
         .precio-menu {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -256,16 +208,8 @@
             text-align: center;
             margin-bottom: 12px;
         }
-        .precio-menu .monto { 
-            font-size: 2.2rem; 
-            font-weight: 800; 
-        }
-        .precio-menu .info { 
-            font-size: 0.85rem; 
-            opacity: 0.9; 
-            margin-top: 4px; 
-        }
-
+        .precio-menu .monto { font-size: 2.2rem; font-weight: 800; }
+        .precio-menu .info { font-size: 0.85rem; opacity: 0.9; margin-top: 4px; }
         .estado-menu {
             padding: 15px;
             border-radius: 14px;
@@ -278,7 +222,6 @@
         .estado-menu .icono { font-size: 2rem; margin-bottom: 5px; }
         .estado-menu .texto { font-size: 1.1rem; font-weight: bold; }
         .estado-menu .subtexto { font-size: 0.8rem; margin-top: 4px; opacity: 0.8; }
-
         .info-conductor {
             background: #f8f9fa;
             border-radius: 12px;
@@ -288,7 +231,6 @@
             font-size: 0.95rem;
             color: #333;
         }
-
         .mensaje-flotante {
             position: absolute;
             top: 60px;
@@ -307,7 +249,6 @@
         .mensaje-ok { background: #d4edda; color: #155724; }
         .mensaje-error { background: #f8d7da; color: #721c24; }
         .mensaje-info { background: #e3f2fd; color: #1565c0; }
-
         .btn-manual {
             width: 100%;
             padding: 12px;
@@ -322,20 +263,9 @@
             text-align: center;
         }
         .btn-manual:hover { background: #ffe0b2; }
-
-        .menu-header {
-            text-align: center;
-            padding: 5px 0 10px 0;
-        }
-        .menu-header h2 {
-            font-size: 1.1rem;
-            color: #333;
-        }
-        .menu-header p {
-            font-size: 0.8rem;
-            color: #888;
-        }
-
+        .menu-header { text-align: center; padding: 5px 0 10px 0; }
+        .menu-header h2 { font-size: 1.1rem; color: #333; }
+        .menu-header p { font-size: 0.8rem; color: #888; }
         .verificacion-compacta {
             background: #f3e5f5;
             border-radius: 12px;
@@ -348,81 +278,60 @@
     </style>
 </head>
 <body>
-    <!-- MENSAJE FLOTANTE -->
     <div class="mensaje-flotante" id="mensaje"></div>
 
-    <!-- ===== 80% MAPA ===== -->
     <div id="mapa-container">
         <div id="mapa"></div>
-
         <div class="mapa-overlay">
             <div class="overlay-badge buscando" id="badgeOrigen">📍 Buscando tu ubicación...</div>
             <div class="overlay-badge precio oculto" id="badgePrecio"></div>
         </div>
-
         <div class="crosshair" id="crosshair">📍</div>
-
-        <button class="btn-flotante" id="btnGPS" onclick="activarGPS()" title="Mi ubicación">
-            📍
-        </button>
+        <button class="btn-flotante" id="btnGPS" onclick="activarGPS()" title="Mi ubicación">📍</button>
     </div>
 
-    <!-- SUGERENCIAS FLOTANTES -->
     <div class="sugerencias-flotante" id="sugerencias"></div>
 
-    <!-- ===== 20% MENÚ ===== -->
     <div id="menu-container">
         <div class="menu-handle"></div>
-
         <div class="menu-scroll">
-
-            <!-- PASO 1: DATOS -->
+            
             <div class="menu-seccion activa" id="menuDatos">
                 <div class="menu-header">
                     <h2>¿A dónde vas?</h2>
                     <p>El móvil te busca donde estás ahora</p>
                 </div>
-
                 <div class="campo-compacto">
                     <input type="text" id="nombre" placeholder="👤 Tu nombre (Ej: Juan)" style="font-size:1rem;">
                 </div>
-
                 <div class="campo-compacto">
                     <input type="tel" id="telefono" placeholder="📞 Teléfono (Ej: 1133667793)" style="font-size:1rem;">
                 </div>
-
                 <div class="campo-compacto">
-                    <input type="text" id="destino" placeholder="📍 Calle y número de destino" 
-                           style="font-size:1rem;" autocomplete="off">
+                    <input type="text" id="destino" placeholder="📍 Calle y número de destino" style="font-size:1rem;" autocomplete="off">
                 </div>
-
                 <button class="btn-manual" onclick="activarModoManual()">
                     ✋ ¿No encontrás tu dirección? Marcala en el mapa
                 </button>
-
                 <button class="btn-menu btn-morado" id="btnCotizar" onclick="cotizarViaje()">
                     💰 VER CUÁNTO CUESTA
                 </button>
             </div>
 
-            <!-- PASO 2: PRECIO -->
             <div class="menu-seccion" id="menuPrecio">
                 <div class="menu-header">
                     <h2>✅ Verificá el viaje</h2>
                     <p>Tocá el mapa si querés ajustar</p>
                 </div>
-
                 <div class="verificacion-compacta">
                     <p>🚩 <strong>Desde:</strong> <span id="origenConfirmado">-</span></p>
                     <p>🏁 <strong>Hasta:</strong> <span id="destinoConfirmado">-</span></p>
                     <p>📏 <strong>Distancia:</strong> <span id="distanciaConfirmada">-</span> km</p>
                 </div>
-
                 <div class="precio-menu">
                     <div class="monto" id="precioMonto">$0</div>
                     <div class="info" id="precioInfo">Calculando...</div>
                 </div>
-
                 <button class="btn-menu btn-verde" id="btnSolicitar" onclick="solicitarViaje()">
                     🚕 ¡PEDIR MÓVIL!
                 </button>
@@ -431,19 +340,16 @@
                 </button>
             </div>
 
-            <!-- PASO 3: ESTADO -->
             <div class="menu-seccion" id="menuEstado">
                 <div class="estado-menu estado-buscando" id="cajaEstado">
                     <div class="icono" id="estadoIcono">🔍</div>
                     <div class="texto" id="estadoTexto">Buscando móvil...</div>
                     <div class="subtexto" id="estadoSubtexto">Unos segundos más</div>
                 </div>
-
                 <div id="infoConductor" class="info-conductor oculto">
                     👤 <strong id="nombreConductor">-</strong><br>
                     🚗 <span id="autoConductor">-</span>
                 </div>
-
                 <button class="btn-menu btn-rojo" onclick="cancelarViaje()">
                     ❌ CANCELAR
                 </button>
@@ -453,25 +359,23 @@
     </div>
 
     <script>
-        // CONFIG SUPABASE
         const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // BASE (solo referencia de cobertura, NO origen)
         const BASE_LAT = -34.6404;
         const BASE_LNG = -58.7145;
         const RADIO_COBERTURA_KM = 35;
 
         const ZONAS_CERCANAS = [
-            'moreno', 'san miguel', 'castelar', 'morón', 'moron',
-            'ituzaingó', 'ituzaingo', 'merlo', 'paso del rey',
-            'haedo', 'ramos mejía', 'ramos mejia', 'el palomar',
-            'ciudadela', 'jose c paz', 'jose c. paz',
-            'trujui', 'francisco alvarez', 'cuartel v', 'la reja',
-            'parque leloir', 'villa tesei', 'william morris',
-            'libertad', 'general rodriguez', 'mariano acosta',
-            'gregorio de laferrere', 'gonzalez catan', 'virrey del pino'
+            'moreno','san miguel','castelar','morón','moron',
+            'ituzaingó','ituzaingo','merlo','paso del rey',
+            'haedo','ramos mejía','ramos mejia','el palomar',
+            'ciudadela','jose c paz','jose c. paz',
+            'trujui','francisco alvarez','cuartel v','la reja',
+            'parque leloir','villa tesei','william morris',
+            'libertad','general rodriguez','mariano acosta',
+            'gregorio de laferrere','gonzalez catan','virrey del pino'
         ];
 
         let viajeId = null;
@@ -480,7 +384,7 @@
         let distanciaKm = 0;
         let destinoTexto = '';
         let destinoCoords = null;
-        let origenCoords = null;  // GPS DEL USUARIO
+        let origenCoords = null;
         let origenTexto = '';
         let mapa = null;
         let marcadorOrigen = null;
@@ -489,38 +393,29 @@
         let circuloCobertura = null;
         let watchId = null;
         let gpsIntentado = false;
+        let viajeActivo = false;
+        let lineaRuta = null;
 
-        // ========== INICIALIZAR ==========
         function initMapa() {
-            mapa = L.map('mapa', {
-                zoomControl: true,
-                attributionControl: false
-            }).setView([BASE_LAT, BASE_LNG], 12);
+            mapa = L.map('mapa', { zoomControl: true, attributionControl: false })
+                .setView([BASE_LAT, BASE_LNG], 12);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap'
             }).addTo(mapa);
 
-            // Círculo de cobertura de la base (solo referencia)
             circuloCobertura = L.circle([BASE_LAT, BASE_LNG], {
-                color: '#667eea',
-                fillColor: '#667eea',
-                fillOpacity: 0.05,
-                radius: RADIO_COBERTURA_KM * 1000,
-                weight: 1,
-                dashArray: '10, 10'
+                color: '#667eea', fillColor: '#667eea', fillOpacity: 0.05,
+                radius: RADIO_COBERTURA_KM * 1000, weight: 1, dashArray: '10, 10'
             }).addTo(mapa);
 
-            // Marcador de la base (referencia, no origen)
             L.marker([BASE_LAT, BASE_LNG], {
                 icon: L.divIcon({
                     html: '<div style="background:#9e9e9e;color:white;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:bold;white-space:nowrap;opacity:0.7;">🏢 BASE</div>',
-                    iconSize: [60, 25],
-                    iconAnchor: [30, 12]
+                    iconSize: [60, 25], iconAnchor: [30, 12]
                 })
             }).addTo(mapa);
 
-            // Escuchar movimiento del mapa en modo manual
             mapa.on('moveend', function() {
                 if (modoManual) {
                     const centro = mapa.getCenter();
@@ -529,79 +424,63 @@
                 }
             });
 
-            // === GPS AUTOMÁTICO AL ABRIR ===
-            setTimeout(() => {
-                activarGPS(true); // true = es automático (sin mostrar error agresivo)
-            }, 500);
+            setTimeout(() => { activarGPS(true); }, 500);
         }
 
-        // ========== GPS - OBTENER UBICACIÓN REAL ==========
         function activarGPS(esAutomatico = false) {
             if (!navigator.geolocation) {
-                if (!esAutomatico) {
-                    mostrarMensaje('Tu navegador no soporta GPS. Marcá tu ubicación manualmente.', 'error');
-                }
+                if (!esAutomatico) mostrarMensaje('Tu navegador no soporta GPS. Marcá tu ubicación manualmente.', 'error');
                 document.getElementById('badgeOrigen').textContent = '❌ GPS no disponible';
                 document.getElementById('badgeOrigen').className = 'overlay-badge';
                 document.getElementById('btnGPS').classList.add('gps-error');
                 return;
             }
 
-            if (!esAutomatico) {
-                mostrarMensaje('📍 Buscando tu ubicación...', 'info');
-            }
-
+            if (!esAutomatico) mostrarMensaje('📍 Buscando tu ubicación...', 'info');
             document.getElementById('badgeOrigen').textContent = '📍 Buscando GPS...';
             document.getElementById('badgeOrigen').className = 'overlay-badge buscando';
 
-            // Limpiar watch anterior si existe
-            if (watchId !== null) {
-                navigator.geolocation.clearWatch(watchId);
-            }
+            if (watchId !== null) navigator.geolocation.clearWatch(watchId);
 
-            // Watch position para actualizar en tiempo real
             watchId = navigator.geolocation.watchPosition(
                 (position) => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     const accuracy = position.coords.accuracy;
-
+                    const coordsAnteriores = origenCoords ? { ...origenCoords } : null;
+                    
                     origenCoords = { lat, lng };
                     gpsIntentado = true;
-
-                    // Obtener nombre de la dirección del origen
-                    reverseGeocodingOrigen(lat, lng);
-
-                    // Actualizar marcador de origen
+                    
+                    if (!origenTexto) reverseGeocodingOrigen(lat, lng);
+                    
                     if (marcadorOrigen) mapa.removeLayer(marcadorOrigen);
                     marcadorOrigen = L.marker([lat, lng], {
                         icon: L.divIcon({
                             html: '<div style="background:#4caf50;color:white;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:bold;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);">🚩 VOS</div>',
-                            iconSize: [60, 30],
-                            iconAnchor: [30, 15]
+                            iconSize: [60, 30], iconAnchor: [30, 15]
                         })
                     }).addTo(mapa).bindPopup('📍 Tu ubicación');
 
-                    // Solo centrar si es la primera vez o si el usuario no movió el mapa manualmente
                     if (!gpsIntentado || document.getElementById('badgeOrigen').textContent.includes('Buscando')) {
                         mapa.setView([lat, lng], 15);
                     }
-
-                    // Actualizar badge
+                    
                     const precision = accuracy < 100 ? '✅' : accuracy < 500 ? '⚠️' : '❓';
-                    document.getElementById('badgeOrigen').textContent = `${precision} Ubicación activa`;
+                    document.getElementById('badgeOrigen').textContent = precision + ' Ubicación activa';
                     document.getElementById('badgeOrigen').className = 'overlay-badge activo';
                     document.getElementById('btnGPS').classList.add('gps-activo');
                     document.getElementById('btnGPS').classList.remove('gps-error');
+                    
+                    if (!esAutomatico) mostrarMensaje('✅ ¡Ubicación actualizada!', 'ok');
 
-                    if (!esAutomatico) {
-                        mostrarMensaje('✅ ¡Ubicación actualizada!', 'ok');
+                    if (viajeActivo && viajeId && coordsAnteriores) {
+                        const distanciaMovida = calcularDistancia(coordsAnteriores.lat, coordsAnteriores.lng, lat, lng);
+                        if (distanciaMovida > 0.05) actualizarUbicacionEnSupabase(lat, lng);
                     }
                 },
                 (error) => {
-                    console.error('GPS error:', error);
                     gpsIntentado = true;
-
                     let msg = '';
                     if (error.code === 1) {
                         msg = 'Necesitamos permiso de GPS. Tocá el botón 📍 para permitirlo.';
@@ -613,20 +492,24 @@
                         msg = 'El GPS tardó mucho. Tocá 📍 para reintentar.';
                         document.getElementById('badgeOrigen').textContent = '⏱️ GPS lento';
                     }
-
                     document.getElementById('badgeOrigen').className = 'overlay-badge';
                     document.getElementById('btnGPS').classList.add('gps-error');
                     document.getElementById('btnGPS').classList.remove('gps-activo');
-
-                    if (!esAutomatico) {
-                        mostrarMensaje(msg, 'error');
-                    }
+                    if (!esAutomatico) mostrarMensaje(msg, 'error');
                 },
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
             );
         }
 
-        // ========== REVERSE GEOCODING ==========
+        async function actualizarUbicacionEnSupabase(lat, lng) {
+            try {
+                const { error } = await supabaseClient.rpc('actualizar_ubicacion_conductor', {
+                    p_viaje_id: viajeId, p_lat: lat, p_lng: lng
+                });
+                if (error) console.error('Error actualizando ubicación:', error);
+            } catch (e) { console.error('Error actualizando ubicación:', e); }
+        }
+
         async function reverseGeocoding(lat, lng) {
             try {
                 const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
@@ -638,7 +521,7 @@
                     const calle = a.road || '';
                     const num = a.house_number || '';
                     const loc = a.city || a.town || a.suburb || '';
-                    const corto = `${calle} ${num}, ${loc}`.replace(/^ ,/, '').replace(/,$/, '').trim();
+                    const corto = (calle + ' ' + num + ', ' + loc).replace(/^ ,/, '').replace(/,$/, '').trim();
                     document.getElementById('destino').value = corto || data.display_name.split(',')[0];
                 }
             } catch(e) {}
@@ -649,13 +532,10 @@
                 const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
                 const res = await fetch(url);
                 const data = await res.json();
-                if (data && data.display_name) {
-                    origenTexto = data.display_name;
-                }
+                if (data && data.display_name) origenTexto = data.display_name;
             } catch(e) {}
         }
 
-        // ========== DISTANCIA ==========
         function calcularDistancia(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -670,13 +550,11 @@
             return { dentro: d <= RADIO_COBERTURA_KM || esZona, distanciaKm: d.toFixed(1) };
         }
 
-        // ========== AUTOCOMPLETADO ==========
         let timeoutBusqueda = null;
         document.getElementById('destino').addEventListener('input', function(e) {
             const texto = e.target.value.trim();
             const sug = document.getElementById('sugerencias');
             clearTimeout(timeoutBusqueda);
-
             if (texto.length < 3) { sug.classList.remove('mostrar'); return; }
 
             timeoutBusqueda = setTimeout(async () => {
@@ -686,7 +564,7 @@
                     const datos = await res.json();
 
                     if (datos.length === 0) {
-                        sug.innerHTML = `<div class="sugerencia-item" style="color:#888;text-align:center;padding:20px;">No encontramos esa dirección.<br><small>Usá "Marcar en el mapa"</small></div>`;
+                        sug.innerHTML = '<div class="sugerencia-item" style="color:#888;text-align:center;padding:20px;">No encontramos esa dirección.<br><small>Usá "Marcar en el mapa"</small></div>';
                         sug.classList.add('mostrar');
                         return;
                     }
@@ -702,18 +580,17 @@
 
                     sug.innerHTML = resultados.map(l => {
                         const calle = l.address.road || l.display_name.split(',')[0];
-                        const num = l.address.house_number ? ` ${l.address.house_number}` : '';
+                        const num = l.address.house_number ? ' ' + l.address.house_number : '';
                         const loc = l.address.city || l.address.town || l.address.suburb || 'Buenos Aires';
                         const partido = l.address.county || '';
-                        const zona = partido ? `${loc}, ${partido}` : loc;
+                        const zona = partido ? loc + ', ' + partido : loc;
                         const distClass = l.enCobertura ? 'cerca' : 'lejos';
-                        const distText = l.enCobertura ? `🟢 ${l.distanciaBase} km de la base` : `🔴 ${l.distanciaBase} km (lejos)`;
-
-                        return `<div class="sugerencia-item" onclick="seleccionarDireccion('${l.display_name.replace(/'/g,"\'")}',${l.lat},${l.lon})">
-                            <div class="calle">${calle}${num}</div>
-                            <div class="zona">📍 ${zona}</div>
-                            <div class="distancia ${distClass}">${distText}</div>
-                        </div>`;
+                        const distText = l.enCobertura ? '🟢 ' + l.distanciaBase + ' km de la base' : '🔴 ' + l.distanciaBase + ' km (lejos)';
+                        return '<div class="sugerencia-item" onclick="seleccionarDireccion(\\'' + l.display_name.replace(/'/g, "\\'") + '\\',' + l.lat + ',' + l.lon + ')">' +
+                            '<div class="calle">' + calle + num + '</div>' +
+                            '<div class="zona">📍 ' + zona + '</div>' +
+                            '<div class="distancia ' + distClass + '">' + distText + '</div>' +
+                        '</div>';
                     }).join('');
                     sug.classList.add('mostrar');
                 } catch(err) {}
@@ -724,7 +601,6 @@
             if (!e.target.closest('.campo-compacto')) document.getElementById('sugerencias').classList.remove('mostrar');
         });
 
-        // ========== SELECCIONAR DIRECCIÓN ==========
         function seleccionarDireccion(direccion, lat, lng) {
             document.getElementById('destino').value = direccion.split(',')[0];
             document.getElementById('sugerencias').classList.remove('mostrar');
@@ -732,67 +608,98 @@
             destinoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
             modoManual = false;
             document.getElementById('crosshair').style.display = 'none';
-
-            // Mover mapa para ver origen y destino
+            
             if (origenCoords) {
-                const bounds = L.latLngBounds(
-                    [origenCoords.lat, origenCoords.lng],
-                    [lat, lng]
-                );
+                const bounds = L.latLngBounds([origenCoords.lat, origenCoords.lng], [lat, lng]);
                 mapa.fitBounds(bounds, { padding: [50, 50] });
             } else {
                 mapa.setView([lat, lng], 16);
             }
-
+            
             if (marcadorDestino) mapa.removeLayer(marcadorDestino);
             marcadorDestino = L.marker([lat, lng], {
                 icon: L.divIcon({
                     html: '<div style="background:#e53935;color:white;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:bold;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);">📍 DESTINO</div>',
-                    iconSize: [90, 30],
-                    iconAnchor: [45, 15]
+                    iconSize: [90, 30], iconAnchor: [45, 15]
                 })
             }).addTo(mapa).bindPopup('Tu destino');
 
             dibujarRuta();
         }
 
-        // ========== MODO MANUAL ==========
         function activarModoManual() {
             modoManual = true;
             document.getElementById('crosshair').style.display = 'block';
             document.getElementById('sugerencias').classList.remove('mostrar');
             document.getElementById('destino').value = '';
             destinoTexto = '';
-
+            
             if (marcadorDestino) { mapa.removeLayer(marcadorDestino); marcadorDestino = null; }
-
-            // Centrar en origen o en base
+            
             const centroLat = origenCoords ? origenCoords.lat : BASE_LAT;
             const centroLng = origenCoords ? origenCoords.lng : BASE_LNG;
             mapa.setView([centroLat, centroLng], 14);
-
             destinoCoords = { lat: centroLat, lng: centroLng };
-
             mostrarMensaje('📍 Mové el mapa. El punto rojo es tu destino.', 'info');
         }
 
-        // ========== DIBUJAR RUTA ==========
-        let lineaRuta = null;
+        function decodePolyline(str, precision = 5) {
+            let index = 0, lat = 0, lng = 0, coordinates = [];
+            const factor = Math.pow(10, precision);
+            while (index < str.length) {
+                let b, shift = 0, result = 0;
+                do { b = str.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+                const dlat = ((result & 1) ? ~(result >> 1) : (result >> 1)); lat += dlat;
+                shift = 0; result = 0;
+                do { b = str.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+                const dlng = ((result & 1) ? ~(result >> 1) : (result >> 1)); lng += dlng;
+                coordinates.push([lat / factor, lng / factor]);
+            }
+            return coordinates;
+        }
+
         function dibujarRuta() {
+            if (!origenCoords || !destinoCoords) return;
             if (lineaRuta) mapa.removeLayer(lineaRuta);
-            if (origenCoords && destinoCoords) {
-                lineaRuta = L.polyline(
-                    [[origenCoords.lat, origenCoords.lng], [destinoCoords.lat, destinoCoords.lng]],
-                    { color: '#667eea', weight: 4, opacity: 0.7, dashArray: '8, 8' }
-                ).addTo(mapa);
+            lineaRuta = L.polyline([[origenCoords.lat, origenCoords.lng], [destinoCoords.lat, destinoCoords.lng]], {
+                color: '#ff9800', weight: 3, opacity: 0.6, dashArray: '10, 10'
+            }).addTo(mapa);
+        }
+
+        async function dibujarRutaReal() {
+            if (!origenCoords || !destinoCoords) return;
+            if (lineaRuta) { mapa.removeLayer(lineaRuta); lineaRuta = null; }
+            
+            try {
+                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${origenCoords.lng},${origenCoords.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=polyline`;
+                const osrmRes = await fetch(osrmUrl);
+                const osrmData = await osrmRes.json();
+
+                if (!osrmData.routes || osrmData.routes.length === 0) {
+                    dibujarRuta();
+                    return;
+                }
+
+                const route = osrmData.routes[0];
+                const coordinates = decodePolyline(route.geometry);
+                
+                if (coordinates.length === 0) { dibujarRuta(); return; }
+
+                lineaRuta = L.polyline(coordinates, {
+                    color: '#2196f3', weight: 5, opacity: 0.8, lineJoin: 'round', lineCap: 'round'
+                }).addTo(mapa);
+
+                mapa.fitBounds(lineaRuta.getBounds(), { padding: [60, 60] });
+
+            } catch (e) {
+                console.error('Error dibujando ruta:', e);
+                dibujarRuta();
             }
         }
 
-        // ========== COTIZAR ==========
         async function cotizarViaje() {
             if (!origenCoords) {
                 mostrarMensaje('⏳ Esperando GPS... Tocá 📍 si tarda mucho.', 'info');
-                // Reintentar GPS
                 activarGPS();
                 return;
             }
@@ -813,15 +720,12 @@
 
             if (!destinoCoords) {
                 btn.disabled = true; btn.textContent = '⏳ Buscando...';
-
                 try {
                     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(inputDestino)}&limit=5&addressdetails=1&countrycodes=ar&bounded=1&viewbox=${BASE_LNG-0.5},${BASE_LAT+0.5},${BASE_LNG+0.5},${BASE_LAT-0.5}`;
                     const res = await fetch(url);
                     const data = await res.json();
 
-                    if (!data || data.length === 0) {
-                        throw new Error('No encontramos esa dirección. Marcala en el mapa.');
-                    }
+                    if (!data || data.length === 0) throw new Error('No encontramos esa dirección. Marcala en el mapa.');
 
                     let mejor = data[0], menor = Infinity;
                     for (const l of data) {
@@ -831,22 +735,14 @@
 
                     destinoCoords = { lat: parseFloat(mejor.lat), lng: parseFloat(mejor.lon) };
                     destinoTexto = mejor.display_name;
-
-                    const bounds = L.latLngBounds(
-                        [origenCoords.lat, origenCoords.lng],
-                        [destinoCoords.lat, destinoCoords.lng]
-                    );
-                    mapa.fitBounds(bounds, { padding: [50, 50] });
-
+                    
                     if (marcadorDestino) mapa.removeLayer(marcadorDestino);
                     marcadorDestino = L.marker([destinoCoords.lat, destinoCoords.lng], {
                         icon: L.divIcon({
                             html: '<div style="background:#e53935;color:white;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:bold;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);">📍 DESTINO</div>',
-                            iconSize: [90, 30],
-                            iconAnchor: [45, 15]
+                            iconSize: [90, 30], iconAnchor: [45, 15]
                         })
                     }).addTo(mapa);
-                    dibujarRuta();
 
                 } catch (e) {
                     mostrarMensaje(e.message, 'error');
@@ -858,27 +754,34 @@
             btn.disabled = true; btn.textContent = '⏳...';
 
             try {
-                // USAR ORIGEN REAL DEL GPS
-                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${origenCoords.lng},${origenCoords.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=false`;
+                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${origenCoords.lng},${origenCoords.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=polyline`;
                 const osrmRes = await fetch(osrmUrl);
                 const osrmData = await osrmRes.json();
 
-                if (!osrmData.routes || osrmData.routes.length === 0) {
-                    throw new Error('No pudimos calcular la ruta.');
-                }
+                if (!osrmData.routes || osrmData.routes.length === 0) throw new Error('No pudimos calcular la ruta.');
 
-                const metros = osrmData.routes[0].distance;
+                const route = osrmData.routes[0];
+                const metros = route.distance;
                 distanciaKm = parseFloat((metros / 1000).toFixed(1));
                 precioCalculado = Math.round(3000 + (distanciaKm * 800));
 
-                document.getElementById('badgePrecio').textContent = `$${precioCalculado.toLocaleString('es-AR')}`;
+                const coordinates = decodePolyline(route.geometry);
+                if (coordinates.length > 0) {
+                    if (lineaRuta) mapa.removeLayer(lineaRuta);
+                    lineaRuta = L.polyline(coordinates, {
+                        color: '#2196f3', weight: 5, opacity: 0.8, lineJoin: 'round', lineCap: 'round'
+                    }).addTo(mapa);
+                    mapa.fitBounds(lineaRuta.getBounds(), { padding: [60, 60] });
+                }
+
+                document.getElementById('badgePrecio').textContent = '$' + precioCalculado.toLocaleString('es-AR');
                 document.getElementById('badgePrecio').classList.remove('oculto');
 
                 document.getElementById('precioMonto').textContent = '$' + precioCalculado.toLocaleString('es-AR');
                 const textoDist = distanciaKm < 3 ? 'Viaje corto' : distanciaKm < 8 ? 'Viaje mediano' : 'Viaje largo';
-                document.getElementById('precioInfo').textContent = `${textoDist} • ${distanciaKm} km`;
-                document.getElementById('origenConfirmado').textContent = origenTexto.split(',')[0] || 'Tu ubicación';
-                document.getElementById('destinoConfirmado').textContent = destinoTexto.split(',')[0] || 'Destino marcado';
+                document.getElementById('precioInfo').textContent = textoDist + ' • ' + distanciaKm + ' km';
+                document.getElementById('origenConfirmado').textContent = (origenTexto || 'Tu ubicación').split(',')[0];
+                document.getElementById('destinoConfirmado').textContent = (destinoTexto || 'Destino marcado').split(',')[0];
                 document.getElementById('distanciaConfirmada').textContent = distanciaKm;
 
                 cambiarSeccion('menuPrecio');
@@ -890,7 +793,6 @@
             }
         }
 
-        // ========== CAMBIAR SECCIÓN ==========
         function cambiarSeccion(id) {
             document.querySelectorAll('.menu-seccion').forEach(s => s.classList.remove('activa'));
             document.getElementById(id).classList.add('activa');
@@ -900,9 +802,9 @@
             cambiarSeccion('menuDatos');
             document.getElementById('badgePrecio').classList.add('oculto');
             document.getElementById('crosshair').style.display = modoManual ? 'block' : 'none';
+            if (lineaRuta) { mapa.removeLayer(lineaRuta); lineaRuta = null; }
         }
 
-        // ========== SOLICITAR VIAJE ==========
         async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value.trim() || 'Pasajero';
             const telefono = document.getElementById('telefono').value.trim();
@@ -933,9 +835,11 @@
                 if (error) throw error;
 
                 viajeId = data;
+                viajeActivo = true;
+                
                 cambiarSeccion('menuEstado');
                 document.getElementById('badgeOrigen').textContent = '⏳ Buscando móvil...';
-                document.getElementById('badgeOrigen').classList.add('buscando');
+                document.getElementById('badgeOrigen').className = 'overlay-badge buscando';
                 mostrarMensaje('¡Listo! Buscando tu móvil', 'ok');
 
                 if (subscription) subscription.unsubscribe();
@@ -992,6 +896,7 @@
                     subtexto.textContent = 'Gracias por viajar con nosotros';
                     badge.textContent = '🎉 Viaje completado';
                     badge.className = 'overlay-badge activo';
+                    viajeActivo = false;
                     break;
                 case 'cancelado':
                     caja.className = 'estado-menu estado-buscando';
@@ -999,12 +904,14 @@
                     subtexto.textContent = 'Podés pedir otro';
                     badge.textContent = '❌ Cancelado';
                     badge.className = 'overlay-badge';
+                    viajeActivo = false;
                     break;
             }
         }
 
         function cancelarViaje() {
             if (confirm('¿Cancelar el viaje?')) {
+                viajeActivo = false;
                 mostrarMensaje('Viaje cancelado', 'ok');
                 setTimeout(() => location.reload(), 2000);
             }
@@ -1017,7 +924,6 @@
             setTimeout(() => msg.classList.remove('mostrar'), 5000);
         }
 
-        // ========== INICIAR ==========
         window.addEventListener('load', initMapa);
     </script>
 </body>
