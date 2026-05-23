@@ -210,7 +210,7 @@
         let distanciaKm = 0;
         let destinoTexto = '';
 
-        // PROCESAR MAPA E INTENT SIMULTÁNEO
+        // PROCESAR MAPA E INTENT SIMULTÁNEO (CORREGIDO Y SEGURO)
         function procesarRutaYMapa() {
             destinoTexto = document.getElementById('destino').value.trim();
 
@@ -219,16 +219,17 @@
                 return;
             }
 
-            // 1. Cargamos la vista de confirmación en el mapa de abajo
-            const mapaUrl = `http://googleusercontent.com/maps.google.com/6{encodeURIComponent(destinoTexto)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+            // 1. Cargamos la vista de confirmación en el mapa de abajo usando la URL embebida oficial
+            const encodedDest = encodeURIComponent(destinoTexto);
+            const mapaUrl = "https://maps.google.com/maps?q=" + encodedDest + "&t=&z=14&ie=UTF8&iwloc=&output=embed";
             document.getElementById('googleMapIframe').src = mapaUrl;
 
             // Mostrar elementos ocultos en la pantalla
             document.getElementById('contenedorMapa').classList.remove('hidden');
             document.getElementById('seccionKm').classList.remove('hidden');
 
-            // 2. LA MAGIA: Abrimos la app nativa de Maps para que calcule los KM reales al instante
-            const appMapsUrl = `http://googleusercontent.com/maps.google.com/7{encodeURIComponent(destinoTexto)}&travelmode=driving`;
+            // 2. Abrimos la app nativa oficial de Google Maps con la ruta manejando en automóvil (travelmode=driving)
+            const appMapsUrl = "https://www.google.com/maps/dir/?api=1&destination=" + encodedDest + "&travelmode=driving";
             window.open(appMapsUrl, '_blank');
             
             mostrarMsg('¡Revisá los kilómetros en la app de Google Maps y anotalos acá abajo!', 'success');
