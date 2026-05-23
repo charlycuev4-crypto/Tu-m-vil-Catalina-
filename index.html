@@ -1,1 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TuMovil Las Catalinas - Pasajero</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 500px; margin: 0 auto; }
+        .header { text-align: center; color: white; margin-bottom: 20px; }
+        .header h1 { font-size: 1.5rem; margin-bottom: 5px; }
+        .header p { font-size: 0.9rem; opacity: 0.9; }
 
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus { outline: none; border-color: #667eea; }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:active { opacity: 0.8; }
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        .btn-success:active { opacity: 0.8; }
+        .btn-maps {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+            box-shadow: 0 4px 10px rgba(66, 133, 244, 0.3);
+        }
+        .btn-maps:active { opacity: 0.8; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .gps-box {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .gps-box .estado {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2e7d32;
+        }
+        .gps-box .coords {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .precio-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 15px 0;
+        }
+        .precio-box .monto { font-size: 2.5rem; font-weight: 700; }
+        .precio-box .detalle { font-size: 0.85rem; opacity: 0.9; margin-top: 5px; }
+
+        .status-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .status-box .estado {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+        .status-box .info { font-size: 0.85rem; color: #666; margin-top: 5px; }
+
+        .conductor-info {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .conductor-info p { font-size: 0.9rem; color: #333; margin: 5px 0; }
+
+        .msg {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        .msg.show { display: block; }
+        .msg-error { background: #ffebee; color: #c62828; }
+        .msg-success { background: #e8f5e9; color: #2e7d32; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚕 TuMovil Las Catalinas</h1>
+            <p>Tu móvil, tu viaje, tu camino</p>
+        </div>
+
+        <div class="msg" id="msg"></div>
+
+        <div class="card" id="cardDatos">
+            <div class="card-title">📍 Tu ubicación</div>
+
+            <div class="gps-box" id="gpsBox">
+                <div class="estado" id="gpsEstado">📍 Tocá para obtener tu ubicación</div>
+                <div class="coords hidden" id="gpsCoords"></div>
+            </div>
+
+            <button class="btn btn-primary" id="btnGPS" onclick="obtenerGPS()">
+                📍 OBTENER MI UBICACIÓN
+            </button>
+
+            <div style="margin-top:20px;">
+                <div class="card-title">📝 Datos del viaje</div>
+
+                <div class="input-group">
+                    <label>Tu nombre</label>
+                    <input type="text" id="nombre" placeholder="Ej: Juan Pérez">
+                </div>
+
+                <div class="input-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="telefono" placeholder="Ej: 1133667793">
+                </div>
+
+                <div class="input-group">
+                    <label>Dirección de destino (Localidad, Calle y Altura)</label>
+                    <input type="text" id="destino" placeholder="Ej: San Miguel, Mitre 1234">
+                </div>
+
+                <button class="btn btn-maps" onclick="verEnGoogleMaps()">
+                    🗺️ VER RUTA EN GOOGLE MAPS
+                </button>
+                <p style="font-size:0.8rem;color:#888;text-align:center;margin-top:8px;">
+                    Abrirá Google Maps para calcular la distancia exacta de forma segura
+                </p>
+            </div>
+        </div>
+
+        <div class="card hidden" id="cardDistancia">
+            <div class="card-title">📏 Confirmar Distancia</div>
+
+            <div class="input-group">
+                <label>¿Cuántos kilómetros indicó Google Maps?</label>
+                <input type="number" id="distancia" placeholder="Ej: 5.4" min="0.5" max="99" step="0.1">
+            </div>
+
+            <button class="btn btn-primary" onclick="calcularPrecio()">
+                💰 CALCULAR PRECIO
+            </button>
+            <button class="btn btn-maps" onclick="verEnGoogleMaps()" style="margin-top:10px; background: #666;">
+                🗺️ VOLVER A VER EL MAPA
+            </button>
+            <button class="btn" onclick="volverAPaso1()" style="margin-top:10px; background:#f0f0f0; color:#333;">
+                ← MODIFICAR DESTINO
+            </button>
+        </div>
+
+        <div class="card hidden" id="cardPrecio">
+            <div class="precio-box">
+                <div class="monto" id="precioMonto">$0</div>
+                <div class="detalle" id="precioDetalle">Base $3.000 + 0km × $800</div>
+            </div>
+
+            <button class="btn btn-success" id="btnSolicitar" onclick="solicitarViaje()">
+                🚕 SOLICITAR MÓVIL
+            </button>
+            <button class="btn" onclick="volverAPaso2()" style="margin-top:10px;background:#f0f0f0;color:#333;">
+                ← MODIFICAR KM
+            </button>
+        </div>
+
+        <div class="card hidden" id="cardEstado">
+            <div class="status-box">
+                <div class="estado" id="estadoTexto">⏳ Buscando conductor...</div>
+                <div class="info" id="estadoInfo">Tu viaje fue solicitado</div>
+            </div>
+
+            <div class="conductor-info hidden" id="infoConductor">
+                <p><strong>👤 Conductor:</strong> <span id="condNombre">-</span></p>
+                <p><strong>📞 Tel:</strong> <span id="condTelefono">-</span></p>
+                <p><strong>🚗 Auto:</strong> <span id="condAuto">-</span></p>
+                <p><strong>🔢 Patente:</strong> <span id="condPlaca">-</span></p>
+            </div>
+
+            <button class="btn btn-primary" onclick="cancelarViaje()" style="background:#ff6b6b;margin-top:10px;">
+                ❌ CANCELAR VIAJE
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // CONFIG SUPABASE
+        const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let viajeId = null;
+        let subscription = null;
+        let precioCalculado = 0;
+        let distanciaKm = 0;
+        let userLat = null;
+        let userLng = null;
+        let destinoTexto = '';
+
+        // OBTENER GPS REAL DEL TELÉFONO
+        function obtenerGPS() {
+            const btn = document.getElementById('btnGPS');
+            const estado = document.getElementById('gpsEstado');
+            const coords = document.getElementById('gpsCoords');
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Obteniendo...';
+            estado.textContent = '⏳ Buscando tu ubicación...';
+
+            if (!navigator.geolocation) {
+                estado.textContent = '❌ GPS no disponible';
+                btn.disabled = false;
+                btn.textContent = '📍 INTENTAR DE NUEVO';
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    userLat = pos.coords.latitude;
+                    userLng = pos.coords.longitude;
+
+                    estado.textContent = '✅ Ubicación obtenida';
+                    coords.textContent = `Lat: ${userLat.toFixed(4)}, Lng: ${userLng.toFixed(4)}`;
+                    coords.classList.remove('hidden');
+
+                    btn.textContent = '✅ UBICACIÓN LISTA';
+                    mostrarMsg('¡Ubicación obtenida con éxito!', 'success');
+                },
+                (err) => {
+                    console.error('GPS error:', err);
+                    estado.textContent = '❌ GPS Desactivado u Oculto';
+                    btn.disabled = false;
+                    btn.textContent = '📍 INTENTAR DE NUEVO';
+                    mostrarMsg('No pudimos geolocalizarte automáticamente. Podés continuar ingresando el destino.', 'error');
+                },
+                { timeout: 10000, maximumAge: 60000, enableHighAccuracy: true }
+            );
+        }
+
+        // REDIRECCIÓN ENLACES UNIVERSALES DE GOOGLE MAPS (DIRECTIONS INTENT)
+        function verEnGoogleMaps() {
+            destinoTexto = document.getElementById('destino').value.trim();
+
+            if (!destinoTexto) {
+                mostrarMsg('Por favor, ingresá la dirección de destino primero', 'error');
+                return;
+            }
+
+            let url;
+            // Si capturamos las coordenadas del navegador del usuario las usamos como origen exacto
+            if (userLat && userLng) {
+                url = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${encodeURIComponent(destinoTexto)}&travelmode=driving`;
+            } else {
+                // Si falló el GPS, dejamos el origen en blanco para que Maps use la ubicación actual del teléfono
+                url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destinoTexto)}&travelmode=driving`;
+            }
+
+            // Abrir de forma segura en pestaña nueva o app nativa
+            window.open(url, '_blank');
+
+            // Saltamos al Paso 2 para que anote los KM
+            document.getElementById('cardDatos').classList.add('hidden');
+            document.getElementById('cardDistancia').classList.remove('hidden');
+            mostrarMsg('Revisá los kilómetros en Google Maps y colocalos acá', 'success');
+        }
+
+        // CALCULAR PRECIO
+        function calcularPrecio() {
+            const distanciaInput = document.getElementById('distancia').value;
+            const distancia = parseFloat(distanciaInput);
+
+            if (!distancia || distancia <= 0) {
+                mostrarMsg('Ingresá los kilómetros del viaje', 'error');
+                return;
+            }
+
+            distanciaKm = distancia;
+            precioCalculado = Math.round(3000 + (distancia * 800));
+
+            document.getElementById('precioMonto').textContent = '$' + precioCalculado.toLocaleString('es-AR');
+            document.getElementById('precioDetalle').textContent = 'Base $3.000 + ' + distancia + 'km × $800';
+
+            document.getElementById('cardDistancia').classList.add('hidden');
+            document.getElementById('cardPrecio').classList.remove('hidden');
+        }
+
+        // NAVEGACIÓN ENTRE TARJETAS (PULIDO)
+        function volverAPaso1() {
+            document.getElementById('cardDistancia').classList.add('hidden');
+            document.getElementById('cardDatos').classList.remove('hidden');
+        }
+
+        function volverAPaso2() {
+            document.getElementById('cardPrecio').classList.add('hidden');
+            document.getElementById('cardDistancia').classList.remove('hidden');
+        }
+
+        // SOLICITAR VIAJE EN SUPABASE
+        async function solicitarViaje() {
+            const nombre = document.getElementById('nombre').value.trim() || 'Pasajero';
+            const telefono = document.getElementById('telefono').value.trim();
+            destinoTexto = document.getElementById('destino').value.trim();
+
+            const btn = document.getElementById('btnSolicitar');
+            btn.disabled = true;
+            btn.textContent = '⏳ Enviando...';
+
+            try {
+                const { data, error } = await supabaseClient.rpc('crear_viaje', {
+                    p_pasajero_nombre: nombre,
+                    p_pasajero_telefono: telefono,
+                    p_origen_lat: userLat || -34.640, // fallback geográfico estimado de zona oeste
+                    p_origen_lng: userLng || -58.715,
+                    p_origen_direccion: 'Ubicación actual del pasajero',
+                    p_destino_lat: userLat || -34.640,
+                    p_destino_lng: userLng || -58.715,
+                    p_destino_direccion: destinoTexto,
+                    p_distancia_km: distanciaKm
+                });
+
+                if (error) throw error;
+
+                viajeId = data;
+                mostrarMsg('¡Viaje solicitado con éxito!', 'success');
+
+                document.getElementById('cardPrecio').classList.add('hidden');
+                document.getElementById('cardEstado').classList.remove('hidden');
+
+                escucharViaje(viajeId);
+
+            } catch (e) {
+                console.error('Error:', e);
+                mostrarMsg('Error en base de datos: ' + e.message, 'error');
+                btn.disabled = false;
+                btn.textContent = '🚕 SOLICITAR MÓVIL';
+            }
+        }
+
+        // REALTIME SUBSCRIPTION
+        function escucharViaje(id) {
+            if (subscription) subscription.unsubscribe();
+
+            subscription = supabaseClient
+                .channel('viaje-' + id)
+                .on('postgres_changes', 
+                    { event: '*', schema: 'public', table: 'viajes', filter: 'id=eq.' + id },
+                    (payload) => { actualizarEstado(payload.new); }
+                )
+                .subscribe();
+        }
+
+        function actualizarEstado(viaje) {
+            const estadoTexto = document.getElementById('estadoTexto');
+            const estadoInfo = document.getElementById('estadoInfo');
+            const infoConductor = document.getElementById('infoConductor');
+
+            switch(viaje.estado) {
+                case 'pendiente':
+                    estadoTexto.textContent = '⏳ Buscando conductor...';
+                    estadoInfo.textContent = 'Tu viaje fue solicitado';
+                    break;
+                case 'aceptado':
+                    estadoTexto.textContent = '✅ Conductor asignado';
+                    estadoInfo.textContent = 'Tu conductor está en camino';
+                    infoConductor.classList.remove('hidden');
+                    document.getElementById('condNombre').textContent = viaje.conductor_nombre || '-';
+                    document.getElementById('condTelefono').textContent = viaje.conductor_telefono || '-';
+                    document.getElementById('condAuto').textContent = (viaje.vehiculo_color || '') + ' ' + (viaje.vehiculo_modelo || '');
+                    document.getElementById('condPlaca').textContent = viaje.vehiculo_placa || '-';
+                    break;
+                case 'en_camino':
+                    estadoTexto.textContent = '🚗 Conductor en camino';
+                    estadoInfo.textContent = 'Se acerca a tu ubicación';
+                    break;
+                case 'iniciado':
+                    estadoTexto.textContent = '🚀 Viaje iniciado';
+                    estadoInfo.textContent = '¡Buen viaje!';
+                    break;
+                case 'finalizado':
+                    estadoTexto.textContent = '✅ Viaje completado';
+                    estadoInfo.textContent = '¡Gracias por viajar con TuMovil!';
+                    if (subscription) subscription.unsubscribe();
+                    break;
+                case 'cancelado':
+                    estadoTexto.textContent = '❌ Viaje cancelado';
+                    estadoInfo.textContent = 'El viaje fue cancelado';
+                    if (subscription) subscription.unsubscribe();
+                    break;
+            }
+        }
+
+        async function cancelarViaje() {
+            if (!viajeId) return;
+            if (!confirm('¿Seguro que querés cancelar el viaje?')) return;
+
+            try {
+                const { error } = await supabaseClient.rpc('actualizar_estado_viaje', {
+                    p_viaje_id: viajeId,
+                    p_nuevo_estado: 'cancelado'
+                });
+                if (error) throw error;
+                mostrarMsg('Viaje cancelado', 'success');
+                setTimeout(() => location.reload(), 2000);
+            } catch (e) {
+                mostrarMsg('Error: ' + e.message, 'error');
+            }
+        }
+
+        function mostrarMsg(texto, tipo) {
+            const msg = document.getElementById('msg');
+            msg.textContent = texto;
+            msg.className = 'msg msg-' + tipo + ' show';
+            setTimeout(() => msg.classList.remove('show'), 6000);
+        }
+    </script>
+</body>
+</html>
