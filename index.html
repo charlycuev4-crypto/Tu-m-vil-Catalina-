@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-0">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TuMovil Las Catalinas - Pasajero</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
@@ -31,17 +31,17 @@
 
         .btn-gigante {
             width: 100%;
-            padding: 25px 15px;
+            padding: 22px 15px;
             border: none;
-            border-radius: 20px;
-            font-size: 1.4rem;
+            border-radius: 16px;
+            font-size: 1.3rem;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             text-align: center;
         }
-        .btn-gigante:active { transform: scale(0.98); }
+        .btn-gigante:active { transform: scale(0.97); }
         
         .btn-verde {
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
@@ -61,37 +61,41 @@
             background: #ff6b6b;
             color: white;
         }
+        .btn-azul {
+            background: linear-gradient(135deg, #42a5f5 0%, #1976d2 100%);
+            color: white;
+        }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .tarjeta {
             background: white;
             border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 15px;
+            padding: 20px;
+            margin-bottom: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
         }
         .tarjeta-titulo {
             font-size: 1.3rem;
             font-weight: bold;
             color: #333;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             text-align: center;
         }
 
-        .campo { margin-bottom: 20px; }
+        .campo { margin-bottom: 15px; }
         .campo label {
             display: block;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             color: #555;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 600;
         }
         .campo input {
             width: 100%;
-            padding: 18px 15px;
+            padding: 16px 14px;
             border: 3px solid #e0e0e0;
-            border-radius: 15px;
-            font-size: 1.2rem;
+            border-radius: 14px;
+            font-size: 1.15rem;
             transition: border-color 0.3s;
         }
         .campo input:focus { 
@@ -99,12 +103,12 @@
             border-color: #667eea; 
         }
 
-        /* SUGERENCIAS MEJORADAS */
+        /* SUGERENCIAS */
         .sugerencias {
             background: white;
             border: 3px solid #667eea;
-            border-radius: 15px;
-            max-height: 350px;
+            border-radius: 14px;
+            max-height: 320px;
             overflow-y: auto;
             display: none;
             position: absolute;
@@ -114,7 +118,7 @@
         }
         .sugerencias.mostrar { display: block; }
         .sugerencia-item {
-            padding: 18px 15px;
+            padding: 14px 12px;
             border-bottom: 2px solid #f0f0f0;
             cursor: pointer;
         }
@@ -122,69 +126,114 @@
         .sugerencia-item .calle { 
             font-weight: 700; 
             color: #333; 
-            font-size: 1.15rem; 
+            font-size: 1.1rem; 
         }
         .sugerencia-item .zona { 
-            font-size: 1rem; 
+            font-size: 0.95rem; 
             color: #667eea; 
-            margin-top: 5px;
+            margin-top: 3px;
             font-weight: 500;
         }
         .sugerencia-item .distancia {
-            font-size: 0.85rem;
-            color: #888;
+            font-size: 0.8rem;
             margin-top: 3px;
         }
-        .sugerencia-item .lejos {
-            color: #c62828;
-            font-weight: 600;
-        }
+        .sugerencia-item .cerca { color: #2e7d32; }
+        .sugerencia-item .lejos { color: #c62828; font-weight: 600; }
 
-        #mapa {
-            height: 220px;
-            border-radius: 15px;
-            margin: 15px 0;
+        /* MAPA COMPLETO */
+        #mapa-container {
             display: none;
+            margin: 12px 0;
+            border-radius: 16px;
+            overflow: hidden;
             border: 3px solid #667eea;
         }
-        #mapa.mostrar { display: block; }
+        #mapa-container.mostrar { display: block; }
+        #mapa {
+            height: 350px;
+            width: 100%;
+        }
+        .mapa-leyenda {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: center;
+            font-size: 0.95rem;
+            color: #555;
+            border-top: 2px solid #e0e0e0;
+        }
+        .mapa-leyenda .punto-rojo { color: #e53935; font-weight: bold; }
+        .mapa-leyenda .punto-azul { color: #1976d2; font-weight: bold; }
+
+        /* BOTÓN MARCAR MANUAL */
+        .btn-manual {
+            width: 100%;
+            padding: 14px;
+            background: #fff3e0;
+            border: 2px dashed #ff9800;
+            border-radius: 14px;
+            color: #e65100;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .btn-manual:hover { background: #ffe0b2; }
+
+        /* INSTRUCCIONES MODO MANUAL */
+        .instrucciones-manual {
+            background: #e3f2fd;
+            border-radius: 14px;
+            padding: 15px;
+            margin: 12px 0;
+            display: none;
+        }
+        .instrucciones-manual.mostrar { display: block; }
+        .instrucciones-manual p {
+            color: #1565c0;
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        .instrucciones-manual strong { color: #0d47a1; }
 
         .precio-caja {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
-            border-radius: 20px;
+            padding: 25px;
+            border-radius: 18px;
             text-align: center;
-            margin: 20px 0;
+            margin: 15px 0;
         }
         .precio-caja .monto { 
-            font-size: 3.5rem; 
+            font-size: 3.2rem; 
             font-weight: 800; 
         }
         .precio-caja .info { 
-            font-size: 1.1rem; 
+            font-size: 1rem; 
             opacity: 0.9; 
-            margin-top: 10px; 
+            margin-top: 8px; 
         }
 
         .estado-caja {
-            padding: 30px;
-            border-radius: 20px;
+            padding: 25px;
+            border-radius: 18px;
             text-align: center;
-            margin: 20px 0;
+            margin: 15px 0;
         }
         .estado-buscando { background: #fff3cd; color: #856404; }
         .estado-asignado { background: #d4edda; color: #155724; }
         .estado-camino { background: #cce5ff; color: #004085; }
-        .estado-caja .icono { font-size: 4rem; margin-bottom: 15px; }
-        .estado-caja .texto { font-size: 1.5rem; font-weight: bold; }
-        .estado-caja .subtexto { font-size: 1rem; margin-top: 10px; opacity: 0.8; }
+        .estado-caja .icono { font-size: 3.5rem; margin-bottom: 12px; }
+        .estado-caja .texto { font-size: 1.4rem; font-weight: bold; }
+        .estado-caja .subtexto { font-size: 0.95rem; margin-top: 8px; opacity: 0.8; }
 
         .mensaje {
-            padding: 18px;
-            border-radius: 15px;
-            margin-bottom: 15px;
-            font-size: 1.1rem;
+            padding: 16px;
+            border-radius: 14px;
+            margin-bottom: 12px;
+            font-size: 1.05rem;
             text-align: center;
             display: none;
             font-weight: 600;
@@ -199,12 +248,25 @@
         .zona-info {
             background: #e8f5e9;
             border-radius: 12px;
-            padding: 12px 15px;
-            margin-bottom: 15px;
+            padding: 10px 12px;
+            margin-bottom: 12px;
             text-align: center;
             color: #2e7d32;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 500;
+        }
+
+        .verificacion-caja {
+            background: #f3e5f5;
+            border-radius: 14px;
+            padding: 15px;
+            margin: 12px 0;
+            text-align: center;
+        }
+        .verificacion-caja p {
+            color: #4a148c;
+            font-size: 1rem;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -227,40 +289,64 @@
 
             <div class="campo">
                 <label>👤 Tu nombre</label>
-                <input type="text" id="nombre" placeholder="Ej: Juan" style="font-size:1.3rem;">
+                <input type="text" id="nombre" placeholder="Ej: Juan" style="font-size:1.2rem;">
             </div>
 
             <div class="campo">
                 <label>📞 Teléfono</label>
-                <input type="tel" id="telefono" placeholder="Ej: 1133667793" style="font-size:1.3rem;">
+                <input type="tel" id="telefono" placeholder="Ej: 1133667793" style="font-size:1.2rem;">
             </div>
 
             <div class="campo" style="position:relative;">
-                <label>📍 Calle y número de destino</label>
+                <label>📍 Escribí la calle y número</label>
                 <input type="text" id="destino" placeholder="Ej: Mitre 1234, San Miguel" 
-                       style="font-size:1.2rem;" autocomplete="off">
+                       style="font-size:1.15rem;" autocomplete="off">
                 <div class="sugerencias" id="sugerencias"></div>
             </div>
 
-            <div id="mapa"></div>
+            <!-- BOTÓN MARCAR MANUAL -->
+            <button class="btn-manual" id="btnManual" onclick="activarModoManual()">
+                📍 ¿No encontrás tu dirección? Marcala manualmente en el mapa
+            </button>
+
+            <!-- INSTRUCCIONES MODO MANUAL -->
+            <div class="instrucciones-manual" id="instruccionesManual">
+                <p>👆 <strong>Mové el mapa</strong> hasta encontrar tu destino</p>
+                <p>🔍 <strong>Hacé zoom</strong> con los botones + y -</p>
+                <p>📍 El <strong>punto rojo</strong> es tu destino — colocalo exacto</p>
+                <p>✅ Cuando esté listo, tocá <strong>"CONFIRMAR DESTINO"</strong></p>
+            </div>
+
+            <!-- MAPA COMPLETO -->
+            <div id="mapa-container">
+                <div id="mapa"></div>
+                <div class="mapa-leyenda">
+                    <span class="punto-rojo">🔴 TU DESTINO</span> &nbsp;&nbsp;|&nbsp;&nbsp; 
+                    <span class="punto-azul">🔵 BASE LAS CATALINAS</span>
+                </div>
+            </div>
 
             <button class="btn-gigante btn-morado" id="btnCotizar" onclick="cotizarViaje()">
                 💰 VER CUÁNTO CUESTA
             </button>
         </div>
 
-        <!-- PASO 2: PRECIO -->
+        <!-- PASO 2: VERIFICACIÓN + PRECIO -->
         <div class="tarjeta oculto" id="pasoPrecio">
-            <div class="tarjeta-titulo">✅ Esto es lo que sale</div>
+            <div class="tarjeta-titulo">✅ Verificá que todo esté bien</div>
+
+            <div class="verificacion-caja">
+                <p>🚩 <strong>Desde:</strong> Base Las Catalinas (Moreno)</p>
+                <p>🏁 <strong>Hasta:</strong> <span id="destinoConfirmado">-</span></p>
+                <p>📏 <strong>Distancia:</strong> <span id="distanciaConfirmada">-</span> km</p>
+            </div>
+
+            <!-- MINI MAPA DE VERIFICACIÓN -->
+            <div id="mapa-verificacion" style="height:200px; border-radius:14px; border:2px solid #667eea; margin:10px 0;"></div>
             
             <div class="precio-caja">
                 <div class="monto" id="precioMonto">$0</div>
                 <div class="info" id="precioInfo">Calculando...</div>
-            </div>
-
-            <div style="text-align:center; color:#666; margin:15px 0; font-size:1.1rem;">
-                <p>🚩 Desde: <strong>Base Las Catalinas (Moreno)</strong></p>
-                <p>🏁 Hasta: <strong id="destinoConfirmado">-</strong></p>
             </div>
 
             <button class="btn-gigante btn-verde" id="btnSolicitar" onclick="solicitarViaje()">
@@ -279,8 +365,8 @@
                 <div class="subtexto" id="estadoSubtexto">Esto tarda unos segundos</div>
             </div>
 
-            <div id="infoConductor" class="oculto" style="text-align:center; margin:20px 0;">
-                <p style="font-size:1.2rem; color:#333;">
+            <div id="infoConductor" class="oculto" style="text-align:center; margin:15px 0;">
+                <p style="font-size:1.1rem; color:#333;">
                     👤 Conductor: <strong id="nombreConductor">-</strong><br>
                     🚗 Auto: <strong id="autoConductor">-</strong>
                 </p>
@@ -298,14 +384,10 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // BASE: Las Catalinas, Moreno
         const BASE_LAT = -34.6404;
         const BASE_LNG = -58.7145;
-
-        // RADIO MÁXIMO DE COBERTURA (km)
         const RADIO_COBERTURA_KM = 35;
 
-        // ZONAS QUE CUBRIMOS (para filtrar resultados)
         const ZONAS_CERCANAS = [
             'moreno', 'san miguel', 'castelar', 'morón', 'moron',
             'ituzaingó', 'ituzaingo', 'merlo', 'paso del rey',
@@ -324,172 +406,220 @@
         let destinoTexto = '';
         let destinoCoords = null;
         let mapa = null;
+        let mapaVerificacion = null;
         let marcadorDestino = null;
+        let marcadorManual = null;
+        let modoManual = false;
 
-        // ========== FUNCIÓN: Calcular distancia entre 2 puntos (Haversine) ==========
+        // ========== DISTANCIA HAVERSINE ==========
         function calcularDistancia(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radio de la Tierra en km
+            const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
-        // ========== FUNCIÓN: Verificar si está dentro de la zona ==========
         function estaEnZonaCobertura(lat, lng, displayName) {
-            // 1. Verificar distancia desde la base
             const distancia = calcularDistancia(BASE_LAT, BASE_LNG, lat, lng);
-            
-            // 2. Verificar si el nombre contiene alguna zona cercana
             const nombreLower = displayName.toLowerCase();
-            const esZonaConocida = ZONAS_CERCANAS.some(zona => nombreLower.includes(zona));
-            
-            return {
-                dentro: distancia <= RADIO_COBERTURA_KM || esZonaConocida,
-                distanciaKm: distancia.toFixed(1),
-                esZonaConocida
-            };
+            const esZonaConocida = ZONAS_CERCANAS.some(z => nombreLower.includes(z));
+            return { dentro: distancia <= RADIO_COBERTURA_KM || esZonaConocida, distanciaKm: distancia.toFixed(1) };
         }
 
-        // ========== AUTOCOMPLETADO CON FILTRO DE ZONA ==========
+        // ========== AUTOCOMPLETADO ==========
         let timeoutBusqueda = null;
         document.getElementById('destino').addEventListener('input', function(e) {
             const texto = e.target.value.trim();
             const sugerenciasDiv = document.getElementById('sugerencias');
-            
             clearTimeout(timeoutBusqueda);
             
-            if (texto.length < 3) {
-                sugerenciasDiv.classList.remove('mostrar');
-                return;
-            }
+            if (texto.length < 3) { sugerenciasDiv.classList.remove('mostrar'); return; }
 
             timeoutBusqueda = setTimeout(async () => {
                 try {
-                    // Búsqueda restringida a Buenos Aires, Argentina
                     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(texto)}&limit=10&addressdetails=1&countrycodes=ar&bounded=1&viewbox=${BASE_LNG-0.5},${BASE_LAT+0.5},${BASE_LNG+0.5},${BASE_LAT-0.5}`;
-                    
                     const res = await fetch(url);
                     const datos = await res.json();
 
                     if (datos.length === 0) {
-                        sugerenciasDiv.innerHTML = `
-                            <div class="sugerencia-item" style="color:#888; text-align:center;">
-                                No encontramos esa dirección.<br>
-                                <small>Probá con calle y número (Ej: Mitre 1234)</small>
-                            </div>
-                        `;
+                        sugerenciasDiv.innerHTML = `<div class="sugerencia-item" style="color:#888;text-align:center;padding:20px;">No encontramos esa dirección.<br><small>Probá con calle y número, o usá "Marcar manualmente"</small></div>`;
                         sugerenciasDiv.classList.add('mostrar');
                         return;
                     }
 
-                    // Filtrar y ordenar resultados por cercanía
-                    const resultadosFiltrados = datos.map(lugar => {
-                        const lat = parseFloat(lugar.lat);
-                        const lng = parseFloat(lugar.lon);
-                        const infoZona = estaEnZonaCobertura(lat, lng, lugar.display_name);
-                        
-                        return {
-                            ...lugar,
-                            distanciaBase: infoZona.distanciaKm,
-                            enCobertura: infoZona.dentro
-                        };
-                    }).sort((a, b) => {
-                        // Primero los de cobertura, luego por distancia
+                    const resultados = datos.map(l => {
+                        const info = estaEnZonaCobertura(parseFloat(l.lat), parseFloat(l.lon), l.display_name);
+                        return {...l, distanciaBase: info.distanciaKm, enCobertura: info.dentro};
+                    }).sort((a,b) => {
                         if (a.enCobertura && !b.enCobertura) return -1;
                         if (!a.enCobertura && b.enCobertura) return 1;
                         return a.distanciaBase - b.distanciaBase;
-                    }).slice(0, 5); // Máximo 5 resultados
+                    }).slice(0, 5);
 
-                    sugerenciasDiv.innerHTML = resultadosFiltrados.map(lugar => {
-                        const calle = lugar.address.road || lugar.display_name.split(',')[0];
-                        const numero = lugar.address.house_number ? ` ${lugar.address.house_number}` : '';
-                        const localidad = lugar.address.city || lugar.address.town || lugar.address.suburb || lugar.address.village || 'Buenos Aires';
-                        const partido = lugar.address.county || lugar.address.state_district || '';
-                        
+                    sugerenciasDiv.innerHTML = resultados.map(l => {
+                        const calle = l.address.road || l.display_name.split(',')[0];
+                        const numero = l.address.house_number ? ` ${l.address.house_number}` : '';
+                        const localidad = l.address.city || l.address.town || l.address.suburb || l.address.village || 'Buenos Aires';
+                        const partido = l.address.county || '';
                         const zonaTexto = partido ? `${localidad}, ${partido}` : localidad;
-                        const distanciaTexto = lugar.enCobertura 
-                            ? `🟢 A ${lugar.distanciaBase} km de la base` 
-                            : `🔴 A ${lugar.distanciaBase} km (lejos)`;
-                        const claseDistancia = lugar.enCobertura ? '' : 'lejos';
+                        const distClass = l.enCobertura ? 'cerca' : 'lejos';
+                        const distTexto = l.enCobertura ? `🟢 A ${l.distanciaBase} km` : `🔴 A ${l.distanciaBase} km (fuera de zona)`;
 
-                        return `
-                            <div class="sugerencia-item" onclick="seleccionarDireccion('${lugar.display_name.replace(/'/g, "\\'")}', ${lugar.lat}, ${lugar.lon}, ${lugar.enCobertura}, ${lugar.distanciaBase})">
-                                <div class="calle">${calle}${numero}</div>
-                                <div class="zona">📍 ${zonaTexto}</div>
-                                <div class="distancia ${claseDistancia}">${distanciaTexto}</div>
-                            </div>
-                        `;
+                        return `<div class="sugerencia-item" onclick="seleccionarDireccion('${l.display_name.replace(/'/g,"\\'")}',${l.lat},${l.lon},${l.enCobertura})">
+                            <div class="calle">${calle}${numero}</div>
+                            <div class="zona">📍 ${zonaTexto}</div>
+                            <div class="distancia ${distClass}">${distTexto}</div>
+                        </div>`;
                     }).join('');
-                    
                     sugerenciasDiv.classList.add('mostrar');
-
-                } catch (err) {
-                    console.error('Error buscando:', err);
-                }
+                } catch(err) { console.error(err); }
             }, 400);
         });
 
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.campo')) {
-                document.getElementById('sugerencias').classList.remove('mostrar');
-            }
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.campo')) document.getElementById('sugerencias').classList.remove('mostrar');
         });
 
-        // ========== SELECCIONAR DIRECCIÓN ==========
-        function seleccionarDireccion(direccion, lat, lng, enCobertura, distancia) {
+        // ========== SELECCIONAR DEL AUTOCOMPLETADO ==========
+        function seleccionarDireccion(direccion, lat, lng, enCobertura) {
             document.getElementById('destino').value = direccion.split(',')[0];
             document.getElementById('sugerencias').classList.remove('mostrar');
             destinoTexto = direccion;
             destinoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
+            modoManual = false;
             
-            if (!enCobertura) {
-                mostrarMensaje(`⚠️ Esa dirección está a ${distancia} km. Podría haber costos extra.`, 'info');
-            }
+            if (!enCobertura) mostrarMensaje(`⚠️ Esa dirección está lejos. Podría haber costos extra.`, 'info');
             
-            mostrarMapa(lat, lng);
+            mostrarMapaCompleto(lat, lng, false);
+            document.getElementById('mapa-container').classList.add('mostrar');
+            document.getElementById('instruccionesManual').classList.remove('mostrar');
         }
 
-        function mostrarMapa(lat, lng) {
-            const mapaDiv = document.getElementById('mapa');
-            mapaDiv.classList.add('mostrar');
+        // ========== MODO MANUAL: ABRIR MAPA COMPLETO ==========
+        function activarModoManual() {
+            modoManual = true;
+            document.getElementById('instruccionesManual').classList.add('mostrar');
+            document.getElementById('mapa-container').classList.add('mostrar');
+            document.getElementById('sugerencias').classList.remove('mostrar');
+            
+            // Limpiar input para que no confunda
+            document.getElementById('destino').value = '';
+            destinoTexto = '';
+            destinoCoords = null;
+            
+            mostrarMapaCompleto(BASE_LAT, BASE_LNG, true);
+            mostrarMensaje('📍 Mové el mapa y colocá el punto rojo exactamente en tu destino', 'info');
+        }
+
+        // ========== MOSTRAR MAPA COMPLETO ==========
+        function mostrarMapaCompleto(lat, lng, esManual) {
+            const container = document.getElementById('mapa-container');
+            container.classList.add('mostrar');
             
             if (!mapa) {
-                mapa = L.map('mapa').setView([lat, lng], 14);
+                mapa = L.map('mapa').setView([lat, lng], esManual ? 13 : 15);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap'
                 }).addTo(mapa);
                 
-                // Marcador de la base
-                L.marker([BASE_LAT, BASE_LNG]).addTo(mapa)
-                    .bindPopup('🚕 Base Las Catalinas').openPopup();
+                // Marcador de la base (siempre visible)
+                L.marker([BASE_LAT, BASE_LNG], {
+                    icon: L.divIcon({
+                        className: 'custom-div-icon',
+                        html: '<div style="background:#1976d2;color:white;padding:4px 8px;border-radius:8px;font-size:12px;font-weight:bold;">🚕 BASE</div>',
+                        iconSize: [60, 30],
+                        iconAnchor: [30, 15]
+                    })
+                }).addTo(mapa);
             } else {
-                mapa.setView([lat, lng], 14);
+                mapa.setView([lat, lng], esManual ? 13 : 15);
             }
 
-            if (marcadorDestino) mapa.removeLayer(marcadorDestino);
-            marcadorDestino = L.marker([lat, lng]).addTo(mapa)
-                .bindPopup('📍 Tu destino').openPopup();
+            // Si es manual, el marcador es arrastrable y se actualiza al mover
+            if (esManual) {
+                if (marcadorDestino) mapa.removeLayer(marcadorDestino);
+                
+                marcadorDestino = L.marker([lat, lng], {
+                    draggable: true,
+                    icon: L.divIcon({
+                        className: 'custom-div-icon',
+                        html: '<div style="background:#e53935;color:white;padding:6px 10px;border-radius:50%;font-size:18px;">📍</div>',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 40]
+                    })
+                }).addTo(mapa);
+                
+                marcadorDestino.on('dragend', function(e) {
+                    const pos = e.target.getLatLng();
+                    destinoCoords = { lat: pos.lat, lng: pos.lng };
+                    // Intentar obtener nombre de la dirección
+                    reverseGeocoding(pos.lat, pos.lng);
+                });
+                
+                // También permitir clic en el mapa para mover el marcador
+                mapa.off('click');
+                mapa.on('click', function(e) {
+                    marcadorDestino.setLatLng(e.latlng);
+                    destinoCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
+                    reverseGeocoding(e.latlng.lat, e.latlng.lng);
+                });
+                
+                destinoCoords = { lat: lat, lng: lng };
+            } else {
+                // Modo automático: marcador fijo
+                if (marcadorDestino) {
+                    mapa.removeLayer(marcadorDestino);
+                    marcadorDestino = null;
+                }
+                L.marker([lat, lng], {
+                    icon: L.divIcon({
+                        className: 'custom-div-icon',
+                        html: '<div style="background:#e53935;color:white;padding:6px 10px;border-radius:50%;font-size:18px;">📍</div>',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 40]
+                    })
+                }).addTo(mapa).bindPopup('📍 Tu destino').openPopup();
+            }
+        }
+
+        // ========== REVERSE GEOCODING (obtener nombre de coordenadas) ==========
+        async function reverseGeocoding(lat, lng) {
+            try {
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (data && data.display_name) {
+                    destinoTexto = data.display_name;
+                    const calle = data.address.road || '';
+                    const numero = data.address.house_number || '';
+                    const localidad = data.address.city || data.address.town || data.address.suburb || '';
+                    const nombreCorto = `${calle} ${numero}, ${localidad}`.replace(/^ ,/, '').replace(/,$/, '');
+                    document.getElementById('destino').value = nombreCorto || data.display_name.split(',')[0];
+                }
+            } catch(e) { console.error('Reverse geocoding error:', e); }
         }
 
         // ========== COTIZAR ==========
         async function cotizarViaje() {
-            destinoTexto = document.getElementById('destino').value.trim();
-            const btn = document.getElementById('btnCotizar');
-
-            if (!destinoTexto) {
-                mostrarMensaje('Por favor, escribí a dónde querés ir', 'error');
-                document.getElementById('destino').focus();
+            // Si está en modo manual y movió el marcador
+            if (modoManual && destinoCoords) {
+                // Usar las coordenadas del marcador manual
+                await calcularPrecio();
                 return;
             }
 
-            // Si no seleccionó del autocompletado, buscar ahora
+            destinoTexto = document.getElementById('destino').value.trim();
+            const btn = document.getElementById('btnCotizar');
+
+            if (!destinoTexto && !destinoCoords) {
+                mostrarMensaje('Por favor, escribí una dirección o marcala en el mapa', 'error');
+                return;
+            }
+
             if (!destinoCoords) {
-                btn.disabled = true;
-                btn.textContent = '⏳ Buscando...';
+                btn.disabled = true; btn.textContent = '⏳ Buscando...';
                 
                 try {
                     const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destinoTexto)}&limit=5&addressdetails=1&countrycodes=ar&bounded=1&viewbox=${BASE_LNG-0.5},${BASE_LAT+0.5},${BASE_LNG+0.5},${BASE_LAT-0.5}`;
@@ -497,43 +627,33 @@
                     const geoData = await geoRes.json();
 
                     if (!geoData || geoData.length === 0) {
-                        throw new Error('No encontramos esa dirección. Probá escribiendo la calle y el número (Ej: Mitre 1234, San Miguel)');
+                        throw new Error('No encontramos esa dirección. Probá marcarla manualmente en el mapa.');
                     }
 
-                    // Tomar el más cercano a la base
-                    let mejorResultado = geoData[0];
-                    let menorDistancia = Infinity;
-                    
-                    for (const lugar of geoData) {
-                        const dist = calcularDistancia(BASE_LAT, BASE_LNG, parseFloat(lugar.lat), parseFloat(lugar.lon));
-                        if (dist < menorDistancia) {
-                            menorDistancia = dist;
-                            mejorResultado = lugar;
-                        }
+                    let mejor = geoData[0], menorDist = Infinity;
+                    for (const l of geoData) {
+                        const d = calcularDistancia(BASE_LAT, BASE_LNG, parseFloat(l.lat), parseFloat(l.lon));
+                        if (d < menorDist) { menorDist = d; mejor = l; }
                     }
 
-                    destinoCoords = {
-                        lat: parseFloat(mejorResultado.lat),
-                        lng: parseFloat(mejorResultado.lon)
-                    };
-                    destinoTexto = mejorResultado.display_name;
+                    destinoCoords = { lat: parseFloat(mejor.lat), lng: parseFloat(mejor.lon) };
+                    destinoTexto = mejor.display_name;
                     
-                    const infoZona = estaEnZonaCobertura(destinoCoords.lat, destinoCoords.lng, destinoTexto);
-                    if (!infoZona.dentro) {
-                        mostrarMensaje(`⚠️ Esa dirección está a ${infoZona.distanciaKm} km de la base. Consultá el precio antes de confirmar.`, 'info');
-                    }
-                    
-                    mostrarMapa(destinoCoords.lat, destinoCoords.lng);
+                    const info = estaEnZonaCobertura(destinoCoords.lat, destinoCoords.lng, destinoTexto);
+                    if (!info.dentro) mostrarMensaje(`⚠️ A ${info.distanciaKm} km de la base. Consultá el precio.`, 'info');
                 } catch (error) {
                     mostrarMensaje(error.message, 'error');
-                    btn.disabled = false;
-                    btn.textContent = '💰 VER CUÁNTO CUESTA';
+                    btn.disabled = false; btn.textContent = '💰 VER CUÁNTO CUESTA';
                     return;
                 }
             }
 
-            btn.disabled = true;
-            btn.textContent = '⏳ Calculando...';
+            await calcularPrecio();
+        }
+
+        async function calcularPrecio() {
+            const btn = document.getElementById('btnCotizar');
+            btn.disabled = true; btn.textContent = '⏳ Calculando...';
 
             try {
                 const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${BASE_LNG},${BASE_LAT};${destinoCoords.lng},${destinoCoords.lat}?overview=false`;
@@ -546,15 +666,17 @@
 
                 const metros = osrmData.routes[0].distance;
                 distanciaKm = parseFloat((metros / 1000).toFixed(1));
-
                 precioCalculado = Math.round(3000 + (distanciaKm * 800));
 
+                // Actualizar UI
                 document.getElementById('precioMonto').textContent = '$' + precioCalculado.toLocaleString('es-AR');
-                
-                let textoDistancia = distanciaKm < 3 ? 'Viaje corto' : distanciaKm < 8 ? 'Viaje mediano' : 'Viaje largo';
-                document.getElementById('precioInfo').textContent = 
-                    `${textoDistancia} • ${distanciaKm} km • Base $3.000 + $800 por km`;
+                let textoDist = distanciaKm < 3 ? 'Viaje corto' : distanciaKm < 8 ? 'Viaje mediano' : 'Viaje largo';
+                document.getElementById('precioInfo').textContent = `${textoDist} • ${distanciaKm} km • Base $3.000 + $800 por km`;
                 document.getElementById('destinoConfirmado').textContent = destinoTexto.split(',')[0];
+                document.getElementById('distanciaConfirmada').textContent = distanciaKm;
+
+                // Mostrar mini mapa de verificación
+                mostrarMapaVerificacion();
 
                 document.getElementById('pasoDatos').classList.add('oculto');
                 document.getElementById('pasoPrecio').classList.remove('oculto');
@@ -563,14 +685,52 @@
             } catch (error) {
                 mostrarMensaje(error.message, 'error');
             } finally {
-                btn.disabled = false;
-                btn.textContent = '💰 VER CUÁNTO CUESTA';
+                btn.disabled = false; btn.textContent = '💰 VER CUÁNTO CUESTA';
             }
+        }
+
+        // ========== MAPA DE VERIFICACIÓN (PASO 2) ==========
+        function mostrarMapaVerificacion() {
+            const div = document.getElementById('mapa-verificacion');
+            
+            if (mapaVerificacion) {
+                mapaVerificacion.remove();
+                mapaVerificacion = null;
+            }
+            
+            mapaVerificacion = L.map('mapa-verificacion').setView([
+                (BASE_LAT + destinoCoords.lat) / 2,
+                (BASE_LNG + destinoCoords.lng) / 2
+            ], 12);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(mapaVerificacion);
+
+            // Base
+            L.marker([BASE_LAT, BASE_LNG]).addTo(mapaVerificacion)
+                .bindPopup('🚕 Base Las Catalinas').openPopup();
+            
+            // Destino
+            L.marker([destinoCoords.lat, destinoCoords.lng], {
+                icon: L.divIcon({
+                    html: '<div style="background:#e53935;color:white;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:bold;">📍 DESTINO</div>',
+                    iconSize: [70, 25],
+                    iconAnchor: [35, 12]
+                })
+            }).addTo(mapaVerificacion);
+
+            // Línea de ruta
+            L.polyline([
+                [BASE_LAT, BASE_LNG],
+                [destinoCoords.lat, destinoCoords.lng]
+            ], { color: '#667eea', weight: 4, opacity: 0.7, dashArray: '10, 10' }).addTo(mapaVerificacion);
         }
 
         function volverAtras() {
             document.getElementById('pasoPrecio').classList.add('oculto');
             document.getElementById('pasoDatos').classList.remove('oculto');
+            if (mapaVerificacion) { mapaVerificacion.remove(); mapaVerificacion = null; }
             window.scrollTo(0, 0);
         }
 
@@ -586,8 +746,7 @@
                 return;
             }
 
-            btn.disabled = true;
-            btn.textContent = '⏳ Enviando...';
+            btn.disabled = true; btn.textContent = '⏳ Enviando...';
 
             try {
                 const { data, error } = await supabaseClient.rpc('crear_viaje', {
@@ -615,19 +774,13 @@
                 subscription = supabaseClient
                     .channel('viaje-' + viajeId)
                     .on('postgres_changes', { 
-                        event: '*', 
-                        schema: 'public', 
-                        table: 'viajes', 
-                        filter: 'id=eq.' + viajeId 
-                    }, payload => {
-                        actualizarEstado(payload.new);
-                    })
+                        event: '*', schema: 'public', table: 'viajes', filter: 'id=eq.' + viajeId 
+                    }, payload => { actualizarEstado(payload.new); })
                     .subscribe();
 
             } catch (e) {
                 mostrarMensaje('Error: ' + e.message, 'error');
-                btn.disabled = false;
-                btn.textContent = '🚕 ¡SÍ, PEDIR MÓVIL!';
+                btn.disabled = false; btn.textContent = '🚕 ¡SÍ, PEDIR MÓVIL!';
             }
         }
 
