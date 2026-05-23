@@ -323,26 +323,26 @@
         <div class="card" id="registroCard">
             <div class="card-title">👤 Tus datos</div>
             <div class="input-group">
-                <label>Nombre completo</label>
-                <input type="text" id="condNombre" placeholder="Ej: Carlos Rodríguez">
+                <label>Nombre completo *</label>
+                <input type="text" id="condNombre" placeholder="Ej: Carlos Rodríguez" value="">
             </div>
             <div class="input-group">
                 <label>Teléfono</label>
-                <input type="tel" id="condTelefono" placeholder="Ej: +54 9 341 1234567">
+                <input type="tel" id="condTelefono" placeholder="Ej: +54 9 341 1234567" value="">
             </div>
             <div class="input-group">
-                <label>Patente del vehículo</label>
-                <input type="text" id="condPlaca" placeholder="Ej: ABC 123">
+                <label>Patente del vehículo *</label>
+                <input type="text" id="condPlaca" placeholder="Ej: ABC 123" value="">
             </div>
             <div class="input-group">
                 <label>Color del vehículo</label>
-                <input type="text" id="condColor" placeholder="Ej: Blanco">
+                <input type="text" id="condColor" placeholder="Ej: Blanco" value="">
             </div>
             <div class="input-group">
                 <label>Modelo del vehículo</label>
-                <input type="text" id="condModelo" placeholder="Ej: Toyota Corolla 2020">
+                <input type="text" id="condModelo" placeholder="Ej: Toyota Corolla 2020" value="">
             </div>
-            <button class="btn btn-primary" id="btnGuardar" onclick="guardarDatosConductor()">
+            <button class="btn btn-primary" id="btnGuardar">
                 💾 Guardar mis datos
             </button>
         </div>
@@ -369,13 +369,13 @@
             <div class="card">
                 <div class="card-title">📍 Mapa</div>
                 <div id="map"></div>
-                <button class="btn btn-secondary" onclick="centrarMapa()">
+                <button class="btn btn-secondary" id="btnCentrar">
                     📍 Centrar en mi ubicación
                 </button>
             </div>
 
             <!-- Botón conectar -->
-            <button class="btn btn-primary" id="btnConectar" onclick="toggleConexion()">
+            <button class="btn btn-primary" id="btnConectar">
                 🟢 Conectar para recibir viajes
             </button>
 
@@ -422,10 +422,16 @@
         // INICIALIZAR
         // ==========================================
         function init() {
+            console.log('Iniciando app conductor...');
             initMap();
             cargarDatosConductor();
             obtenerUbicacion();
             iniciarSeguimientoGPS();
+
+            // Asignar eventos a botones
+            document.getElementById('btnGuardar').addEventListener('click', guardarDatosConductor);
+            document.getElementById('btnConectar').addEventListener('click', toggleConexion);
+            document.getElementById('btnCentrar').addEventListener('click', centrarMapa);
         }
 
         function initMap() {
@@ -439,36 +445,58 @@
         // DATOS DEL CONDUCTOR
         // ==========================================
         function cargarDatosConductor() {
-            const datos = localStorage.getItem('tumovil_conductor');
-            if (datos) {
-                conductorData = JSON.parse(datos);
-                document.getElementById('condNombre').value = conductorData.nombre || '';
-                document.getElementById('condTelefono').value = conductorData.telefono || '';
-                document.getElementById('condPlaca').value = conductorData.placa || '';
-                document.getElementById('condColor').value = conductorData.color || '';
-                document.getElementById('condModelo').value = conductorData.modelo || '';
-                mostrarPanelPrincipal();
+            try {
+                const datos = localStorage.getItem('tumovil_conductor');
+                if (datos) {
+                    conductorData = JSON.parse(datos);
+                    document.getElementById('condNombre').value = conductorData.nombre || '';
+                    document.getElementById('condTelefono').value = conductorData.telefono || '';
+                    document.getElementById('condPlaca').value = conductorData.placa || '';
+                    document.getElementById('condColor').value = conductorData.color || '';
+                    document.getElementById('condModelo').value = conductorData.modelo || '';
+                    mostrarPanelPrincipal();
+                }
+            } catch (e) {
+                console.error('Error cargando datos:', e);
             }
         }
 
         function guardarDatosConductor() {
-            conductorData = {
-                nombre: document.getElementById('condNombre').value.trim(),
-                telefono: document.getElementById('condTelefono').value.trim(),
-                placa: document.getElementById('condPlaca').value.trim(),
-                color: document.getElementById('condColor').value.trim(),
-                modelo: document.getElementById('condModelo').value.trim(),
-                id: 'cond-' + Date.now()
-            };
+            console.log('Guardando datos...');
 
-            if (!conductorData.nombre || !conductorData.placa) {
-                mostrarError('Completá al menos nombre y patente');
+            const nombre = document.getElementById('condNombre').value.trim();
+            const telefono = document.getElementById('condTelefono').value.trim();
+            const placa = document.getElementById('condPlaca').value.trim();
+            const color = document.getElementById('condColor').value.trim();
+            const modelo = document.getElementById('condModelo').value.trim();
+
+            if (!nombre) {
+                mostrarError('Completá tu nombre');
+                return;
+            }
+            if (!placa) {
+                mostrarError('Completá la patente del vehículo');
                 return;
             }
 
-            localStorage.setItem('tumovil_conductor', JSON.stringify(conductorData));
-            mostrarExito('Datos guardados correctamente');
-            mostrarPanelPrincipal();
+            conductorData = {
+                nombre: nombre,
+                telefono: telefono,
+                placa: placa,
+                color: color,
+                modelo: modelo,
+                id: 'cond-' + Date.now()
+            };
+
+            try {
+                localStorage.setItem('tumovil_conductor', JSON.stringify(conductorData));
+                console.log('Datos guardados:', conductorData);
+                mostrarExito('Datos guardados correctamente');
+                mostrarPanelPrincipal();
+            } catch (e) {
+                console.error('Error guardando en localStorage:', e);
+                mostrarError('Error al guardar: ' + e.message);
+            }
         }
 
         function mostrarPanelPrincipal() {
@@ -481,16 +509,22 @@
         // UBICACIÓN Y GPS
         // ==========================================
         function obtenerUbicacion() {
-            if (!navigator.geolocation) return;
+            if (!navigator.geolocation) {
+                console.log('Geolocalización no soportada');
+                return;
+            }
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     userLat = position.coords.latitude;
                     userLng = position.coords.longitude;
                     actualizarMarker();
+                    console.log('Ubicación obtenida:', userLat, userLng);
                 },
-                (error) => console.log('Error ubicación:', error),
-                { enableHighAccuracy: true }
+                (error) => {
+                    console.log('Error ubicación:', error.code, error.message);
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
             );
         }
 
@@ -551,6 +585,7 @@
                 .on('postgres_changes', 
                     { event: 'INSERT', schema: 'public', table: 'viajes', filter: 'estado=eq.pendiente' }, 
                     (payload) => {
+                        console.log('Nuevo viaje recibido:', payload.new);
                         mostrarNuevoViaje(payload.new);
                         if ('Notification' in window && Notification.permission === 'granted') {
                             new Notification('Nuevo viaje!', {
@@ -561,12 +596,15 @@
                 )
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes' },
                     (payload) => {
+                        console.log('Viaje actualizado:', payload.new);
                         if (payload.new.id === viajeActivoId) {
                             actualizarViajeActivoUI(payload.new);
                         }
                     }
                 )
-                .subscribe();
+                .subscribe((status) => {
+                    console.log('Realtime status:', status);
+                });
         }
 
         // ==========================================
@@ -574,6 +612,7 @@
         // ==========================================
         async function cargarViajesPendientes() {
             try {
+                console.log('Cargando viajes pendientes...');
                 const { data, error } = await supabase.rpc('obtener_viajes_pendientes');
                 if (error) throw error;
 
@@ -593,8 +632,10 @@
                 data.forEach(viaje => {
                     container.appendChild(crearCardViaje(viaje));
                 });
+                console.log('Viajes cargados:', data.length);
             } catch (e) {
                 console.error('Error cargando viajes:', e);
+                mostrarError('Error al cargar viajes: ' + e.message);
             }
         }
 
@@ -703,6 +744,7 @@
         // ==========================================
         async function aceptarViaje(viajeId) {
             try {
+                console.log('Aceptando viaje:', viajeId);
                 const { data, error } = await supabase.rpc('aceptar_viaje', {
                     p_viaje_id: viajeId,
                     p_conductor_id: conductorData.id,
@@ -732,6 +774,7 @@
                     mostrarError('El viaje ya fue tomado por otro conductor');
                 }
             } catch (e) {
+                console.error('Error aceptando viaje:', e);
                 mostrarError('Error al aceptar: ' + e.message);
             }
         }
@@ -744,12 +787,10 @@
             container.innerHTML = '';
             container.appendChild(crearCardViaje(viaje));
 
-            // Limpiar markers anteriores
             if (pasajeroMarker) map.removeLayer(pasajeroMarker);
             if (destinoMarker) map.removeLayer(destinoMarker);
             if (routeLine) map.removeLayer(routeLine);
 
-            // Marker del pasajero (origen)
             if (viaje.origen_lat && viaje.origen_lng) {
                 pasajeroMarker = L.marker([viaje.origen_lat, viaje.origen_lng], {
                     icon: L.divIcon({
@@ -761,7 +802,6 @@
                 }).addTo(map).bindPopup('<b>📍 Pasajero:</b> ' + viaje.pasajero_nombre);
             }
 
-            // Marker del destino
             if (viaje.destino_lat && viaje.destino_lng) {
                 destinoMarker = L.marker([viaje.destino_lat, viaje.destino_lng], {
                     icon: L.divIcon({
@@ -773,7 +813,6 @@
                 }).addTo(map).bindPopup('<b>🎯 Destino:</b> ' + viaje.destino_direccion);
             }
 
-            // Ajustar vista para ver todo
             const points = [];
             if (userLat && userLng) points.push([userLat, userLng]);
             if (viaje.origen_lat && viaje.origen_lng) points.push([viaje.origen_lat, viaje.origen_lng]);
