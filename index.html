@@ -21,12 +21,12 @@
         .card {
             background: white;
             border-radius: 16px;
-            padding: 15px;
+            padding: 18px;
             margin-bottom: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
         .card-title {
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             font-weight: 600;
             color: #667eea;
             margin-bottom: 12px;
@@ -36,26 +36,26 @@
         .input-group label {
             display: block;
             font-size: 0.85rem;
-            color: #555;
-            margin-bottom: 4px;
-            font-weight: 500;
+            color: #444;
+            margin-bottom: 5px;
+            font-weight: 600;
         }
         .input-group input {
             width: 100%;
-            padding: 10px 12px;
+            padding: 12px;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
-            font-size: 0.95rem;
+            font-size: 1rem;
             transition: border-color 0.3s;
         }
         .input-group input:focus { outline: none; border-color: #667eea; }
 
         .btn {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             border: none;
             border-radius: 12px;
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
@@ -71,17 +71,18 @@
         .btn-maps {
             background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
             color: white;
+            box-shadow: 0 4px 10px rgba(66, 133, 244, 0.2);
         }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Contenedor del Mapa Dividido */
+        /* Contenedor del Mapa Embebido */
         .mapa-contenedor {
             width: 100%;
-            height: 280px;
+            height: 240px;
             border-radius: 12px;
             border: 2px solid #4285f4;
             overflow: hidden;
-            margin-top: 15px;
+            margin: 15px 0;
         }
         .mapa-contenedor iframe {
             width: 100%;
@@ -98,7 +99,7 @@
             margin: 15px 0;
         }
         .precio-box .monto { font-size: 2.3rem; font-weight: 700; }
-        .precio-box .detalle { font-size: 0.8rem; opacity: 0.9; margin-top: 5px; }
+        .precio-box .detalle { font-size: 0.85rem; opacity: 0.9; margin-top: 5px; }
 
         .status-box {
             background: #f8f9fa;
@@ -108,15 +109,15 @@
             text-align: center;
         }
         .status-box .estado { font-size: 1.1rem; font-weight: 600; color: #667eea; }
-        .status-box .info { font-size: 0.8rem; color: #666; margin-top: 5px; }
 
         .msg {
-            padding: 10px;
+            padding: 12px;
             border-radius: 10px;
             margin-bottom: 12px;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             display: none;
             text-align: center;
+            font-weight: 500;
         }
         .msg.show { display: block; }
         .msg-error { background: #ffebee; color: #c62828; }
@@ -135,7 +136,7 @@
         <div class="msg" id="msg"></div>
 
         <div class="card" id="cardDatos">
-            <div class="card-title">📝 Datos del viaje</div>
+            <div class="card-title">📝 Datos para el viaje</div>
 
             <div class="input-group">
                 <label>Tu nombre</label>
@@ -148,11 +149,11 @@
             </div>
 
             <div class="input-group">
-                <label>Dirección de destino (Localidad, Calle y Altura)</label>
-                <input type="text" id="destino" placeholder="Ej: San Miguel, Mitre 1234">
+                <label>Dirección de destino</label>
+                <input type="text" id="destino" placeholder="Ej: Cruce Castelar, Moreno">
             </div>
 
-            <button class="btn btn-maps" onclick="mostrarMapaDividido()">
+            <button class="btn btn-maps" onclick="procesarRutaYMapa()">
                 🗺️ MOSTRAR RUTA EN EL MAPA
             </button>
 
@@ -160,9 +161,9 @@
                 <iframe id="googleMapIframe" src=""></iframe>
             </div>
 
-            <div id="seccionKm" class="hidden" style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px;">
+            <div id="seccionKm" class="hidden" style="border-top: 2px dashed #eee; padding-top: 15px;">
                 <div class="input-group">
-                    <label style="color:#2e7d32; font-weight: bold;">¿Cuántos kilómetros dice el mapa de abajo? (Ej: 5.3)</label>
+                    <label style="color:#2e7d32; font-size: 0.9rem;">¿Cuántos kilómetros (km) marcó Google Maps?</label>
                     <input type="number" id="distancia" placeholder="Ej: 5.3" min="0.1" max="99" step="0.1">
                 </div>
                 <button class="btn btn-primary" onclick="calcularPrecio()">
@@ -189,7 +190,7 @@
         <div class="card hidden" id="cardEstado">
             <div class="status-box">
                 <div class="estado" id="estadoTexto">⏳ Buscando conductor...</div>
-                <div class="info" id="estadoInfo">Tu viaje fue solicitado</div>
+                <div class="info" style="font-size:0.85rem; color:#666; margin-top:5px;">Tu viaje fue solicitado a la base.</div>
             </div>
             <button class="btn" onclick="cancelarViaje()" style="background:#ff6b6b; color:white; margin-top:10px;">
                 ❌ CANCELAR VIAJE
@@ -209,8 +210,8 @@
         let distanciaKm = 0;
         let destinoTexto = '';
 
-        // CARGAR EL MAPA EMBEBIDO SIN SALIR DE LA APP
-        function mostrarMapaDividido() {
+        // PROCESAR MAPA E INTENT SIMULTÁNEO
+        function procesarRutaYMapa() {
             destinoTexto = document.getElementById('destino').value.trim();
 
             if (!destinoTexto) {
@@ -218,18 +219,19 @@
                 return;
             }
 
-            // Usamos el modo de búsqueda/direcciones embebido gratuito de Google Maps
-            // Al no definir el origen, Google toma la ubicación IP/Red aproximada o le pide permiso al navegador
-            const mapaUrl = `https://maps.google.com/maps?q=${encodeURIComponent(destinoTexto)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
-            
-            const iframe = document.getElementById('googleMapIframe');
-            iframe.src = mapaUrl;
+            // 1. Cargamos la vista de confirmación en el mapa de abajo
+            const mapaUrl = `http://googleusercontent.com/maps.google.com/6{encodeURIComponent(destinoTexto)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+            document.getElementById('googleMapIframe').src = mapaUrl;
 
-            // Mostrar el mapa y la sección para poner los KM
+            // Mostrar elementos ocultos en la pantalla
             document.getElementById('contenedorMapa').classList.remove('hidden');
             document.getElementById('seccionKm').classList.remove('hidden');
+
+            // 2. LA MAGIA: Abrimos la app nativa de Maps para que calcule los KM reales al instante
+            const appMapsUrl = `http://googleusercontent.com/maps.google.com/7{encodeURIComponent(destinoTexto)}&travelmode=driving`;
+            window.open(appMapsUrl, '_blank');
             
-            mostrarMsg('¡Mapa cargado! Buscá los kilómetros abajo e ingresalos', 'success');
+            mostrarMsg('¡Revisá los kilómetros en la app de Google Maps y anotalos acá abajo!', 'success');
         }
 
         // CALCULAR PRECIO
@@ -237,7 +239,7 @@
             const distancia = parseFloat(document.getElementById('distancia').value);
 
             if (!distancia || distancia <= 0) {
-                mostrarMsg('Por favor, ingresá los kilómetros para calcular', 'error');
+                mostrarMsg('Por favor, ingresá los kilómetros que viste en Maps', 'error');
                 return;
             }
 
@@ -284,7 +286,6 @@
                 document.getElementById('cardPrecio').classList.add('hidden');
                 document.getElementById('cardEstado').classList.remove('hidden');
                 
-                // Activar tiempo real
                 if (subscription) subscription.unsubscribe();
                 subscription = supabaseClient
                     .channel('viaje-' + viajeId)
@@ -292,7 +293,6 @@
                         payload => {
                             if(payload.new.estado === 'aceptado') {
                                 document.getElementById('estadoTexto').textContent = '✅ ¡Conductor Asignado!';
-                                document.getElementById('estadoInfo').textContent = 'El auto está en viaje.';
                             }
                         }
                     ).subscribe();
@@ -308,7 +308,7 @@
             const msg = document.getElementById('msg');
             msg.textContent = texto;
             msg.className = 'msg msg-' + tipo + ' show';
-            setTimeout(() => msg.classList.remove('show'), 5000);
+            setTimeout(() => msg.classList.remove('show'), 6000);
         }
     </script>
 </body>
