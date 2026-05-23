@@ -1,1 +1,461 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TuMovil Las Catalinas - Pasajero</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+        .header h1 { font-size: 1.5rem; margin-bottom: 5px; }
+        .header p { font-size: 0.9rem; opacity: 0.9; }
 
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:active { opacity: 0.8; }
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        .btn-success:active { opacity: 0.8; }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .precio-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 15px 0;
+        }
+        .precio-box .monto {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        .precio-box .detalle {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .status-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .status-box .estado {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+        .status-box .info {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .msg {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        .msg.show { display: block; }
+        .msg-error { background: #ffebee; color: #c62828; }
+        .msg-success { background: #e8f5e9; color: #2e7d32; }
+
+        .hidden { display: none !important; }
+
+        .conductor-info {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .conductor-info p {
+            font-size: 0.9rem;
+            color: #333;
+            margin: 5px 0;
+        }
+
+        .distancia-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .distancia-input input {
+            flex: 1;
+        }
+        .distancia-input span {
+            font-size: 1rem;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚕 TuMovil Las Catalinas</h1>
+            <p>Tu móvil, tu viaje, tu camino</p>
+        </div>
+
+        <div class="msg" id="msg"></div>
+
+        <!-- PASO 1: Datos del viaje -->
+        <div class="card" id="cardDatos">
+            <div class="card-title">📝 Datos del viaje</div>
+
+            <div class="input-group">
+                <label>Tu nombre</label>
+                <input type="text" id="nombre" placeholder="Ej: Juan Pérez" value="">
+            </div>
+
+            <div class="input-group">
+                <label>Teléfono</label>
+                <input type="tel" id="telefono" placeholder="Ej: 1133667793" value="">
+            </div>
+
+            <div class="input-group">
+                <label>Dirección de destino</label>
+                <input type="text" id="destino" placeholder="Ej: Av. Pellegrini 1234" value="">
+            </div>
+
+            <div class="input-group">
+                <label>Distancia aproximada (km)</label>
+                <div class="distancia-input">
+                    <input type="number" id="distancia" placeholder="Ej: 5" value="" min="0.5" max="50" step="0.1">
+                    <span>km</span>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="btnCalcular" onclick="calcularPrecio()">
+                💰 Calcular precio
+            </button>
+        </div>
+
+        <!-- PASO 2: Precio y confirmar -->
+        <div class="card hidden" id="cardPrecio">
+            <div class="precio-box">
+                <div class="monto" id="precioMonto">$0</div>
+                <div class="detalle" id="precioDetalle">Base $3.000 + 0km × $800</div>
+            </div>
+
+            <button class="btn btn-success" id="btnSolicitar" onclick="solicitarViaje()">
+                🚕 Solicitar móvil
+            </button>
+            <button class="btn btn-primary" onclick="volverAtras()" style="margin-top:10px;background:#f0f0f0;color:#333;">
+                ← Modificar datos
+            </button>
+        </div>
+
+        <!-- PASO 3: Estado del viaje -->
+        <div class="card hidden" id="cardEstado">
+            <div class="status-box">
+                <div class="estado" id="estadoTexto">⏳ Buscando conductor...</div>
+                <div class="info" id="estadoInfo">Tu viaje fue solicitado</div>
+            </div>
+
+            <div class="conductor-info hidden" id="infoConductor">
+                <p><strong>👤 Conductor:</strong> <span id="condNombre">-</span></p>
+                <p><strong>📞 Tel:</strong> <span id="condTelefono">-</span></p>
+                <p><strong>🚗 Auto:</strong> <span id="condAuto">-</span></p>
+                <p><strong>🔢 Patente:</strong> <span id="condPlaca">-</span></p>
+            </div>
+
+            <button class="btn btn-primary" onclick="cancelarViaje()" style="background:#ff6b6b;">
+                ❌ Cancelar viaje
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURACIÓN
+        // ==========================================
+        const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ==========================================
+        // VARIABLES
+        // ==========================================
+        let viajeId = null;
+        let subscription = null;
+        let precioCalculado = 0;
+        let distanciaKm = 0;
+
+        // ==========================================
+        // CALCULAR PRECIO
+        // ==========================================
+        function calcularPrecio() {
+            const distancia = parseFloat(document.getElementById('distancia').value);
+
+            if (!distancia || distancia <= 0) {
+                mostrarMsg('Ingresá una distancia válida', 'error');
+                return;
+            }
+
+            distanciaKm = distancia;
+            precioCalculado = Math.round(3000 + (distancia * 800));
+
+            document.getElementById('precioMonto').textContent = '$' + precioCalculado.toLocaleString('es-AR');
+            document.getElementById('precioDetalle').textContent = 
+                'Base $3.000 + ' + distancia + 'km × $800';
+
+            document.getElementById('cardDatos').classList.add('hidden');
+            document.getElementById('cardPrecio').classList.remove('hidden');
+        }
+
+        function volverAtras() {
+            document.getElementById('cardPrecio').classList.add('hidden');
+            document.getElementById('cardDatos').classList.remove('hidden');
+        }
+
+        // ==========================================
+        // SOLICITAR VIAJE
+        // ==========================================
+        async function solicitarViaje() {
+            const nombre = document.getElementById('nombre').value.trim() || 'Pasajero';
+            const telefono = document.getElementById('telefono').value.trim();
+            const destino = document.getElementById('destino').value.trim();
+
+            if (!destino) {
+                mostrarMsg('Ingresá el destino', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnSolicitar');
+            btn.disabled = true;
+            btn.textContent = '⏳ Enviando...';
+
+            try {
+                // Obtener ubicación GPS (opcional, no bloqueante)
+                let lat = null, lng = null;
+                try {
+                    const pos = await getGPS();
+                    lat = pos.lat;
+                    lng = pos.lng;
+                } catch(e) {
+                    console.log('GPS no disponible, continuando sin ubicación');
+                }
+
+                // Crear viaje en Supabase
+                const { data, error } = await supabaseClient.rpc('crear_viaje', {
+                    p_pasajero_nombre: nombre,
+                    p_pasajero_telefono: telefono,
+                    p_origen_lat: lat || -32.944,
+                    p_origen_lng: lng || -60.650,
+                    p_origen_direccion: 'Ubicación actual',
+                    p_destino_lat: lat || -32.944,
+                    p_destino_lng: lng || -60.650,
+                    p_destino_direccion: destino,
+                    p_distancia_km: distanciaKm
+                });
+
+                if (error) throw error;
+
+                viajeId = data;
+                mostrarMsg('¡Viaje solicitado!', 'success');
+
+                // Mostrar estado
+                document.getElementById('cardPrecio').classList.add('hidden');
+                document.getElementById('cardEstado').classList.remove('hidden');
+
+                // Escuchar cambios
+                escucharViaje(viajeId);
+
+            } catch (e) {
+                console.error('Error:', e);
+                mostrarMsg('Error: ' + e.message, 'error');
+                btn.disabled = false;
+                btn.textContent = '🚕 Solicitar móvil';
+            }
+        }
+
+        // ==========================================
+        // GPS (opcional, no bloqueante)
+        // ==========================================
+        function getGPS() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('GPS no soportado'));
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                    (err) => reject(err),
+                    { timeout: 5000, maximumAge: 60000 }
+                );
+            });
+        }
+
+        // ==========================================
+        // ESCUCHAR CAMBIOS DEL VIAJE
+        // ==========================================
+        function escucharViaje(id) {
+            if (subscription) subscription.unsubscribe();
+
+            subscription = supabaseClient
+                .channel('viaje-' + id)
+                .on('postgres_changes', 
+                    { event: '*', schema: 'public', table: 'viajes', filter: 'id=eq.' + id },
+                    (payload) => {
+                        actualizarEstado(payload.new);
+                    }
+                )
+                .subscribe();
+        }
+
+        // ==========================================
+        // ACTUALIZAR ESTADO EN PANTALLA
+        // ==========================================
+        function actualizarEstado(viaje) {
+            const estadoTexto = document.getElementById('estadoTexto');
+            const estadoInfo = document.getElementById('estadoInfo');
+            const infoConductor = document.getElementById('infoConductor');
+
+            switch(viaje.estado) {
+                case 'pendiente':
+                    estadoTexto.textContent = '⏳ Buscando conductor...';
+                    estadoInfo.textContent = 'Tu viaje fue solicitado';
+                    break;
+
+                case 'aceptado':
+                    estadoTexto.textContent = '✅ Conductor asignado';
+                    estadoInfo.textContent = 'Tu conductor está en camino';
+                    infoConductor.classList.remove('hidden');
+                    document.getElementById('condNombre').textContent = viaje.conductor_nombre || '-';
+                    document.getElementById('condTelefono').textContent = viaje.conductor_telefono || '-';
+                    document.getElementById('condAuto').textContent = 
+                        (viaje.vehiculo_color || '') + ' ' + (viaje.vehiculo_modelo || '');
+                    document.getElementById('condPlaca').textContent = viaje.vehiculo_placa || '-';
+                    break;
+
+                case 'en_camino':
+                    estadoTexto.textContent = '🚗 Conductor en camino';
+                    estadoInfo.textContent = 'Se acerca a tu ubicación';
+                    break;
+
+                case 'iniciado':
+                    estadoTexto.textContent = '🚀 Viaje iniciado';
+                    estadoInfo.textContent = '¡Buen viaje!';
+                    break;
+
+                case 'finalizado':
+                    estadoTexto.textContent = '✅ Viaje completado';
+                    estadoInfo.textContent = '¡Gracias por viajar con TuMovil!';
+                    if (subscription) subscription.unsubscribe();
+                    break;
+
+                case 'cancelado':
+                    estadoTexto.textContent = '❌ Viaje cancelado';
+                    estadoInfo.textContent = 'El viaje fue cancelado';
+                    if (subscription) subscription.unsubscribe();
+                    break;
+            }
+        }
+
+        // ==========================================
+        // CANCELAR VIAJE
+        // ==========================================
+        async function cancelarViaje() {
+            if (!viajeId) return;
+            if (!confirm('¿Cancelar el viaje?')) return;
+
+            try {
+                const { error } = await supabaseClient.rpc('actualizar_estado_viaje', {
+                    p_viaje_id: viajeId,
+                    p_nuevo_estado: 'cancelado'
+                });
+                if (error) throw error;
+
+                mostrarMsg('Viaje cancelado', 'success');
+                setTimeout(() => location.reload(), 2000);
+            } catch (e) {
+                mostrarMsg('Error: ' + e.message, 'error');
+            }
+        }
+
+        // ==========================================
+        // UTILIDADES
+        // ==========================================
+        function mostrarMsg(texto, tipo) {
+            const msg = document.getElementById('msg');
+            msg.textContent = texto;
+            msg.className = 'msg msg-' + tipo + ' show';
+            setTimeout(() => msg.classList.remove('show'), 5000);
+        }
+    </script>
+</body>
+</html>
