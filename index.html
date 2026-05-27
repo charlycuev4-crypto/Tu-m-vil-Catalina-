@@ -5,924 +5,743 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TuMovil Las Catalinas - Pasajero</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
+        html, body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
-            min-height: 100vh;
-            padding: 10px;
-            font-size: 18px;
+            background: #f0f2f5;
+            height: 100vh;
+            overflow: hidden;
         }
-        .container { max-width: 500px; margin: 0 auto; }
 
+        /* ========== HEADER ========== */
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 25px 15px;
-            border-radius: 20px;
+            padding: 10px 15px;
             text-align: center;
-            margin-bottom: 15px;
-        }
-        .header h1 { font-size: 1.8rem; margin-bottom: 8px; }
-        .header p { font-size: 1.1rem; opacity: 0.9; }
-
-        .btn-gigante {
-            width: 100%;
-            padding: 25px 15px;
-            border: none;
-            border-radius: 20px;
-            font-size: 1.4rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        .btn-gigante:active { transform: scale(0.98); }
-
-        .btn-verde {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-            box-shadow: 0 6px 20px rgba(17,153,142,0.3);
-        }
-        .btn-morado {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            box-shadow: 0 6px 20px rgba(102,126,234,0.3);
-        }
-        .btn-gris {
-            background: #e0e0e0;
-            color: #555;
-        }
-        .btn-rojo {
-            background: #ff6b6b;
-            color: white;
-        }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .tarjeta {
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        }
-        .tarjeta-titulo {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .campo { margin-bottom: 20px; }
-        .campo label {
-            display: block;
-            font-size: 1.1rem;
-            color: #555;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-        .campo input {
-            width: 100%;
-            padding: 18px 15px;
-            border: 3px solid #e0e0e0;
-            border-radius: 15px;
-            font-size: 1.2rem;
-            transition: border-color 0.3s;
-        }
-        .campo input:focus { 
-            outline: none; 
-            border-color: #667eea; 
-        }
-
-        /* SUGERENCIAS MEJORADAS */
-        .sugerencias {
-            background: white;
-            border: 3px solid #667eea;
-            border-radius: 15px;
-            max-height: 350px;
-            overflow-y: auto;
-            display: none;
-            position: absolute;
-            width: 100%;
+            position: fixed;
+            top: 0; left: 0; right: 0;
             z-index: 1000;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-        }
-        .sugerencias.mostrar { display: block; }
-        .sugerencia-item {
-            padding: 18px 15px;
-            border-bottom: 2px solid #f0f0f0;
-            cursor: pointer;
-        }
-        .sugerencia-item:hover { background: #f0f4ff; }
-        .sugerencia-item .calle { 
-            font-weight: 700; 
-            color: #333; 
-            font-size: 1.15rem; 
-        }
-        .sugerencia-item .zona { 
-            font-size: 1rem; 
-            color: #667eea; 
-            margin-top: 5px;
-            font-weight: 500;
-        }
-        .sugerencia-item .distancia {
-            font-size: 0.85rem;
-            color: #888;
-            margin-top: 3px;
-        }
-        .sugerencia-item .lejos {
-            color: #c62828;
-            font-weight: 600;
-        }
-
-        #mapa {
-            height: 280px;
-            border-radius: 15px;
-            margin: 15px 0;
-            display: none;
-            border: 3px solid #667eea;
-        }
-        #mapa.mostrar { display: block; }
-
-        .precio-caja {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            margin: 20px 0;
-        }
-        .precio-caja .monto { 
-            font-size: 3.5rem; 
-            font-weight: 800; 
-        }
-        .precio-caja .info { 
-            font-size: 1.1rem; 
-            opacity: 0.9; 
-            margin-top: 10px; 
-        }
-
-        .estado-caja {
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            margin: 20px 0;
-        }
-        .estado-buscando { background: #fff3cd; color: #856404; }
-        .estado-asignado { background: #d4edda; color: #155724; }
-        .estado-camino { background: #cce5ff; color: #004085; }
-        .estado-caja .icono { font-size: 4rem; margin-bottom: 15px; }
-        .estado-caja .texto { font-size: 1.5rem; font-weight: bold; }
-        .estado-caja .subtexto { font-size: 1rem; margin-top: 10px; opacity: 0.8; }
-
-        .mensaje {
-            padding: 18px;
-            border-radius: 15px;
-            margin-bottom: 15px;
-            font-size: 1.1rem;
-            text-align: center;
-            display: none;
-            font-weight: 600;
-        }
-        .mensaje.mostrar { display: block; }
-        .mensaje-ok { background: #d4edda; color: #155724; }
-        .mensaje-error { background: #f8d7da; color: #721c24; }
-        .mensaje-info { background: #e3f2fd; color: #1565c0; }
-        .mensaje-warn { background: #fff3cd; color: #856404; }
-
-        .oculto { display: none !important; }
-
-        .zona-info {
-            background: #e8f5e9;
-            border-radius: 12px;
-            padding: 12px 15px;
-            margin-bottom: 15px;
-            text-align: center;
-            color: #2e7d32;
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
-
-        .gps-info {
-            background: #e3f2fd;
-            border-radius: 12px;
-            padding: 12px 15px;
-            margin-bottom: 15px;
-            text-align: center;
-            color: #1565c0;
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
-        .gps-info .direccion-gps {
-            font-weight: 700;
-            color: #0d47a1;
-            margin-top: 5px;
-            font-size: 1.05rem;
-        }
-        .gps-info .precision {
-            font-size: 0.8rem;
-            color: #555;
-            margin-top: 3px;
-        }
-
-        .gps-loading {
+            height: 55px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            padding: 15px;
-            background: #fff3cd;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            color: #856404;
-            font-weight: 500;
+            flex-direction: column;
         }
-        .gps-loading .spinner {
-            width: 20px;
-            height: 20px;
-            border: 3px solid #856404;
-            border-top-color: transparent;
+        .header h1 { font-size: 1.1rem; margin: 0; }
+        .header p { font-size: 0.7rem; opacity: 0.9; margin: 0; }
+
+        /* ========== CONTENEDOR PRINCIPAL ========== */
+        .app-container {
+            position: fixed;
+            top: 55px;
+            left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ========== MAPA 40% ========== */
+        .mapa-seccion {
+            height: 40%;
+            min-height: 200px;
+            position: relative;
+            background: #e5e5e5;
+        }
+        .mapa-seccion iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .mapa-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: #888;
+            font-size: 0.9rem;
+            background: linear-gradient(135deg, #e0e0e0 0%, #f0f0f0 100%);
+        }
+        .mapa-placeholder i {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        /* ========== PANEL 60% ========== */
+        .panel-seccion {
+            height: 60%;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            position: relative;
+            z-index: 10;
+        }
+        .panel-handle {
+            width: 40px;
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+            margin: 8px auto;
+        }
+        .panel-contenido {
+            padding: 0 15px 20px;
+        }
+
+        /* ========== ORIGEN GPS ========== */
+        .origen-box {
+            background: #e3f2fd;
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #1565c0;
+        }
+        .origen-box .icono {
+            font-size: 1.2rem;
+        }
+        .origen-box .texto {
+            flex: 1;
+        }
+        .origen-box .direccion {
+            font-weight: 700;
+            color: #0d47a1;
+        }
+        .origen-box .precision {
+            font-size: 0.7rem;
+            color: #555;
+        }
+
+        /* ========== INPUTS ========== */
+        .input-group { margin-bottom: 10px; }
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: #555;
+            margin-bottom: 3px;
+            font-weight: 600;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus { outline: none; border-color: #667eea; }
+
+        /* ========== BOTONES ========== */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(17,153,142,0.3);
+        }
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+        }
+        .btn-maps {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+        }
+        .btn-outline {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        /* ========== SUGERENCIAS ========== */
+        .sugerencias {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            max-height: 180px;
+            overflow-y: auto;
+            display: none;
+            position: absolute;
+            left: 15px; right: 15px;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .sugerencias.activo { display: block; }
+        .sugerencia-item {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .sugerencia-item:hover { background: #f0f4ff; }
+        .sugerencia-item .calle { font-weight: 600; color: #333; }
+        .sugerencia-item .zona { font-size: 0.75rem; color: #667eea; }
+
+        /* ========== ESTADOS ========== */
+        .estado-box {
+            text-align: center;
+            padding: 15px 0;
+        }
+        .estado-box .icono-grande {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        .estado-box h2 {
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .estado-box p {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #eee;
+            border-top-color: #667eea;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 10px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .gps-error {
-            background: #ffebee;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            text-align: center;
-            color: #c62828;
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
-        .gps-error button {
-            margin-top: 10px;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 10px;
-            background: #c62828;
+        /* ========== TARIFA ========== */
+        .tarifa-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            font-size: 1rem;
-            cursor: pointer;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 12px 0;
         }
+        .tarifa-box .precio {
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
+        .tarifa-box .detalle {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        /* ========== INFO CONDUCTOR ========== */
+        .info-conductor {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 10px 0;
+            text-align: left;
+        }
+        .info-conductor .fila {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .info-conductor .fila:last-child { margin-bottom: 0; }
+        .avatar {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .datos h4 { margin: 0; font-size: 0.95rem; }
+        .datos p { margin: 2px 0 0; font-size: 0.8rem; color: #666; }
+
+        /* ========== MENSAJES ========== */
+        .msg {
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            text-align: center;
+            display: none;
+            font-weight: 600;
+        }
+        .msg.show { display: block; }
+        .msg-error { background: #ffebee; color: #c62828; }
+        .msg-success { background: #e8f5e9; color: #2e7d32; }
+        .msg-info { background: #e3f2fd; color: #1565c0; }
+        .msg-warn { background: #fff3cd; color: #856404; }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🚕 TuMovil</h1>
-            <p>Las Catalinas - Tu móvil, tu viaje</p>
+
+    <div class="header">
+        <h1>🚕 TuMovil Las Catalinas</h1>
+        <p>Tu móvil, tu viaje, tu camino</p>
+    </div>
+
+    <div class="app-container">
+        <!-- ===== MAPA 40% ===== -->
+        <div class="mapa-seccion" id="mapaSeccion">
+            <div class="mapa-placeholder" id="mapaPlaceholder">
+                <div style="font-size:2.5rem; margin-bottom:8px;">🗺️</div>
+                <div>Escribí tu destino y tocá<br>"VER EN MAPA"</div>
+            </div>
+            <iframe id="googleMapIframe" class="hidden" src=""></iframe>
         </div>
 
-        <div class="mensaje" id="mensaje"></div>
+        <!-- ===== PANEL 60% ===== -->
+        <div class="panel-seccion">
+            <div class="panel-handle"></div>
+            <div class="panel-contenido" id="panelContenido">
+                <div class="msg" id="msg"></div>
 
-        <!-- PASO 0: OBTENER GPS -->
-        <div class="tarjeta" id="pasoGPS">
-            <div class="tarjeta-titulo">📍 ¿Dónde estás?</div>
-            <p style="text-align:center; color:#666; margin-bottom:20px; font-size:1.05rem;">
-                Necesitamos tu ubicación para calcular el precio desde donde estás parado.
-            </p>
+                <!-- PASO 1: DATOS -->
+                <div id="pasoDatos">
+                    <!-- Origen GPS -->
+                    <div class="origen-box" id="origenBox">
+                        <span class="icono">📍</span>
+                        <div class="texto">
+                            <div>Buscando tu ubicación...</div>
+                        </div>
+                    </div>
 
-            <div class="gps-loading" id="gpsLoading">
-                <div class="spinner"></div>
-                <span>Buscando tu ubicación...</span>
+                    <!-- Inputs -->
+                    <div class="input-group">
+                        <label>🏁 ¿A dónde vas?</label>
+                        <input type="text" id="destino" placeholder="Ej: San Miguel, Mitre 1234" 
+                               autocomplete="off" oninput="buscarDireccion(this.value)">
+                        <div class="sugerencias" id="sugerencias"></div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>👤 Tu nombre</label>
+                        <input type="text" id="nombre" placeholder="Ej: Juan Pérez">
+                    </div>
+
+                    <div class="input-group">
+                        <label>📞 Teléfono</label>
+                        <input type="tel" id="telefono" placeholder="Ej: 1133667793">
+                    </div>
+
+                    <button class="btn btn-maps" onclick="mostrarMapa()">
+                        🗺️ VER DESTINO EN MAPA
+                    </button>
+
+                    <button class="btn btn-primary" onclick="solicitarViaje()">
+                        🚕 PEDIR MÓVIL
+                    </button>
+                </div>
+
+                <!-- PASO 2: ESPERANDO COTIZACIÓN -->
+                <div id="pasoEsperando" class="hidden">
+                    <div class="estado-box">
+                        <div class="spinner"></div>
+                        <h2>Buscando conductor...</h2>
+                        <p>Tu viaje fue enviado. Un conductor va a cotizar el precio.</p>
+                    </div>
+                    <button class="btn btn-danger" onclick="cancelarViaje()">
+                        ❌ CANCELAR
+                    </button>
+                </div>
+
+                <!-- PASO 3: PRECIO RECIBIDO -->
+                <div id="pasoPrecio" class="hidden">
+                    <div class="estado-box">
+                        <div style="font-size:2.5rem;">💰</div>
+                        <h2>¡Tenés una cotización!</h2>
+                    </div>
+
+                    <div class="tarifa-box">
+                        <div class="detalle">Precio del viaje</div>
+                        <div class="precio" id="precioMonto">$0</div>
+                        <div class="detalle" id="precioDetalle">Base $3.000 + km</div>
+                    </div>
+
+                    <div class="info-conductor" id="infoConductor">
+                        <div class="fila">
+                            <div class="avatar" id="avatarCond">?</div>
+                            <div class="datos">
+                                <h4 id="nombreCond">-</h4>
+                                <p id="autoCond">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-success" onclick="confirmarViaje()">
+                        ✅ CONFIRMAR Y VIAJAR
+                    </button>
+                    <button class="btn btn-outline" onclick="rechazarPrecio()">
+                        ❌ BUSCAR OTRO CONDUCTOR
+                    </button>
+                </div>
+
+                <!-- PASO 4: CONDUCTOR EN CAMINO -->
+                <div id="pasoEnCamino" class="hidden">
+                    <div class="estado-box">
+                        <div style="font-size:2.5rem;">🚗</div>
+                        <h2>¡Tu móvil está llegando!</h2>
+                        <p id="infoEnCamino">El conductor va en camino</p>
+                    </div>
+                    <div class="tarifa-box">
+                        <div class="detalle">Tarifa acordada</div>
+                        <div class="precio" id="precioEnCamino">$0</div>
+                    </div>
+                </div>
+
+                <!-- PASO 5: VIAJE COMPLETADO -->
+                <div id="pasoCompletado" class="hidden">
+                    <div class="estado-box">
+                        <div style="font-size:2.5rem;">⭐</div>
+                        <h2>¡Llegaste!</h2>
+                        <p>Gracias por viajar con Las Catalinas</p>
+                    </div>
+                    <div class="tarifa-box">
+                        <div class="detalle">Total a pagar</div>
+                        <div class="precio" id="precioFinal">$0</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="location.reload()">
+                        🔄 NUEVO VIAJE
+                    </button>
+                </div>
             </div>
-
-            <div class="gps-info oculto" id="gpsInfo">
-                <div>📍 Tu ubicación detectada:</div>
-                <div class="direccion-gps" id="gpsDireccion">-</div>
-                <div class="precision" id="gpsPrecision">-</div>
-            </div>
-
-            <div class="gps-error oculto" id="gpsError">
-                <div id="gpsErrorTexto">No pudimos obtener tu ubicación.</div>
-                <button onclick="intentarGPSdeNuevo()">🔄 Intentar de nuevo</button>
-            </div>
-
-            <button class="btn-gigante btn-morado oculto" id="btnContinuarGPS" onclick="continuarADestino()">
-                ✅ CONTINUAR
-            </button>
-        </div>
-
-        <!-- PASO 1: DATOS Y DESTINO -->
-        <div class="tarjeta oculto" id="pasoDatos">
-            <div class="tarjeta-titulo">¿A dónde vas?</div>
-
-            <div class="gps-info">
-                <div>🚩 Origen (tu ubicación):</div>
-                <div class="direccion-gps" id="origenConfirmado">-</div>
-            </div>
-
-            <div class="zona-info">
-                📍 Cubrimos: Moreno, San Miguel, Castelar, Morón, Ituzaingó, Merlo, Paso del Rey y alrededores
-            </div>
-
-            <div class="campo">
-                <label>👤 Tu nombre</label>
-                <input type="text" id="nombre" placeholder="Ej: Juan" style="font-size:1.3rem;">
-            </div>
-
-            <div class="campo">
-                <label>📞 Teléfono</label>
-                <input type="tel" id="telefono" placeholder="Ej: 1133667793" style="font-size:1.3rem;">
-            </div>
-
-            <div class="campo" style="position:relative;">
-                <label>🏁 Calle y número de destino</label>
-                <input type="text" id="destino" placeholder="Ej: Mitre 1234, San Miguel" 
-                       style="font-size:1.2rem;" autocomplete="off">
-                <div class="sugerencias" id="sugerencias"></div>
-            </div>
-
-            <div id="mapa"></div>
-
-            <button class="btn-gigante btn-morado" id="btnCotizar" onclick="cotizarViaje()">
-                💰 VER CUÁNTO CUESTA
-            </button>
-        </div>
-
-        <!-- PASO 2: PRECIO -->
-        <div class="tarjeta oculto" id="pasoPrecio">
-            <div class="tarjeta-titulo">✅ Esto es lo que sale</div>
-
-            <div class="precio-caja">
-                <div class="monto" id="precioMonto">$0</div>
-                <div class="info" id="precioInfo">Calculando...</div>
-            </div>
-
-            <div style="text-align:center; color:#666; margin:15px 0; font-size:1.1rem;">
-                <p>🚩 Desde: <strong id="origenResumen">-</strong></p>
-                <p>🏁 Hasta: <strong id="destinoConfirmado">-</strong></p>
-            </div>
-
-            <button class="btn-gigante btn-verde" id="btnSolicitar" onclick="solicitarViaje()">
-                🚕 ¡SÍ, PEDIR MÓVIL!
-            </button>
-            <button class="btn-gigante btn-gris" onclick="volverAtras()">
-                ← NO, CAMBIAR DIRECCIÓN
-            </button>
-        </div>
-
-        <!-- PASO 3: ESTADO -->
-        <div class="tarjeta oculto" id="pasoEstado">
-            <div class="estado-caja estado-buscando" id="cajaEstado">
-                <div class="icono" id="estadoIcono">🔍</div>
-                <div class="texto" id="estadoTexto">Buscando móvil...</div>
-                <div class="subtexto" id="estadoSubtexto">Esto tarda unos segundos</div>
-            </div>
-
-            <div id="infoConductor" class="oculto" style="text-align:center; margin:20px 0;">
-                <p style="font-size:1.2rem; color:#333;">
-                    👤 Conductor: <strong id="nombreConductor">-</strong><br>
-                    🚗 Auto: <strong id="autoConductor">-</strong>
-                </p>
-            </div>
-
-            <button class="btn-gigante btn-rojo" onclick="cancelarViaje()">
-                ❌ CANCELAR
-            </button>
         </div>
     </div>
 
     <script>
-        // CONFIG SUPABASE
+        // ===== CONFIG =====
         const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // RADIO MÁXIMO DE COBERTURA (km)
-        const RADIO_COBERTURA_KM = 35;
-
-        // ZONAS QUE CUBRIMOS (para filtrar resultados)
-        const ZONAS_CERCANAS = [
-            'moreno', 'san miguel', 'castelar', 'morón', 'moron',
-            'ituzaingó', 'ituzaingo', 'merlo', 'paso del rey',
-            'haedo', 'ramos mejía', 'ramos mejia', 'el palomar',
-            'ciudadela', 'jose c paz', 'jose c. paz', 'jose c paz',
-            'trujui', 'francisco alvarez', 'cuartel v', 'la reja',
-            'parque leloir', 'villa tesei', 'william morris',
-            'libertad', 'general rodriguez', 'mariano acosta',
-            'gregorio de laferrere', 'gonzalez catan', 'virrey del pino'
-        ];
+        const TARIFA_BASE = 3000;
+        const TARIFA_POR_KM = 600;
+        const TIEMPO_ESPERA_MS = 60000; // 1 minuto
 
         let viajeId = null;
         let subscription = null;
+        let origenCoords = null;
+        let origenTexto = 'Ubicación actual';
+        let destinoCoords = null;
+        let destinoTexto = '';
         let precioCalculado = 0;
         let distanciaKm = 0;
-        let destinoTexto = '';
-        let destinoCoords = null;
-        let origenCoords = null;
-        let origenTexto = '';
-        let mapa = null;
-        let marcadorOrigen = null;
-        let marcadorDestino = null;
-        let rutaLayer = null;
+        let timeoutConfirmacion = null;
 
-        // ========== INICIO: OBTENER GPS AL CARGAR ==========
-        window.addEventListener('DOMContentLoaded', function() {
-            obtenerUbicacionGPS();
+        // ===== INICIO: GPS =====
+        window.addEventListener('DOMContentLoaded', () => {
+            obtenerGPS();
         });
 
-        function obtenerUbicacionGPS() {
-            document.getElementById('gpsLoading').classList.remove('oculto');
-            document.getElementById('gpsInfo').classList.add('oculto');
-            document.getElementById('gpsError').classList.add('oculto');
-            document.getElementById('btnContinuarGPS').classList.add('oculto');
-
+        function obtenerGPS() {
             if (!navigator.geolocation) {
-                mostrarErrorGPS('Tu navegador no soporta geolocalización.');
+                actualizarOrigen('GPS no soportado', 'error');
                 return;
             }
 
-            const opciones = {
-                enableHighAccuracy: true,
-                timeout: 15000,
-                maximumAge: 0
-            };
-
             navigator.geolocation.getCurrentPosition(
-                onGPSSuccess,
-                onGPSError,
-                opciones
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    const precision = pos.coords.accuracy;
+                    origenCoords = { lat, lng };
+                    origenTexto = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                    actualizarOrigen(origenTexto, 'ok', precision);
+                },
+                (err) => {
+                    let msg = 'No pudimos obtener tu ubicación';
+                    if (err.code === 1) msg = '❌ GPS bloqueado. Andá a configuración del navegador y permití la ubicación.';
+                    else if (err.code === 2) msg = '⚠️ GPS apagado. Activá la ubicación en tu celular.';
+                    else if (err.code === 3) msg = '⏱️ GPS muy lento. Probá de nuevo.';
+                    actualizarOrigen(msg, 'error');
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
         }
 
-        async function onGPSSuccess(position) {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            const precision = position.coords.accuracy;
-
-            origenCoords = { lat, lng };
-
-            // Reverse geocoding para obtener dirección legible
-            try {
-                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
-                const res = await fetch(url);
-                const data = await res.json();
-
-                const calle = data.address?.road || '';
-                const numero = data.address?.house_number ? ` ${data.address.house_number}` : '';
-                const localidad = data.address?.city || data.address?.town || data.address?.suburb || data.address?.village || '';
-
-                origenTexto = calle + numero + (localidad ? `, ${localidad}` : '');
-                if (!origenTexto) origenTexto = data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-
-                document.getElementById('gpsDireccion').textContent = origenTexto;
-                document.getElementById('gpsPrecision').textContent = `Precisión: ±${Math.round(precision)} metros`;
-
-                document.getElementById('gpsLoading').classList.add('oculto');
-                document.getElementById('gpsInfo').classList.remove('oculto');
-                document.getElementById('btnContinuarGPS').classList.remove('oculto');
-
-            } catch (err) {
-                // Si falla el reverse geocoding, igual mostramos las coords
-                origenTexto = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-                document.getElementById('gpsDireccion').textContent = origenTexto;
-                document.getElementById('gpsPrecision').textContent = `Precisión: ±${Math.round(precision)} metros`;
-
-                document.getElementById('gpsLoading').classList.add('oculto');
-                document.getElementById('gpsInfo').classList.remove('oculto');
-                document.getElementById('btnContinuarGPS').classList.remove('oculto');
-            }
+        function actualizarOrigen(texto, tipo, precision) {
+            const box = document.getElementById('origenBox');
+            const icono = tipo === 'error' ? '⚠️' : '📍';
+            const prec = precision ? `<div class="precision">Precisión: ±${Math.round(precision)}m</div>` : '';
+            box.innerHTML = `
+                <span class="icono">${icono}</span>
+                <div class="texto">
+                    <div class="direccion">Origen: ${texto}</div>
+                    ${prec}
+                </div>
+            `;
+            if (tipo === 'error') box.style.background = '#ffebee';
         }
 
-        function onGPSError(error) {
-            let mensaje = 'No pudimos obtener tu ubicación.';
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    mensaje = '❌ No nos diste permiso para usar tu GPS.
-
-Andá a la configuración de tu navegador, permití la ubicación y recargá la página.';
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    mensaje = '⚠️ Tu dispositivo no pudo determinar la ubicación. Asegurate de tener el GPS activado.';
-                    break;
-                case error.TIMEOUT:
-                    mensaje = '⏱️ Se agotó el tiempo para obtener tu ubicación. Probá de nuevo.';
-                    break;
-            }
-            mostrarErrorGPS(mensaje);
-        }
-
-        function mostrarErrorGPS(texto) {
-            document.getElementById('gpsLoading').classList.add('oculto');
-            document.getElementById('gpsErrorTexto').textContent = texto;
-            document.getElementById('gpsError').classList.remove('oculto');
-        }
-
-        function intentarGPSdeNuevo() {
-            obtenerUbicacionGPS();
-        }
-
-        function continuarADestino() {
-            if (!origenCoords) {
-                mostrarMensaje('Esperá un momento, todavía estamos buscando tu ubicación...', 'warn');
-                return;
-            }
-            document.getElementById('pasoGPS').classList.add('oculto');
-            document.getElementById('pasoDatos').classList.remove('oculto');
-            document.getElementById('origenConfirmado').textContent = origenTexto;
-            window.scrollTo(0, 0);
-        }
-
-        // ========== FUNCIÓN: Calcular distancia entre 2 puntos (Haversine) ==========
-        function calcularDistancia(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-
-        // ========== FUNCIÓN: Verificar si está dentro de la zona ==========
-        function estaEnZonaCobertura(lat, lng, displayName) {
-            if (!origenCoords) return { dentro: false, distanciaKm: '0', esZonaConocida: false };
-
-            const distancia = calcularDistancia(origenCoords.lat, origenCoords.lng, lat, lng);
-            const nombreLower = (displayName || '').toLowerCase();
-            const esZonaConocida = ZONAS_CERCANAS.some(zona => nombreLower.includes(zona));
-
-            return {
-                dentro: distancia <= RADIO_COBERTURA_KM || esZonaConocida,
-                distanciaKm: distancia.toFixed(1),
-                esZonaConocida
-            };
-        }
-
-        // ========== AUTOCOMPLETADO CON FILTRO DE ZONA ==========
+        // ===== BUSCADOR DE DIRECCIONES =====
         let timeoutBusqueda = null;
-        document.getElementById('destino').addEventListener('input', function(e) {
-            const texto = e.target.value.trim();
+        function buscarDireccion(query) {
             const sugerenciasDiv = document.getElementById('sugerencias');
-
             clearTimeout(timeoutBusqueda);
 
-            if (texto.length < 3) {
-                sugerenciasDiv.classList.remove('mostrar');
+            if (query.length < 3) {
+                sugerenciasDiv.classList.remove('activo');
                 return;
             }
 
             timeoutBusqueda = setTimeout(async () => {
                 try {
-                    if (!origenCoords) {
-                        sugerenciasDiv.innerHTML = '<div class="sugerencia-item" style="color:#888; text-align:center;">Esperando tu ubicación...</div>';
-                        sugerenciasDiv.classList.add('mostrar');
-                        return;
-                    }
-
-                    // Búsqueda restringida a Buenos Aires, Argentina, centrada en la ubicación del pasajero
-                    const viewbox = `${origenCoords.lng-0.5},${origenCoords.lat+0.5},${origenCoords.lng+0.5},${origenCoords.lat-0.5}`;
-                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(texto)}&limit=10&addressdetails=1&countrycodes=ar&bounded=1&viewbox=${viewbox}`;
-
+                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Buenos Aires, Argentina')}&limit=5&addressdetails=1`;
                     const res = await fetch(url);
                     const datos = await res.json();
 
-                    if (datos.length === 0) {
-                        sugerenciasDiv.innerHTML = `
-                            <div class="sugerencia-item" style="color:#888; text-align:center;">
-                                No encontramos esa dirección.<br>
-                                <small>Probá con calle y número (Ej: Mitre 1234)</small>
-                            </div>
-                        `;
-                        sugerenciasDiv.classList.add('mostrar');
-                        return;
-                    }
-
-                    // Filtrar y ordenar resultados por cercanía al origen del pasajero
-                    const resultadosFiltrados = datos.map(lugar => {
-                        const lat = parseFloat(lugar.lat);
-                        const lng = parseFloat(lugar.lon);
-                        const infoZona = estaEnZonaCobertura(lat, lng, lugar.display_name);
-
-                        return {
-                            ...lugar,
-                            distanciaOrigen: infoZona.distanciaKm,
-                            enCobertura: infoZona.dentro
-                        };
-                    }).sort((a, b) => {
-                        if (a.enCobertura && !b.enCobertura) return -1;
-                        if (!a.enCobertura && b.enCobertura) return 1;
-                        return a.distanciaOrigen - b.distanciaOrigen;
-                    }).slice(0, 5);
-
-                    sugerenciasDiv.innerHTML = resultadosFiltrados.map(lugar => {
-                        const calle = lugar.address.road || lugar.display_name.split(',')[0];
-                        const numero = lugar.address.house_number ? ` ${lugar.address.house_number}` : '';
-                        const localidad = lugar.address.city || lugar.address.town || lugar.address.suburb || lugar.address.village || 'Buenos Aires';
-                        const partido = lugar.address.county || lugar.address.state_district || '';
-
-                        const zonaTexto = partido ? `${localidad}, ${partido}` : localidad;
-                        const distanciaTexto = lugar.enCobertura 
-                            ? `🟢 A ${lugar.distanciaOrigen} km de tu ubicación` 
-                            : `🔴 A ${lugar.distanciaOrigen} km (lejos)`;
-                        const claseDistancia = lugar.enCobertura ? '' : 'lejos';
-
+                    sugerenciasDiv.innerHTML = datos.map(lugar => {
+                        const calle = lugar.address?.road || lugar.display_name.split(',')[0];
+                        const numero = lugar.address?.house_number ? ` ${lugar.address.house_number}` : '';
+                        const localidad = lugar.address?.city || lugar.address?.town || lugar.address?.suburb || 'Buenos Aires';
                         return `
-                            <div class="sugerencia-item" onclick="seleccionarDireccion('${lugar.display_name.replace(/'/g, "\'")}', ${lugar.lat}, ${lugar.lon}, ${lugar.enCobertura}, ${lugar.distanciaOrigen})">
+                            <div class="sugerencia-item" onclick="seleccionarDestino('${lugar.display_name.replace(/'/g, "\'")}', ${lugar.lat}, ${lugar.lon})">
                                 <div class="calle">${calle}${numero}</div>
-                                <div class="zona">📍 ${zonaTexto}</div>
-                                <div class="distancia ${claseDistancia}">${distanciaTexto}</div>
+                                <div class="zona">📍 ${localidad}</div>
                             </div>
                         `;
                     }).join('');
-
-                    sugerenciasDiv.classList.add('mostrar');
-
-                } catch (err) {
-                    console.error('Error buscando:', err);
+                    sugerenciasDiv.classList.add('activo');
+                } catch (e) {
+                    console.error('Error buscando:', e);
                 }
             }, 400);
-        });
+        }
 
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.campo')) {
-                document.getElementById('sugerencias').classList.remove('mostrar');
-            }
-        });
-
-        // ========== SELECCIONAR DIRECCIÓN ==========
-        function seleccionarDireccion(direccion, lat, lng, enCobertura, distancia) {
+        function seleccionarDestino(direccion, lat, lng) {
             document.getElementById('destino').value = direccion.split(',')[0];
-            document.getElementById('sugerencias').classList.remove('mostrar');
+            document.getElementById('sugerencias').classList.remove('activo');
             destinoTexto = direccion;
             destinoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
-
-            if (!enCobertura) {
-                mostrarMensaje(`⚠️ Esa dirección está a ${distancia} km de tu ubicación. Podría haber costos extra.`, 'info');
-            }
-
-            mostrarMapa();
         }
 
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.input-group')) {
+                document.getElementById('sugerencias').classList.remove('activo');
+            }
+        });
+
+        // ===== MOSTRAR MAPA =====
         function mostrarMapa() {
-            if (!origenCoords || !destinoCoords) return;
-
-            const mapaDiv = document.getElementById('mapa');
-            mapaDiv.classList.add('mostrar');
-
-            if (!mapa) {
-                mapa = L.map('mapa');
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
-                }).addTo(mapa);
+            destinoTexto = document.getElementById('destino').value.trim();
+            if (!destinoTexto) {
+                mostrarMsg('Escribí un destino primero', 'error');
+                return;
             }
 
-            // Limpiar marcadores anteriores
-            if (marcadorOrigen) mapa.removeLayer(marcadorOrigen);
-            if (marcadorDestino) mapa.removeLayer(marcadorDestino);
-            if (rutaLayer) mapa.removeLayer(rutaLayer);
-
-            // Marcador de origen (ubicación del pasajero)
-            const iconoOrigen = L.divIcon({
-                className: 'custom-div-icon',
-                html: `<div style="background:#2196F3;color:white;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:16px;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);">📍</div>`,
-                iconSize: [30, 30],
-                iconAnchor: [15, 15]
-            });
-
-            marcadorOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: iconoOrigen })
-                .addTo(mapa)
-                .bindPopup('🚩 Tu ubicación').openPopup();
-
-            // Marcador de destino
-            marcadorDestino = L.marker([destinoCoords.lat, destinoCoords.lng])
-                .addTo(mapa)
-                .bindPopup('🏁 Tu destino').openPopup();
-
-            // Ajustar vista para mostrar ambos puntos
-            const bounds = L.latLngBounds(
-                [origenCoords.lat, origenCoords.lng],
-                [destinoCoords.lat, destinoCoords.lng]
-            );
-            mapa.fitBounds(bounds, { padding: [30, 30] });
+            const url = `https://maps.google.com/maps?q=${encodeURIComponent(destinoTexto)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+            document.getElementById('googleMapIframe').src = url;
+            document.getElementById('googleMapIframe').classList.remove('hidden');
+            document.getElementById('mapaPlaceholder').classList.add('hidden');
+            mostrarMsg('Mapa cargado ✓', 'success');
         }
 
-        // ========== COTIZAR ==========
-        async function cotizarViaje() {
+        // ===== SOLICITAR VIAJE =====
+        async function solicitarViaje() {
+            const nombre = document.getElementById('nombre').value.trim();
+            const telefono = document.getElementById('telefono').value.trim();
             destinoTexto = document.getElementById('destino').value.trim();
-            const btn = document.getElementById('btnCotizar');
 
-            if (!destinoTexto) {
-                mostrarMensaje('Por favor, escribí a dónde querés ir', 'error');
-                document.getElementById('destino').focus();
+            if (!nombre || !telefono || !destinoTexto) {
+                mostrarMsg('Completá nombre, teléfono y destino', 'error');
                 return;
             }
 
             if (!origenCoords) {
-                mostrarMensaje('Esperá, todavía no tenemos tu ubicación. Recargá la página.', 'error');
+                mostrarMsg('Esperando GPS... si tarda mucho, recargá la página', 'warn');
                 return;
             }
 
-            // Si no seleccionó del autocompletado, buscar ahora
-            if (!destinoCoords) {
-                btn.disabled = true;
-                btn.textContent = '⏳ Buscando...';
-
-                try {
-                    const viewbox = `${origenCoords.lng-0.5},${origenCoords.lat+0.5},${origenCoords.lng+0.5},${origenCoords.lat-0.5}`;
-                    const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destinoTexto)}&limit=5&addressdetails=1&countrycodes=ar&bounded=1&viewbox=${viewbox}`;
-                    const geoRes = await fetch(geoUrl);
-                    const geoData = await geoRes.json();
-
-                    if (!geoData || geoData.length === 0) {
-                        throw new Error('No encontramos esa dirección. Probá escribiendo la calle y el número (Ej: Mitre 1234, San Miguel)');
-                    }
-
-                    // Tomar el más cercano al origen del pasajero
-                    let mejorResultado = geoData[0];
-                    let menorDistancia = Infinity;
-
-                    for (const lugar of geoData) {
-                        const dist = calcularDistancia(origenCoords.lat, origenCoords.lng, parseFloat(lugar.lat), parseFloat(lugar.lon));
-                        if (dist < menorDistancia) {
-                            menorDistancia = dist;
-                            mejorResultado = lugar;
-                        }
-                    }
-
-                    destinoCoords = {
-                        lat: parseFloat(mejorResultado.lat),
-                        lng: parseFloat(mejorResultado.lon)
-                    };
-                    destinoTexto = mejorResultado.display_name;
-
-                    const infoZona = estaEnZonaCobertura(destinoCoords.lat, destinoCoords.lng, destinoTexto);
-                    if (!infoZona.dentro) {
-                        mostrarMensaje(`⚠️ Esa dirección está a ${infoZona.distanciaKm} km de tu ubicación. Consultá el precio antes de confirmar.`, 'info');
-                    }
-
-                    mostrarMapa();
-                } catch (error) {
-                    mostrarMensaje(error.message, 'error');
-                    btn.disabled = false;
-                    btn.textContent = '💰 VER CUÁNTO CUESTA';
-                    return;
-                }
-            }
-
-            btn.disabled = true;
-            btn.textContent = '⏳ Calculando...';
-
             try {
-                // Usar OSRM para calcular ruta real en auto desde ubicación del pasajero
-                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${origenCoords.lng},${origenCoords.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=false`;
-                const osrmRes = await fetch(osrmUrl);
-                const osrmData = await osrmRes.json();
-
-                if (!osrmData.routes || osrmData.routes.length === 0) {
-                    // Fallback: calcular distancia en línea recta si OSRM falla
-                    distanciaKm = calcularDistancia(origenCoords.lat, origenCoords.lng, destinoCoords.lat, destinoCoords.lng);
-                    distanciaKm = parseFloat(distanciaKm.toFixed(1));
-                    mostrarMensaje('No pudimos calcular la ruta exacta. El precio es estimado.', 'warn');
-                } else {
-                    const metros = osrmData.routes[0].distance;
-                    distanciaKm = parseFloat((metros / 1000).toFixed(1));
-                }
-
-                // Fórmula de precio: base $3.000 + $800 por km
-                precioCalculado = Math.round(3000 + (distanciaKm * 800));
-
-                document.getElementById('precioMonto').textContent = '$' + precioCalculado.toLocaleString('es-AR');
-
-                let textoDistancia = distanciaKm < 3 ? 'Viaje corto' : distanciaKm < 8 ? 'Viaje mediano' : 'Viaje largo';
-                document.getElementById('precioInfo').textContent = 
-                    `${textoDistancia} • ${distanciaKm} km • Base $3.000 + $800 por km`;
-                document.getElementById('destinoConfirmado').textContent = destinoTexto.split(',')[0];
-                document.getElementById('origenResumen').textContent = origenTexto;
-
-                document.getElementById('pasoDatos').classList.add('oculto');
-                document.getElementById('pasoPrecio').classList.remove('oculto');
-                window.scrollTo(0, 0);
-
-            } catch (error) {
-                mostrarMensaje(error.message, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '💰 VER CUÁNTO CUESTA';
-            }
-        }
-
-        function volverAtras() {
-            document.getElementById('pasoPrecio').classList.add('oculto');
-            document.getElementById('pasoDatos').classList.remove('oculto');
-            window.scrollTo(0, 0);
-        }
-
-        // ========== SOLICITAR VIAJE ==========
-        async function solicitarViaje() {
-            const nombre = document.getElementById('nombre').value.trim() || 'Pasajero';
-            const telefono = document.getElementById('telefono').value.trim();
-            const btn = document.getElementById('btnSolicitar');
-
-            if (!telefono) {
-                mostrarMensaje('Por favor, ingresá tu teléfono para que el conductor te llame', 'error');
-                document.getElementById('telefono').focus();
-                return;
-            }
-
-            btn.disabled = true;
-            btn.textContent = '⏳ Enviando...';
-
-            try {
-                const { data, error } = await supabaseClient.rpc('crear_viaje', {
-                    p_pasajero_nombre: nombre,
-                    p_pasajero_telefono: telefono,
-                    p_origen_lat: origenCoords.lat,
-                    p_origen_lng: origenCoords.lng,
-                    p_origen_direccion: origenTexto,
-                    p_destino_lat: destinoCoords.lat,
-                    p_destino_lng: destinoCoords.lng,
-                    p_destino_direccion: destinoTexto,
-                    p_distancia_km: distanciaKm,
-                    p_precio_estimado: precioCalculado
-                });
+                // Insertar viaje en Supabase
+                const { data, error } = await supabaseClient
+                    .from('viajes')
+                    .insert({
+                        estado: 'solicitado',
+                        pasajero_nombre: nombre,
+                        pasajero_telefono: telefono,
+                        origen_lat: origenCoords.lat,
+                        origen_lng: origenCoords.lng,
+                        origen_direccion: origenTexto,
+                        destino_direccion: destinoTexto,
+                        destino_lat: destinoCoords?.lat || null,
+                        destino_lng: destinoCoords?.lng || null
+                    })
+                    .select()
+                    .single();
 
                 if (error) throw error;
 
-                viajeId = data;
-                document.getElementById('pasoPrecio').classList.add('oculto');
-                document.getElementById('pasoEstado').classList.remove('oculto');
-                window.scrollTo(0, 0);
-                mostrarMensaje('¡Listo! Ya estamos buscando tu móvil', 'ok');
+                viajeId = data.id;
+                mostrarPaso('pasoEsperando');
+                mostrarMsg('Viaje enviado. Esperando cotización...', 'success');
 
-                if (subscription) subscription.unsubscribe();
-                subscription = supabaseClient
-                    .channel('viaje-' + viajeId)
-                    .on('postgres_changes', { 
-                        event: '*', 
-                        schema: 'public', 
-                        table: 'viajes', 
-                        filter: 'id=eq.' + viajeId 
-                    }, payload => {
-                        actualizarEstado(payload.new);
-                    })
-                    .subscribe();
+                // Escuchar cambios
+                escucharViaje(viajeId);
 
             } catch (e) {
-                mostrarMensaje('Error: ' + e.message, 'error');
-                btn.disabled = false;
-                btn.textContent = '🚕 ¡SÍ, PEDIR MÓVIL!';
+                mostrarMsg('Error: ' + e.message, 'error');
             }
         }
 
-        function actualizarEstado(viaje) {
-            const caja = document.getElementById('cajaEstado');
-            const icono = document.getElementById('estadoIcono');
-            const texto = document.getElementById('estadoTexto');
-            const subtexto = document.getElementById('estadoSubtexto');
-            const infoConductor = document.getElementById('infoConductor');
+        // ===== ESCUCHAR VIAJE =====
+        function escucharViaje(id) {
+            if (subscription) subscription.unsubscribe();
+
+            subscription = supabaseClient
+                .channel('viaje-' + id)
+                .on('postgres_changes', {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'viajes',
+                    filter: `id=eq.${id}`
+                }, (payload) => {
+                    procesarEstado(payload.new);
+                })
+                .subscribe();
+        }
+
+        function procesarEstado(viaje) {
+            console.log('Estado recibido:', viaje.estado);
 
             switch(viaje.estado) {
-                case 'pendiente':
-                    caja.className = 'estado-caja estado-buscando';
-                    icono.textContent = '🔍'; texto.textContent = 'Buscando móvil...';
-                    subtexto.textContent = 'Esto tarda unos segundos'; break;
-                case 'aceptado':
-                    caja.className = 'estado-caja estado-asignado';
-                    icono.textContent = '✅'; texto.textContent = '¡Móvil asignado!';
-                    subtexto.textContent = 'El conductor va en camino';
+                case 'esperando_confirmacion':
+                    // Conductor envió precio
+                    precioCalculado = viaje.precio || 0;
+                    distanciaKm = viaje.distancia_km || 0;
+                    document.getElementById('precioMonto').textContent = '$' + precioCalculado.toLocaleString('es-AR');
+                    document.getElementById('precioDetalle').textContent = `Base $${TARIFA_BASE.toLocaleString()} + ${distanciaKm}km × $${TARIFA_POR_KM}`;
+
                     if (viaje.conductor_nombre) {
-                        document.getElementById('nombreConductor').textContent = viaje.conductor_nombre;
-                        document.getElementById('autoConductor').textContent = viaje.conductor_auto || 'Móvil particular';
-                        infoConductor.classList.remove('oculto');
-                    } break;
+                        document.getElementById('nombreCond').textContent = viaje.conductor_nombre;
+                        document.getElementById('autoCond').textContent = viaje.conductor_auto || 'Móvil particular';
+                        document.getElementById('avatarCond').textContent = viaje.conductor_nombre.charAt(0).toUpperCase();
+                    }
+
+                    mostrarPaso('pasoPrecio');
+                    mostrarMsg('¡Tenés una cotización! Tenés 1 minuto para confirmar.', 'info');
+
+                    // Timeout de 1 minuto
+                    timeoutConfirmacion = setTimeout(() => {
+                        mostrarMsg('Se agotó el tiempo. Buscando otro conductor...', 'warn');
+                        rechazarPrecio(true); // true = timeout, no rechazo manual
+                    }, TIEMPO_ESPERA_MS);
+                    break;
+
+                case 'confirmado':
                 case 'en_camino':
-                    caja.className = 'estado-caja estado-camino';
-                    icono.textContent = '🚗'; texto.textContent = '¡Tu móvil está llegando!';
-                    subtexto.textContent = 'Mirá por la ventana 👀'; break;
+                    clearTimeout(timeoutConfirmacion);
+                    document.getElementById('precioEnCamino').textContent = '$' + precioCalculado.toLocaleString('es-AR');
+                    mostrarPaso('pasoEnCamino');
+                    mostrarMsg('¡Conductor confirmado! Está en camino.', 'success');
+                    break;
+
                 case 'completado':
-                    caja.className = 'estado-caja estado-asignado';
-                    icono.textContent = '🎉'; texto.textContent = '¡Llegaste!';
-                    subtexto.textContent = 'Gracias por viajar con nosotros'; break;
+                    clearTimeout(timeoutConfirmacion);
+                    document.getElementById('precioFinal').textContent = '$' + precioCalculado.toLocaleString('es-AR');
+                    mostrarPaso('pasoCompletado');
+                    break;
+
                 case 'cancelado':
-                    caja.className = 'estado-caja estado-buscando';
-                    icono.textContent = '❌'; texto.textContent = 'Viaje cancelado';
-                    subtexto.textContent = 'Podés pedir otro cuando quieras'; break;
+                    clearTimeout(timeoutConfirmacion);
+                    mostrarMsg('El viaje fue cancelado.', 'error');
+                    setTimeout(() => location.reload(), 2000);
+                    break;
             }
         }
 
-        function cancelarViaje() {
-            if (confirm('¿Seguro que querés cancelar el viaje?')) {
-                mostrarMensaje('Viaje cancelado', 'ok');
-                setTimeout(() => location.reload(), 2000);
+        // ===== CONFIRMAR / RECHAZAR =====
+        async function confirmarViaje() {
+            clearTimeout(timeoutConfirmacion);
+            try {
+                await supabaseClient
+                    .from('viajes')
+                    .update({ estado: 'confirmado' })
+                    .eq('id', viajeId);
+            } catch (e) {
+                mostrarMsg('Error al confirmar: ' + e.message, 'error');
             }
         }
 
-        function mostrarMensaje(texto, tipo) {
-            const msg = document.getElementById('mensaje');
+        async function rechazarPrecio(esTimeout = false) {
+            clearTimeout(timeoutConfirmacion);
+            try {
+                // Volver a estado solicitado para que otro conductor lo tome
+                await supabaseClient
+                    .from('viajes')
+                    .update({ 
+                        estado: 'solicitado',
+                        conductor_id: null,
+                        conductor_nombre: null,
+                        conductor_auto: null,
+                        precio: null,
+                        distancia_km: null
+                    })
+                    .eq('id', viajeId);
+
+                mostrarPaso('pasoEsperando');
+                if (!esTimeout) {
+                    mostrarMsg('Buscando otro conductor...', 'info');
+                }
+            } catch (e) {
+                mostrarMsg('Error: ' + e.message, 'error');
+            }
+        }
+
+        // ===== CANCELAR =====
+        async function cancelarViaje() {
+            if (!confirm('¿Seguro que querés cancelar?')) return;
+            clearTimeout(timeoutConfirmacion);
+            try {
+                await supabaseClient
+                    .from('viajes')
+                    .update({ estado: 'cancelado' })
+                    .eq('id', viajeId);
+                if (subscription) subscription.unsubscribe();
+                location.reload();
+            } catch (e) {
+                mostrarMsg('Error al cancelar: ' + e.message, 'error');
+            }
+        }
+
+        // ===== UTILS =====
+        function mostrarPaso(id) {
+            ['pasoDatos', 'pasoEsperando', 'pasoPrecio', 'pasoEnCamino', 'pasoCompletado'].forEach(p => {
+                document.getElementById(p).classList.add('hidden');
+            });
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function mostrarMsg(texto, tipo) {
+            const msg = document.getElementById('msg');
             msg.textContent = texto;
-            msg.className = 'mensaje mensaje-' + tipo + ' mostrar';
-            setTimeout(() => msg.classList.remove('mostrar'), 6000);
+            msg.className = 'msg msg-' + tipo + ' show';
+            setTimeout(() => msg.classList.remove('show'), 5000);
         }
     </script>
 </body>
