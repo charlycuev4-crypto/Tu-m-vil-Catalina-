@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-0">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TuMovil Las Catalinas - Pasajero</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
@@ -42,7 +42,7 @@
             text-align: center;
         }
         .btn-gigante:active { transform: scale(0.98); }
-        
+
         .btn-verde {
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             color: white;
@@ -141,7 +141,7 @@
         }
 
         #mapa {
-            height: 220px;
+            height: 280px;
             border-radius: 15px;
             margin: 15px 0;
             display: none;
@@ -193,9 +193,10 @@
         .mensaje-ok { background: #d4edda; color: #155724; }
         .mensaje-error { background: #f8d7da; color: #721c24; }
         .mensaje-info { background: #e3f2fd; color: #1565c0; }
+        .mensaje-warn { background: #fff3cd; color: #856404; }
 
         .oculto { display: none !important; }
-        
+
         .zona-info {
             background: #e8f5e9;
             border-radius: 12px;
@@ -205,6 +206,71 @@
             color: #2e7d32;
             font-size: 0.95rem;
             font-weight: 500;
+        }
+
+        .gps-info {
+            background: #e3f2fd;
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #1565c0;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .gps-info .direccion-gps {
+            font-weight: 700;
+            color: #0d47a1;
+            margin-top: 5px;
+            font-size: 1.05rem;
+        }
+        .gps-info .precision {
+            font-size: 0.8rem;
+            color: #555;
+            margin-top: 3px;
+        }
+
+        .gps-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            color: #856404;
+            font-weight: 500;
+        }
+        .gps-loading .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #856404;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .gps-error {
+            background: #ffebee;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #c62828;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .gps-error button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            background: #c62828;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -217,12 +283,45 @@
 
         <div class="mensaje" id="mensaje"></div>
 
-        <!-- PASO 1: DATOS -->
-        <div class="tarjeta" id="pasoDatos">
+        <!-- PASO 0: OBTENER GPS -->
+        <div class="tarjeta" id="pasoGPS">
+            <div class="tarjeta-titulo">📍 ¿Dónde estás?</div>
+            <p style="text-align:center; color:#666; margin-bottom:20px; font-size:1.05rem;">
+                Necesitamos tu ubicación para calcular el precio desde donde estás parado.
+            </p>
+
+            <div class="gps-loading" id="gpsLoading">
+                <div class="spinner"></div>
+                <span>Buscando tu ubicación...</span>
+            </div>
+
+            <div class="gps-info oculto" id="gpsInfo">
+                <div>📍 Tu ubicación detectada:</div>
+                <div class="direccion-gps" id="gpsDireccion">-</div>
+                <div class="precision" id="gpsPrecision">-</div>
+            </div>
+
+            <div class="gps-error oculto" id="gpsError">
+                <div id="gpsErrorTexto">No pudimos obtener tu ubicación.</div>
+                <button onclick="intentarGPSdeNuevo()">🔄 Intentar de nuevo</button>
+            </div>
+
+            <button class="btn-gigante btn-morado oculto" id="btnContinuarGPS" onclick="continuarADestino()">
+                ✅ CONTINUAR
+            </button>
+        </div>
+
+        <!-- PASO 1: DATOS Y DESTINO -->
+        <div class="tarjeta oculto" id="pasoDatos">
             <div class="tarjeta-titulo">¿A dónde vas?</div>
 
+            <div class="gps-info">
+                <div>🚩 Origen (tu ubicación):</div>
+                <div class="direccion-gps" id="origenConfirmado">-</div>
+            </div>
+
             <div class="zona-info">
-                📍 Cubrimos: Moreno, San Miguel, Castelar, Morón, Ituzaingó, Merlo, Paso del Rey
+                📍 Cubrimos: Moreno, San Miguel, Castelar, Morón, Ituzaingó, Merlo, Paso del Rey y alrededores
             </div>
 
             <div class="campo">
@@ -236,7 +335,7 @@
             </div>
 
             <div class="campo" style="position:relative;">
-                <label>📍 Calle y número de destino</label>
+                <label>🏁 Calle y número de destino</label>
                 <input type="text" id="destino" placeholder="Ej: Mitre 1234, San Miguel" 
                        style="font-size:1.2rem;" autocomplete="off">
                 <div class="sugerencias" id="sugerencias"></div>
@@ -252,14 +351,14 @@
         <!-- PASO 2: PRECIO -->
         <div class="tarjeta oculto" id="pasoPrecio">
             <div class="tarjeta-titulo">✅ Esto es lo que sale</div>
-            
+
             <div class="precio-caja">
                 <div class="monto" id="precioMonto">$0</div>
                 <div class="info" id="precioInfo">Calculando...</div>
             </div>
 
             <div style="text-align:center; color:#666; margin:15px 0; font-size:1.1rem;">
-                <p>🚩 Desde: <strong>Base Las Catalinas (Moreno)</strong></p>
+                <p>🚩 Desde: <strong id="origenResumen">-</strong></p>
                 <p>🏁 Hasta: <strong id="destinoConfirmado">-</strong></p>
             </div>
 
@@ -298,10 +397,6 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // BASE: Las Catalinas, Moreno
-        const BASE_LAT = -34.6404;
-        const BASE_LNG = -58.7145;
-
         // RADIO MÁXIMO DE COBERTURA (km)
         const RADIO_COBERTURA_KM = 35;
 
@@ -323,12 +418,123 @@
         let distanciaKm = 0;
         let destinoTexto = '';
         let destinoCoords = null;
+        let origenCoords = null;
+        let origenTexto = '';
         let mapa = null;
+        let marcadorOrigen = null;
         let marcadorDestino = null;
+        let rutaLayer = null;
+
+        // ========== INICIO: OBTENER GPS AL CARGAR ==========
+        window.addEventListener('DOMContentLoaded', function() {
+            obtenerUbicacionGPS();
+        });
+
+        function obtenerUbicacionGPS() {
+            document.getElementById('gpsLoading').classList.remove('oculto');
+            document.getElementById('gpsInfo').classList.add('oculto');
+            document.getElementById('gpsError').classList.add('oculto');
+            document.getElementById('btnContinuarGPS').classList.add('oculto');
+
+            if (!navigator.geolocation) {
+                mostrarErrorGPS('Tu navegador no soporta geolocalización.');
+                return;
+            }
+
+            const opciones = {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0
+            };
+
+            navigator.geolocation.getCurrentPosition(
+                onGPSSuccess,
+                onGPSError,
+                opciones
+            );
+        }
+
+        async function onGPSSuccess(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const precision = position.coords.accuracy;
+
+            origenCoords = { lat, lng };
+
+            // Reverse geocoding para obtener dirección legible
+            try {
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+                const res = await fetch(url);
+                const data = await res.json();
+
+                const calle = data.address?.road || '';
+                const numero = data.address?.house_number ? ` ${data.address.house_number}` : '';
+                const localidad = data.address?.city || data.address?.town || data.address?.suburb || data.address?.village || '';
+
+                origenTexto = calle + numero + (localidad ? `, ${localidad}` : '');
+                if (!origenTexto) origenTexto = data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+
+                document.getElementById('gpsDireccion').textContent = origenTexto;
+                document.getElementById('gpsPrecision').textContent = `Precisión: ±${Math.round(precision)} metros`;
+
+                document.getElementById('gpsLoading').classList.add('oculto');
+                document.getElementById('gpsInfo').classList.remove('oculto');
+                document.getElementById('btnContinuarGPS').classList.remove('oculto');
+
+            } catch (err) {
+                // Si falla el reverse geocoding, igual mostramos las coords
+                origenTexto = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                document.getElementById('gpsDireccion').textContent = origenTexto;
+                document.getElementById('gpsPrecision').textContent = `Precisión: ±${Math.round(precision)} metros`;
+
+                document.getElementById('gpsLoading').classList.add('oculto');
+                document.getElementById('gpsInfo').classList.remove('oculto');
+                document.getElementById('btnContinuarGPS').classList.remove('oculto');
+            }
+        }
+
+        function onGPSError(error) {
+            let mensaje = 'No pudimos obtener tu ubicación.';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    mensaje = '❌ No nos diste permiso para usar tu GPS.
+
+Andá a la configuración de tu navegador, permití la ubicación y recargá la página.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    mensaje = '⚠️ Tu dispositivo no pudo determinar la ubicación. Asegurate de tener el GPS activado.';
+                    break;
+                case error.TIMEOUT:
+                    mensaje = '⏱️ Se agotó el tiempo para obtener tu ubicación. Probá de nuevo.';
+                    break;
+            }
+            mostrarErrorGPS(mensaje);
+        }
+
+        function mostrarErrorGPS(texto) {
+            document.getElementById('gpsLoading').classList.add('oculto');
+            document.getElementById('gpsErrorTexto').textContent = texto;
+            document.getElementById('gpsError').classList.remove('oculto');
+        }
+
+        function intentarGPSdeNuevo() {
+            obtenerUbicacionGPS();
+        }
+
+        function continuarADestino() {
+            if (!origenCoords) {
+                mostrarMensaje('Esperá un momento, todavía estamos buscando tu ubicación...', 'warn');
+                return;
+            }
+            document.getElementById('pasoGPS').classList.add('oculto');
+            document.getElementById('pasoDatos').classList.remove('oculto');
+            document.getElementById('origenConfirmado').textContent = origenTexto;
+            window.scrollTo(0, 0);
+        }
 
         // ========== FUNCIÓN: Calcular distancia entre 2 puntos (Haversine) ==========
         function calcularDistancia(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radio de la Tierra en km
+            const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -340,13 +546,12 @@
 
         // ========== FUNCIÓN: Verificar si está dentro de la zona ==========
         function estaEnZonaCobertura(lat, lng, displayName) {
-            // 1. Verificar distancia desde la base
-            const distancia = calcularDistancia(BASE_LAT, BASE_LNG, lat, lng);
-            
-            // 2. Verificar si el nombre contiene alguna zona cercana
-            const nombreLower = displayName.toLowerCase();
+            if (!origenCoords) return { dentro: false, distanciaKm: '0', esZonaConocida: false };
+
+            const distancia = calcularDistancia(origenCoords.lat, origenCoords.lng, lat, lng);
+            const nombreLower = (displayName || '').toLowerCase();
             const esZonaConocida = ZONAS_CERCANAS.some(zona => nombreLower.includes(zona));
-            
+
             return {
                 dentro: distancia <= RADIO_COBERTURA_KM || esZonaConocida,
                 distanciaKm: distancia.toFixed(1),
@@ -359,9 +564,9 @@
         document.getElementById('destino').addEventListener('input', function(e) {
             const texto = e.target.value.trim();
             const sugerenciasDiv = document.getElementById('sugerencias');
-            
+
             clearTimeout(timeoutBusqueda);
-            
+
             if (texto.length < 3) {
                 sugerenciasDiv.classList.remove('mostrar');
                 return;
@@ -369,9 +574,16 @@
 
             timeoutBusqueda = setTimeout(async () => {
                 try {
-                    // Búsqueda restringida a Buenos Aires, Argentina
-                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(texto)}&limit=10&addressdetails=1&countrycodes=ar&bounded=1&viewbox=${BASE_LNG-0.5},${BASE_LAT+0.5},${BASE_LNG+0.5},${BASE_LAT-0.5}`;
-                    
+                    if (!origenCoords) {
+                        sugerenciasDiv.innerHTML = '<div class="sugerencia-item" style="color:#888; text-align:center;">Esperando tu ubicación...</div>';
+                        sugerenciasDiv.classList.add('mostrar');
+                        return;
+                    }
+
+                    // Búsqueda restringida a Buenos Aires, Argentina, centrada en la ubicación del pasajero
+                    const viewbox = `${origenCoords.lng-0.5},${origenCoords.lat+0.5},${origenCoords.lng+0.5},${origenCoords.lat-0.5}`;
+                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(texto)}&limit=10&addressdetails=1&countrycodes=ar&bounded=1&viewbox=${viewbox}`;
+
                     const res = await fetch(url);
                     const datos = await res.json();
 
@@ -386,45 +598,44 @@
                         return;
                     }
 
-                    // Filtrar y ordenar resultados por cercanía
+                    // Filtrar y ordenar resultados por cercanía al origen del pasajero
                     const resultadosFiltrados = datos.map(lugar => {
                         const lat = parseFloat(lugar.lat);
                         const lng = parseFloat(lugar.lon);
                         const infoZona = estaEnZonaCobertura(lat, lng, lugar.display_name);
-                        
+
                         return {
                             ...lugar,
-                            distanciaBase: infoZona.distanciaKm,
+                            distanciaOrigen: infoZona.distanciaKm,
                             enCobertura: infoZona.dentro
                         };
                     }).sort((a, b) => {
-                        // Primero los de cobertura, luego por distancia
                         if (a.enCobertura && !b.enCobertura) return -1;
                         if (!a.enCobertura && b.enCobertura) return 1;
-                        return a.distanciaBase - b.distanciaBase;
-                    }).slice(0, 5); // Máximo 5 resultados
+                        return a.distanciaOrigen - b.distanciaOrigen;
+                    }).slice(0, 5);
 
                     sugerenciasDiv.innerHTML = resultadosFiltrados.map(lugar => {
                         const calle = lugar.address.road || lugar.display_name.split(',')[0];
                         const numero = lugar.address.house_number ? ` ${lugar.address.house_number}` : '';
                         const localidad = lugar.address.city || lugar.address.town || lugar.address.suburb || lugar.address.village || 'Buenos Aires';
                         const partido = lugar.address.county || lugar.address.state_district || '';
-                        
+
                         const zonaTexto = partido ? `${localidad}, ${partido}` : localidad;
                         const distanciaTexto = lugar.enCobertura 
-                            ? `🟢 A ${lugar.distanciaBase} km de la base` 
-                            : `🔴 A ${lugar.distanciaBase} km (lejos)`;
+                            ? `🟢 A ${lugar.distanciaOrigen} km de tu ubicación` 
+                            : `🔴 A ${lugar.distanciaOrigen} km (lejos)`;
                         const claseDistancia = lugar.enCobertura ? '' : 'lejos';
 
                         return `
-                            <div class="sugerencia-item" onclick="seleccionarDireccion('${lugar.display_name.replace(/'/g, "\\'")}', ${lugar.lat}, ${lugar.lon}, ${lugar.enCobertura}, ${lugar.distanciaBase})">
+                            <div class="sugerencia-item" onclick="seleccionarDireccion('${lugar.display_name.replace(/'/g, "\'")}', ${lugar.lat}, ${lugar.lon}, ${lugar.enCobertura}, ${lugar.distanciaOrigen})">
                                 <div class="calle">${calle}${numero}</div>
                                 <div class="zona">📍 ${zonaTexto}</div>
                                 <div class="distancia ${claseDistancia}">${distanciaTexto}</div>
                             </div>
                         `;
                     }).join('');
-                    
+
                     sugerenciasDiv.classList.add('mostrar');
 
                 } catch (err) {
@@ -445,34 +656,55 @@
             document.getElementById('sugerencias').classList.remove('mostrar');
             destinoTexto = direccion;
             destinoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
-            
+
             if (!enCobertura) {
-                mostrarMensaje(`⚠️ Esa dirección está a ${distancia} km. Podría haber costos extra.`, 'info');
+                mostrarMensaje(`⚠️ Esa dirección está a ${distancia} km de tu ubicación. Podría haber costos extra.`, 'info');
             }
-            
-            mostrarMapa(lat, lng);
+
+            mostrarMapa();
         }
 
-        function mostrarMapa(lat, lng) {
+        function mostrarMapa() {
+            if (!origenCoords || !destinoCoords) return;
+
             const mapaDiv = document.getElementById('mapa');
             mapaDiv.classList.add('mostrar');
-            
+
             if (!mapa) {
-                mapa = L.map('mapa').setView([lat, lng], 14);
+                mapa = L.map('mapa');
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap'
                 }).addTo(mapa);
-                
-                // Marcador de la base
-                L.marker([BASE_LAT, BASE_LNG]).addTo(mapa)
-                    .bindPopup('🚕 Base Las Catalinas').openPopup();
-            } else {
-                mapa.setView([lat, lng], 14);
             }
 
+            // Limpiar marcadores anteriores
+            if (marcadorOrigen) mapa.removeLayer(marcadorOrigen);
             if (marcadorDestino) mapa.removeLayer(marcadorDestino);
-            marcadorDestino = L.marker([lat, lng]).addTo(mapa)
-                .bindPopup('📍 Tu destino').openPopup();
+            if (rutaLayer) mapa.removeLayer(rutaLayer);
+
+            // Marcador de origen (ubicación del pasajero)
+            const iconoOrigen = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div style="background:#2196F3;color:white;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:16px;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);">📍</div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
+
+            marcadorOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: iconoOrigen })
+                .addTo(mapa)
+                .bindPopup('🚩 Tu ubicación').openPopup();
+
+            // Marcador de destino
+            marcadorDestino = L.marker([destinoCoords.lat, destinoCoords.lng])
+                .addTo(mapa)
+                .bindPopup('🏁 Tu destino').openPopup();
+
+            // Ajustar vista para mostrar ambos puntos
+            const bounds = L.latLngBounds(
+                [origenCoords.lat, origenCoords.lng],
+                [destinoCoords.lat, destinoCoords.lng]
+            );
+            mapa.fitBounds(bounds, { padding: [30, 30] });
         }
 
         // ========== COTIZAR ==========
@@ -486,13 +718,19 @@
                 return;
             }
 
+            if (!origenCoords) {
+                mostrarMensaje('Esperá, todavía no tenemos tu ubicación. Recargá la página.', 'error');
+                return;
+            }
+
             // Si no seleccionó del autocompletado, buscar ahora
             if (!destinoCoords) {
                 btn.disabled = true;
                 btn.textContent = '⏳ Buscando...';
-                
+
                 try {
-                    const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destinoTexto)}&limit=5&addressdetails=1&countrycodes=ar&bounded=1&viewbox=${BASE_LNG-0.5},${BASE_LAT+0.5},${BASE_LNG+0.5},${BASE_LAT-0.5}`;
+                    const viewbox = `${origenCoords.lng-0.5},${origenCoords.lat+0.5},${origenCoords.lng+0.5},${origenCoords.lat-0.5}`;
+                    const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destinoTexto)}&limit=5&addressdetails=1&countrycodes=ar&bounded=1&viewbox=${viewbox}`;
                     const geoRes = await fetch(geoUrl);
                     const geoData = await geoRes.json();
 
@@ -500,12 +738,12 @@
                         throw new Error('No encontramos esa dirección. Probá escribiendo la calle y el número (Ej: Mitre 1234, San Miguel)');
                     }
 
-                    // Tomar el más cercano a la base
+                    // Tomar el más cercano al origen del pasajero
                     let mejorResultado = geoData[0];
                     let menorDistancia = Infinity;
-                    
+
                     for (const lugar of geoData) {
-                        const dist = calcularDistancia(BASE_LAT, BASE_LNG, parseFloat(lugar.lat), parseFloat(lugar.lon));
+                        const dist = calcularDistancia(origenCoords.lat, origenCoords.lng, parseFloat(lugar.lat), parseFloat(lugar.lon));
                         if (dist < menorDistancia) {
                             menorDistancia = dist;
                             mejorResultado = lugar;
@@ -517,13 +755,13 @@
                         lng: parseFloat(mejorResultado.lon)
                     };
                     destinoTexto = mejorResultado.display_name;
-                    
+
                     const infoZona = estaEnZonaCobertura(destinoCoords.lat, destinoCoords.lng, destinoTexto);
                     if (!infoZona.dentro) {
-                        mostrarMensaje(`⚠️ Esa dirección está a ${infoZona.distanciaKm} km de la base. Consultá el precio antes de confirmar.`, 'info');
+                        mostrarMensaje(`⚠️ Esa dirección está a ${infoZona.distanciaKm} km de tu ubicación. Consultá el precio antes de confirmar.`, 'info');
                     }
-                    
-                    mostrarMapa(destinoCoords.lat, destinoCoords.lng);
+
+                    mostrarMapa();
                 } catch (error) {
                     mostrarMensaje(error.message, 'error');
                     btn.disabled = false;
@@ -536,25 +774,31 @@
             btn.textContent = '⏳ Calculando...';
 
             try {
-                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${BASE_LNG},${BASE_LAT};${destinoCoords.lng},${destinoCoords.lat}?overview=false`;
+                // Usar OSRM para calcular ruta real en auto desde ubicación del pasajero
+                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${origenCoords.lng},${origenCoords.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=false`;
                 const osrmRes = await fetch(osrmUrl);
                 const osrmData = await osrmRes.json();
 
                 if (!osrmData.routes || osrmData.routes.length === 0) {
-                    throw new Error('No pudimos calcular la ruta en auto hasta ahí.');
+                    // Fallback: calcular distancia en línea recta si OSRM falla
+                    distanciaKm = calcularDistancia(origenCoords.lat, origenCoords.lng, destinoCoords.lat, destinoCoords.lng);
+                    distanciaKm = parseFloat(distanciaKm.toFixed(1));
+                    mostrarMensaje('No pudimos calcular la ruta exacta. El precio es estimado.', 'warn');
+                } else {
+                    const metros = osrmData.routes[0].distance;
+                    distanciaKm = parseFloat((metros / 1000).toFixed(1));
                 }
 
-                const metros = osrmData.routes[0].distance;
-                distanciaKm = parseFloat((metros / 1000).toFixed(1));
-
+                // Fórmula de precio: base $3.000 + $800 por km
                 precioCalculado = Math.round(3000 + (distanciaKm * 800));
 
                 document.getElementById('precioMonto').textContent = '$' + precioCalculado.toLocaleString('es-AR');
-                
+
                 let textoDistancia = distanciaKm < 3 ? 'Viaje corto' : distanciaKm < 8 ? 'Viaje mediano' : 'Viaje largo';
                 document.getElementById('precioInfo').textContent = 
                     `${textoDistancia} • ${distanciaKm} km • Base $3.000 + $800 por km`;
                 document.getElementById('destinoConfirmado').textContent = destinoTexto.split(',')[0];
+                document.getElementById('origenResumen').textContent = origenTexto;
 
                 document.getElementById('pasoDatos').classList.add('oculto');
                 document.getElementById('pasoPrecio').classList.remove('oculto');
@@ -593,9 +837,9 @@
                 const { data, error } = await supabaseClient.rpc('crear_viaje', {
                     p_pasajero_nombre: nombre,
                     p_pasajero_telefono: telefono,
-                    p_origen_lat: BASE_LAT,
-                    p_origen_lng: BASE_LNG,
-                    p_origen_direccion: 'Base Las Catalinas, Moreno',
+                    p_origen_lat: origenCoords.lat,
+                    p_origen_lng: origenCoords.lng,
+                    p_origen_direccion: origenTexto,
                     p_destino_lat: destinoCoords.lat,
                     p_destino_lng: destinoCoords.lng,
                     p_destino_direccion: destinoTexto,
