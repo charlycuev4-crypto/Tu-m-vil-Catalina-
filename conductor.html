@@ -13,8 +13,9 @@
             height: 100vh;
             overflow: hidden;
         }
+
         .header {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 10px 15px;
             text-align: center;
@@ -29,169 +30,281 @@
         }
         .header h1 { font-size: 1.1rem; margin: 0; }
         .header p { font-size: 0.7rem; opacity: 0.9; margin: 0; }
+
         .app-container {
             position: fixed;
-            top: 55px; left: 0; right: 0; bottom: 0;
+            top: 55px;
+            left: 0; right: 0; bottom: 0;
             display: flex;
             flex-direction: column;
         }
-        .mapa-seccion { height: 40%; min-height: 200px; position: relative; background: #e5e5e5; }
-        .mapa-seccion iframe { width: 100%; height: 100%; border: none; }
+
+        .mapa-seccion {
+            height: 40%;
+            min-height: 200px;
+            position: relative;
+            background: #e5e5e5;
+        }
+        .mapa-seccion iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
         .mapa-placeholder {
-            width: 100%; height: 100%; display: flex;
-            align-items: center; justify-content: center;
-            flex-direction: column; color: #888; font-size: 0.9rem;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: #888;
+            font-size: 0.9rem;
             background: linear-gradient(135deg, #e0e0e0 0%, #f0f0f0 100%);
         }
-        .mapa-fullscreen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; background: #e5e5e5; display: none; }
-        .mapa-fullscreen.activo { display: block; }
-        .mapa-fullscreen iframe { width: 100%; height: 100%; border: none; }
-        .btn-volver-nav {
-            position: absolute; top: 15px; left: 15px; z-index: 10000;
-            background: white; border: none; border-radius: 50%;
-            width: 50px; height: 50px; font-size: 1.3rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;
+
+        .panel-seccion {
+            height: 60%;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            position: relative;
+            z-index: 10;
         }
-        .btn-llegue {
-            position: absolute; bottom: 30px; left: 15px; right: 15px; z-index: 10000;
+        .panel-handle {
+            width: 40px;
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+            margin: 8px auto;
+        }
+        .panel-contenido {
+            padding: 0 15px 20px;
+        }
+
+        .viaje-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+        .viaje-card h3 {
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .viaje-card h3 .badge {
+            background: #667eea;
+            color: white;
+            font-size: 0.65rem;
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+        .viaje-card p {
+            font-size: 0.85rem;
+            color: #555;
+            margin: 4px 0;
+        }
+        .viaje-card p strong { color: #333; }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-success {
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white; border: none; border-radius: 16px; padding: 18px;
-            font-size: 1.1rem; font-weight: 700; box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            color: white;
         }
-        .panel-seccion { height: 60%; background: white; border-radius: 20px 20px 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); overflow-y: auto; z-index: 10; }
-        .panel-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 8px auto; }
-        .panel-contenido { padding: 0 15px 20px; }
-        .toggle-box { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; border-radius: 14px; padding: 12px 15px; margin-bottom: 12px; }
-        .toggle-box .texto { font-size: 0.9rem; font-weight: 600; }
-        .toggle-box .texto.disponible { color: #28a745; }
-        .toggle-box .texto.ocupado { color: #dc3545; }
-        .toggle-switch { position: relative; width: 56px; height: 30px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; border-radius: 30px; transition: 0.3s; }
-        .toggle-slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px; background: white; border-radius: 50%; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .toggle-switch input:checked + .toggle-slider { background: #28a745; }
-        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(26px); }
-        .lista-viajes { margin-top: 10px; }
-        .viaje-item { background: #f8f9fa; border-radius: 14px; padding: 14px; margin-bottom: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
-        .viaje-item:hover { border-color: #11998e; background: #e8f5e9; }
-        .viaje-item .nombre { font-weight: 700; font-size: 0.95rem; color: #333; margin-bottom: 4px; }
-        .viaje-item .ruta { font-size: 0.8rem; color: #666; margin-bottom: 6px; }
-        .viaje-item .badge { display: inline-block; background: #11998e; color: white; padding: 3px 10px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; }
-        .sin-viajes { text-align: center; padding: 30px 20px; color: #888; }
-        .input-group { margin-bottom: 10px; }
-        .input-group label { display: block; font-size: 0.8rem; color: #555; margin-bottom: 3px; font-weight: 600; }
-        .input-group input { width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 0.9rem; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; text-align: center; margin-bottom: 8px; }
-        .btn-primary { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
-        .btn-success { background: linear-gradient(135deg, #28a745 0%, #34ce57 100%); color: white; }
-        .btn-danger { background: #ff6b6b; color: white; }
-        .btn-maps { background: linear-gradient(135deg, #4285f4 0%, #34a853 100%); color: white; }
-        .btn-outline { background: transparent; color: #11998e; border: 2px solid #11998e; }
-        .btn-nav { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .info-pasajero { background: #e3f2fd; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
-        .info-pasajero .fila { display: flex; align-items: center; gap: 10px; }
-        .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; font-weight: bold; }
-        .datos h4 { margin: 0; font-size: 0.95rem; }
-        .datos p { margin: 2px 0 0; font-size: 0.8rem; color: #666; }
-        .ruta-box { background: #fff8f3; border-radius: 12px; padding: 12px; margin-bottom: 12px; border-left: 4px solid #f47920; }
-        .ruta-box .titulo { font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
-        .ruta-box .direccion { font-size: 0.9rem; color: #333; font-weight: 600; }
-        .tarifa-preview { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 16px; text-align: center; margin: 12px 0; }
-        .tarifa-preview .precio { font-size: 2.2rem; font-weight: 800; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #eee; border-top-color: #11998e; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 10px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .msg { padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.85rem; text-align: center; display: none; font-weight: 600; }
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .btn-maps {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+        }
+
+        .empty {
+            text-align: center;
+            color: #888;
+            padding: 40px 20px;
+        }
+        .empty .icono { font-size: 3rem; margin-bottom: 10px; }
+
+        .estado-box {
+            text-align: center;
+            padding: 15px 0;
+        }
+        .estado-box h2 { font-size: 1.1rem; color: #333; margin-bottom: 5px; }
+        .estado-box p { font-size: 0.85rem; color: #666; }
+
+        .calc-box {
+            background: #f0f4ff;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .calc-box label {
+            display: block;
+            font-size: 0.8rem;
+            color: #555;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .calc-box input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        .calc-box input:focus { outline: none; border-color: #667eea; }
+
+        .precio-result {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .precio-result .precio { font-size: 2.5rem; font-weight: 800; }
+        .precio-result .detalle { font-size: 0.8rem; opacity: 0.9; margin-top: 5px; }
+
+        .msg {
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            text-align: center;
+            display: none;
+            font-weight: 600;
+        }
         .msg.show { display: block; }
         .msg-error { background: #ffebee; color: #c62828; }
         .msg-success { background: #e8f5e9; color: #2e7d32; }
         .msg-info { background: #e3f2fd; color: #1565c0; }
+
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>🚕 TuMovil Conductor</h1>
-        <p>Control de Viajes en Tiempo Real</p>
-    </div>
-
-    <div class="mapa-fullscreen" id="mapaFullscreen">
-        <button class="btn-volver-nav" onclick="cerrarNavegacion()">←</button>
-        <iframe id="navIframe" src=""></iframe>
-        <button class="btn-llegue" id="btnLlegue" onclick="marcarLlegada()">✅ LLEGUÉ</button>
+        <h1>🚕 Panel del Conductor</h1>
+        <p>TuMovil Las Catalinas</p>
     </div>
 
     <div class="app-container">
+        <!-- MAPA 40% -->
         <div class="mapa-seccion" id="mapaSeccion">
             <div class="mapa-placeholder" id="mapaPlaceholder">
                 <div style="font-size:2.5rem; margin-bottom:8px;">🗺️</div>
-                <div>Destino del Pasajero</div>
+                <div>Seleccioná un viaje para ver el mapa</div>
             </div>
             <iframe id="googleMapIframe" class="hidden" src=""></iframe>
         </div>
 
+        <!-- PANEL 60% -->
         <div class="panel-seccion">
             <div class="panel-handle"></div>
-            <div class="panel-contenido">
+            <div class="panel-contenido" id="panelContenido">
                 <div class="msg" id="msg"></div>
 
-                <div id="pasoLogin">
-                    <div class="input-group"><label>Tu nombre</label><input type="text" id="condNombre" placeholder="Ej: Juan Pérez"></div>
-                    <div class="input-group"><label>Teléfono</label><input type="tel" id="condTelefono" placeholder="Ej: 1133667793"></div>
-                    <div class="input-group"><label>Auto</label><input type="text" id="condAuto" placeholder="Ej: VW Gol Trend"></div>
-                    <div class="input-group"><label>Patente</label><input type="text" id="condPatente" placeholder="Ej: ABC 123"></div>
-                    <button class="btn btn-primary" onclick="registrarConductor()">✅ EMPEZAR A TRABAJAR</button>
-                </div>
-
-                <div id="pasoDisponible" class="hidden">
-                    <div class="toggle-box">
-                        <div class="texto" id="toggleTexto">🔴 No disponible</div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="toggleDisp" onchange="cambiarDisponibilidad()">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="lista-viajes" id="listaViajes"></div>
-                </div>
-
-                <div id="pasoDetalle" class="hidden">
-                    <div class="info-pasajero">
-                        <div class="fila">
-                            <div class="avatar" id="avatarPax">?</div>
-                            <div class="datos"><h4 id="nombrePax">-</h4><p id="telPax">-</p></div>
+                <!-- LISTA DE VIAJES -->
+                <div id="pasoLista">
+                    <h2 style="font-size:1rem; margin-bottom:12px; color:#333;">📋 Viajes disponibles</h2>
+                    <div id="viajesContainer">
+                        <div class="empty">
+                            <div class="icono">📭</div>
+                            <div>Cargando viajes...</div>
                         </div>
                     </div>
-                    <div class="ruta-box"><div class="titulo">🚩 ORIGEN</div><div class="direccion" id="origenPax">-</div></div>
-                    <div class="ruta-box" style="border-left-color:#28a745;"><div class="titulo">🏁 DESTINO SOLICITADO</div><div class="direccion" id="destinoPax">-</div></div>
-                    
-                    <div class="input-group" style="margin-top:15px;">
-                        <label style="color:#11998e; font-weight:700;">✏️ Digitá los Kilómetros del mapa:</label>
-                        <input type="number" id="kmInput" placeholder="Ej: 5.4" step="0.1" oninput="calcularTarifaEnVivo()">
-                    </div>
-                    <div class="tarifa-preview" id="liveTarifaBox" style="background:#444; padding:10px; margin-bottom:10px;">
-                        <div style="font-size:1.2rem; font-weight:bold;" id="liveTarifaPrecio">$0</div>
-                    </div>
-
-                    <button class="btn btn-success" onclick="enviarPrecio()">💰 ENVIAR ESTA TARIFA AL PASAJERO</button>
-                    <button class="btn btn-danger" onclick="cancelarYLiberarViaje()">❌ RECHAZAR / LIBERAR VIAJE</button>
                 </div>
 
-                <div id="pasoEsperando" class="hidden">
+                <!-- CALCULAR PRECIO -->
+                <div id="pasoCalcular" class="hidden">
                     <div class="estado-box">
-                        <div class="spinner"></div>
-                        <h2>Esperando respuesta del pasajero...</h2>
-                        <p>Le enviamos la cotización.</p>
+                        <div style="font-size:2.5rem;">💰</div>
+                        <h2>Cotizar viaje</h2>
                     </div>
-                    <button class="btn btn-danger" style="margin-top:20px;" onclick="cancelarYLiberarViaje()">❌ CANCELAR COTIZACIÓN</button>
+                    <div class="viaje-card" id="infoViajeCalcular">
+                        <p><strong>👤 Pasajero:</strong> <span id="calcPasajero">-</span></p>
+                        <p><strong>📍 Origen:</strong> <span id="calcOrigen">-</span></p>
+                        <p><strong>🏁 Destino:</strong> <span id="calcDestino">-</span></p>
+                    </div>
+                    <div class="calc-box">
+                        <label>🛣️ Kilómetros del viaje</label>
+                        <input type="number" id="kmInput" placeholder="Ej: 5.2" step="0.1" min="0">
+                        <div style="font-size:0.8rem; color:#667eea; text-align:center;">
+                            Tarifa: $3.000 base + $600/km
+                        </div>
+                    </div>
+                    <div class="precio-result hidden" id="precioResult">
+                        <div class="detalle">Precio calculado</div>
+                        <div class="precio" id="precioCalculado">$0</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="calcularPrecio()">🧮 Calcular</button>
+                    <button class="btn btn-success hidden" id="btnEnviarPrecio" onclick="enviarPrecio()">📤 Enviar precio al pasajero</button>
+                    <button class="btn btn-outline" onclick="volverLista()" style="background:transparent; color:#667eea; border:2px solid #667eea;">❌ Cancelar</button>
                 </div>
 
-                <div id="pasoConfirmado" class="hidden">
-                    <h2>¡Confirmado! En viaje</h2>
-                    <button class="btn btn-nav" onclick="navegarGPS('origen')">🧭 VER EN GOOGLE MAPS</button>
-                    <button class="btn btn-success" onclick="finalizarViajeConductor()">🏁 FINALIZAR VIAJE EXITOSAMENTE</button>
-                    <button class="btn btn-danger" onclick="cancelarYLiberarViaje()">❌ CANCELAR POR EMERGENCIA</button>
+                <!-- ESPERANDO CONFIRMACIÓN -->
+                <div id="pasoEsperandoConfirm" class="hidden">
+                    <div class="estado-box">
+                        <div class="spinner" style="width:40px;height:40px;border:4px solid #eee;border-top-color:#667eea;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px;"></div>
+                        <h2>Esperando confirmación...</h2>
+                        <p>El pasajero tiene 1 minuto para aceptar el precio</p>
+                    </div>
+                    <button class="btn btn-danger" onclick="cancelarOferta()">❌ Cancelar oferta</button>
                 </div>
 
+                <!-- NAVEGACIÓN -->
+                <div id="pasoNavegacion" class="hidden">
+                    <div class="estado-box">
+                        <div style="font-size:2.5rem;">🧭</div>
+                        <h2 id="navTitulo">Yendo a buscar al pasajero</h2>
+                    </div>
+                    <div class="viaje-card">
+                        <p><strong>👤 Pasajero:</strong> <span id="navPasajero">-</span></p>
+                        <p><strong>📱 Tel:</strong> <span id="navTel">-</span></p>
+                        <p><strong>📍 Origen:</strong> <span id="navOrigen">-</span></p>
+                        <p><strong>🏁 Destino:</strong> <span id="navDestino">-</span></p>
+                        <p><strong>💰 Precio:</strong> <span id="navPrecio">-</span></p>
+                    </div>
+                    <button class="btn btn-maps" id="btnAbrirMaps" onclick="abrirMaps()">
+                        🗺️ ABRIR GOOGLE MAPS
+                    </button>
+                    <button class="btn btn-success" id="btnLlegue" onclick="marcarLlegada()">
+                        ✅ LLEGUE AL PASAJERO
+                    </button>
+                    <button class="btn btn-danger" onclick="cancelarViaje()">❌ Cancelar viaje</button>
+                </div>
             </div>
         </div>
     </div>
@@ -203,161 +316,275 @@
 
         const TARIFA_BASE = 3000;
         const TARIFA_POR_KM = 600;
-        let conductorDatos = null;
+
+        const CONDUCTOR = {
+            nombre: 'Carlos Gómez',
+            telefono: '3519876543',
+            auto: 'Toyota Etios - ABC123'
+        };
+
         let viajeActual = null;
-        let subViajes = null;
-        let subIndividual = null;
+        let precioCalculado = 0;
+        let kmCalculado = 0;
+        let faseViaje = 'ida_pasajero';
+        let viajesSub = null;
+        let confirmSub = null;
 
-        function registrarConductor() {
-            const nombre = document.getElementById('condNombre').value.trim();
-            const telefono = document.getElementById('condTelefono').value.trim();
-            const auto = document.getElementById('condAuto').value.trim();
-            const patente = document.getElementById('condPatente').value.trim();
-            if(!nombre || !telefono) return mostrarMsg('Completá los datos básicos', 'error');
-            
-            conductorDatos = { nombre, telefono, auto: `${auto} (${patente})` };
-            localStorage.setItem('conductorDatos', JSON.stringify(conductorDatos));
-            mostrarPaso('pasoDisponible');
-            escucharViajesGlobales();
-        }
+        // ===== CARGAR VIAJES =====
+        async function cargarViajes() {
+            const { data, error } = await supabaseClient
+                .from('viajes')
+                .select('*')
+                .eq('estado', 'pendiente')
+                .order('created_at', { ascending: false });
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const datos = localStorage.getItem('conductorDatos');
-            if(datos) {
-                conductorDatos = JSON.parse(datos);
-                mostrarPaso('pasoDisponible');
-                escucharViajesGlobales();
-            }
-        });
-
-        function cambiarDisponibilidad() {
-            const chk = document.getElementById('toggleDisp').checked;
-            document.getElementById('toggleTexto').textContent = chk ? '🟢 Estoy disponible' : '🔴 No disponible';
-            document.getElementById('toggleTexto').className = chk ? 'texto disponible' : 'texto ocupado';
-            actualizarLista();
-        }
-
-        function escucharViajesGlobales() {
-            if(subViajes) subViajes.unsubscribe();
-            subViajes = supabaseClient.channel('global').on('postgres_changes', { event:'*', schema:'public', table:'viajes' }, () => {
-                actualizarLista();
-            }).subscribe();
-            actualizarLista();
-        }
-
-        async function actualizarLista() {
-            if(!document.getElementById('toggleDisp').checked) {
-                document.getElementById('listaViajes').innerHTML = '<div class="sin-viajes">Activá disponibilidad para ver viajes.</div>';
+            if (error) {
+                console.error(error);
                 return;
             }
-            const { data } = await supabaseClient.from('viajes').select('*').eq('estado', 'pendiente');
-            const lista = document.getElementById('listaViajes');
-            if(!data || data.length === 0) {
-                lista.innerHTML = '<div class="sin-viajes">📭 No hay solicitudes activas en la zona</div>';
+
+            const container = document.getElementById('viajesContainer');
+            if (!data || data.length === 0) {
+                container.innerHTML = `
+                    <div class="empty">
+                        <div class="icono">📭</div>
+                        <div>No hay viajes pendientes</div>
+                    </div>`;
                 return;
             }
-            lista.innerHTML = data.map(v => `
-                <div class="viaje-item" onclick="verDetalleViaje('${v.id}')">
-                    <div class="nombre">👤 ${v.pasajero_nombre}</div>
-                    <div class="ruta">🚩 ${v.origen_direccion} <br> 🏁 Destino: ${v.destino_direccion}</div>
-                    <span class="badge">Tomar Orden</span>
+
+            container.innerHTML = data.map(v => `
+                <div class="viaje-card">
+                    <h3>👤 ${v.pasajero_nombre} <span class="badge">PENDIENTE</span></h3>
+                    <p>📱 <strong>Tel:</strong> ${v.pasajero_telefono}</p>
+                    <p>📍 <strong>Origen:</strong> ${v.origen_direccion}</p>
+                    <p>🏁 <strong>Destino:</strong> ${v.destino_direccion}</p>
+                    <p>🕐 <strong>Hora:</strong> ${new Date(v.created_at).toLocaleTimeString()}</p>
+                    <button class="btn btn-success" onclick="abrirCalcularPrecio(${v.id})">💰 Cotizar</button>
                 </div>
             `).join('');
         }
 
-        async function verDetalleViaje(id) {
+        // ===== CALCULAR PRECIO =====
+        async function abrirCalcularPrecio(id) {
             const { data } = await supabaseClient.from('viajes').select('*').eq('id', id).single();
-            if(!data) return;
+            if (!data) return;
+
             viajeActual = data;
+            document.getElementById('calcPasajero').textContent = data.pasajero_nombre;
+            document.getElementById('calcOrigen').textContent = data.origen_direccion;
+            document.getElementById('calcDestino').textContent = data.destino_direccion;
+            document.getElementById('kmInput').value = '';
+            document.getElementById('precioResult').classList.add('hidden');
+            document.getElementById('btnEnviarPrecio').classList.add('hidden');
 
-            document.getElementById('nombrePax').textContent = data.pasajero_nombre;
-            document.getElementById('telPax').textContent = '📞 ' + data.pasajero_telefono;
-            document.getElementById('origenPax').textContent = data.origen_direccion;
-            document.getElementById('destinoPax').textContent = data.destino_direccion;
-
-            // Cargar mapa estático del destino elegido
-            const urlMaps = `https://maps.google.com/maps?q=${encodeURIComponent(data.destino_direccion)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
-            document.getElementById('googleMapIframe').src = urlMaps;
+            // Mostrar mapa con destino
+            const url = `https://maps.google.com/maps?q=${encodeURIComponent(data.destino_direccion)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+            document.getElementById('googleMapIframe').src = url;
             document.getElementById('googleMapIframe').classList.remove('hidden');
             document.getElementById('mapaPlaceholder').classList.add('hidden');
 
-            mostrarPaso('pasoDetalle');
-            suscribirViajeIndividual(data.id);
+            mostrarPaso('pasoCalcular');
         }
 
-        function calcularTarifaEnVivo() {
-            const km = parseFloat(document.getElementById('kmInput').value) || 0;
-            const total = TARIFA_BASE + (km * TARIFA_POR_KM);
-            document.getElementById('liveTarifaPrecio').textContent = `Tarifa Estimada: $${total.toLocaleString('es-AR')}`;
+        function calcularPrecio() {
+            const km = parseFloat(document.getElementById('kmInput').value);
+            if (!km || km <= 0) {
+                mostrarMsg('Ingresá los kilómetros', 'error');
+                return;
+            }
+            kmCalculado = km;
+            precioCalculado = Math.round(TARIFA_BASE + (km * TARIFA_POR_KM));
+            document.getElementById('precioCalculado').textContent = '$' + precioCalculado.toLocaleString('es-AR');
+            document.getElementById('precioResult').classList.remove('hidden');
+            document.getElementById('btnEnviarPrecio').classList.remove('hidden');
         }
 
         async function enviarPrecio() {
-            const km = parseFloat(document.getElementById('kmInput').value);
-            if(!km || km <= 0) return mostrarMsg('Colocá los kilómetros primero', 'error');
-            
-            const total = TARIFA_BASE + (km * TARIFA_POR_KM);
             await supabaseClient.from('viajes').update({
-                estado: 'esperando_confirmacion',
-                precio: total,
-                distancia_km: km,
-                conductor_nombre: conductorDatos.nombre,
-                conductor_auto: conductorDatos.auto
+                precio: precioCalculado,
+                distancia_km: kmCalculado,
+                estado: 'precio_enviado'
             }).eq('id', viajeActual.id);
 
-            mostrarPaso('pasoEsperando');
+            mostrarPaso('pasoEsperandoConfirm');
+            mostrarMsg('Precio enviado. Esperando confirmación del pasajero...', 'info');
+
+            // Escuchar confirmación
+            escucharConfirmacion(viajeActual.id);
         }
 
-        function suscribirViajeIndividual(id) {
-            if(subIndividual) subIndividual.unsubscribe();
-            subIndividual = supabaseClient.channel('ind-'+id).on('postgres_changes', { event:'UPDATE', schema:'public', table:'viajes', filter:'id=eq.'+id }, (payload) => {
-                const v = payload.new;
-                if(v.estado === 'confirmado') mostrarPaso('pasoConfirmado');
-                if(v.estado === 'pendiente' || v.estado === 'cancelado') {
-                    mostrarMsg('El viaje se canceló o se liberó.', 'error');
-                    limpiarYVolver();
-                }
-            }).subscribe();
-        }
-
-        async function finalizarViajeConductor() {
-            if(!viajeActual) return;
-            await supabaseClient.from('viajes').update({ estado: 'completado' }).eq('id', viajeActual.id);
-            mostrarMsg('¡Viaje Completado con éxito!', 'success');
-            limpiarYVolver();
-        }
-
-        async function cancelarYLiberarViaje() {
-            if(!viajeActual) return;
-            // Lo devolvemos a pendiente para que no quede fantasma o se cierre
-            await supabaseClient.from('viajes').update({ estado: 'pendiente', precio: null, conductor_nombre: null }).eq('id', viajeActual.id);
-            mostrarMsg('Viaje liberado/cancelado con éxito.', 'info');
-            limpiarYVolver();
-        }
-
-        function limpiarYVolver() {
+        function volverLista() {
             viajeActual = null;
-            document.getElementById('kmInput').value = '';
             document.getElementById('googleMapIframe').classList.add('hidden');
             document.getElementById('mapaPlaceholder').classList.remove('hidden');
-            mostrarPaso('pasoDisponible');
-            actualizarLista();
+            mostrarPaso('pasoLista');
+            cargarViajes();
         }
 
-        function navegarGPS(tipo) {
-            const dest = tipo === 'origen' ? viajeActual.origen_direccion : viajeActual.destino_direccion;
-            document.getElementById('navIframe').src = `https://maps.google.com/maps?q=${encodeURIComponent(dest)}&t=&z=14&output=embed`;
-            document.getElementById('mapaFullscreen').classList.add('activo');
-        }
-        function cerrarNavegacion() { document.getElementById('mapaFullscreen').classList.remove('activo'); }
+        // ===== ESCUCHAR CONFIRMACIÓN =====
+        function escucharConfirmacion(id) {
+            if (confirmSub) confirmSub.unsubscribe();
 
+            confirmSub = supabaseClient
+                .channel('confirmacion-' + id)
+                .on('postgres_changes', {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'viajes',
+                    filter: 'id=eq.' + id
+                }, async (payload) => {
+                    const v = payload.new;
+                    if (v.estado === 'confirmado') {
+                        // Asignar conductor
+                        await supabaseClient.from('viajes').update({
+                            estado: 'aceptado',
+                            conductor_nombre: CONDUCTOR.nombre,
+                            conductor_telefono: CONDUCTOR.telefono,
+                            conductor_auto: CONDUCTOR.auto
+                        }).eq('id', id);
+
+                        viajeActual = v;
+                        faseViaje = 'ida_pasajero';
+                        abrirNavegacion(v, 'ida_pasajero');
+                    }
+                    if (v.estado === 'rechazado' || v.estado === 'cancelado') {
+                        mostrarMsg('❌ El pasajero rechazó o canceló', 'error');
+                        setTimeout(volverLista, 2000);
+                    }
+                })
+                .subscribe();
+        }
+
+        // ===== NAVEGACIÓN =====
+        function abrirNavegacion(viaje, fase) {
+            faseViaje = fase;
+            viajeActual = viaje;
+
+            document.getElementById('navPasajero').textContent = viaje.pasajero_nombre;
+            document.getElementById('navTel').textContent = viaje.pasajero_telefono;
+            document.getElementById('navOrigen').textContent = viaje.origen_direccion;
+            document.getElementById('navDestino').textContent = viaje.destino_direccion;
+            document.getElementById('navPrecio').textContent = '$' + (viaje.precio || precioCalculado).toLocaleString('es-AR');
+
+            const btn = document.getElementById('btnLlegue');
+            const titulo = document.getElementById('navTitulo');
+
+            if (fase === 'ida_pasajero') {
+                titulo.textContent = '🧭 Yendo a buscar al pasajero';
+                btn.textContent = '✅ LLEGUE AL PASAJERO';
+                btn.className = 'btn btn-success';
+                // Mapa al origen
+                const url = `https://maps.google.com/maps?q=${encodeURIComponent(viaje.origen_direccion)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+                document.getElementById('googleMapIframe').src = url;
+            } else {
+                titulo.textContent = '🧭 Yendo al destino';
+                btn.textContent = '✅ LLEGUE AL DESTINO (Finalizar)';
+                btn.className = 'btn btn-warning';
+                // Mapa al destino
+                const url = `https://maps.google.com/maps?q=${encodeURIComponent(viaje.destino_direccion)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+                document.getElementById('googleMapIframe').src = url;
+            }
+
+            mostrarPaso('pasoNavegacion');
+        }
+
+        function abrirMaps() {
+            let destino;
+            if (faseViaje === 'ida_pasajero') {
+                destino = viajeActual.origen_direccion;
+            } else {
+                destino = viajeActual.destino_direccion;
+            }
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destino + ', Argentina')}&travelmode=driving`;
+            window.open(url, '_blank');
+        }
+
+        // ===== MARCAR LLEGADA =====
+        async function marcarLlegada() {
+            if (!viajeActual) return;
+
+            if (faseViaje === 'ida_pasajero') {
+                const confirmar = confirm('¿Confirmás que el pasajero subió al auto?');
+                if (!confirmar) return;
+
+                await supabaseClient.from('viajes').update({
+                    estado: 'en_viaje'
+                }).eq('id', viajeActual.id);
+
+                // Cambiar a fase destino
+                abrirNavegacion(viajeActual, 'ida_destino');
+                mostrarMsg('🚗 Pasajero a bordo. Yendo al destino...', 'success');
+
+            } else {
+                const confirmar = confirm('¿Finalizar el viaje?');
+                if (!confirmar) return;
+
+                await supabaseClient.from('viajes').update({
+                    estado: 'completado',
+                    fecha_fin: new Date().toISOString()
+                }).eq('id', viajeActual.id);
+
+                mostrarMsg('✅ Viaje completado', 'success');
+                setTimeout(() => {
+                    viajeActual = null;
+                    faseViaje = 'ida_pasajero';
+                    document.getElementById('googleMapIframe').classList.add('hidden');
+                    document.getElementById('mapaPlaceholder').classList.remove('hidden');
+                    mostrarPaso('pasoLista');
+                    cargarViajes();
+                }, 2000);
+            }
+        }
+
+        // ===== CANCELAR =====
+        async function cancelarOferta() {
+            if (!confirm('¿Cancelar esta oferta?')) return;
+            if (confirmSub) confirmSub.unsubscribe();
+            await supabaseClient.from('viajes').update({
+                estado: 'pendiente',
+                precio: null,
+                distancia_km: null
+            }).eq('id', viajeActual.id);
+            volverLista();
+        }
+
+        async function cancelarViaje() {
+            if (!confirm('¿Cancelar este viaje?')) return;
+            await supabaseClient.from('viajes').update({
+                estado: 'cancelado'
+            }).eq('id', viajeActual.id);
+            if (confirmSub) confirmSub.unsubscribe();
+            volverLista();
+        }
+
+        // ===== UTILS =====
         function mostrarPaso(id) {
-            ['pasoLogin', 'pasoDisponible', 'pasoDetalle', 'pasoEsperando', 'pasoConfirmado'].forEach(p => document.getElementById(p).classList.add('hidden'));
+            ['pasoLista', 'pasoCalcular', 'pasoEsperandoConfirm', 'pasoNavegacion'].forEach(p => {
+                document.getElementById(p).classList.add('hidden');
+            });
             document.getElementById(id).classList.remove('hidden');
         }
-        function mostrarMsg(t, tipo) {
-            const m = document.getElementById('msg'); m.textContent = t; m.className = `msg msg-${tipo} show`;
-            setTimeout(() => m.classList.remove('show'), 4000);
+
+        function mostrarMsg(texto, tipo) {
+            const msg = document.getElementById('msg');
+            msg.textContent = texto;
+            msg.className = 'msg msg-' + tipo + ' show';
+            setTimeout(() => msg.classList.remove('show'), 5000);
         }
+
+        // ===== INICIALIZAR =====
+        cargarViajes();
+
+        // Realtime para nuevos viajes
+        supabaseClient
+            .channel('nuevos-viajes')
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'viajes'
+            }, () => cargarViajes())
+            .subscribe();
     </script>
 </body>
 </html>
