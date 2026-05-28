@@ -216,6 +216,13 @@
         }
         .tarifa-box .precio { font-size: 2.5rem; font-weight: 800; }
         .tarifa-box .detalle { font-size: 0.8rem; opacity: 0.9; margin-top: 5px; }
+        .tarifa-box .km-info {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+        }
 
         /* ========== INFO CONDUCTOR ========== */
         .info-conductor {
@@ -352,6 +359,7 @@
                         <div class="detalle">Precio del viaje</div>
                         <div class="precio" id="precioMonto">$0</div>
                         <div class="detalle" id="precioDetalle">Base $3.000 + km</div>
+                        <div class="km-info" id="kmInfo">🛣️ Distancia: -- km</div>
                     </div>
 
                     <div class="timer" id="timerConfirm">⏱️ Tenés 1 minuto para confirmar</div>
@@ -383,6 +391,7 @@
                     <div class="tarifa-box">
                         <div class="detalle">Tarifa acordada</div>
                         <div class="precio" id="precioEnCamino">$0</div>
+                        <div class="km-info" id="kmEnCamino">🛣️ -- km</div>
                     </div>
                 </div>
 
@@ -405,6 +414,7 @@
                     <div class="tarifa-box">
                         <div class="detalle">Total a pagar</div>
                         <div class="precio" id="precioEnViaje">$0</div>
+                        <div class="km-info" id="kmEnViaje">🛣️ -- km</div>
                     </div>
                 </div>
 
@@ -418,6 +428,7 @@
                     <div class="tarifa-box">
                         <div class="detalle">Total a pagar</div>
                         <div class="precio" id="precioFinal">$0</div>
+                        <div class="km-info" id="kmFinal">🛣️ -- km</div>
                     </div>
                     <button class="btn btn-primary" onclick="location.reload()">
                         🔄 NUEVO VIAJE
@@ -510,7 +521,7 @@
                         const numero = lugar.address?.house_number ? ` ${lugar.address.house_number}` : '';
                         const localidad = lugar.address?.city || lugar.address?.town || lugar.address?.suburb || 'Buenos Aires';
                         return `
-                            <div class="sugerencia-item" onclick="seleccionarDestino('${lugar.display_name.replace(/'/g, "\\'")}', ${lugar.lat}, ${lugar.lon})">
+                            <div class="sugerencia-item" onclick="seleccionarDestino('${lugar.display_name.replace(/'/g, "\'")}', ${lugar.lat}, ${lugar.lon})">
                                 <div class="calle">${calle}${numero}</div>
                                 <div class="zona">📍 ${localidad}</div>
                             </div>
@@ -640,6 +651,7 @@
                     distanciaKm = viaje.distancia_km || 0;
                     document.getElementById('precioMonto').textContent = '$' + precioCalculado.toLocaleString('es-AR');
                     document.getElementById('precioDetalle').textContent = `Base $${TARIFA_BASE.toLocaleString()} + ${distanciaKm}km × $${TARIFA_POR_KM}`;
+                    document.getElementById('kmInfo').textContent = `🛣️ Distancia: ${distanciaKm} km`;
                     mostrarPaso('pasoPrecio');
                     mostrarMsg('¡Tenés una cotización! Tenés 1 minuto para confirmar.', 'info');
 
@@ -658,6 +670,7 @@
                 case 'aceptado':
                     clearInterval(timerInterval);
                     document.getElementById('precioEnCamino').textContent = '$' + precioCalculado.toLocaleString('es-AR');
+                    document.getElementById('kmEnCamino').textContent = '🛣️ ' + distanciaKm + ' km';
                     if (viaje.conductor_nombre) {
                         document.getElementById('nombreCond').textContent = viaje.conductor_nombre;
                         document.getElementById('autoCond').textContent = viaje.conductor_auto || 'Móvil particular';
@@ -669,6 +682,7 @@
 
                 case 'en_viaje':
                     document.getElementById('precioEnViaje').textContent = '$' + precioCalculado.toLocaleString('es-AR');
+                    document.getElementById('kmEnViaje').textContent = '🛣️ ' + distanciaKm + ' km';
                     if (viaje.conductor_nombre) {
                         document.getElementById('nombreCondViaje').textContent = viaje.conductor_nombre;
                         document.getElementById('autoCondViaje').textContent = viaje.conductor_auto || 'Móvil particular';
@@ -681,6 +695,7 @@
                 case 'completado':
                     clearInterval(timerInterval);
                     document.getElementById('precioFinal').textContent = '$' + precioCalculado.toLocaleString('es-AR');
+                    document.getElementById('kmFinal').textContent = '🛣️ ' + distanciaKm + ' km';
                     mostrarPaso('pasoCompletado');
                     mostrarMsg('¡Viaje completado! Gracias por viajar con nosotros.', 'success');
                     break;
@@ -713,9 +728,7 @@
             try {
                 await supabaseClient
                     .from('viajes')
-                    .update({
-                        estado: 'rechazado'
-                    })
+                    .update({ estado: 'rechazado' })
                     .eq('id', viajeId);
 
                 mostrarMsg(esTimeout ? '⏰ Se acabó el tiempo.' : 'Buscando otro conductor...', 'warn');
