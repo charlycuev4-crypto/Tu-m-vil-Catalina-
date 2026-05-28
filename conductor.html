@@ -173,13 +173,6 @@
             padding: 15px;
             margin: 10px 0;
         }
-        .calc-box .km-auto {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #11998e;
-            text-align: center;
-            margin-bottom: 10px;
-        }
         .calc-box label {
             display: block;
             font-size: 0.8rem;
@@ -276,9 +269,16 @@
                         <p><strong>🏁 Destino:</strong> <span id="calcDestino">-</span></p>
                     </div>
 
+                    <!-- Botón para abrir Google Maps app nativa -->
+                    <button class="btn btn-maps" id="btnVerMaps" onclick="verEnGoogleMaps()">
+                        🗺️ VER RUTA EN GOOGLE MAPS
+                    </button>
+                    <p style="font-size:0.75rem; color:#666; text-align:center; margin-bottom:12px;">
+                        Tocá acá para ver la ruta real y los km en Google Maps
+                    </p>
+
                     <div class="calc-box">
-                        <div class="km-auto" id="kmAuto">🛣️ Calculando km...</div>
-                        <label>✏️ Ajustar kilómetros (opcional)</label>
+                        <label>✏️ Kilómetros del viaje (los que viste en Google Maps)</label>
                         <input type="number" id="kmInput" placeholder="Ej: 5.2" step="0.1" min="0">
                         <div class="info">Tarifa: $3.000 base + $600/km</div>
                     </div>
@@ -296,7 +296,7 @@
                 <!-- ESPERANDO CONFIRMACIÓN -->
                 <div id="pasoEsperandoConfirm" class="hidden">
                     <div class="estado-box">
-                        <div class="spinner" style="width:40px;height:40px;border:4px solid #eee;border-top-color:#11998e;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px;"></div>
+                        <div style="font-size:2.5rem;">⏳</div>
                         <h2>Esperando respuesta del pasajero...</h2>
                         <p>Le enviamos la cotización.</p>
                     </div>
@@ -349,7 +349,6 @@
         let faseViaje = 'ida_pasajero';
         let viajesSub = null;
         let confirmSub = null;
-        let gpsInterval = null;
 
         // ===== CARGAR VIAJES =====
         async function cargarViajes() {
@@ -386,58 +385,47 @@
             `).join('');
         }
 
-        // ===== CALCULAR DISTANCIA (Haversine) =====
-        function calcularDistanciaHaversine(lat1, lng1, lat2, lng2) {
-            const R = 6371; // Radio de la Tierra en km
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLng = (lng2 - lng1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLng/2) * Math.sin(dLng/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-
-        // ===== CALCULAR PRECIO =====
+        // ===== ABRIR CALCULAR PRECIO =====
         async function abrirCalcularPrecio(id) {
-            const { data } = await supabaseClient.from('viajes').select('*').eq('id', id).single();
-            if (!data) return;
+            const { data, error } = await supabaseClient.from('viajes').select('*').eq('id', id).single();
+            if (error || !data) {
+                mostrarMsg('Error al cargar viaje', 'error');
+                return;
+            }
 
             viajeActual = data;
             document.getElementById('calcPasajero').textContent = data.pasajero_nombre;
             document.getElementById('calcOrigen').textContent = data.origen_direccion;
             document.getElementById('calcDestino').textContent = data.destino_direccion;
+            document.getElementById('kmInput').value = '';
             document.getElementById('precioResult').classList.add('hidden');
             document.getElementById('btnEnviarPrecio').classList.add('hidden');
 
-            // Calcular km automáticamente si hay coordenadas
-            if (data.origen_lat && data.origen_lng && data.destino_lat && data.destino_lng) {
-                const kmAuto = calcularDistanciaHaversine(
-                    data.origen_lat, data.origen_lng,
-                    data.destino_lat, data.destino_lng
-                );
-                kmCalculado = Math.round(kmAuto * 10) / 10; // 1 decimal
-                document.getElementById('kmAuto').textContent = `🛣️ Distancia estimada: ${kmCalculado} km`;
-                document.getElementById('kmInput').value = kmCalculado;
-            } else {
-                document.getElementById('kmAuto').textContent = '🛣️ No hay coordenadas GPS. Ingresá los km manualmente.';
-                document.getElementById('kmInput').value = '';
-                kmCalculado = 0;
-            }
-
-            // Mostrar mapa con destino
-            const url = `https://maps.google.com/maps?q=${encodeURIComponent(data.destino_direccion)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
-            document.getElementById('googleMapIframe').src = url;
+            // Mostrar mapa con DESTINO en el iframe (40% arriba)
+            const destino = encodeURIComponent(data.destino_direccion);
+            const urlMapa = `https://maps.google.com/maps?q=${destino}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+            document.getElementById('googleMapIframe').src = urlMapa;
             document.getElementById('googleMapIframe').classList.remove('hidden');
             document.getElementById('mapaPlaceholder').classList.add('hidden');
 
             mostrarPaso('pasoCalcular');
         }
 
+        // ===== VER EN GOOGLE MAPS APP NATIVA =====
+        function verEnGoogleMaps() {
+            if (!viajeActual) return;
+            // Abre Google Maps app con la ruta desde origen hasta destino
+            const origen = encodeURIComponent(viajeActual.origen_direccion + ', Argentina');
+            const destino = encodeURIComponent(viajeActual.destino_direccion + ', Argentina');
+            const url = `https://www.google.com/maps/dir/?api=1&origin=${origen}&destination=${destino}&travelmode=driving`;
+            window.open(url, '_blank');
+        }
+
+        // ===== CALCULAR PRECIO =====
         function calcularPrecio() {
             const km = parseFloat(document.getElementById('kmInput').value);
             if (!km || km <= 0) {
-                mostrarMsg('Ingresá los kilómetros', 'error');
+                mostrarMsg('Ingresá los kilómetros que viste en Google Maps', 'error');
                 return;
             }
             kmCalculado = km;
@@ -445,20 +433,31 @@
             document.getElementById('precioCalculado').textContent = '$' + precioCalculado.toLocaleString('es-AR');
             document.getElementById('precioResult').classList.remove('hidden');
             document.getElementById('btnEnviarPrecio').classList.remove('hidden');
+            mostrarMsg('Precio calculado: $' + precioCalculado.toLocaleString('es-AR'), 'success');
         }
 
+        // ===== ENVIAR PRECIO AL PASAJERO =====
         async function enviarPrecio() {
-            await supabaseClient.from('viajes').update({
-                precio: precioCalculado,
-                distancia_km: kmCalculado,
-                estado: 'precio_enviado'
-            }).eq('id', viajeActual.id);
+            if (!viajeActual) return;
 
-            mostrarPaso('pasoEsperandoConfirm');
-            mostrarMsg('Precio enviado. Esperando confirmación del pasajero...', 'info');
+            try {
+                const { error } = await supabaseClient.from('viajes').update({
+                    precio: precioCalculado,
+                    distancia_km: kmCalculado,
+                    estado: 'precio_enviado'
+                }).eq('id', viajeActual.id);
 
-            // Escuchar confirmación
-            escucharConfirmacion(viajeActual.id);
+                if (error) throw error;
+
+                mostrarPaso('pasoEsperandoConfirm');
+                mostrarMsg('💰 Precio enviado al pasajero. Esperando confirmación...', 'info');
+
+                // Escuchar si el pasajero confirma o rechaza
+                escucharConfirmacion(viajeActual.id);
+
+            } catch (e) {
+                mostrarMsg('Error al enviar precio: ' + e.message, 'error');
+            }
         }
 
         function volverLista() {
@@ -469,7 +468,7 @@
             cargarViajes();
         }
 
-        // ===== ESCUCHAR CONFIRMACIÓN =====
+        // ===== ESCUCHAR CONFIRMACIÓN DEL PASAJERO =====
         function escucharConfirmacion(id) {
             if (confirmSub) confirmSub.unsubscribe();
 
@@ -482,55 +481,38 @@
                     filter: 'id=eq.' + id
                 }, async (payload) => {
                     const v = payload.new;
+                    console.log('Estado recibido:', v.estado);
+
                     if (v.estado === 'confirmado') {
-                        // Asignar conductor
-                        await supabaseClient.from('viajes').update({
+                        // Pasajero aceptó → asignar conductor
+                        const { error } = await supabaseClient.from('viajes').update({
                             estado: 'aceptado',
                             conductor_nombre: CONDUCTOR.nombre,
                             conductor_telefono: CONDUCTOR.telefono,
                             conductor_auto: CONDUCTOR.auto
                         }).eq('id', id);
 
+                        if (error) {
+                            mostrarMsg('Error al asignar conductor: ' + error.message, 'error');
+                            return;
+                        }
+
                         viajeActual = v;
                         faseViaje = 'ida_pasajero';
                         abrirNavegacion(v, 'ida_pasajero');
-
-                        // Iniciar GPS del conductor
-                        iniciarGPSConductor(id);
                     }
-                    if (v.estado === 'rechazado' || v.estado === 'cancelado') {
-                        mostrarMsg('❌ El pasajero rechazó o canceló', 'error');
-                        detenerGPSConductor();
-                        setTimeout(volverLista, 2000);
+
+                    if (v.estado === 'rechazado') {
+                        mostrarMsg('❌ El pasajero rechazó el precio', 'error');
+                        setTimeout(volverLista, 3000);
+                    }
+
+                    if (v.estado === 'cancelado') {
+                        mostrarMsg('❌ El pasajero canceló el viaje', 'error');
+                        setTimeout(volverLista, 3000);
                     }
                 })
                 .subscribe();
-        }
-
-        // ===== GPS DEL CONDUCTOR =====
-        function iniciarGPSConductor(viajeId) {
-            if (!navigator.geolocation) return;
-
-            gpsInterval = setInterval(() => {
-                navigator.geolocation.getCurrentPosition(
-                    async (pos) => {
-                        await supabaseClient.from('viajes').update({
-                            conductor_lat: pos.coords.latitude,
-                            conductor_lng: pos.coords.longitude,
-                            conductor_ultima_posicion: new Date().toISOString()
-                        }).eq('id', viajeId);
-                    },
-                    (err) => console.error('GPS error:', err),
-                    { enableHighAccuracy: true, maximumAge: 10000 }
-                );
-            }, 10000); // Actualizar cada 10 segundos
-        }
-
-        function detenerGPSConductor() {
-            if (gpsInterval) {
-                clearInterval(gpsInterval);
-                gpsInterval = null;
-            }
         }
 
         // ===== NAVEGACIÓN =====
@@ -568,6 +550,7 @@
         }
 
         function abrirMaps() {
+            if (!viajeActual) return;
             let destino;
             if (faseViaje === 'ida_pasajero') {
                 destino = viajeActual.origen_direccion;
@@ -586,9 +569,14 @@
                 const confirmar = confirm('¿Confirmás que el pasajero subió al auto?');
                 if (!confirmar) return;
 
-                await supabaseClient.from('viajes').update({
+                const { error } = await supabaseClient.from('viajes').update({
                     estado: 'en_viaje'
                 }).eq('id', viajeActual.id);
+
+                if (error) {
+                    mostrarMsg('Error: ' + error.message, 'error');
+                    return;
+                }
 
                 abrirNavegacion(viajeActual, 'ida_destino');
                 mostrarMsg('🚗 Pasajero a bordo. Yendo al destino...', 'success');
@@ -597,12 +585,15 @@
                 const confirmar = confirm('¿Finalizar el viaje?');
                 if (!confirmar) return;
 
-                detenerGPSConductor();
-
-                await supabaseClient.from('viajes').update({
+                const { error } = await supabaseClient.from('viajes').update({
                     estado: 'completado',
                     fecha_fin: new Date().toISOString()
                 }).eq('id', viajeActual.id);
+
+                if (error) {
+                    mostrarMsg('Error: ' + error.message, 'error');
+                    return;
+                }
 
                 mostrarMsg('✅ Viaje completado', 'success');
                 setTimeout(() => {
@@ -620,20 +611,33 @@
         async function cancelarOferta() {
             if (!confirm('¿Cancelar esta oferta?')) return;
             if (confirmSub) confirmSub.unsubscribe();
-            await supabaseClient.from('viajes').update({
+
+            const { error } = await supabaseClient.from('viajes').update({
                 estado: 'pendiente',
                 precio: null,
                 distancia_km: null
             }).eq('id', viajeActual.id);
+
+            if (error) {
+                mostrarMsg('Error: ' + error.message, 'error');
+                return;
+            }
+
             volverLista();
         }
 
         async function cancelarViaje() {
             if (!confirm('¿Cancelar este viaje?')) return;
-            detenerGPSConductor();
-            await supabaseClient.from('viajes').update({
+
+            const { error } = await supabaseClient.from('viajes').update({
                 estado: 'cancelado'
             }).eq('id', viajeActual.id);
+
+            if (error) {
+                mostrarMsg('Error: ' + error.message, 'error');
+                return;
+            }
+
             if (confirmSub) confirmSub.unsubscribe();
             volverLista();
         }
