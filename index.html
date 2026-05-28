@@ -2,179 +2,282 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TuMovil - Pasajero</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TuMovil - Pedir Remis</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, sans-serif; background: #f4f6f9; padding: 15px; }
-        .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        h2 { font-size: 1.2rem; margin-bottom: 12px; color: #333; }
-        .input-group { margin-bottom: 12px; }
-        .input-group label { display: block; font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; color: #666; }
-        .input-group input { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 0.95rem; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-bottom: 8px; text-align: center; display: block; }
-        .btn-primary { background: #11998e; color: white; }
-        .btn-danger { background: #ff6b6b; color: white; }
-        .btn-success { background: #28a745; color: white; }
-        .mapa-box { height: 220px; width: 100%; background: #e0e0e0; border-radius: 12px; margin-top: 10px; overflow: hidden; }
-        .mapa-box iframe { width: 100%; height: 100%; border: none; }
-        .tarifa-box { background: #e3f2fd; border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px; border: 2px solid #2196f3; }
-        .tarifa-box .monto { font-size: 2rem; font-weight: 800; color: #0d47a1; }
-        .hidden { display: none !important; }
-        .msg { padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 10px; font-weight: bold; }
-        .msg-error { background: #ffebee; color: #c62828; }
-        .msg-info { background: #e3f2fd; color: #1565c0; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+        body { background:#0d1117; color:#fff; min-height:100vh; padding:20px; }
+        .container { max-width:400px; margin:0 auto; }
+        h1 { text-align:center; color:#00d4aa; margin-bottom:10px; font-size:1.5rem; }
+        .logo { text-align:center; font-size:3rem; margin-bottom:5px; }
+        .card { background:#161b22; border:1px solid #30363d; border-radius:16px; padding:20px; margin-bottom:15px; }
+        label { display:block; margin-bottom:5px; color:#8b949e; font-size:0.85rem; }
+        input, select { width:100%; padding:12px; border:1px solid #30363d; border-radius:8px; background:#0d1117; color:#fff; font-size:1rem; margin-bottom:15px; }
+        input:focus, select:focus { outline:none; border-color:#00d4aa; }
+        .btn { width:100%; padding:15px; border:none; border-radius:12px; font-size:1.1rem; font-weight:bold; cursor:pointer; transition:all 0.3s; }
+        .btn-primary { background:#00d4aa; color:#0d1117; }
+        .btn-primary:hover { background:#00b894; transform:scale(1.02); }
+        .btn-danger { background:#ff4757; color:#fff; }
+        .btn-danger:hover { background:#ff3838; }
+        .btn:disabled { opacity:0.5; cursor:not-allowed; }
+        .gps-btn { background:#1f6feb; color:#fff; padding:10px; border:none; border-radius:8px; width:100%; margin-bottom:10px; cursor:pointer; font-size:0.9rem; }
+        .gps-btn:hover { background:#388bfd; }
+        .gps-ok { color:#00d4aa; font-size:0.85rem; margin-bottom:10px; }
+        .precio-box { background:#21262d; border:2px solid #00d4aa; border-radius:12px; padding:20px; text-align:center; margin:15px 0; }
+        .precio-box h2 { color:#00d4aa; font-size:2rem; margin:10px 0; }
+        .timer { color:#ff4757; font-weight:bold; font-size:1.2rem; }
+        .estado { text-align:center; padding:15px; border-radius:12px; margin:10px 0; font-weight:bold; }
+        .estado-pendiente { background:#ffa50233; color:#ffa502; border:1px solid #ffa502; }
+        .estado-aceptado { background:#00d4aa33; color:#00d4aa; border:1px solid #00d4aa; }
+        .estado-en-camino { background:#1f6feb33; color:#1f6feb; border:1px solid #1f6feb; }
+        .estado-completado { background:#00d4aa33; color:#00d4aa; border:1px solid #00d4aa; }
+        .hidden { display:none; }
+        .conductor-info { background:#21262d; padding:15px; border-radius:8px; margin:10px 0; }
+        .conductor-info p { margin:5px 0; color:#c9d1d9; }
+        .conductor-info strong { color:#00d4aa; }
+        .origen-gps { font-size:0.8rem; color:#8b949e; margin-top:5px; }
     </style>
 </head>
 <body>
-
-    <div class="card">
-        <h2>👤 Datos del Pasajero</h2>
-        <div class="input-group"><label>Nombre</label><input type="text" id="paxNombre" placeholder="Tu Nombre"></div>
-        <div class="input-group"><label>Teléfono</label><input type="tel" id="paxTelefono" placeholder="Tu celular"></div>
-    </div>
-
-    <div id="paxPedir" class="card">
-        <h2>🗺️ ¿A dónde vamos hoy?</h2>
-        <div class="input-group">
-            <label>Punto de Origen</label>
-            <input type="text" id="paxOrigen" value="Las Catalinas #53">
-        </div>
-        <div class="input-group">
-            <label>Dirección de Destino</label>
-            <input type="text" id="paxDestino" placeholder="Ej: Plaza Central, Buenos Aires" onchange="actualizarPrevisualizacionMapa()">
-        </div>
+    <div class="container">
+        <div class="logo">🚗</div>
+        <h1>TuMovil Las Catalinas</h1>
         
-        <div class="mapa-box">
-            <iframe id="mapaPrevia" src="https://maps.google.com/maps?q=Las%20Catalinas&t=&z=14&output=embed"></iframe>
-        </div>
-        
-        <button class="btn btn-primary" style="margin-top:15px;" onclick="solicitarViaje()">🚕 SOLICITAR MÓVIL</button>
-    </div>
-
-    <div id="paxBuscando" class="card hidden">
-        <div style="text-align:center; padding:20px 0;">
-            <div style="font-size:3rem; animation: pulse 1.5s infinite;">⏳</div>
-            <h2>Buscando conductores disponibles...</h2>
-            <p style="color:#666; font-size:0.9rem; margin-top:5px;">El conductor revisará tu destino para cotizar los kilómetros.</p>
-        </div>
-        <button class="btn btn-danger" onclick="cancelarViajePasajero()">❌ CANCELAR SOLICITUD / LIMPIAR APP</button>
-    </div>
-
-    <div id="paxTarifa" class="card hidden">
-        <h2>¡Tenemos un Conductor Interesado!</h2>
-        <p id="datosChofer" style="margin-bottom:10px; font-weight:600; color:#444;"></p>
-        
-        <div class="tarifa-box">
-            <div>Tarifa propuesta por el viaje:</div>
-            <div class="monto" id="montoTarifa">$0</div>
-            <div style="font-size:0.8rem; color:#555;" id="detalleKm"></div>
-        </div>
-
-        <button class="btn btn-success" onclick="aceptarTarifa()">✅ ACEPTAR TARIFA Y CONFIRMAR VIAJE</button>
-        <button class="btn btn-danger" onclick="cancelarViajePasajero()">❌ RECHAZAR / CANCELAR VIAJE</button>
-    </div>
-
-    <div id="paxEnViaje" class="card hidden">
-        <div style="text-align:center;">
-            <h2>🚕 ¡Tu viaje está en curso!</h2>
-            <p>Buen viaje. El chofer finalizará el viaje al llegar a destino.</p>
-        </div>
-        <button class="btn btn-danger" style="margin-top:20px;" onclick="cancelarViajePasajero()">❌ CANCELAR POR EMERGENCIA</button>
-    </div>
-
-    <script>
-        const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        let viajeId = null;
-        let subViaje = null;
-
-        function actualizarPrevisualizacionMapa() {
-            const dest = document.getElementById('paxDestino').value.trim();
-            if(!dest) return;
-            document.getElementById('mapaPrevia').src = `https://maps.google.com/maps?q=${encodeURIComponent(dest)}&t=&z=14&output=embed`;
-        }
-
-        async function solicitarViaje() {
-            const nombre = document.getElementById('paxNombre').value.trim();
-            const telefono = document.getElementById('paxTelefono').value.trim();
-            const origen = document.getElementById('paxOrigen').value.trim();
-            const destino = document.getElementById('paxDestino').value.trim();
-
-            if(!nombre || !destino) {
-                alert('Por favor ingresa tu nombre y un destino válido.');
-                return;
-            }
-
-            const { data, error } = await supabaseClient.from('viajes').insert([{
-                pasajero_nombre: nombre,
-                pasajero_telefono: telefono,
-                origen_direccion: origen,
-                destino_direccion: destino,
-                estado: 'pendiente' // Nace pendiente para que lo vea el Conductor
-            }]).select().single();
-
-            if(error) return alert('Error al solicitar: ' + error.message);
+        <!-- FORMULARIO -->
+        <div id="formulario" class="card">
+            <label>📍 Tu nombre</label>
+            <input type="text" id="nombre" placeholder="Ej: Juan Pérez" value="">
             
-            viajeId = data.id;
-            mostrarPaso('paxBuscando');
-            conectarCanalViaje(data.id);
-        }
+            <label>📱 Tu teléfono</label>
+            <input type="tel" id="telefono" placeholder="Ej: 3512345678" value="">
+            
+            <label>📍 Origen (tu ubicación)</label>
+            <button class="gps-btn" onclick="obtenerGPS()">📡 Usar mi ubicación GPS</button>
+            <div id="gpsStatus" class="gps-ok hidden">✅ Ubicación detectada</div>
+            <input type="text" id="origen" placeholder="Ej: Las Catalinas #53" value="Las Catalinas #53">
+            <div class="origen-gps" id="origenCoords"></div>
+            
+            <label>🏁 Destino</label>
+            <input type="text" id="destino" placeholder="Ej: Centro Córdoba" value="">
+            
+            <button class="btn btn-primary" id="btnSolicitar" onclick="solicitarViaje()">
+                🚕 SOLICITAR REMIS
+            </button>
+        </div>
 
-        function conectarCanalViaje(id) {
-            if(subViaje) subViaje.unsubscribe();
-            subViaje = supabaseClient.channel('pax-'+id).on('postgres_changes', { event:'UPDATE', schema:'public', table:'viajes', filter:'id=eq.'+id }, (payload) => {
-                procesarCambioViaje(payload.new);
-            }).subscribe();
-        }
+        <!-- ESPERANDO PRECIO -->
+        <div id="esperando" class="card hidden">
+            <h3>⏳ Esperando precio...</h3>
+            <p>El conductor está calculando el costo de tu viaje.</p>
+            <div class="timer" id="timer">60s</div>
+        </div>
 
-        function procesarCambioViaje(v) {
-            if(v.estado === 'esperando_confirmacion') {
-                document.getElementById('datosChofer').textContent = `Chofer: ${v.conductor_nombre} - Vehículo: ${v.conductor_auto}`;
-                document.getElementById('montoTarifa').textContent = `$${v.precio.toLocaleString('es-AR')}`;
-                document.getElementById('detalleKm').textContent = `Distancia calculada por chofer: ${v.distancia_km} KM`;
-                mostrarPaso('paxTarifa');
+        <!-- PRECIO Y CONFIRMACIÓN -->
+        <div id="precioCard" class="card hidden">
+            <div class="precio-box">
+                <p>Precio del viaje</p>
+                <h2 id="precioMonto">$0</h2>
+                <p id="precioDetalle" style="color:#8b949e; font-size:0.9rem;"></p>
+            </div>
+            <p class="timer" id="timerConfirm">⏱️ Tenés 1 minuto para confirmar</p>
+            <button class="btn btn-primary" onclick="confirmarViaje()">✅ CONFIRMAR VIAJE</button>
+            <button class="btn btn-danger" onclick="rechazarViaje()" style="margin-top:10px;">❌ RECHAZAR</button>
+        </div>
+
+        <!-- ESTADO DEL VIAJE -->
+        <div id="estadoViaje" class="card hidden">
+            <div id="estadoTexto" class="estado estado-pendiente">🕐 Pendiente</div>
+            <div id="conductorInfo" class="conductor-info hidden">
+                <p><strong>🚗 Conductor:</strong> <span id="condNombre">-</span></p>
+                <p><strong>📱 Tel:</strong> <span id="condTel">-</span></p>
+                <p><strong>🚙 Auto:</strong> <span id="condAuto">-</span></p>
+            </div>
+        </div>
+    </div>
+
+<script>
+const SUPABASE_URL = 'https://tusupabase.supabase.co';
+const SUPABASE_KEY = 'tu_anon_key_aqui';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let viajeId = null;
+let timerInterval = null;
+let viajeSub = null;
+let origenLat = null;
+let origenLng = null;
+
+// ========== GPS ==========
+function obtenerGPS() {
+    if (!navigator.geolocation) {
+        alert('Tu navegador no soporta GPS');
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            origenLat = pos.coords.latitude;
+            origenLng = pos.coords.longitude;
+            document.getElementById('gpsStatus').classList.remove('hidden');
+            document.getElementById('origenCoords').textContent = 
+                `📡 Coordenadas: ${origenLat.toFixed(6)}, ${origenLng.toFixed(6)}`;
+            // Opcional: reverse geocoding para poner dirección automática
+        },
+        (err) => {
+            alert('No se pudo obtener GPS: ' + err.message);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
+}
+
+// ========== SOLICITAR VIAJE ==========
+async function solicitarViaje() {
+    const nombre = document.getElementById('nombre').value.trim();
+    const telefono = document.getElementById('telefono').value.trim();
+    const origen = document.getElementById('origen').value.trim();
+    const destino = document.getElementById('destino').value.trim();
+
+    if (!nombre || !telefono || !origen || !destino) {
+        alert('Completá todos los campos');
+        return;
+    }
+
+    document.getElementById('btnSolicitar').disabled = true;
+    document.getElementById('btnSolicitar').textContent = '⏳ Enviando...';
+
+    const { data, error } = await supabaseClient.from('viajes').insert([{
+        pasajero_nombre: nombre,
+        pasajero_telefono: telefono,
+        origen_direccion: origen,
+        destino_direccion: destino,
+        origen_lat: origenLat,
+        origen_lng: origenLng,
+        estado: 'pendiente'
+    }]).select();
+
+    if (error) {
+        alert('Error: ' + error.message);
+        document.getElementById('btnSolicitar').disabled = false;
+        document.getElementById('btnSolicitar').textContent = '🚕 SOLICITAR REMIS';
+        return;
+    }
+
+    viajeId = data[0].id;
+    
+    // Ocultar formulario, mostrar espera
+    document.getElementById('formulario').classList.add('hidden');
+    document.getElementById('esperando').classList.remove('hidden');
+
+    // Timer 60s
+    let segundos = 60;
+    timerInterval = setInterval(() => {
+        segundos--;
+        document.getElementById('timer').textContent = segundos + 's';
+        if (segundos <= 0) {
+            clearInterval(timerInterval);
+            alert('⏰ Se acabó el tiempo. Probá de nuevo.');
+            location.reload();
+        }
+    }, 1000);
+
+    // Escuchar cambios en el viaje
+    escucharViaje(viajeId);
+}
+
+// ========== ESCUCHAR VIAJE ==========
+function escucharViaje(id) {
+    viajeSub = supabaseClient
+        .channel('viaje-' + id)
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'viajes',
+            filter: 'id=eq.' + id
+        }, (payload) => {
+            const viaje = payload.new;
+            manejarCambioEstado(viaje);
+        })
+        .subscribe();
+}
+
+function manejarCambioEstado(viaje) {
+    // Si el conductor puso precio
+    if (viaje.estado === 'precio_enviado' && viaje.precio) {
+        clearInterval(timerInterval);
+        document.getElementById('esperando').classList.add('hidden');
+        document.getElementById('precioCard').classList.remove('hidden');
+        document.getElementById('precioMonto').textContent = '$' + viaje.precio.toLocaleString();
+        document.getElementById('precioDetalle').textContent = 
+            `Distancia: ${viaje.distancia_km} km | $3.000 base + $600/km`;
+        
+        // Timer confirmación 60s
+        let seg = 60;
+        timerInterval = setInterval(() => {
+            seg--;
+            document.getElementById('timerConfirm').textContent = '⏱️ Tenés ' + seg + 's para confirmar';
+            if (seg <= 0) {
+                clearInterval(timerInterval);
+                rechazarViaje();
             }
-            if(v.estado === 'confirmado') {
-                mostrarPaso('paxEnViaje');
-            }
-            if(v.estado === 'completado') {
-                alert('¡Viaje completado! Gracias por viajar con nosotros.');
-                recargarApp();
-            }
-            if(v.estado === 'cancelado') {
-                alert('El viaje fue cancelado o liberado.');
-                recargarApp();
-            }
-        }
+        }, 1000);
+    }
 
-        async function aceptarTarifa() {
-            if(!viajeId) return;
-            await supabaseClient.from('viajes').update({ estado: 'confirmado' }).eq('id', viajeId);
-            mostrarPaso('paxEnViaje');
-        }
+    // Si fue aceptado
+    if (viaje.estado === 'aceptado') {
+        clearInterval(timerInterval);
+        document.getElementById('precioCard').classList.add('hidden');
+        document.getElementById('esperando').classList.add('hidden');
+        mostrarEstado(viaje, 'aceptado', '🟢 Conductor asignado', 'estado-aceptado');
+    }
 
-        async function cancelarViajePasajero() {
-            if(viajeId) {
-                // Seteamos cancelado para avisar al chofer y limpiar el registro
-                await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeId);
-            }
-            recargarApp();
-        }
+    // En camino al pasajero
+    if (viaje.estado === 'en_camino_pasajero') {
+        mostrarEstado(viaje, 'en_camino_pasajero', '🚗 Conductor en camino a buscarte', 'estado-en-camino');
+    }
 
-        function recargarApp() {
-            viajeId = null;
-            document.getElementById('paxDestino').value = '';
-            mostrarPaso('paxPedir');
-        }
+    // Pasajero a bordo
+    if (viaje.estado === 'en_viaje') {
+        mostrarEstado(viaje, 'en_viaje', '🛣️ En viaje al destino', 'estado-en-camino');
+    }
 
-        function mostrarPaso(id) {
-            ['paxPedir', 'paxBuscando', 'paxTarifa', 'paxEnViaje'].forEach(p => document.getElementById(p).classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-        }
-    </script>
+    // Completado
+    if (viaje.estado === 'completado') {
+        mostrarEstado(viaje, 'completado', '✅ Viaje finalizado', 'estado-completado');
+        setTimeout(() => location.reload(), 5000);
+    }
+}
+
+function mostrarEstado(viaje, estado, texto, clase) {
+    document.getElementById('estadoViaje').classList.remove('hidden');
+    document.getElementById('precioCard').classList.add('hidden');
+    document.getElementById('esperando').classList.add('hidden');
+    
+    const el = document.getElementById('estadoTexto');
+    el.className = 'estado ' + clase;
+    el.textContent = texto;
+
+    if (viaje.conductor_nombre) {
+        document.getElementById('conductorInfo').classList.remove('hidden');
+        document.getElementById('condNombre').textContent = viaje.conductor_nombre;
+        document.getElementById('condTel').textContent = viaje.conductor_telefono || '-';
+        document.getElementById('condAuto').textContent = viaje.conductor_auto || '-';
+    }
+}
+
+// ========== CONFIRMAR / RECHAZAR ==========
+async function confirmarViaje() {
+    clearInterval(timerInterval);
+    await supabaseClient.from('viajes').update({ estado: 'confirmado' }).eq('id', viajeId);
+    document.getElementById('precioCard').classList.add('hidden');
+    document.getElementById('estadoViaje').classList.remove('hidden');
+    document.getElementById('estadoTexto').textContent = '✅ Confirmado - Esperando conductor';
+}
+
+async function rechazarViaje() {
+    clearInterval(timerInterval);
+    await supabaseClient.from('viajes').update({ estado: 'rechazado' }).eq('id', viajeId);
+    alert('Viaje rechazado');
+    location.reload();
+}
+</script>
 </body>
 </html>
