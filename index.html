@@ -37,8 +37,8 @@
             flex-direction: column;
         }
         .mapa-seccion {
-            height: 40%;
-            min-height: 200px;
+            height: 35%;
+            min-height: 180px;
             position: relative;
             background: #e5e5e5;
         }
@@ -59,7 +59,7 @@
             background: linear-gradient(135deg, #e0e0e0 0%, #f0f0f0 100%);
         }
         .panel-seccion {
-            height: 60%;
+            height: 65%;
             background: white;
             border-radius: 20px 20px 0 0;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
@@ -240,6 +240,24 @@
         .msg-warn { background: #fff3cd; color: #856404; }
         .timer { color: #ff6b6b; font-weight: bold; font-size: 1.1rem; text-align: center; margin: 8px 0; }
         .hidden { display: none !important; }
+
+        /* DEBUG LOG */
+        .debug-log {
+            background: #1a1a2e;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            font-size: 0.7rem;
+            padding: 8px;
+            border-radius: 8px;
+            margin-top: 10px;
+            max-height: 120px;
+            overflow-y: auto;
+            line-height: 1.4;
+        }
+        .debug-log .line { margin: 1px 0; }
+        .debug-log .line.error { color: #ff6b6b; }
+        .debug-log .line.success { color: #00ff88; }
+        .debug-log .line.warn { color: #ff9800; }
     </style>
 </head>
 <body>
@@ -298,6 +316,7 @@
                     </div>
                     <button class="btn btn-refresh" onclick="verificarCotizacionManual()">🔄 VERIFICAR SI HAY COTIZACIÓN</button>
                     <button class="btn btn-danger" onclick="cancelarViaje()">❌ CANCELAR</button>
+                    <div class="debug-log" id="debugLog"></div>
                 </div>
 
                 <!-- PASO 3: PRECIO RECIBIDO -->
@@ -390,7 +409,6 @@
         const TARIFA_POR_KM = 600;
 
         let viajeId = null;
-        let subscription = null;
         let pollInterval = null;
         let origenCoords = null;
         let origenTexto = 'Ubicación actual';
@@ -399,6 +417,21 @@
         let precioCalculado = 0;
         let distanciaKm = 0;
         let timerInterval = null;
+        let ultimoEstado = null;
+        let pollingActivo = false;
+
+        // ===== DEBUG LOG =====
+        function log(msg, tipo = 'info') {
+            const debugDiv = document.getElementById('debugLog');
+            if (!debugDiv) return;
+            const line = document.createElement('div');
+            line.className = 'line ' + tipo;
+            const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            line.textContent = `[${hora}] ${msg}`;
+            debugDiv.appendChild(line);
+            debugDiv.scrollTop = debugDiv.scrollHeight;
+            console.log(`[${tipo.toUpperCase()}] ${msg}`);
+        }
 
         // ===== INICIO: GPS =====
         window.addEventListener('DOMContentLoaded', () => {
@@ -500,6 +533,7 @@
             document.getElementById('btnSolicitar').textContent = '⏳ Enviando...';
 
             try {
+                log('Insertando viaje en Supabase...', 'info');
                 const { data, error } = await supabaseClient
                     .from('viajes')
                     .insert({
@@ -516,9 +550,13 @@
                     .select()
                     .single();
 
-                if (error) throw error;
+                if (error) {
+                    log('ERROR al insertar: ' + error.message, 'error');
+                    throw error;
+                }
 
                 viajeId = data.id;
+                log('✅ Viaje creado ID: ' + viajeId, 'success');
                 mostrarPaso('pasoEsperando');
                 mostrarMsg('Viaje enviado. Esperando cotización...', 'success');
 
@@ -529,49 +567,87 @@
                     document.getElementById('timerEspera').textContent = segundos + 's';
                     if (segundos <= 0) {
                         clearInterval(timerInterval);
-                        clearInterval(pollInterval);
+                        detenerPolling();
                         mostrarMsg('⏰ Se acabó el tiempo. Probá de nuevo.', 'warn');
                         setTimeout(() => location.reload(), 2000);
                     }
                 }, 1000);
 
-                // Iniciar REALTIME + POLLING
-                escucharViaje(viajeId);
+                // Iniciar POLLING SOLO (sin Realtime)
                 iniciarPolling(viajeId);
 
             } catch (e) {
+                log('ERROR: ' + e.message, 'error');
                 mostrarMsg('Error: ' + e.message, 'error');
                 document.getElementById('btnSolicitar').disabled = false;
                 document.getElementById('btnSolicitar').textContent = '🚕 PEDIR MÓVIL';
             }
         }
 
-        // ===== POLLING (consulta cada 5 segundos) =====
+        // ===== POLLING (consulta cada 2 segundos) =====
         function iniciarPolling(id) {
             if (pollInterval) clearInterval(pollInterval);
+            pollingActivo = true;
+            log('🔄 Polling iniciado cada 2 segundos', 'info');
+
             pollInterval = setInterval(async () => {
-                if (!viajeId) {
-                    clearInterval(pollInterval);
+                if (!viajeId || !pollingActivo) {
+                    detenerPolling();
                     return;
                 }
+
                 try {
+                    log('Consultando viaje ' + id + '...', 'info');
                     const { data, error } = await supabaseClient
                         .from('viajes')
                         .select('*')
                         .eq('id', id)
                         .single();
 
-                    if (error || !data) return;
+                    if (error) {
+                        log('Error polling: ' + error.message, 'error');
+                        return;
+                    }
 
-                    // Solo procesar si hay un cambio relevante
-                    if (data.estado === 'precio_enviado' && data.precio && document.getElementById('pasoEsperando').classList.contains('hidden') === false) {
-                        console.log('📡 POLLING detectó cotización!');
-                        procesarEstado(data);
+                    if (!data) {
+                        log('Viaje no encontrado', 'error');
+                        return;
+                    }
+
+                    log('Estado recibido: ' + data.estado + ' | precio: ' + (data.precio || 'null'), 'info');
+
+                    // Si el estado cambió, procesarlo
+                    if (data.estado !== ultimoEstado) {
+                        ultimoEstado = data.estado;
+                        log('🚨 ESTADO CAMBIÓ A: ' + data.estado, 'success');
+
+                        if (data.estado === 'precio_enviado' && data.precio) {
+                            log('✅✅✅ COTIZACIÓN DETECTADA! Precio: $' + data.precio, 'success');
+                            detenerPolling();
+                            procesarEstado(data);
+                        } else if (data.estado === 'aceptado') {
+                            log('✅ Viaje aceptado por conductor', 'success');
+                            detenerPolling();
+                            procesarEstado(data);
+                        } else if (data.estado === 'cancelado' || data.estado === 'rechazado') {
+                            log('❌ Viaje cancelado/rechazado', 'error');
+                            detenerPolling();
+                            procesarEstado(data);
+                        }
                     }
                 } catch (e) {
-                    console.error('Polling error:', e);
+                    log('Excepción polling: ' + e.message, 'error');
                 }
-            }, 5000); // Cada 5 segundos
+            }, 2000); // Cada 2 segundos
+        }
+
+        function detenerPolling() {
+            pollingActivo = false;
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+            log('🛑 Polling detenido', 'warn');
         }
 
         // ===== VERIFICAR MANUALMENTE =====
@@ -581,7 +657,8 @@
                 return;
             }
 
-            mostrarMsg('🔄 Verificando cotización...', 'info');
+            log('🔄 Verificación MANUAL iniciada...', 'info');
+            mostrarMsg('Verificando cotización...', 'info');
 
             try {
                 const { data, error } = await supabaseClient
@@ -590,43 +667,39 @@
                     .eq('id', viajeId)
                     .single();
 
-                if (error) throw error;
+                if (error) {
+                    log('Error manual: ' + error.message, 'error');
+                    throw error;
+                }
+
+                log('Manual - Estado: ' + data.estado + ' | Precio: ' + (data.precio || 'null'), 'info');
 
                 if (data.estado === 'precio_enviado' && data.precio) {
-                    mostrarMsg('¡Cotización encontrada! Mostrando...', 'success');
+                    log('✅ COTIZACIÓN ENCONTRADA MANUALMENTE!', 'success');
+                    detenerPolling();
                     procesarEstado(data);
+                    mostrarMsg('¡Cotización encontrada! Mostrando...', 'success');
                 } else {
-                    mostrarMsg(`Estado actual: ${data.estado}. Esperando cotización...`, 'info');
+                    log('ℹ️ Aún sin cotización. Estado: ' + data.estado, 'warn');
+                    mostrarMsg('Estado: ' + data.estado + '. Esperando cotización...', 'info');
                 }
             } catch (e) {
+                log('Error verificación manual: ' + e.message, 'error');
                 mostrarMsg('Error al verificar: ' + e.message, 'error');
             }
         }
 
-        // ===== ESCUCHAR VIAJE (Realtime) =====
-        function escucharViaje(id) {
-            if (subscription) subscription.unsubscribe();
-
-            subscription = supabaseClient
-                .channel('viaje-' + id)
-                .on('postgres_changes', {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'viajes',
-                    filter: `id=eq.${id}`
-                }, (payload) => {
-                    console.log('📡 REALTIME recibido:', payload.new);
-                    procesarEstado(payload.new);
-                })
-                .subscribe();
-        }
-
+        // ===== PROCESAR ESTADO =====
         function procesarEstado(viaje) {
+            log('Procesando estado: ' + viaje.estado, 'info');
+
             switch(viaje.estado) {
                 case 'precio_enviado':
-                    if (!viaje.precio) return;
+                    if (!viaje.precio) {
+                        log('precio_enviado pero sin precio!', 'error');
+                        return;
+                    }
                     clearInterval(timerInterval);
-                    clearInterval(pollInterval);
                     precioCalculado = viaje.precio;
                     distanciaKm = viaje.distancia_km || 0;
                     document.getElementById('precioMonto').textContent = '$' + precioCalculado.toLocaleString('es-AR');
@@ -682,7 +755,7 @@
                 case 'cancelado':
                 case 'rechazado':
                     clearInterval(timerInterval);
-                    clearInterval(pollInterval);
+                    detenerPolling();
                     mostrarMsg('El viaje fue cancelado.', 'error');
                     setTimeout(() => location.reload(), 2000);
                     break;
@@ -693,21 +766,26 @@
         async function confirmarViaje() {
             clearInterval(timerInterval);
             try {
+                log('Enviando confirmación...', 'info');
                 await supabaseClient.from('viajes').update({ estado: 'confirmado' }).eq('id', viajeId);
+                log('✅ Confirmación enviada', 'success');
                 mostrarMsg('Viaje confirmado. Esperando que el conductor acepte...', 'success');
             } catch (e) {
+                log('Error al confirmar: ' + e.message, 'error');
                 mostrarMsg('Error al confirmar: ' + e.message, 'error');
             }
         }
 
         async function rechazarPrecio(esTimeout = false) {
             clearInterval(timerInterval);
-            clearInterval(pollInterval);
+            detenerPolling();
             try {
+                log('Rechazando precio...', 'warn');
                 await supabaseClient.from('viajes').update({ estado: 'rechazado' }).eq('id', viajeId);
                 mostrarMsg(esTimeout ? '⏰ Se acabó el tiempo.' : 'Buscando otro conductor...', 'warn');
                 setTimeout(() => location.reload(), 2000);
             } catch (e) {
+                log('Error al rechazar: ' + e.message, 'error');
                 mostrarMsg('Error: ' + e.message, 'error');
             }
         }
@@ -715,12 +793,13 @@
         async function cancelarViaje() {
             if (!confirm('¿Seguro que querés cancelar?')) return;
             clearInterval(timerInterval);
-            clearInterval(pollInterval);
+            detenerPolling();
             try {
+                log('Cancelando viaje...', 'warn');
                 await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeId);
-                if (subscription) subscription.unsubscribe();
                 location.reload();
             } catch (e) {
+                log('Error al cancelar: ' + e.message, 'error');
                 mostrarMsg('Error al cancelar: ' + e.message, 'error');
             }
         }
