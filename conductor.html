@@ -81,6 +81,7 @@
         .input-group { margin-bottom: 10px; }
         .input-group label { display: block; font-size: 0.8rem; color: #555; margin-bottom: 3px; font-weight: 600; }
         .input-group input { width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 0.9rem; }
+        .input-group input:focus { outline: none; border-color: #11998e; }
         .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; text-align: center; margin-bottom: 8px; }
         .btn-primary { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
         .btn-success { background: linear-gradient(135deg, #28a745 0%, #34ce57 100%); color: white; }
@@ -124,6 +125,16 @@
         .debug-log .line.error { color: #ff6b6b; }
         .debug-log .line.success { color: #00ff88; }
         .debug-log .line.warn { color: #ff9800; }
+
+        /* Input km destacado */
+        .km-input-destacado {
+            border: 3px solid #ff9800 !important;
+            background: #fff8e1 !important;
+        }
+        .km-input-ok {
+            border: 3px solid #28a745 !important;
+            background: #e8f5e9 !important;
+        }
     </style>
 </head>
 <body>
@@ -170,7 +181,7 @@
                         </label>
                     </div>
                     <div class="lista-viajes" id="listaViajes"></div>
-                    <div class="debug-log" id="debugLogConductor"></div>
+                    <div class="debug-log" id="debugLogDisponible"></div>
                 </div>
 
                 <div id="pasoDetalle" class="hidden">
@@ -191,8 +202,9 @@
                         <div style="font-size:1.2rem; font-weight:bold;" id="liveTarifaPrecio">$0</div>
                     </div>
 
-                    <button class="btn btn-success" onclick="enviarPrecio()">💰 ENVIAR ESTA TARIFA AL PASAJERO</button>
+                    <button class="btn btn-success" id="btnEnviarPrecio" onclick="enviarPrecio()">💰 ENVIAR ESTA TARIFA AL PASAJERO</button>
                     <button class="btn btn-danger" onclick="cancelarYLiberarViaje()">❌ RECHAZAR / LIBERAR VIAJE</button>
+                    <div class="debug-log" id="debugLogDetalle"></div>
                 </div>
 
                 <div id="pasoEsperando" class="hidden">
@@ -227,8 +239,8 @@
         let conductorDatos = null;
         let viajeActual = null;
         let subViajes = null;
-        let subIndividual = null;
         let pollIntervalConductor = null;
+        let pasoActual = '';
 
         // ===== DEBUG LOG =====
         function log(msg, tipo = 'info') {
@@ -236,8 +248,12 @@
             const lineText = `[${hora}] ${msg}`;
             console.log(`[${tipo.toUpperCase()}] ${msg}`);
 
-            // Intentar poner en el debug log visible si existe
-            const debugDiv = document.getElementById('debugLogConductor') || document.getElementById('debugLogEsperando');
+            // Poner en el debug log del paso actual
+            let debugDiv = null;
+            if (pasoActual === 'pasoDisponible') debugDiv = document.getElementById('debugLogDisponible');
+            else if (pasoActual === 'pasoDetalle') debugDiv = document.getElementById('debugLogDetalle');
+            else if (pasoActual === 'pasoEsperando') debugDiv = document.getElementById('debugLogEsperando');
+
             if (debugDiv) {
                 const line = document.createElement('div');
                 line.className = 'line ' + tipo;
@@ -326,12 +342,18 @@
                     return;
                 }
                 viajeActual = data;
-                log('Viaje cargado. Estado: ' + data.estado, 'info');
+                log('Viaje cargado. Estado: ' + data.estado + ' | ID: ' + data.id, 'info');
 
                 document.getElementById('nombrePax').textContent = data.pasajero_nombre;
                 document.getElementById('telPax').textContent = '📞 ' + data.pasajero_telefono;
                 document.getElementById('origenPax').textContent = data.origen_direccion;
                 document.getElementById('destinoPax').textContent = data.destino_direccion;
+
+                // Resetear input
+                document.getElementById('kmInput').value = '';
+                document.getElementById('kmInput').className = '';
+                document.getElementById('liveTarifaPrecio').textContent = '$0';
+                document.getElementById('liveTarifaBox').style.background = '#444';
 
                 const urlMaps = `https://maps.google.com/maps?q=${encodeURIComponent(data.destino_direccion)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
                 document.getElementById('googleMapIframe').src = urlMaps;
@@ -345,22 +367,47 @@
         }
 
         function calcularTarifaEnVivo() {
-            const km = parseFloat(document.getElementById('kmInput').value) || 0;
+            const input = document.getElementById('kmInput');
+            const km = parseFloat(input.value);
+
+            if (!km || km <= 0) {
+                input.className = 'km-input-destacado';
+                document.getElementById('liveTarifaPrecio').textContent = '$0';
+                document.getElementById('liveTarifaBox').style.background = '#444';
+                return;
+            }
+
+            input.className = 'km-input-ok';
             const total = TARIFA_BASE + (km * TARIFA_POR_KM);
-            document.getElementById('liveTarifaPrecio').textContent = `Tarifa Estimada: $${total.toLocaleString('es-AR')}`;
+            document.getElementById('liveTarifaPrecio').textContent = `Tarifa: $${total.toLocaleString('es-AR')}`;
+            document.getElementById('liveTarifaBox').style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            log(`Tarifa calculada: ${km}km = $${total}`, 'info');
         }
 
         async function enviarPrecio() {
-            const km = parseFloat(document.getElementById('kmInput').value);
-            if(!km || km <= 0) {
-                mostrarMsg('Colocá los kilómetros primero', 'error');
+            const kmInput = document.getElementById('kmInput');
+            const km = parseFloat(kmInput.value);
+
+            log('=== ENVIAR PRECIO INICIADO ===', 'info');
+            log('KM ingresado: ' + kmInput.value + ' | Parseado: ' + km, 'info');
+
+            if(!km || km <= 0 || isNaN(km)) {
+                log('ERROR: KM inválido', 'error');
+                kmInput.className = 'km-input-destacado';
+                mostrarMsg('⚠️ Colocá los kilómetros primero (ej: 5.4)', 'error');
                 return;
             }
 
             const total = TARIFA_BASE + (km * TARIFA_POR_KM);
             log('Enviando precio: $' + total + ' para viaje ' + viajeActual.id, 'info');
 
+            // Deshabilitar botón
+            const btn = document.getElementById('btnEnviarPrecio');
+            btn.disabled = true;
+            btn.textContent = '⏳ Enviando...';
+
             try {
+                log('Ejecutando UPDATE en Supabase...', 'info');
                 const { data, error } = await supabaseClient.from('viajes').update({
                     estado: 'precio_enviado',
                     precio: total,
@@ -370,20 +417,26 @@
                 }).eq('id', viajeActual.id).select();
 
                 if (error) {
-                    log('ERROR al enviar precio: ' + error.message, 'error');
+                    log('ERROR UPDATE: ' + error.message, 'error');
+                    log('Error detalle: ' + JSON.stringify(error), 'error');
                     mostrarMsg('Error al enviar: ' + error.message, 'error');
+                    btn.disabled = false;
+                    btn.textContent = '💰 ENVIAR ESTA TARIFA AL PASAJERO';
                     return;
                 }
 
-                log('✅ Precio enviado correctamente. Respuesta: ' + JSON.stringify(data), 'success');
+                log('✅ UPDATE exitoso. Respuesta: ' + JSON.stringify(data), 'success');
                 mostrarMsg('💰 Precio enviado al pasajero', 'success');
                 mostrarPaso('pasoEsperando');
 
                 // Iniciar polling para esperar respuesta del pasajero
                 iniciarPollingEspera(viajeActual.id);
             } catch (e) {
-                log('ERROR enviarPrecio: ' + e.message, 'error');
+                log('ERROR EXCEPCIÓN enviarPrecio: ' + e.message, 'error');
+                log('Stack: ' + e.stack, 'error');
                 mostrarMsg('Error: ' + e.message, 'error');
+                btn.disabled = false;
+                btn.textContent = '💰 ENVIAR ESTA TARIFA AL PASAJERO';
             }
         }
 
@@ -443,15 +496,21 @@
         async function cancelarYLiberarViaje() {
             if(!viajeActual) return;
             try {
-                log('Liberando viaje...', 'warn');
-                await supabaseClient.from('viajes').update({ 
+                log('Liberando viaje ' + viajeActual.id + '...', 'warn');
+                const { data, error } = await supabaseClient.from('viajes').update({ 
                     estado: 'pendiente', 
                     precio: null, 
                     distancia_km: null,
                     conductor_nombre: null,
                     conductor_auto: null
-                }).eq('id', viajeActual.id);
-                log('✅ Viaje liberado', 'success');
+                }).eq('id', viajeActual.id).select();
+
+                if (error) {
+                    log('Error al liberar: ' + error.message, 'error');
+                    return;
+                }
+
+                log('✅ Viaje liberado. Respuesta: ' + JSON.stringify(data), 'success');
                 mostrarMsg('Viaje liberado.', 'info');
                 limpiarYVolver();
             } catch (e) {
@@ -463,6 +522,7 @@
             if (pollIntervalConductor) clearInterval(pollIntervalConductor);
             viajeActual = null;
             document.getElementById('kmInput').value = '';
+            document.getElementById('kmInput').className = '';
             document.getElementById('googleMapIframe').classList.add('hidden');
             document.getElementById('mapaPlaceholder').classList.remove('hidden');
             mostrarPaso('pasoDisponible');
@@ -506,6 +566,7 @@
         }
 
         function mostrarPaso(id) {
+            pasoActual = id;
             ['pasoLogin', 'pasoDisponible', 'pasoDetalle', 'pasoEsperando', 'pasoConfirmado'].forEach(p => document.getElementById(p).classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         }
