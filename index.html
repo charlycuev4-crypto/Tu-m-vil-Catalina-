@@ -164,8 +164,10 @@
             border: 2px solid #667eea;
         }
         .btn-refresh {
-            background: #ff9800;
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
             color: white;
+            font-size: 1.1rem;
+            padding: 16px;
         }
         .estado-box {
             text-align: center;
@@ -238,10 +240,9 @@
         .msg-success { background: #e8f5e9; color: #2e7d32; }
         .msg-info { background: #e3f2fd; color: #1565c0; }
         .msg-warn { background: #fff3cd; color: #856404; }
-        .timer { color: #ff6b6b; font-weight: bold; font-size: 1.1rem; text-align: center; margin: 8px 0; }
+        .timer { color: #ff6b6b; font-weight: bold; font-size: 1.3rem; text-align: center; margin: 8px 0; }
         .hidden { display: none !important; }
 
-        /* DEBUG LOG */
         .debug-log {
             background: #1a1a2e;
             color: #00ff88;
@@ -258,6 +259,17 @@
         .debug-log .line.error { color: #ff6b6b; }
         .debug-log .line.success { color: #00ff88; }
         .debug-log .line.warn { color: #ff9800; }
+
+        .estado-actual {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 8px 12px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #1565c0;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -314,6 +326,7 @@
                         <p>Tu viaje fue enviado. Un conductor va a cotizar el precio.</p>
                         <div class="timer" id="timerEspera">60s</div>
                     </div>
+                    <div class="estado-actual" id="estadoActual">Estado: consultando...</div>
                     <button class="btn btn-refresh" onclick="verificarCotizacionManual()">🔄 VERIFICAR SI HAY COTIZACIÓN</button>
                     <button class="btn btn-danger" onclick="cancelarViaje()">❌ CANCELAR</button>
                     <div class="debug-log" id="debugLog"></div>
@@ -331,12 +344,21 @@
                         <div class="detalle" id="precioDetalle">Base $3.000 + km</div>
                         <div class="km-info" id="kmInfo">🛣️ Distancia: -- km</div>
                     </div>
+                    <div class="info-conductor" id="infoConductorPrecio">
+                        <div class="fila">
+                            <div class="avatar" id="avatarCondPrecio">?</div>
+                            <div class="datos">
+                                <h4 id="nombreCondPrecio">-</h4>
+                                <p id="autoCondPrecio">-</p>
+                            </div>
+                        </div>
+                    </div>
                     <div class="timer" id="timerConfirm">⏱️ Tenés 1 minuto para confirmar</div>
                     <button class="btn btn-success" onclick="confirmarViaje()">✅ CONFIRMAR Y VIAJAR</button>
                     <button class="btn btn-outline" onclick="rechazarPrecio()">❌ BUSCAR OTRO CONDUCTOR</button>
                 </div>
 
-                <!-- PASO 4: CONDUCTOR ASIGNADO -->
+                <!-- PASO 4: CONDUCTOR ASIGNADO / EN VIAJE -->
                 <div id="pasoEnCamino" class="hidden">
                     <div class="estado-box">
                         <div style="font-size:2.5rem;">🚗</div>
@@ -359,7 +381,7 @@
                     </div>
                 </div>
 
-                <!-- PASO 5: EN VIAJE -->
+                <!-- PASO 5: EN VIAJE (yendo al destino) -->
                 <div id="pasoEnViaje" class="hidden">
                     <div class="estado-box">
                         <div style="font-size:2.5rem;">🛣️</div>
@@ -573,7 +595,6 @@
                     }
                 }, 1000);
 
-                // Iniciar POLLING SOLO (sin Realtime)
                 iniciarPolling(viajeId);
 
             } catch (e) {
@@ -584,7 +605,7 @@
             }
         }
 
-        // ===== POLLING (consulta cada 2 segundos) =====
+        // ===== POLLING =====
         function iniciarPolling(id) {
             if (pollInterval) clearInterval(pollInterval);
             pollingActivo = true;
@@ -597,7 +618,6 @@
                 }
 
                 try {
-                    log('Consultando viaje ' + id + '...', 'info');
                     const { data, error } = await supabaseClient
                         .from('viajes')
                         .select('*')
@@ -614,23 +634,30 @@
                         return;
                     }
 
-                    log('Estado recibido: ' + data.estado + ' | precio: ' + (data.precio || 'null'), 'info');
+                    document.getElementById('estadoActual').textContent = 
+                        `Estado: ${data.estado} | Precio: ${data.precio || '---'} | KM: ${data.distancia_km || '---'}`;
 
-                    // Si el estado cambió, procesarlo
+                    log('Estado: ' + data.estado + ' | Precio: ' + (data.precio || 'null'), 'info');
+
                     if (data.estado !== ultimoEstado) {
                         ultimoEstado = data.estado;
                         log('🚨 ESTADO CAMBIÓ A: ' + data.estado, 'success');
 
-                        if (data.estado === 'precio_enviado' && data.precio) {
+                        // ✅ CAMBIO CLAVE: Detectar 'aceptado' con precio = cotización recibida
+                        if (data.estado === 'aceptado' && data.precio) {
                             log('✅✅✅ COTIZACIÓN DETECTADA! Precio: $' + data.precio, 'success');
                             detenerPolling();
                             procesarEstado(data);
-                        } else if (data.estado === 'aceptado') {
-                            log('✅ Viaje aceptado por conductor', 'success');
+                        } else if (data.estado === 'en_viaje') {
+                            log('✅ Viaje confirmado, conductor en camino', 'success');
                             detenerPolling();
                             procesarEstado(data);
-                        } else if (data.estado === 'cancelado' || data.estado === 'rechazado') {
-                            log('❌ Viaje cancelado/rechazado', 'error');
+                        } else if (data.estado === 'completado') {
+                            log('✅ Viaje completado', 'success');
+                            detenerPolling();
+                            procesarEstado(data);
+                        } else if (data.estado === 'cancelado') {
+                            log('❌ Viaje cancelado', 'error');
                             detenerPolling();
                             procesarEstado(data);
                         }
@@ -638,7 +665,7 @@
                 } catch (e) {
                     log('Excepción polling: ' + e.message, 'error');
                 }
-            }, 2000); // Cada 2 segundos
+            }, 2000);
         }
 
         function detenerPolling() {
@@ -674,7 +701,7 @@
 
                 log('Manual - Estado: ' + data.estado + ' | Precio: ' + (data.precio || 'null'), 'info');
 
-                if (data.estado === 'precio_enviado' && data.precio) {
+                if (data.estado === 'aceptado' && data.precio) {
                     log('✅ COTIZACIÓN ENCONTRADA MANUALMENTE!', 'success');
                     detenerPolling();
                     procesarEstado(data);
@@ -694,9 +721,10 @@
             log('Procesando estado: ' + viaje.estado, 'info');
 
             switch(viaje.estado) {
-                case 'precio_enviado':
+                case 'aceptado':
+                    // El conductor envió precio (estado 'aceptado' con precio)
                     if (!viaje.precio) {
-                        log('precio_enviado pero sin precio!', 'error');
+                        log('aceptado pero sin precio aún', 'warn');
                         return;
                     }
                     clearInterval(timerInterval);
@@ -705,6 +733,14 @@
                     document.getElementById('precioMonto').textContent = '$' + precioCalculado.toLocaleString('es-AR');
                     document.getElementById('precioDetalle').textContent = `Base $${TARIFA_BASE.toLocaleString()} + ${distanciaKm}km × $${TARIFA_POR_KM}`;
                     document.getElementById('kmInfo').textContent = `🛣️ Distancia: ${distanciaKm} km`;
+
+                    // Mostrar info del conductor
+                    if (viaje.conductor_nombre) {
+                        document.getElementById('nombreCondPrecio').textContent = viaje.conductor_nombre;
+                        document.getElementById('autoCondPrecio').textContent = viaje.conductor_auto || 'Móvil particular';
+                        document.getElementById('avatarCondPrecio').textContent = viaje.conductor_nombre.charAt(0).toUpperCase();
+                    }
+
                     mostrarPaso('pasoPrecio');
                     mostrarMsg('¡Tenés una cotización! Tenés 1 minuto para confirmar.', 'info');
 
@@ -719,10 +755,11 @@
                     }, 1000);
                     break;
 
-                case 'aceptado':
+                case 'en_viaje':
+                    // Pasajero confirmó, conductor va en camino o ya está en viaje
                     clearInterval(timerInterval);
-                    document.getElementById('precioEnCamino').textContent = '$' + precioCalculado.toLocaleString('es-AR');
-                    document.getElementById('kmEnCamino').textContent = '🛣️ ' + distanciaKm + ' km';
+                    document.getElementById('precioEnCamino').textContent = '$' + (viaje.precio || precioCalculado).toLocaleString('es-AR');
+                    document.getElementById('kmEnCamino').textContent = '🛣️ ' + (viaje.distancia_km || distanciaKm) + ' km';
                     if (viaje.conductor_nombre) {
                         document.getElementById('nombreCond').textContent = viaje.conductor_nombre;
                         document.getElementById('autoCond').textContent = viaje.conductor_auto || 'Móvil particular';
@@ -730,18 +767,6 @@
                     }
                     mostrarPaso('pasoEnCamino');
                     mostrarMsg('¡Conductor asignado! Está en camino a buscarte.', 'success');
-                    break;
-
-                case 'en_viaje':
-                    document.getElementById('precioEnViaje').textContent = '$' + precioCalculado.toLocaleString('es-AR');
-                    document.getElementById('kmEnViaje').textContent = '🛣️ ' + distanciaKm + ' km';
-                    if (viaje.conductor_nombre) {
-                        document.getElementById('nombreCondViaje').textContent = viaje.conductor_nombre;
-                        document.getElementById('autoCondViaje').textContent = viaje.conductor_auto || 'Móvil particular';
-                        document.getElementById('avatarCondViaje').textContent = viaje.conductor_nombre.charAt(0).toUpperCase();
-                    }
-                    mostrarPaso('pasoEnViaje');
-                    mostrarMsg('¡Pasajero a bordo! Yendo al destino.', 'success');
                     break;
 
                 case 'completado':
@@ -753,7 +778,6 @@
                     break;
 
                 case 'cancelado':
-                case 'rechazado':
                     clearInterval(timerInterval);
                     detenerPolling();
                     mostrarMsg('El viaje fue cancelado.', 'error');
@@ -767,9 +791,13 @@
             clearInterval(timerInterval);
             try {
                 log('Enviando confirmación...', 'info');
-                await supabaseClient.from('viajes').update({ estado: 'confirmado' }).eq('id', viajeId);
-                log('✅ Confirmación enviada', 'success');
-                mostrarMsg('Viaje confirmado. Esperando que el conductor acepte...', 'success');
+                // ✅ CAMBIO: Confirmar cambiando a 'en_viaje' (estado permitido por el constraint)
+                await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeId);
+                log('✅ Confirmación enviada (estado: en_viaje)', 'success');
+                mostrarMsg('Viaje confirmado. El conductor va en camino...', 'success');
+
+                // Mostrar pantalla de conductor en camino
+                mostrarPaso('pasoEnCamino');
             } catch (e) {
                 log('Error al confirmar: ' + e.message, 'error');
                 mostrarMsg('Error al confirmar: ' + e.message, 'error');
@@ -781,7 +809,14 @@
             detenerPolling();
             try {
                 log('Rechazando precio...', 'warn');
-                await supabaseClient.from('viajes').update({ estado: 'rechazado' }).eq('id', viajeId);
+                // Volver a pendiente y borrar precio para que otro conductor pueda cotizar
+                await supabaseClient.from('viajes').update({ 
+                    estado: 'pendiente',
+                    precio: null,
+                    distancia_km: null,
+                    conductor_nombre: null,
+                    conductor_auto: null
+                }).eq('id', viajeId);
                 mostrarMsg(esTimeout ? '⏰ Se acabó el tiempo.' : 'Buscando otro conductor...', 'warn');
                 setTimeout(() => location.reload(), 2000);
             } catch (e) {
