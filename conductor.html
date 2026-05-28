@@ -422,7 +422,6 @@
         <p>Las Catalinas #53</p>
     </div>
 
-    <!-- ===== MAPA FULLSCREEN NAVEGACIÓN ===== -->
     <div class="mapa-fullscreen" id="mapaFullscreen">
         <button class="btn-volver-nav" onclick="cerrarNavegacion()">←</button>
         <iframe id="navIframe" src=""></iframe>
@@ -432,7 +431,6 @@
     </div>
 
     <div class="app-container">
-        <!-- ===== MAPA 40% ===== -->
         <div class="mapa-seccion" id="mapaSeccion">
             <div class="mapa-placeholder" id="mapaPlaceholder">
                 <div style="font-size:2.5rem; margin-bottom:8px;">🗺️</div>
@@ -441,13 +439,11 @@
             <iframe id="googleMapIframe" class="hidden" src=""></iframe>
         </div>
 
-        <!-- ===== PANEL 60% ===== -->
         <div class="panel-seccion">
             <div class="panel-handle"></div>
             <div class="panel-contenido" id="panelContenido">
                 <div class="msg" id="msg"></div>
 
-                <!-- PASO 0: LOGIN -->
                 <div id="pasoLogin">
                     <div class="estado-box">
                         <div style="font-size:2.5rem;">👤</div>
@@ -475,7 +471,6 @@
                     </button>
                 </div>
 
-                <!-- PASO 1: DISPONIBLE + LISTA VIAJES -->
                 <div id="pasoDisponible" class="hidden">
                     <div class="toggle-box">
                         <div class="texto" id="toggleTexto">🔴 No disponible</div>
@@ -497,7 +492,6 @@
                     </div>
                 </div>
 
-                <!-- PASO 2: DETALLE VIAJE -->
                 <div id="pasoDetalle" class="hidden">
                     <button class="btn btn-outline" onclick="volverALista()" style="margin-bottom:12px;">
                         ← VOLVER A LA LISTA
@@ -540,7 +534,6 @@
                     </div>
                 </div>
 
-                <!-- PASO 3: PREVIEW PRECIO -->
                 <div id="pasoPreview" class="hidden">
                     <div class="estado-box">
                         <div style="font-size:2.5rem;">💰</div>
@@ -564,7 +557,6 @@
                     </button>
                 </div>
 
-                <!-- PASO 4: ESPERANDO CONFIRMACIÓN -->
                 <div id="pasoEsperando" class="hidden">
                     <div class="estado-box">
                         <div class="spinner"></div>
@@ -577,7 +569,6 @@
                     </div>
                 </div>
 
-                <!-- PASO 5: VIAJE CONFIRMADO -->
                 <div id="pasoConfirmado" class="hidden">
                     <div class="estado-box">
                         <div style="font-size:2.5rem;">🎉</div>
@@ -605,12 +596,11 @@
                     </button>
                 </div>
 
-                <!-- PASO 6: EN CAMINO AL DESTINO -->
                 <div id="pasoEnDestino" class="hidden">
                     <div class="estado-box">
                         <div style="font-size:2.5rem;">🛣️</div>
                         <h2>¡Pasajero a bordo!</h2>
-                        <p>Lleválo a su destino.</p>
+                        <p>Leválo a su destino.</p>
                     </div>
 
                     <div class="ruta-box" style="border-left-color:#28a745;">
@@ -623,7 +613,6 @@
                     </button>
                 </div>
 
-                <!-- PASO 7: COMPLETAR -->
                 <div id="pasoCompletar" class="hidden">
                     <div class="estado-box">
                         <div style="font-size:2.5rem;">🏁</div>
@@ -707,6 +696,7 @@
                 texto.textContent = '🟢 Estoy disponible';
                 texto.className = 'texto disponible';
                 mostrarMsg('¡Estás disponible! Vas a recibir viajes.', 'success');
+                actualizarListaViajes();
             } else {
                 texto.textContent = '🔴 No disponible';
                 texto.className = 'texto ocupado';
@@ -725,8 +715,8 @@
                     table: 'viajes'
                 }, (payload) => {
                     const viaje = payload.new;
-                    // Solo mostrar los que están en estado 'solicitado'
-                    if (viaje.estado === 'solicitado') {
+                    // Escucha los viajes que ingresen o cambien a estado 'pendiente'
+                    if (viaje && viaje.estado === 'pendiente') {
                         actualizarListaViajes();
                     }
                 })
@@ -744,7 +734,7 @@
                 const { data, error } = await supabaseClient
                     .from('viajes')
                     .select('*')
-                    .eq('estado', 'solicitado')
+                    .eq('estado', 'pendiente')
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
@@ -808,6 +798,7 @@
             document.getElementById('googleMapIframe').classList.add('hidden');
             document.getElementById('mapaPlaceholder').classList.remove('hidden');
             mostrarPaso('pasoDisponible');
+            actualizarListaViajes();
         }
 
         // ===== MOSTRAR RUTA EN MAPA =====
@@ -905,7 +896,7 @@
                 mostrarPaso('pasoConfirmado');
                 mostrarMsg('¡El pasajero confirmó! Andá a buscarlo.', 'success');
             }
-            else if (viaje.estado === 'solicitado') {
+            else if (viaje.estado === 'pendiente') {
                 // Pasajero rechazó o timeout
                 mostrarMsg('El pasajero buscó otro conductor.', 'warn');
                 setTimeout(() => volverALista(), 2000);
@@ -927,8 +918,8 @@
 
             navDestino = destino;
 
-            // Usar Google Maps direcciones para navegación real
-            const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destino)}`;
+            // Navegación mediante Google Maps embebido
+            const url = `https://maps.google.com/maps?q=${encodeURIComponent(destino)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
             document.getElementById('navIframe').src = url;
             document.getElementById('mapaFullscreen').classList.add('activo');
 
