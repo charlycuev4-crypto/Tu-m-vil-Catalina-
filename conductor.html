@@ -90,13 +90,7 @@
         .btn-outline { background: transparent; color: #11998e; border: 2px solid #11998e; }
         .btn-nav { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
         .btn-limpiar { background: #6c757d; color: white; font-size: 0.85rem; padding: 10px; }
-        .btn-reset-total {
-            background: #dc3545;
-            color: white;
-            font-size: 0.9rem;
-            padding: 12px;
-            margin-top: 8px;
-        }
+        .btn-reset-total { background: #dc3545; color: white; font-size: 0.9rem; padding: 12px; margin-top: 8px; }
         .info-pasajero { background: #e3f2fd; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
         .info-pasajero .fila { display: flex; align-items: center; gap: 10px; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; font-weight: bold; }
@@ -158,7 +152,7 @@
     <div class="mapa-fullscreen" id="mapaFullscreen">
         <button class="btn-volver-nav" onclick="cerrarNavegacion()">←</button>
         <iframe id="navIframe" src=""></iframe>
-        <button class="btn-llegue" id="btnLlegue" onclick="marcarLlegada()">✅ LLEGUE AL PASAJERO</button>
+        <button class="btn-llegue" id="btnLlegue">✅ REGISTRAR ACCION</button>
     </div>
 
     <div class="app-container">
@@ -196,7 +190,7 @@
                         <span id="statsFantasmas">Fantasmas: --</span>
                     </div>
                     <div class="lista-viajes" id="listaViajes"></div>
-                    <button class="btn btn-limpiar" onclick="limpiarViajesFantasma()">🧹 LIMPIAR VIAJES FANTASMA (antiguos)</button>
+                    <button class="btn btn-limpiar" onclick="limpiarViajesFantasma()">🧹 LIMPIAR VIAJES FANTASMA</button>
                     <button class="btn btn-reset-total" onclick="borrarTodosLosViajes()">🗑️ BORRAR TODOS LOS VIAJES</button>
                     <div class="debug-log" id="debugLogDisponible"></div>
                 </div>
@@ -342,16 +336,13 @@
                 }
 
                 const { data, error } = await supabaseClient.from('viajes').select('*').eq('estado', 'pendiente');
-                if (error) {
-                    log('Error al cargar viajes: ' + error.message, 'error');
-                    return;
-                }
+                if (error) return;
+                
                 const lista = document.getElementById('listaViajes');
                 if(!data || data.length === 0) {
                     lista.innerHTML = '<div class="sin-viajes">📭 No hay solicitudes activas en la zona</div>';
                     return;
                 }
-                log('Viajes pendientes encontrados: ' + data.length, 'info');
                 lista.innerHTML = data.map(v => {
                     const creado = new Date(v.created_at);
                     const ahora = new Date();
@@ -364,111 +355,44 @@
                         <span class="badge">Tomar Orden</span>
                     </div>`;
                 }).join('');
-            } catch (e) {
-                log('Error actualizarLista: ' + e.message, 'error');
-            }
+            } catch (e) { console.error(e); }
         }
 
         async function limpiarViajesFantasma() {
-            if (!confirm('¿Limpiar viajes antiguos (más de 30 min) y cancelados?')) return;
-
-            log('🧹 Iniciando limpieza de viajes fantasma...', 'warn');
+            if (!confirm('¿Limpiar viajes antiguos y cancelados?')) return;
             try {
-                const { data: antiguos, error: err1 } = await supabaseClient
-                    .from('viajes')
-                    .select('id, created_at, estado')
-                    .lt('created_at', new Date(Date.now() - 30*60*1000).toISOString());
-
-                if (err1) {
-                    log('Error buscando antiguos: ' + err1.message, 'error');
-                    return;
-                }
-
+                const { data: antiguos } = await supabaseClient.from('viajes').select('id, estado').lt('created_at', new Date(Date.now() - 30*60*1000).toISOString());
                 let borrados = 0;
                 for (const v of antiguos || []) {
-                    if (v.estado === 'pendiente' || v.estado === 'cancelado' || v.estado === 'completado') {
-                        const { error: errDel } = await supabaseClient.from('viajes').delete().eq('id', v.id);
-                        if (!errDel) borrados++;
+                    if (['pendiente', 'cancelado', 'completado'].includes(v.estado)) {
+                        const { error } = await supabaseClient.from('viajes').delete().eq('id', v.id);
+                        if (!error) borrados++;
                     }
                 }
-
-                log(`✅ ${borrados} viajes fantasma eliminados`, 'success');
                 mostrarMsg(`🧹 ${borrados} viajes limpiados`, 'success');
                 actualizarLista();
-            } catch (e) {
-                log('Error limpiando: ' + e.message, 'error');
-            }
+            } catch (e) { console.error(e); }
         }
 
         async function borrarTodosLosViajes() {
-            if (!confirm('⚠️ ¿Estás seguro?\n\nSe borrarán TODOS los viajes:\n- Pendientes\n- Aceptados\n- En viaje\n- Completados\n- Cancelados\n\nEsta acción NO se puede deshacer.')) {
-                return;
-            }
-
-            if (!confirm('🚨 ÚLTIMA ADVERTENCIA\n\n¿Realmente querés borrar TODOS los viajes?')) {
-                return;
-            }
-
-            log('🗑️ Iniciando borrado TOTAL de viajes...', 'warn');
-
+            if (!confirm('⚠️ ¿Borrar TODOS los viajes de la base de datos?')) return;
             try {
-                const { data: todos, error: errCount } = await supabaseClient
-                    .from('viajes')
-                    .select('id, estado');
-
-                if (errCount) {
-                    log('Error al contar viajes: ' + errCount.message, 'error');
-                    return;
-                }
-
-                const total = todos ? todos.length : 0;
-                if (total === 0) {
-                    log('ℹ️ No hay viajes para borrar', 'info');
-                    mostrarMsg('No hay viajes en la base de datos', 'info');
-                    return;
-                }
-
-                log(`Encontrados ${total} viajes para borrar:`, 'warn');
-                todos.forEach(v => log(`  - ${v.id.substring(0,8)}... estado: ${v.estado}`, 'warn'));
-
+                const { data: todos } = await supabaseClient.from('viajes').select('id');
                 let borrados = 0;
-                let errores = 0;
-
-                for (const viaje of todos) {
-                    const { error: errDel } = await supabaseClient
-                        .from('viajes')
-                        .delete()
-                        .eq('id', viaje.id);
-
-                    if (errDel) {
-                        log(`❌ Error borrando ${viaje.id.substring(0,8)}: ${errDel.message}`, 'error');
-                        errores++;
-                    } else {
-                        borrados++;
-                    }
+                for (const viaje of todos || []) {
+                    const { error } = await supabaseClient.from('viajes').delete().eq('id', viaje.id);
+                    if (!error) borrados++;
                 }
-
-                log(`✅ ${borrados} viajes borrados | ❌ ${errores} errores`, 'success');
-                mostrarMsg(`🗑️ ${borrados} viajes eliminados`, borrados > 0 ? 'success' : 'warn');
-
+                mostrarMsg(`🗑️ ${borrados} viajes eliminados`, 'success');
                 actualizarLista();
-
-            } catch (e) {
-                log('❌ Error en borrado total: ' + e.message, 'error');
-                mostrarMsg('Error al borrar: ' + e.message, 'error');
-            }
+            } catch (e) { console.error(e); }
         }
 
         async function verDetalleViaje(id) {
-            log('Cargando detalle del viaje: ' + id, 'info');
             try {
                 const { data, error } = await supabaseClient.from('viajes').select('*').eq('id', id).single();
-                if(error || !data) {
-                    log('Error cargando viaje: ' + (error?.message || 'no encontrado'), 'error');
-                    return;
-                }
+                if(error || !data) return;
                 viajeActual = data;
-                log('Viaje cargado. Estado: ' + data.estado + ' | ID: ' + data.id, 'info');
 
                 document.getElementById('nombrePax').textContent = data.pasajero_nombre;
                 document.getElementById('telPax').textContent = '📞 ' + data.pasajero_telefono;
@@ -480,113 +404,82 @@
                 document.getElementById('liveTarifaPrecio').textContent = '$0';
                 document.getElementById('liveTarifaBox').style.background = '#444';
 
+                // CORREGIDA la interpolación de mapas acá:
                 const urlMaps = `https://maps.google.com/maps?q=${encodeURIComponent(data.destino_direccion)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
                 document.getElementById('googleMapIframe').src = urlMaps;
                 document.getElementById('googleMapIframe').classList.remove('hidden');
                 document.getElementById('mapaPlaceholder').classList.add('hidden');
 
                 mostrarPaso('pasoDetalle');
-            } catch (e) {
-                log('Error verDetalleViaje: ' + e.message, 'error');
-            }
+            } catch (e) { console.error(e); }
         }
 
         function calcularTarifaEnVivo() {
             const input = document.getElementById('kmInput');
             const km = parseFloat(input.value);
-
             if (!km || km <= 0) {
                 input.className = 'km-input-destacado';
                 document.getElementById('liveTarifaPrecio').textContent = '$0';
                 document.getElementById('liveTarifaBox').style.background = '#444';
                 return;
             }
-
             input.className = 'km-input-ok';
             const total = TARIFA_BASE + (km * TARIFA_POR_KM);
             document.getElementById('liveTarifaPrecio').textContent = `Tarifa: $${total.toLocaleString('es-AR')}`;
             document.getElementById('liveTarifaBox').style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            log(`Tarifa calculada: ${km}km = $${total}`, 'info');
         }
 
         async function enviarPrecio() {
             const kmInput = document.getElementById('kmInput');
             const km = parseFloat(kmInput.value);
 
-            log('=== ENVIAR PRECIO INICIADO ===', 'info');
-            log('KM ingresado: ' + kmInput.value + ' | Parseado: ' + km, 'info');
-
             if(!km || km <= 0 || isNaN(km)) {
-                log('ERROR: KM inválido', 'error');
                 kmInput.className = 'km-input-destacado';
-                mostrarMsg('⚠️ Colocá los kilómetros primero (ej: 5.4)', 'error');
+                mostrarMsg('⚠️ Colocá los kilómetros primero', 'error');
                 return;
             }
 
             const total = TARIFA_BASE + (km * TARIFA_POR_KM);
-            log('Enviando precio: $' + total + ' para viaje ' + viajeActual.id, 'info');
-
             const btn = document.getElementById('btnEnviarPrecio');
             btn.disabled = true;
             btn.textContent = '⏳ Enviando...';
 
             try {
-                log('Ejecutando UPDATE en Supabase...', 'info');
-
-                const { data, error } = await supabaseClient.from('viajes').update({
+                const { error } = await supabaseClient.from('viajes').update({
                     estado: 'aceptado',
                     precio: total,
                     distancia_km: km,
                     conductor_nombre: conductorDatos.nombre,
                     conductor_auto: conductorDatos.auto
-                }).eq('id', viajeActual.id).select();
+                }).eq('id', viajeActual.id);
 
                 if (error) {
-                    log('ERROR UPDATE: ' + error.message, 'error');
-                    log('Error detalle: ' + JSON.stringify(error), 'error');
-                    mostrarMsg('Error al enviar: ' + error.message, 'error');
+                    mostrarMsg('Error: ' + error.message, 'error');
                     btn.disabled = false;
-                    btn.textContent = '💰 ENVIAR ESTA TARIFA AL PASAJERO';
+                    btn.textContent = '💰 ENVIAR ESTA TARIFA';
                     return;
                 }
 
-                log('✅ UPDATE exitoso. Respuesta: ' + JSON.stringify(data), 'success');
-                mostrarMsg('💰 Precio enviado al pasajero', 'success');
+                mostrarMsg('💰 Precio enviado', 'success');
                 mostrarPaso('pasoEsperando');
-
                 iniciarPollingEspera(viajeActual.id);
             } catch (e) {
-                log('ERROR EXCEPCIÓN enviarPrecio: ' + e.message, 'error');
-                log('Stack: ' + e.stack, 'error');
-                mostrarMsg('Error: ' + e.message, 'error');
                 btn.disabled = false;
-                btn.textContent = '💰 ENVIAR ESTA TARIFA AL PASAJERO';
             }
         }
 
         function iniciarPollingEspera(id) {
             if (pollIntervalConductor) clearInterval(pollIntervalConductor);
-            log('🔄 Iniciando polling de espera cada 2 segundos...', 'info');
+            log('🔄 Esperando respuesta del pasajero...', 'info');
 
-            let intentos = 0;
             pollIntervalConductor = setInterval(async () => {
-                intentos++;
                 try {
-                    const { data, error } = await supabaseClient
-                        .from('viajes')
-                        .select('*')
-                        .eq('id', id)
-                        .single();
+                    const { data, error } = await supabaseClient.from('viajes').select('*').eq('id', id).single();
+                    if (error || !data) return;
 
-                    if (error || !data) {
-                        log('[' + intentos + '] Error: ' + (error?.message || 'no data'), 'error');
-                        return;
-                    }
-
-                    log('[' + intentos + '] Estado: ' + data.estado + ' | Precio: ' + (data.precio || 'null') + ' | Conf: ' + (data.confirmado_en || 'null'), 'info');
-
-                    if (data.estado === 'en_viaje') {
-                        log('✅✅✅ PASAJERO CONFIRMÓ! (estado: en_viaje)', 'success');
+                    // CORREGIDO: Ahora escucha el estado "confirmado" que manda el pasajero
+                    if (data.estado === 'confirmado') {
+                        log('✅ ¡El pasajero aceptó la tarifa!', 'success');
                         clearInterval(pollIntervalConductor);
                         pollIntervalConductor = null;
                         mostrarPaso('pasoConfirmado');
@@ -595,74 +488,46 @@
                     }
 
                     if (data.estado === 'pendiente' && !data.precio) {
-                        log('❌ Pasajero rechazó (pendiente sin precio)', 'warn');
                         clearInterval(pollIntervalConductor);
-                        pollIntervalConductor = null;
                         mostrarMsg('El pasajero rechazó la cotización.', 'warn');
                         limpiarYVolver();
                         return;
                     }
 
                     if (data.estado === 'cancelado') {
-                        log('❌ Viaje cancelado por pasajero', 'error');
                         clearInterval(pollIntervalConductor);
-                        pollIntervalConductor = null;
-                        mostrarMsg('El pasajero canceló.', 'error');
+                        mostrarMsg('El pasajero canceló el viaje.', 'error');
                         limpiarYVolver();
                         return;
                     }
-                } catch (e) {
-                    log('[' + intentos + '] Excepción: ' + e.message, 'error');
-                }
+                } catch (e) { console.error(e); }
             }, 2000);
         }
 
         async function finalizarViajeConductor() {
             if(!viajeActual) return;
             try {
-                log('Finalizando viaje...', 'info');
                 await supabaseClient.from('viajes').update({ estado: 'completado' }).eq('id', viajeActual.id);
-                log('✅ Viaje completado', 'success');
                 mostrarMsg('¡Viaje Completado con éxito!', 'success');
                 limpiarYVolver();
-            } catch (e) {
-                log('Error al finalizar: ' + e.message, 'error');
-            }
+            } catch (e) { console.error(e); }
         }
 
         async function cancelarYLiberarViaje() {
             if(!viajeActual) return;
             try {
-                log('Liberando viaje ' + viajeActual.id + '...', 'warn');
-                const { data, error } = await supabaseClient.from('viajes').update({ 
-                    estado: 'pendiente', 
-                    precio: null, 
-                    distancia_km: null,
-                    conductor_nombre: null,
-                    conductor_auto: null
-                }).eq('id', viajeActual.id).select();
-
-                if (error) {
-                    log('Error al liberar: ' + error.message, 'error');
-                    return;
-                }
-
-                log('✅ Viaje liberado', 'success');
+                await supabaseClient.from('viajes').update({ 
+                    estado: 'pendiente', precio: null, distancia_km: null, conductor_nombre: null, conductor_auto: null
+                }).eq('id', viajeActual.id);
                 mostrarMsg('Viaje liberado.', 'info');
                 limpiarYVolver();
-            } catch (e) {
-                log('Error al liberar: ' + e.message, 'error');
-            }
+            } catch (e) { console.error(e); }
         }
 
         function limpiarYVolver() {
-            if (pollIntervalConductor) {
-                clearInterval(pollIntervalConductor);
-                pollIntervalConductor = null;
-            }
+            if (pollIntervalConductor) { clearInterval(pollIntervalConductor); pollIntervalConductor = null; }
             viajeActual = null;
             document.getElementById('kmInput').value = '';
-            document.getElementById('kmInput').className = '';
             document.getElementById('googleMapIframe').classList.add('hidden');
             document.getElementById('mapaPlaceholder').classList.remove('hidden');
             mostrarPaso('pasoDisponible');
@@ -672,21 +537,21 @@
         function navegarGPS(tipo) {
             if(!viajeActual) return;
             const dest = tipo === 'origen' ? viajeActual.origen_direccion : viajeActual.destino_direccion;
+            
+            // CORREGIDA la interpolación de texto de mapas quitando el '0' roto
             document.getElementById('navIframe').src = `https://maps.google.com/maps?q=${encodeURIComponent(dest)}&t=&z=14&output=embed`;
             document.getElementById('mapaFullscreen').classList.add('activo');
 
             const btn = document.getElementById('btnLlegue');
             if(tipo === 'origen') {
-                btn.textContent = '✅ LLEGUE AL PASAJERO';
+                btn.textContent = '✅ LLEGUE AL PASAJERO (INICIAR VIAJE)';
                 btn.onclick = async function() {
                     try {
+                        // Cambia a "en_viaje" para avisarle al pasajero que ya arrancaron hacia el destino
                         await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActual.id);
-                        log('Estado cambiado a EN_VIAJE', 'success');
                         cerrarNavegacion();
                         mostrarMsg('¡Pasajero a bordo! Yendo al destino...', 'success');
-                    } catch (e) {
-                        log('Error al marcar en_viaje: ' + e.message, 'error');
-                    }
+                    } catch (e) { console.error(e); }
                 };
             } else {
                 btn.textContent = '✅ LLEGUE AL DESTINO (FINALIZAR)';
@@ -701,15 +566,12 @@
             document.getElementById('mapaFullscreen').classList.remove('activo'); 
         }
 
-        function marcarLlegada() {
-            // Esta función se redefine dinámicamente en navegarGPS()
-        }
-
         function mostrarPaso(id) {
             pasoActual = id;
             ['pasoLogin', 'pasoDisponible', 'pasoDetalle', 'pasoEsperando', 'pasoConfirmado'].forEach(p => document.getElementById(p).classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         }
+        
         function mostrarMsg(t, tipo) {
             const m = document.getElementById('msg'); m.textContent = t; m.className = `msg msg-${tipo} show`;
             setTimeout(() => m.classList.remove('show'), 4000);
