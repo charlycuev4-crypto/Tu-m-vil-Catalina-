@@ -293,7 +293,6 @@
             <div class="panel-contenido" id="panelContenido">
                 <div class="msg" id="msg"></div>
 
-                <!-- PASO 1: DATOS -->
                 <div id="pasoDatos">
                     <div class="origen-box" id="origenBox">
                         <span class="icono">📍</span>
@@ -318,7 +317,6 @@
                     <button class="btn btn-primary" id="btnSolicitar" onclick="solicitarViaje()">🚕 PEDIR MÓVIL</button>
                 </div>
 
-                <!-- PASO 2: ESPERANDO PRECIO -->
                 <div id="pasoEsperando" class="hidden">
                     <div class="estado-box">
                         <div class="spinner"></div>
@@ -332,7 +330,6 @@
                     <div class="debug-log" id="debugLog"></div>
                 </div>
 
-                <!-- PASO 3: PRECIO RECIBIDO -->
                 <div id="pasoPrecio" class="hidden">
                     <div class="estado-box">
                         <div style="font-size:2.5rem;">💰</div>
@@ -358,7 +355,6 @@
                     <button class="btn btn-outline" onclick="rechazarPrecio()">❌ BUSCAR OTRO CONDUCTOR</button>
                 </div>
 
-                <!-- PASO 4: CONDUCTOR ASIGNADO / EN VIAJE -->
                 <div id="pasoEnCamino" class="hidden">
                     <div class="estado-box">
                         <div style="font-size:2.5rem;">🚗</div>
@@ -381,7 +377,6 @@
                     </div>
                 </div>
 
-                <!-- PASO 5: EN VIAJE (yendo al destino) -->
                 <div id="pasoEnViaje" class="hidden">
                     <div class="estado-box">
                         <div style="font-size:2.5rem;">🛣️</div>
@@ -404,7 +399,6 @@
                     </div>
                 </div>
 
-                <!-- PASO 6: COMPLETADO -->
                 <div id="pasoCompletado" class="hidden">
                     <div class="estado-box">
                         <div style="font-size:2.5rem;">⭐</div>
@@ -442,7 +436,6 @@
         let ultimoEstado = null;
         let pollingActivo = false;
 
-        // ===== DEBUG LOG =====
         function log(msg, tipo = 'info') {
             const debugDiv = document.getElementById('debugLog');
             if (!debugDiv) return;
@@ -455,7 +448,6 @@
             console.log(`[${tipo.toUpperCase()}] ${msg}`);
         }
 
-        // ===== INICIO: GPS =====
         window.addEventListener('DOMContentLoaded', () => {
             obtenerGPS();
         });
@@ -476,9 +468,9 @@
                 },
                 (err) => {
                     let msg = 'No pudimos obtener tu ubicación';
-                    if (err.code === 1) msg = '❌ GPS bloqueado. Andá a configuración del navegador y permití la ubicación.';
-                    else if (err.code === 2) msg = '⚠️ GPS apagado. Activá la ubicación en tu celular.';
-                    else if (err.code === 3) msg = '⏱️ GPS muy lento. Probá de nuevo.';
+                    if (err.code === 1) msg = '❌ GPS bloqueado. Permití la ubicación.';
+                    else if (err.code === 2) msg = '⚠️ GPS apagado. Activalo.';
+                    else if (err.code === 3) msg = '⏱️ GPS lento. Probá de nuevo.';
                     actualizarOrigen(msg, 'error');
                 },
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
@@ -493,7 +485,6 @@
             if (tipo === 'error') box.style.background = '#ffebee';
         }
 
-        // ===== BUSCADOR =====
         let timeoutBusqueda = null;
         function buscarDireccion(query) {
             const sugerenciasDiv = document.getElementById('sugerencias');
@@ -536,7 +527,6 @@
             mostrarMsg('Mapa cargado ✓', 'success');
         }
 
-        // ===== SOLICITAR VIAJE =====
         async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value.trim();
             const telefono = document.getElementById('telefono').value.trim();
@@ -547,7 +537,7 @@
                 return;
             }
             if (!origenCoords) {
-                mostrarMsg('Esperando GPS... si tarda mucho, recargá la página', 'warn');
+                mostrarMsg('Esperando GPS...', 'warn');
                 return;
             }
 
@@ -572,10 +562,7 @@
                     .select()
                     .single();
 
-                if (error) {
-                    log('ERROR al insertar: ' + error.message, 'error');
-                    throw error;
-                }
+                if (error) throw error;
 
                 viajeId = data.id;
                 log('✅ Viaje creado ID: ' + viajeId, 'success');
@@ -589,7 +576,7 @@
                     if (segundos <= 0) {
                         clearInterval(timerInterval);
                         detenerPolling();
-                        mostrarMsg('⏰ Se acabó el tiempo. Probá de nuevo.', 'warn');
+                        mostrarMsg('⏰ Tiempo agotado.', 'warn');
                         setTimeout(() => location.reload(), 2000);
                     }
                 }, 1000);
@@ -604,7 +591,6 @@
             }
         }
 
-        // ===== POLLING =====
         function iniciarPolling(id) {
             if (pollInterval) clearInterval(pollInterval);
             pollingActivo = true;
@@ -623,42 +609,15 @@
                         .eq('id', id)
                         .single();
 
-                    if (error) {
-                        log('Error polling: ' + error.message, 'error');
-                        return;
-                    }
-
-                    if (!data) {
-                        log('Viaje no encontrado', 'error');
-                        return;
-                    }
+                    if (error || !data) return;
 
                     document.getElementById('estadoActual').textContent = 
-                        `Estado: ${data.estado} | Precio: ${data.precio || '---'} | KM: ${data.distancia_km || '---'}`;
-
-                    log('Estado: ' + data.estado + ' | Precio: ' + (data.precio || 'null'), 'info');
+                        `Estado: ${data.estado} | Precio: ${data.precio || '---'}`;
 
                     if (data.estado !== ultimoEstado) {
                         ultimoEstado = data.estado;
                         log('🚨 ESTADO CAMBIÓ A: ' + data.estado, 'success');
-
-                        if (data.estado === 'aceptado' && data.precio) {
-                            log('✅✅✅ COTIZACIÓN DETECTADA! Precio: $' + data.precio, 'success');
-                            detenerPolling();
-                            procesarEstado(data);
-                        } else if (data.estado === 'en_viaje') {
-                            log('✅ Viaje confirmado, conductor en camino', 'success');
-                            detenerPolling();
-                            procesarEstado(data);
-                        } else if (data.estado === 'completado') {
-                            log('✅ Viaje completado', 'success');
-                            detenerPolling();
-                            procesarEstado(data);
-                        } else if (data.estado === 'cancelado') {
-                            log('❌ Viaje cancelado', 'error');
-                            detenerPolling();
-                            procesarEstado(data);
-                        }
+                        procesarEstado(data);
                     }
                 } catch (e) {
                     log('Excepción polling: ' + e.message, 'error');
@@ -675,55 +634,33 @@
             log('🛑 Polling detenido', 'warn');
         }
 
-        // ===== VERIFICAR MANUALMENTE =====
         async function verificarCotizacionManual() {
-            if (!viajeId) {
-                mostrarMsg('No hay viaje activo', 'error');
-                return;
-            }
-
-            log('🔄 Verificación MANUAL iniciada...', 'info');
-            mostrarMsg('Verificando cotización...', 'info');
-
+            if (!viajeId) return;
             try {
-                const { data, error } = await supabaseClient
-                    .from('viajes')
-                    .select('*')
-                    .eq('id', viajeId)
-                    .single();
-
-                if (error) {
-                    log('Error manual: ' + error.message, 'error');
-                    throw error;
-                }
-
-                log('Manual - Estado: ' + data.estado + ' | Precio: ' + (data.precio || 'null'), 'info');
-
-                if (data.estado === 'aceptado' && data.precio) {
-                    log('✅ COTIZACIÓN ENCONTRADA MANUALMENTE!', 'success');
-                    detenerPolling();
-                    procesarEstado(data);
-                    mostrarMsg('¡Cotización encontrada! Mostrando...', 'success');
-                } else {
-                    log('ℹ️ Aún sin cotización. Estado: ' + data.estado, 'warn');
-                    mostrarMsg('Estado: ' + data.estado + '. Esperando cotización...', 'info');
-                }
-            } catch (e) {
-                log('Error verificación manual: ' + e.message, 'error');
-                mostrarMsg('Error al verificar: ' + e.message, 'error');
-            }
+                const { data, error } = await supabaseClient.from('viajes').select('*').eq('id', viajeId).single();
+                if (!error && data) procesarEstado(data);
+            } catch (e) { console.error(e); }
         }
 
-        // ===== PROCESAR ESTADO =====
         function procesarEstado(viaje) {
             log('Procesando estado: ' + viaje.estado, 'info');
 
+            // Inyectar datos del chofer si están disponibles
+            if (viaje.conductor_nombre) {
+                ['nombreCondPrecio', 'nombreCond', 'nombreCondViaje'].forEach(id => {
+                    const el = document.getElementById(id); if(el) el.textContent = viaje.conductor_nombre;
+                });
+                ['autoCondPrecio', 'autoCond', 'autoCondViaje'].forEach(id => {
+                    const el = document.getElementById(id); if(el) el.textContent = viaje.conductor_auto || 'Móvil particular';
+                });
+                ['avatarCondPrecio', 'avatarCond', 'avatarCondViaje'].forEach(id => {
+                    const el = document.getElementById(id); if(el) el.textContent = viaje.conductor_nombre.charAt(0).toUpperCase();
+                });
+            }
+
             switch(viaje.estado) {
                 case 'aceptado':
-                    if (!viaje.precio) {
-                        log('aceptado pero sin precio aún', 'warn');
-                        return;
-                    }
+                    if (!viaje.precio) return;
                     clearInterval(timerInterval);
                     precioCalculado = viaje.precio;
                     distanciaKm = viaje.distancia_km || 0;
@@ -731,45 +668,32 @@
                     document.getElementById('precioDetalle').textContent = `Base $${TARIFA_BASE.toLocaleString()} + ${distanciaKm}km × $${TARIFA_POR_KM}`;
                     document.getElementById('kmInfo').textContent = `🛣️ Distancia: ${distanciaKm} km`;
 
-                    if (viaje.conductor_nombre) {
-                        document.getElementById('nombreCondPrecio').textContent = viaje.conductor_nombre;
-                        document.getElementById('autoCondPrecio').textContent = viaje.conductor_auto || 'Móvil particular';
-                        document.getElementById('avatarCondPrecio').textContent = viaje.conductor_nombre.charAt(0).toUpperCase();
-                    }
-
                     mostrarPaso('pasoPrecio');
-                    mostrarMsg('¡Tenés una cotización! Tenés 1 minuto para confirmar.', 'info');
+                    break;
 
-                    let seg = 60;
-                    timerInterval = setInterval(() => {
-                        seg--;
-                        document.getElementById('timerConfirm').textContent = '⏱️ Tenés ' + seg + 's para confirmar';
-                        if (seg <= 0) {
-                            clearInterval(timerInterval);
-                            rechazarPrecio(true);
-                        }
-                    }, 1000);
+                case 'confirmado':
+                    clearInterval(timerInterval);
+                    document.getElementById('precioEnCamino').textContent = '$' + (viaje.precio || precioCalculado).toLocaleString('es-AR');
+                    document.getElementById('kmEnCamino').textContent = '🛣️ ' + (viaje.distancia_km || distanciaKm) + ' km';
+                    mostrarPaso('pasoEnCamino');
+                    // Reactivamos el polling para esperar que el chofer marque "en_viaje" al subirnos
+                    if(!pollingActivo) iniciarPolling(viajeId);
                     break;
 
                 case 'en_viaje':
                     clearInterval(timerInterval);
-                    document.getElementById('precioEnCamino').textContent = '$' + (viaje.precio || precioCalculado).toLocaleString('es-AR');
-                    document.getElementById('kmEnCamino').textContent = '🛣️ ' + (viaje.distancia_km || distanciaKm) + ' km';
-                    if (viaje.conductor_nombre) {
-                        document.getElementById('nombreCond').textContent = viaje.conductor_nombre;
-                        document.getElementById('autoCond').textContent = viaje.conductor_auto || 'Móvil particular';
-                        document.getElementById('avatarCond').textContent = viaje.conductor_nombre.charAt(0).toUpperCase();
-                    }
-                    mostrarPaso('pasoEnCamino');
-                    mostrarMsg('¡Conductor asignado! Está en camino a buscarte.', 'success');
+                    document.getElementById('precioEnViaje').textContent = '$' + (viaje.precio || precioCalculado).toLocaleString('es-AR');
+                    document.getElementById('kmEnViaje').textContent = '🛣️ ' + (viaje.distancia_km || distanciaKm) + ' km';
+                    mostrarPaso('pasoEnViaje');
+                    if(!pollingActivo) iniciarPolling(viajeId);
                     break;
 
                 case 'completado':
                     clearInterval(timerInterval);
-                    document.getElementById('precioFinal').textContent = '$' + precioCalculado.toLocaleString('es-AR');
-                    document.getElementById('kmFinal').textContent = '🛣️ ' + distanciaKm + ' km';
+                    detenerPolling();
+                    document.getElementById('precioFinal').textContent = '$' + (viaje.precio || precioCalculado).toLocaleString('es-AR');
+                    document.getElementById('kmFinal').textContent = '🛣️ ' + (viaje.distancia_km || distanciaKm) + ' km';
                     mostrarPaso('pasoCompletado');
-                    mostrarMsg('¡Viaje completado! Gracias por viajar con nosotros.', 'success');
                     break;
 
                 case 'cancelado':
@@ -781,93 +705,47 @@
             }
         }
 
-        // ===== CONFIRMAR / RECHAZAR =====
         async function confirmarViaje() {
             clearInterval(timerInterval);
-            
             const btn = document.getElementById('btnConfirmar');
             btn.disabled = true;
             btn.textContent = '⏳ Confirmando...';
             
             try {
-                log('🚀 Enviando confirmación a Supabase...', 'info');
-                log('Viaje ID: ' + viajeId, 'info');
-                
+                log('🚀 Enviando confirmación (estado: confirmado)...', 'info');
                 const { data, error } = await supabaseClient
                     .from('viajes')
-                    .update({ estado: 'en_viaje' })
+                    .update({ estado: 'confirmado' }) // <-- CAMBIO CLAVE A CONFIRMADO
                     .eq('id', viajeId)
                     .select();
                 
-                if (error) {
-                    log('❌ ERROR SUPABASE: ' + error.message, 'error');
-                    log('Código error: ' + (error.code || 'N/A'), 'error');
-                    mostrarMsg('Error al confirmar: ' + error.message, 'error');
+                if (error || !data || data.length === 0) {
+                    log('❌ Error al confirmar', 'error');
                     btn.disabled = false;
-                    btn.textContent = '❌ Reintentar CONFIRMAR';
+                    btn.textContent = '❌ Reintentar';
                     return;
                 }
                 
-                if (!data || data.length === 0) {
-                    log('⚠️ UPDATE retornó VACÍO. Posibles causas:', 'warn');
-                    log('  1. RLS bloquea el UPDATE (más probable)', 'warn');
-                    log('  2. El viajeId no existe: ' + viajeId, 'warn');
-                    log('  3. El registro fue eliminado', 'warn');
-                    mostrarMsg('No se pudo confirmar. ¿Permisos de Supabase?', 'error');
-                    btn.disabled = false;
-                    btn.textContent = '❌ Reintentar CONFIRMAR';
-                    return;
-                }
-                
-                const viajeActualizado = data[0];
-                log('✅ CONFIRMADO! Estado en Supabase: ' + viajeActualizado.estado, 'success');
-                log('✅ Precio guardado: $' + viajeActualizado.precio, 'success');
-                log('✅ Conductor: ' + viajeActualizado.conductor_nombre, 'success');
-                
-                mostrarMsg('¡Viaje confirmado! El conductor fue notificado.', 'success');
+                log('✅ Viaje Confirmado por pasajero!', 'success');
                 mostrarPaso('pasoEnCamino');
+                iniciarPolling(viajeId);
                 
             } catch (e) {
-                log('❌ EXCEPCIÓN al confirmar: ' + e.message, 'error');
-                mostrarMsg('Error inesperado: ' + e.message, 'error');
+                log('❌ Error: ' + e.message, 'error');
                 btn.disabled = false;
-                btn.textContent = '❌ Reintentar CONFIRMAR';
             }
         }
 
-        async function rechazarPrecio(esTimeout = false) {
+        async function rechazarPrecio() {
             clearInterval(timerInterval);
             detenerPolling();
-            
             try {
-                log('Rechazando precio...', 'warn');
-                
-                const { data, error } = await supabaseClient
-                    .from('viajes')
-                    .update({ 
-                        estado: 'pendiente',
-                        precio: null,
-                        distancia_km: null,
-                        conductor_nombre: null,
-                        conductor_auto: null
-                    })
-                    .eq('id', viajeId)
-                    .select();
-                
-                if (error) {
-                    log('❌ Error al rechazar: ' + error.message, 'error');
-                    mostrarMsg('Error al rechazar: ' + error.message, 'error');
-                    return;
-                }
-                
-                log('✅ Viaje vuelto a pendiente. Otro conductor puede cotizar.', 'success');
-                mostrarMsg(esTimeout ? '⏰ Se acabó el tiempo.' : 'Buscando otro conductor...', 'warn');
-                setTimeout(() => location.reload(), 2000);
-                
-            } catch (e) {
-                log('❌ Error al rechazar: ' + e.message, 'error');
-                mostrarMsg('Error: ' + e.message, 'error');
-            }
+                await supabaseClient.from('viajes').update({ 
+                    estado: 'pendiente', precio: null, distancia_km: null, conductor_nombre: null, conductor_auto: null
+                }).eq('id', viajeId);
+                mostrarMsg('Buscando otro conductor...', 'warn');
+                setTimeout(() => location.reload(), 1500);
+            } catch (e) { location.reload(); }
         }
 
         async function cancelarViaje() {
@@ -875,16 +753,11 @@
             clearInterval(timerInterval);
             detenerPolling();
             try {
-                log('Cancelando viaje...', 'warn');
                 await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeId);
                 location.reload();
-            } catch (e) {
-                log('Error al cancelar: ' + e.message, 'error');
-                mostrarMsg('Error al cancelar: ' + e.message, 'error');
-            }
+            } catch (e) { location.reload(); }
         }
 
-        // ===== UTILS =====
         function mostrarPaso(id) {
             ['pasoDatos', 'pasoEsperando', 'pasoPrecio', 'pasoEnCamino', 'pasoEnViaje', 'pasoCompletado'].forEach(p => {
                 document.getElementById(p).classList.add('hidden');
