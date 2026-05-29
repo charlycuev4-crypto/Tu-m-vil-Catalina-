@@ -35,7 +35,7 @@
             display: flex;
             flex-direction: column;
         }
-        .mapa-seccion { height: 30%; min-height: 150px; position: relative; background: #e5e5e5; }
+        .mapa-seccion { height: 25%; min-height: 120px; position: relative; background: #e5e5e5; }
         .mapa-seccion iframe { width: 100%; height: 100%; border: none; }
         .mapa-placeholder {
             width: 100%; height: 100%; display: flex;
@@ -58,7 +58,7 @@
             color: white; border: none; border-radius: 16px; padding: 18px;
             font-size: 1.1rem; font-weight: 700; box-shadow: 0 6px 20px rgba(0,0,0,0.3);
         }
-        .panel-seccion { height: 70%; background: white; border-radius: 20px 20px 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); overflow-y: auto; z-index: 10; }
+        .panel-seccion { height: 75%; background: white; border-radius: 20px 20px 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); overflow-y: auto; z-index: 10; }
         .panel-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 8px auto; }
         .panel-contenido { padding: 0 15px 20px; }
         .toggle-box { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; border-radius: 14px; padding: 12px 15px; margin-bottom: 12px; }
@@ -89,6 +89,14 @@
         .btn-maps { background: linear-gradient(135deg, #4285f4 0%, #34a853 100%); color: white; }
         .btn-outline { background: transparent; color: #11998e; border: 2px solid #11998e; }
         .btn-nav { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-limpiar { background: #6c757d; color: white; font-size: 0.85rem; padding: 10px; }
+        .btn-reset-total {
+            background: #dc3545;
+            color: white;
+            font-size: 0.9rem;
+            padding: 12px;
+            margin-top: 8px;
+        }
         .info-pasajero { background: #e3f2fd; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
         .info-pasajero .fila { display: flex; align-items: center; gap: 10px; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; font-weight: bold; }
@@ -108,7 +116,6 @@
         .msg-info { background: #e3f2fd; color: #1565c0; }
         .hidden { display: none !important; }
 
-        /* DEBUG LOG */
         .debug-log {
             background: #1a1a2e;
             color: #00ff88;
@@ -128,6 +135,17 @@
 
         .km-input-destacado { border: 3px solid #ff9800 !important; background: #fff8e1 !important; }
         .km-input-ok { border: 3px solid #28a745 !important; background: #e8f5e9 !important; }
+
+        .stats-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+        }
     </style>
 </head>
 <body>
@@ -173,7 +191,13 @@
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
+                    <div class="stats-box">
+                        <span id="statsPendientes">Viajes pendientes: --</span>
+                        <span id="statsFantasmas">Fantasmas: --</span>
+                    </div>
                     <div class="lista-viajes" id="listaViajes"></div>
+                    <button class="btn btn-limpiar" onclick="limpiarViajesFantasma()">🧹 LIMPIAR VIAJES FANTASMA (antiguos)</button>
+                    <button class="btn btn-reset-total" onclick="borrarTodosLosViajes()">🗑️ BORRAR TODOS LOS VIAJES</button>
                     <div class="debug-log" id="debugLogDisponible"></div>
                 </div>
 
@@ -235,7 +259,6 @@
         let pollIntervalConductor = null;
         let pasoActual = '';
 
-        // ===== DEBUG LOG =====
         function log(msg, tipo = 'info') {
             const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             const lineText = `[${hora}] ${msg}`;
@@ -299,9 +322,25 @@
         async function actualizarLista() {
             if(!document.getElementById('toggleDisp').checked) {
                 document.getElementById('listaViajes').innerHTML = '<div class="sin-viajes">Activá disponibilidad para ver viajes.</div>';
+                document.getElementById('statsPendientes').textContent = 'Viajes pendientes: --';
+                document.getElementById('statsFantasmas').textContent = 'Fantasmas: --';
                 return;
             }
             try {
+                const { data: todos, error: errTodos } = await supabaseClient.from('viajes').select('estado, created_at');
+                if (!errTodos && todos) {
+                    const pendientes = todos.filter(v => v.estado === 'pendiente').length;
+                    const fantasmas = todos.filter(v => {
+                        if (v.estado !== 'pendiente' && v.estado !== 'aceptado') return false;
+                        const creado = new Date(v.created_at);
+                        const ahora = new Date();
+                        const diffMin = (ahora - creado) / 1000 / 60;
+                        return diffMin > 30;
+                    }).length;
+                    document.getElementById('statsPendientes').textContent = `Viajes pendientes: ${pendientes}`;
+                    document.getElementById('statsFantasmas').textContent = `Fantasmas: ${fantasmas}`;
+                }
+
                 const { data, error } = await supabaseClient.from('viajes').select('*').eq('estado', 'pendiente');
                 if (error) {
                     log('Error al cargar viajes: ' + error.message, 'error');
@@ -313,15 +352,110 @@
                     return;
                 }
                 log('Viajes pendientes encontrados: ' + data.length, 'info');
-                lista.innerHTML = data.map(v => `
+                lista.innerHTML = data.map(v => {
+                    const creado = new Date(v.created_at);
+                    const ahora = new Date();
+                    const diffMin = Math.round((ahora - creado) / 1000 / 60);
+                    const tiempo = diffMin < 1 ? 'Ahora' : diffMin + 'min';
+                    return `
                     <div class="viaje-item" onclick="verDetalleViaje('${v.id}')">
-                        <div class="nombre">👤 ${v.pasajero_nombre}</div>
+                        <div class="nombre">👤 ${v.pasajero_nombre} <span style="font-size:0.7rem;color:#888;">(${tiempo})</span></div>
                         <div class="ruta">🚩 ${v.origen_direccion} <br> 🏁 Destino: ${v.destino_direccion}</div>
                         <span class="badge">Tomar Orden</span>
-                    </div>
-                `).join('');
+                    </div>`;
+                }).join('');
             } catch (e) {
                 log('Error actualizarLista: ' + e.message, 'error');
+            }
+        }
+
+        async function limpiarViajesFantasma() {
+            if (!confirm('¿Limpiar viajes antiguos (más de 30 min) y cancelados?')) return;
+
+            log('🧹 Iniciando limpieza de viajes fantasma...', 'warn');
+            try {
+                const { data: antiguos, error: err1 } = await supabaseClient
+                    .from('viajes')
+                    .select('id, created_at, estado')
+                    .lt('created_at', new Date(Date.now() - 30*60*1000).toISOString());
+
+                if (err1) {
+                    log('Error buscando antiguos: ' + err1.message, 'error');
+                    return;
+                }
+
+                let borrados = 0;
+                for (const v of antiguos || []) {
+                    if (v.estado === 'pendiente' || v.estado === 'cancelado' || v.estado === 'completado') {
+                        const { error: errDel } = await supabaseClient.from('viajes').delete().eq('id', v.id);
+                        if (!errDel) borrados++;
+                    }
+                }
+
+                log(`✅ ${borrados} viajes fantasma eliminados`, 'success');
+                mostrarMsg(`🧹 ${borrados} viajes limpiados`, 'success');
+                actualizarLista();
+            } catch (e) {
+                log('Error limpiando: ' + e.message, 'error');
+            }
+        }
+
+        async function borrarTodosLosViajes() {
+            if (!confirm('⚠️ ¿Estás seguro?\n\nSe borrarán TODOS los viajes:\n- Pendientes\n- Aceptados\n- En viaje\n- Completados\n- Cancelados\n\nEsta acción NO se puede deshacer.')) {
+                return;
+            }
+
+            if (!confirm('🚨 ÚLTIMA ADVERTENCIA\n\n¿Realmente querés borrar TODOS los viajes?')) {
+                return;
+            }
+
+            log('🗑️ Iniciando borrado TOTAL de viajes...', 'warn');
+
+            try {
+                const { data: todos, error: errCount } = await supabaseClient
+                    .from('viajes')
+                    .select('id, estado');
+
+                if (errCount) {
+                    log('Error al contar viajes: ' + errCount.message, 'error');
+                    return;
+                }
+
+                const total = todos ? todos.length : 0;
+                if (total === 0) {
+                    log('ℹ️ No hay viajes para borrar', 'info');
+                    mostrarMsg('No hay viajes en la base de datos', 'info');
+                    return;
+                }
+
+                log(`Encontrados ${total} viajes para borrar:`, 'warn');
+                todos.forEach(v => log(`  - ${v.id.substring(0,8)}... estado: ${v.estado}`, 'warn'));
+
+                let borrados = 0;
+                let errores = 0;
+
+                for (const viaje of todos) {
+                    const { error: errDel } = await supabaseClient
+                        .from('viajes')
+                        .delete()
+                        .eq('id', viaje.id);
+
+                    if (errDel) {
+                        log(`❌ Error borrando ${viaje.id.substring(0,8)}: ${errDel.message}`, 'error');
+                        errores++;
+                    } else {
+                        borrados++;
+                    }
+                }
+
+                log(`✅ ${borrados} viajes borrados | ❌ ${errores} errores`, 'success');
+                mostrarMsg(`🗑️ ${borrados} viajes eliminados`, borrados > 0 ? 'success' : 'warn');
+
+                actualizarLista();
+
+            } catch (e) {
+                log('❌ Error en borrado total: ' + e.message, 'error');
+                mostrarMsg('Error al borrar: ' + e.message, 'error');
             }
         }
 
@@ -399,9 +533,6 @@
             try {
                 log('Ejecutando UPDATE en Supabase...', 'info');
 
-                // ✅ CAMBIO CLAVE: Usar 'aceptado' en vez de 'precio_enviado' 
-                // porque el constraint de Supabase no permite 'precio_enviado'
-                // El pasajero detectará que hay precio y mostrará la cotización
                 const { data, error } = await supabaseClient.from('viajes').update({
                     estado: 'aceptado',
                     precio: total,
@@ -423,7 +554,6 @@
                 mostrarMsg('💰 Precio enviado al pasajero', 'success');
                 mostrarPaso('pasoEsperando');
 
-                // Iniciar polling para esperar respuesta del pasajero
                 iniciarPollingEspera(viajeActual.id);
             } catch (e) {
                 log('ERROR EXCEPCIÓN enviarPrecio: ' + e.message, 'error');
@@ -436,9 +566,11 @@
 
         function iniciarPollingEspera(id) {
             if (pollIntervalConductor) clearInterval(pollIntervalConductor);
-            log('🔄 Iniciando polling de espera cada 3 segundos...', 'info');
+            log('🔄 Iniciando polling de espera cada 2 segundos...', 'info');
 
+            let intentos = 0;
             pollIntervalConductor = setInterval(async () => {
+                intentos++;
                 try {
                     const { data, error } = await supabaseClient
                         .from('viajes')
@@ -446,37 +578,43 @@
                         .eq('id', id)
                         .single();
 
-                    if (error || !data) return;
+                    if (error || !data) {
+                        log('[' + intentos + '] Error: ' + (error?.message || 'no data'), 'error');
+                        return;
+                    }
 
-                    log('Polling conductor - Estado: ' + data.estado, 'info');
+                    log('[' + intentos + '] Estado: ' + data.estado + ' | Precio: ' + (data.precio || 'null') + ' | Conf: ' + (data.confirmado_en || 'null'), 'info');
 
-                    // ✅ CAMBIO: El pasajero confirma cambiando a 'en_viaje'
                     if (data.estado === 'en_viaje') {
                         log('✅✅✅ PASAJERO CONFIRMÓ! (estado: en_viaje)', 'success');
                         clearInterval(pollIntervalConductor);
-
+                        pollIntervalConductor = null;
                         mostrarPaso('pasoConfirmado');
                         mostrarMsg('¡Pasajero confirmó! Andá a buscarlo.', 'success');
+                        return;
                     }
 
-                    // Si el pasajero cancela, vuelve a pendiente
-                    if (data.estado === 'pendiente' && data.precio === null) {
-                        log('❌ Pasajero rechazó o canceló (precio borrado)', 'error');
+                    if (data.estado === 'pendiente' && !data.precio) {
+                        log('❌ Pasajero rechazó (pendiente sin precio)', 'warn');
                         clearInterval(pollIntervalConductor);
-                        mostrarMsg('El pasajero rechazó o canceló.', 'error');
+                        pollIntervalConductor = null;
+                        mostrarMsg('El pasajero rechazó la cotización.', 'warn');
                         limpiarYVolver();
+                        return;
                     }
 
                     if (data.estado === 'cancelado') {
-                        log('❌ Viaje cancelado', 'error');
+                        log('❌ Viaje cancelado por pasajero', 'error');
                         clearInterval(pollIntervalConductor);
+                        pollIntervalConductor = null;
                         mostrarMsg('El pasajero canceló.', 'error');
                         limpiarYVolver();
+                        return;
                     }
                 } catch (e) {
-                    log('Error polling espera: ' + e.message, 'error');
+                    log('[' + intentos + '] Excepción: ' + e.message, 'error');
                 }
-            }, 3000);
+            }, 2000);
         }
 
         async function finalizarViajeConductor() {
@@ -509,7 +647,7 @@
                     return;
                 }
 
-                log('✅ Viaje liberado. Respuesta: ' + JSON.stringify(data), 'success');
+                log('✅ Viaje liberado', 'success');
                 mostrarMsg('Viaje liberado.', 'info');
                 limpiarYVolver();
             } catch (e) {
@@ -518,7 +656,10 @@
         }
 
         function limpiarYVolver() {
-            if (pollIntervalConductor) clearInterval(pollIntervalConductor);
+            if (pollIntervalConductor) {
+                clearInterval(pollIntervalConductor);
+                pollIntervalConductor = null;
+            }
             viajeActual = null;
             document.getElementById('kmInput').value = '';
             document.getElementById('kmInput').className = '';
