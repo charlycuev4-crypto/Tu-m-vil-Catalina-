@@ -90,6 +90,13 @@
         .btn-outline { background: transparent; color: #11998e; border: 2px solid #11998e; }
         .btn-nav { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
         .btn-limpiar { background: #6c757d; color: white; font-size: 0.85rem; padding: 10px; }
+        .btn-reset-total {
+            background: #dc3545;
+            color: white;
+            font-size: 0.9rem;
+            padding: 12px;
+            margin-top: 8px;
+        }
         .info-pasajero { background: #e3f2fd; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
         .info-pasajero .fila { display: flex; align-items: center; gap: 10px; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; font-weight: bold; }
@@ -190,6 +197,7 @@
                     </div>
                     <div class="lista-viajes" id="listaViajes"></div>
                     <button class="btn btn-limpiar" onclick="limpiarViajesFantasma()">🧹 LIMPIAR VIAJES FANTASMA (antiguos)</button>
+                    <button class="btn btn-reset-total" onclick="borrarTodosLosViajes()">🗑️ BORRAR TODOS LOS VIAJES</button>
                     <div class="debug-log" id="debugLogDisponible"></div>
                 </div>
 
@@ -389,6 +397,65 @@
                 actualizarLista();
             } catch (e) {
                 log('Error limpiando: ' + e.message, 'error');
+            }
+        }
+
+        async function borrarTodosLosViajes() {
+            if (!confirm('⚠️ ¿Estás seguro?\n\nSe borrarán TODOS los viajes:\n- Pendientes\n- Aceptados\n- En viaje\n- Completados\n- Cancelados\n\nEsta acción NO se puede deshacer.')) {
+                return;
+            }
+
+            if (!confirm('🚨 ÚLTIMA ADVERTENCIA\n\n¿Realmente querés borrar TODOS los viajes?')) {
+                return;
+            }
+
+            log('🗑️ Iniciando borrado TOTAL de viajes...', 'warn');
+
+            try {
+                const { data: todos, error: errCount } = await supabaseClient
+                    .from('viajes')
+                    .select('id, estado');
+
+                if (errCount) {
+                    log('Error al contar viajes: ' + errCount.message, 'error');
+                    return;
+                }
+
+                const total = todos ? todos.length : 0;
+                if (total === 0) {
+                    log('ℹ️ No hay viajes para borrar', 'info');
+                    mostrarMsg('No hay viajes en la base de datos', 'info');
+                    return;
+                }
+
+                log(`Encontrados ${total} viajes para borrar:`, 'warn');
+                todos.forEach(v => log(`  - ${v.id.substring(0,8)}... estado: ${v.estado}`, 'warn'));
+
+                let borrados = 0;
+                let errores = 0;
+
+                for (const viaje of todos) {
+                    const { error: errDel } = await supabaseClient
+                        .from('viajes')
+                        .delete()
+                        .eq('id', viaje.id);
+
+                    if (errDel) {
+                        log(`❌ Error borrando ${viaje.id.substring(0,8)}: ${errDel.message}`, 'error');
+                        errores++;
+                    } else {
+                        borrados++;
+                    }
+                }
+
+                log(`✅ ${borrados} viajes borrados | ❌ ${errores} errores`, 'success');
+                mostrarMsg(`🗑️ ${borrados} viajes eliminados`, borrados > 0 ? 'success' : 'warn');
+
+                actualizarLista();
+
+            } catch (e) {
+                log('❌ Error en borrado total: ' + e.message, 'error');
+                mostrarMsg('Error al borrar: ' + e.message, 'error');
             }
         }
 
