@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -81,7 +80,7 @@
             cursor: pointer;
         }
 
-        /* ===== MARCADOR CENTRAL ===== */
+        /* ===== MARCADOR CENTRAL (DESTINO) ===== */
         .marker-center {
             position: fixed;
             top: 50%; left: 50%;
@@ -90,20 +89,43 @@
             pointer-events: none;
         }
         .marker-pin {
-            width: 36px; height: 36px;
+            width: 44px; height: 44px;
             background: #ff4757;
             border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 3px 12px rgba(255,71,87,0.4);
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .marker-pin::after {
+            content: '📍';
+            font-size: 1.1rem;
+            transform: rotate(45deg);
+        }
+        .marker-label {
+            position: absolute;
+            top: -32px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.75);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .marker-label::after {
             content: '';
-            width: 14px; height: 14px;
-            background: white;
-            border-radius: 50%;
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid rgba(0,0,0,0.75);
         }
 
         /* ===== TARJETA FLOTANTE ABAJO ===== */
@@ -210,7 +232,7 @@
             z-index: 2;
         }
 
-        /* ===== TARJETA CONDUCTOR (como la imagen) ===== */
+        /* ===== TARJETA CONDUCTOR CON IMAGEN REAL ===== */
         .driver-card {
             display: flex;
             align-items: center;
@@ -218,17 +240,21 @@
             padding: 16px 0;
         }
         .driver-img {
-            width: 80px; height: 60px;
+            width: 90px; height: 65px;
             border-radius: 12px;
             background: #f0f0f0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
             overflow: hidden;
             flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        .driver-img img { width: 100%; height: 100%; object-fit: cover; }
+        .driver-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
         .driver-info { flex: 1; }
         .driver-info h3 {
             font-size: 1.15rem;
@@ -404,8 +430,9 @@
         <button class="menu-btn" onclick="obtenerGPS()">📍</button>
     </div>
 
-    <!-- MARCADOR CENTRAL -->
+    <!-- MARCADOR CENTRAL (DESTINO) -->
     <div class="marker-center" id="markerCenter">
+        <div class="marker-label" id="markerLabel">Tu destino</div>
         <div class="marker-pin"></div>
     </div>
 
@@ -465,10 +492,10 @@
             <div class="section-title" style="text-align:center;">¡Tenés una cotización!</div>
             <div class="section-subtitle" style="text-align:center;">Deslizá para confirmar</div>
 
-            <!-- TARJETA CONDUCTOR ESTILO IMAGEN -->
+            <!-- TARJETA CONDUCTOR CON IMAGEN REAL -->
             <div class="driver-card">
                 <div class="driver-img" id="driverImg">
-                    🚗
+                    <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=200&h=150&fit=crop" alt="Auto" id="driverImgSrc">
                 </div>
                 <div class="driver-info">
                     <h3 id="nombreCondPrecio">Tu Móvil</h3>
@@ -502,7 +529,9 @@
             <div class="section-subtitle" style="text-align:center;" id="infoEnCamino">El conductor va en camino a buscarte</div>
 
             <div class="driver-card">
-                <div class="driver-img" id="driverImgCamino">🚗</div>
+                <div class="driver-img" id="driverImgCamino">
+                    <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=200&h=150&fit=crop" alt="Auto">
+                </div>
                 <div class="driver-info">
                     <h3 id="nombreCond">Tu Móvil</h3>
                     <p id="autoCond">Conductor asignado</p>
@@ -523,7 +552,9 @@
             <div class="section-subtitle" style="text-align:center;">Yendo al destino...</div>
 
             <div class="driver-card">
-                <div class="driver-img" id="driverImgViaje">🚗</div>
+                <div class="driver-img" id="driverImgViaje">
+                    <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=200&h=150&fit=crop" alt="Auto">
+                </div>
                 <div class="driver-info">
                     <h3 id="nombreCondViaje">Tu Móvil</h3>
                     <p id="autoCondViaje">Conductor asignado</p>
@@ -737,19 +768,41 @@
             document.getElementById('sugerencias').classList.remove('activo');
             destinoTexto = direccion;
             destinoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
+            // Actualizar marcador con nombre del destino
+            document.getElementById('markerLabel').textContent = direccion.split(',')[0];
+            // Actualizar mapa automáticamente
+            actualizarMapaDestino();
         }
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.input-row')) document.getElementById('sugerencias').classList.remove('activo');
         });
 
-        function mostrarMapa() {
-            destinoTexto = document.getElementById('destino').value.trim();
-            if (!destinoTexto) { mostrarMsg('Escribí un destino primero', 'error'); return; }
-            const url = `https://maps.google.com/maps?q=${encodeURIComponent(destinoTexto)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+        function actualizarMapaDestino() {
+            if (!destinoCoords) return;
+            // Mapa centrado en el destino con marcador
+            const url = `https://maps.google.com/maps?q=${destinoCoords.lat},${destinoCoords.lng}&t=&z=16&ie=UTF8&iwloc=B&output=embed`;
             document.getElementById('googleMapIframe').src = url;
             document.getElementById('googleMapIframe').classList.remove('hidden');
             document.getElementById('mapaPlaceholder').classList.add('hidden');
+            // Mostrar marcador
+            document.getElementById('markerCenter').style.display = 'block';
+            log('Mapa centrado en destino: ' + destinoTexto, 'success');
+        }
+
+        function mostrarMapa() {
+            destinoTexto = document.getElementById('destino').value.trim();
+            if (!destinoTexto) { mostrarMsg('Escribí un destino primero', 'error'); return; }
+            if (destinoCoords) {
+                actualizarMapaDestino();
+            } else {
+                // Búsqueda por texto
+                const url = `https://maps.google.com/maps?q=${encodeURIComponent(destinoTexto)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+                document.getElementById('googleMapIframe').src = url;
+                document.getElementById('googleMapIframe').classList.remove('hidden');
+                document.getElementById('mapaPlaceholder').classList.add('hidden');
+                document.getElementById('markerLabel').textContent = destinoTexto;
+            }
             mostrarMsg('Mapa cargado ✓', 'success');
         }
 
@@ -897,7 +950,6 @@
                     }
                     mostrarPaso('pasoPrecio');
                     mostrarMsg('¡Tenés una cotización! Deslizá para confirmar.', 'info');
-                    // Timer 60s confirmación
                     let seg = 60;
                     timerInterval = setInterval(() => {
                         seg--;
