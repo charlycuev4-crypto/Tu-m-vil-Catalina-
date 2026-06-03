@@ -107,8 +107,6 @@
         .msg-success { background: #e8f5e9; color: #2e7d32; }
         .msg-info { background: #e3f2fd; color: #1565c0; }
         .hidden { display: none !important; }
-
-        /* DEBUG LOG */
         .debug-log {
             background: #1a1a2e;
             color: #00ff88;
@@ -125,7 +123,6 @@
         .debug-log .line.error { color: #ff6b6b; }
         .debug-log .line.success { color: #00ff88; }
         .debug-log .line.warn { color: #ff9800; }
-
         .km-input-destacado { border: 3px solid #ff9800 !important; background: #fff8e1 !important; }
         .km-input-ok { border: 3px solid #28a745 !important; background: #e8f5e9 !important; }
     </style>
@@ -232,7 +229,7 @@
         let conductorDatos = null;
         let viajeActual = null;
         let subViajes = null;
-        let pollIntervalConductor = null;
+        let subEspera = null;
         let pasoActual = '';
 
         // ===== DEBUG LOG =====
@@ -288,11 +285,19 @@
         }
 
         function escucharViajesGlobales() {
-            if(subViajes) subViajes.unsubscribe();
-            log('Iniciando escucha de viajes globales...', 'info');
-            subViajes = supabaseClient.channel('global').on('postgres_changes', { event:'*', schema:'public', table:'viajes' }, () => {
-                actualizarLista();
-            }).subscribe();
+            if(subViajes) { subViajes.unsubscribe(); subViajes = null; }
+            log('Iniciando escucha Realtime de viajes globales...', 'info');
+            subViajes = supabaseClient
+                .channel('global-conductor')
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'viajes',
+                    filter: 'estado=eq.pendiente'
+                }, () => {
+                    actualizarLista();
+                })
+                .subscribe();
             actualizarLista();
         }
 
@@ -399,11 +404,10 @@
             try {
                 log('Ejecutando UPDATE en Supabase...', 'info');
 
-                // ✅ CAMBIO CLAVE: Usar 'aceptado' en vez de 'precio_enviado' 
-                // porque el constraint de Supabase no permite 'precio_enviado'
-                // El pasajero detectará que hay precio y mostrará la cotización
+                // ✅ CORREGIDO: Mantener estado 'pendiente' pero con precio
+                // El pasajero detecta por precio !== null, no por estado
                 const { data, error } = await supabaseClient.from('viajes').update({
-                    estado: 'aceptado',
+                    estado: 'pendiente',        // Se queda pendiente hasta que el pasajero confirme
                     precio: total,
                     distancia_km: km,
                     conductor_nombre: conductorDatos.nombre,
@@ -423,8 +427,9 @@
                 mostrarMsg('💰 Precio enviado al pasajero', 'success');
                 mostrarPaso('pasoEsperando');
 
-                // Iniciar polling para esperar respuesta del pasajero
-                iniciarPollingEspera(viajeActual.id);
+                // ✅ CORREGIDO: Usar Realtime en vez de polling
+                iniciarEscuchaRealtime(viajeActual.id);
+
             } catch (e) {
                 log('ERROR EXCEPCIÓN enviarPrecio: ' + e.message, 'error');
                 log('Stack: ' + e.stack, 'error');
@@ -434,49 +439,50 @@
             }
         }
 
-        function iniciarPollingEspera(id) {
-            if (pollIntervalConductor) clearInterval(pollIntervalConductor);
-            log('🔄 Iniciando polling de espera cada 3 segundos...', 'info');
+        function iniciarEscuchaRealtime(id) {
+            // Limpiar suscripción anterior
+            if (subEspera) { subEspera.unsubscribe(); subEspera = null; }
+            
+            log('🔄 Iniciando escucha Realtime para viaje ' + id, 'info');
 
-            pollIntervalConductor = setInterval(async () => {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('viajes')
-                        .select('*')
-                        .eq('id', id)
-                        .single();
+            subEspera = supabaseClient
+                .channel('espera-conductor-' + id)
+                .on('postgres_changes', {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'viajes',
+                    filter: 'id=eq.' + id
+                }, (payload) => {
+                    const data = payload.new;
+                    log('Realtime conductor - Estado: ' + data.estado + ' | Precio: ' + (data.precio || 'null'), 'info');
 
-                    if (error || !data) return;
-
-                    log('Polling conductor - Estado: ' + data.estado, 'info');
-
-                    // ✅ CAMBIO: El pasajero confirma cambiando a 'en_viaje'
-                    if (data.estado === 'en_viaje') {
-                        log('✅✅✅ PASAJERO CONFIRMÓ! (estado: en_viaje)', 'success');
-                        clearInterval(pollIntervalConductor);
-
+                    // El pasajero confirma cambiando a 'aceptado'
+                    if (data.estado === 'aceptado') {
+                        log('✅✅✅ PASAJERO CONFIRMÓ! (estado: aceptado)', 'success');
+                        subEspera.unsubscribe();
+                        subEspera = null;
                         mostrarPaso('pasoConfirmado');
                         mostrarMsg('¡Pasajero confirmó! Andá a buscarlo.', 'success');
                     }
 
-                    // Si el pasajero cancela, vuelve a pendiente
-                    if (data.estado === 'pendiente' && data.precio === null) {
-                        log('❌ Pasajero rechazó o canceló (precio borrado)', 'error');
-                        clearInterval(pollIntervalConductor);
+                    // Si el pasajero rechaza, vuelve a pendiente con precio null
+                    if (data.estado === 'pendiente' && data.precio === null && data.conductor_nombre === null) {
+                        log('❌ Pasajero rechazó o canceló (datos limpiados)', 'error');
+                        subEspera.unsubscribe();
+                        subEspera = null;
                         mostrarMsg('El pasajero rechazó o canceló.', 'error');
                         limpiarYVolver();
                     }
 
                     if (data.estado === 'cancelado') {
                         log('❌ Viaje cancelado', 'error');
-                        clearInterval(pollIntervalConductor);
+                        subEspera.unsubscribe();
+                        subEspera = null;
                         mostrarMsg('El pasajero canceló.', 'error');
                         limpiarYVolver();
                     }
-                } catch (e) {
-                    log('Error polling espera: ' + e.message, 'error');
-                }
-            }, 3000);
+                })
+                .subscribe();
         }
 
         async function finalizarViajeConductor() {
@@ -496,6 +502,10 @@
             if(!viajeActual) return;
             try {
                 log('Liberando viaje ' + viajeActual.id + '...', 'warn');
+                
+                // Limpiar escucha primero
+                if (subEspera) { subEspera.unsubscribe(); subEspera = null; }
+
                 const { data, error } = await supabaseClient.from('viajes').update({ 
                     estado: 'pendiente', 
                     precio: null, 
@@ -518,12 +528,14 @@
         }
 
         function limpiarYVolver() {
-            if (pollIntervalConductor) clearInterval(pollIntervalConductor);
+            if (subEspera) { subEspera.unsubscribe(); subEspera = null; }
             viajeActual = null;
             document.getElementById('kmInput').value = '';
             document.getElementById('kmInput').className = '';
             document.getElementById('googleMapIframe').classList.add('hidden');
             document.getElementById('mapaPlaceholder').classList.remove('hidden');
+            document.getElementById('btnEnviarPrecio').disabled = false;
+            document.getElementById('btnEnviarPrecio').textContent = '💰 ENVIAR ESTA TARIFA AL PASAJERO';
             mostrarPaso('pasoDisponible');
             actualizarLista();
         }
