@@ -20,8 +20,11 @@
         #mapaLeaflet { width: 100%; height: 100%; }
 
         .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
-        .status-badge { background: #1e293b; color: #38bdf8; padding: 10px 16px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto; border: 1px solid #334155; }
+        
+        /* Modificado para que visualmente se note que es un botón interactivo */
+        .status-badge { background: #1e293b; color: #38bdf8; padding: 10px 16px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto; border: 1px solid #334155; cursor: pointer; user-select: none; transition: all 0.2s ease; }
         .status-badge.activo { background: #059669; color: #ffffff; border-color: #10b981; }
+        .status-badge.inactivo { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
 
         .gps-btn { width: 44px; height: 44px; border-radius: 50%; background: #1e293b; color: white; display: flex; align-items: center; justify-content: center; border: 1px solid #334155; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto; }
 
@@ -45,6 +48,7 @@
 
         .btn-action { width: 100%; color: white; border: none; padding: 14px; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: background 0.2s; }
         .btn-espera { background: #334155; color: #94a3b8; cursor: not-allowed; }
+        .btn-desconectado { background: #451a03; color: #f59e0b; cursor: not-allowed; }
         .btn-aceptar { background: #10b981; font-size: 1.1rem; }
         .btn-llegué { background: #3b82f6; }
         .btn-iniciar { background: #8b5cf6; }
@@ -65,7 +69,8 @@
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
     <div class="header-float">
-        <div class="status-badge activo" id="txtEstadoChofer">Móvil en Línea 🟢</div>
+        <!-- El badge ahora ejecuta la función para alternar estado al hacerle clic -->
+        <div class="status-badge activo" id="txtEstadoChofer" onclick="conmutarEstadoConexion()">Móvil en Línea 🟢</div>
         <button class="gps-btn" onclick="obtenerUbicacionChofer()">🎯</button>
     </div>
 
@@ -75,8 +80,8 @@
 
         <div id="vistaEspera">
             <div style="text-align: center; padding: 20px 0;">
-                <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 10px;">Esperando solicitudes de viaje en San Miguel...</p>
-                <div class="btn-action btn-espera">Buscando Pasajeros...</div>
+                <p id="lblSubtextoEspera" style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 10px;">Esperando solicitudes de viaje en San Miguel...</p>
+                <div class="btn-action btn-espera" id="btnEstadoEsperaTexto">Buscando Pasajeros...</div>
             </div>
         </div>
 
@@ -102,8 +107,28 @@
         const NOMBRE_CHOFER = "Carlos Cueva";
         const AUTO_CHOFER = "Ford Fiesta Max (Patente: JCP 478)"; 
 
-        // SISTEMA INTEGRADO DE SIRENA DE ALERTA CONTINUA
         let loopAudioAlerta = null;
+        let canalSupabase = null;
+        let estaConectado = true; // Control de estado En Línea / Fuera de Línea
+        let wakeLock = null; // Mantiene la pantalla encendida
+
+        // MANEJO DE PANTALLA SIEMPRE ENCENDIDA (WAKE LOCK)
+        async function solicitarWakeLock() {
+            if (!('wakeLock' in navigator)) return;
+            try {
+                if (!wakeLock) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) { console.log("WakeLock bloqueado o no soportado."); }
+        }
+
+        function liberarWakeLock() {
+            if (wakeLock) {
+                wakeLock.release();
+                wakeLock = null;
+            }
+        }
+
         function comenzarSirenaAlerta() {
             if (loopAudioAlerta) return;
             try {
@@ -111,16 +136,16 @@
                 loopAudioAlerta = setInterval(() => {
                     let osc = contexto.createOscillator();
                     let gain = contexto.createGain();
-                    osc.type = 'sawtooth'; // Sonido electrónico penetrante
-                    osc.frequency.setValueAtTime(880, contexto.currentTime); // Tono de alerta alto
-                    osc.frequency.exponentialRampToValueAtTime(440, contexto.currentTime + 0.3); // Modulación descendente
+                    osc.type = 'sawtooth'; 
+                    osc.frequency.setValueAtTime(880, contexto.currentTime); 
+                    osc.frequency.exponentialRampToValueAtTime(440, contexto.currentTime + 0.3); 
                     gain.gain.setValueAtTime(0.3, contexto.currentTime);
                     gain.gain.exponentialRampToValueAtTime(0.01, contexto.currentTime + 0.35);
                     osc.connect(gain);
                     gain.connect(contexto.destination);
                     osc.start();
                     osc.stop(contexto.currentTime + 0.4);
-                }, 500); // Se repite de manera infinita cada medio segundo
+                }, 500); 
             } catch (e) {}
         }
 
@@ -153,11 +178,51 @@
             }
         }
 
+        // CONTROL DE CONEXIÓN (BOTÓN SUPERIOR)
+        function conmutarEstadoConexion() {
+            if (viajeActivo) {
+                alert("No podés desconectarte mientras estás en un viaje activo.");
+                return;
+            }
+
+            estaConectado = !estaConectado;
+            const badge = document.getElementById('txtEstadoChofer');
+            const subtexto = document.getElementById('lblSubtextoEspera');
+            const btnEspera = document.getElementById('btnEstadoEsperaTexto');
+
+            if (estaConectado) {
+                // VOLVER EN LÍNEA
+                badge.textContent = "Móvil en Línea 🟢";
+                badge.className = "status-badge activo";
+                subtexto.textContent = "Esperando solicitudes de viaje en San Miguel...";
+                btnEspera.textContent = "Buscando Pasajeros...";
+                btnEspera.className = "btn-action btn-espera";
+                
+                solicitarWakeLock();
+                escucharNuevosViajes();
+                mostrarMsg('Te pusiste en línea.', 'success');
+            } else {
+                // FUERA DE LÍNEA
+                badge.textContent = "Fuera de Línea 🔴";
+                badge.className = "status-badge inactivo";
+                subtexto.textContent = "Estás desconectado. No recibirás alertas.";
+                btnEspera.textContent = "Turno Pausado";
+                btnEspera.className = "btn-action btn-desconectado";
+                
+                liberarWakeLock();
+                apagarEscuchaViajes();
+                mostrarMsg('Turno pausado. Desconectado.', 'success');
+            }
+        }
+
         function escucharNuevosViajes() {
-            supabaseClient
-                .channel('despacho-chofer')
+            if (canalSupabase) return; // Evita duplicar escuchas
+
+            canalSupabase = supabaseClient.channel('despacho-chofer');
+            
+            canalSupabase
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, (payload) => {
-                    if (payload.new.estado === 'pendiente' && !viajeActivo) {
+                    if (payload.new.estado === 'pendiente' && !viajeActivo && estaConectado) {
                         montarViajeEntrante(payload.new);
                     }
                 })
@@ -172,11 +237,17 @@
                 .subscribe();
         }
 
+        function apagarEscuchaViajes() {
+            if (canalSupabase) {
+                supabaseClient.removeChannel(canalSupabase);
+                canalSupabase = null;
+            }
+        }
+
         function montarViajeEntrante(viaje) {
             viajeActivo = viaje;
             estadoFlujo = 'pendiente';
 
-            // ACTIVAR LA SIRENA REPETITIVA DE ALERTA AL RECIBIR EL VIAJE
             comenzarSirenaAlerta();
 
             document.getElementById('vistaEspera').classList.add('hidden');
@@ -200,7 +271,6 @@
             const btn = document.getElementById('btnAccionPrincipal');
 
             if (estadoFlujo === 'pendiente') {
-                // APAGAR LA SIRENA CUANDO EL CONDUCTOR COMPROMETE EL VIAJE
                 detenerSirenaAlerta();
 
                 try {
@@ -255,6 +325,7 @@
                 await supabaseClient.from('viajes').update({ estado: 'finalizado' }).eq('id', viajeActivo.id);
                 mostrarMsg('¡Viaje completado con éxito! Cobrá $' + viajeActivo.precio, 'success');
                 limpiarMemoriaConductor();
+                liberarWakeLock();
                 setTimeout(() => location.reload(), 4000);
             }
         }
@@ -314,8 +385,17 @@
 
         function mostrarMsg(texto, tipo) { const msg = document.getElementById('msgChofer'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
 
+        // Evento que re-activa el wake lock si el usuario minimiza y vuelve a abrir la app
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && estaConectado) {
+                await solicitarWakeLock();
+            }
+        });
+
         window.addEventListener('DOMContentLoaded', () => {
-            initMapa(); escucharNuevosViajes();
+            initMapa(); 
+            escucharNuevosViajes();
+            solicitarWakeLock(); // Arranca encendido por defecto
             setTimeout(async () => { obtenerUbicacionChofer(); await verificarViajeActivoConductor(); }, 1000);
         });
     </script>
