@@ -30,7 +30,7 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             margin-bottom: 25px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); border: 1px solid #334155;
         }
-        .splash-logo-box img { width: 70px; height: auto; margin-bottom: 4px; }
+        .splash-logo-box img { width: 85px; height: auto; border-radius: 8px; margin-bottom: 4px; }
         .splash-logo-box span { font-size: 0.8rem; font-weight: 700; color: #ffcc00; letter-spacing: 1px; }
         
         .splash-form { width: 100%; max-width: 300px; display: none; flex-direction: column; gap: 12px; margin-top: 15px; }
@@ -56,15 +56,15 @@
         .mapa-hint.visible { display: block; }
 
         /* MENÚ INFERIOR */
-        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: white; border-radius: 24px 24px 0 0; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 12px 20px 20px; height: 25vh; overflow-y: auto; transition: height 0.4s ease; -webkit-overflow-scrolling: touch; }
-        .bottom-panel:focus-within, .bottom-panel:active { height: 45vh; }
-        .bottom-panel.con-ruta { height: 30vh; }
+        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: white; border-radius: 24px 24px 0 0; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 12px 20px 20px; height: 28vh; overflow-y: auto; transition: height 0.4s ease; -webkit-overflow-scrolling: touch; }
+        .bottom-panel:focus-within, .bottom-panel:active { height: 48vh; }
+        .bottom-panel.con-ruta { height: 35vh; }
 
         .panel-handle { width: 40px; height: 5px; background: #e0e0e0; border-radius: 3px; margin: 0 auto 10px; }
 
         .driver-card-preview { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .driver-img-box { width: 65px; height: 50px; border-radius: 12px; background: #f5f5f7; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
-        .driver-img-box img { width: 100%; height: 100%; object-fit: contain; }
+        .driver-img-box { width: 75px; height: 55px; border-radius: 12px; background: #f5f5f7; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; border: 1px solid #e2e8f0; }
+        .driver-img-box img { width: 100%; height: 100%; object-fit: cover; }
         .driver-info-box h3 { font-size: 1.05rem; font-weight: 700; color: #111; }
         .driver-info-box p { font-size: 0.8rem; color: #666; }
 
@@ -81,6 +81,8 @@
         .sugerencia-item { padding: 10px 12px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 0.85rem; }
 
         .price-box-live { background: #eef2ff; color: #3b5bdb; padding: 10px; border-radius: 14px; text-align: center; font-weight: 700; margin-bottom: 12px; display: none; font-size: 0.95rem; }
+        .badge-nocturno { background: #fee2e2; color: #ef4444; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-top: 4px; }
+        
         .btn-green-action { width: 100%; background: #2cd44a; color: white; border: none; padding: 14px; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(44,212,74,0.3); text-align: center; margin-top: 5px; }
 
         .pasajero-ping-icon { background: #007aff; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
@@ -97,7 +99,7 @@
 
     <div id="splashScreen">
         <div class="splash-logo-box">
-            <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&h=80&fit=crop" alt="Tu Móvil">
+            <img src="https://i.ibb.co/VpyXw99v/1000310012.jpg" alt="Tu Móvil">
             <span>TU MÓVIL</span>
         </div>
         <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 8px; font-size: 1.4rem;">Cargando...</h2>
@@ -131,11 +133,12 @@
         <div id="pasoDatos">
             <div class="driver-card-preview">
                 <div class="driver-img-box">
-                    <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=200&h=150&fit=crop" alt="Auto">
+                    <img src="https://i.ibb.co/VpyXw99v/1000310012.jpg" alt="Ford Fiesta Max">
                 </div>
                 <div class="driver-info-box">
-                    <h3>Tu Móvil</h3>
-                    <p>Base $3.000 + $800 x Kilómetro</p>
+                    <h3>Tu派Móvil (Ford Fiesta)</h3>
+                    <p id="txtEstructuraTarifa">Base $3.000 + $600 x Kilómetro</p>
+                    <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +50% Recargo Nocturno Activo</div>
                 </div>
             </div>
 
@@ -167,11 +170,11 @@
             <div class="price-box-live" style="display:block; background:#dbeafe; color:#1e40af;" id="precioMonto">$0.00</div>
             <div class="driver-card-preview">
                 <div class="driver-img-box">
-                    <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=200&h=150&fit=crop" alt="Auto">
+                    <img src="https://i.ibb.co/VpyXw99v/1000310012.jpg" alt="Ford Fiesta Max">
                 </div>
                 <div class="driver-info-box">
                     <h3 id="nombreCond">Carlos Cueva</h3>
-                    <p id="autoCond">Fiat 500 (Patente: JCP 478)</p>
+                    <p id="autoCond">Ford Fiesta Max (Patente: JCP 478)</p>
                 </div>
             </div>
             <div style="text-align: center; padding: 10px 0; color: #475569; font-weight: 600; font-size: 0.9rem;" id="estadoViajePasajero">
@@ -185,10 +188,11 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const TARIFA_BASE = 3000, TARIFA_KM = 800;
-        const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212]; 
+        // ===== NUEVAS TARIFAS OPTIMIZADAS =====
+        const TARIFA_BASE = 3000;
+        const TARIFA_KM = 600; // Reducido de 800 a 600 por tu solicitud
 
-        // TIMBRE DE LLEGADA DEL CHOFER EN LA PUERTA (Ding Dong nítido)
+        const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212]; 
         const timbreLlegadaPuerta = new Audio("https://assets.mixkit.co/active_storage/sfx/1655/1655-84.wav");
 
         let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
@@ -196,10 +200,22 @@
         let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "";
 
+        // FUNCIÓN AUTOMÁTICA PARA CONTROLAR EL HORARIO NOCTURNO (22hs a 07hs)
+        function esHorarioNocturno() {
+            const horaActual = new Date().getHours();
+            return (horaActual >= 22 || horaActual < 7);
+        }
+
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 15);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             mapa.on('click', (e) => { if (modoDestinoManual) marcarDestinoManual(e.latlng.lat, e.latlng.lng); });
+            
+            // Verificar visualmente si corresponde alertar recargo nocturno en la UI
+            if(esHorarioNocturno()) {
+                document.getElementById('badgeNocturnoAviso').classList.remove('hidden');
+                document.getElementById('txtEstructuraTarifa').innerHTML = "Base $3.000 + $600 x Km <br><b>(Tarifa nocturna aplicada)</b>";
+            }
         }
 
         function procesarSplashDeBienvenida() {
@@ -239,8 +255,8 @@
 
                 markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
                 markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
-                document.getElementById('origenDisplay').value = viaje.origen_direccion || "Origen";
-                document.getElementById('destino').value = viaje.destino_direccion || "Destino";
+                document.getElementById('origenDisplay').value = "Ubicación inicial";
+                document.getElementById('destino').value = "Destino seleccionado";
 
                 await recalcularRutaYPrecio();
 
@@ -249,7 +265,7 @@
                 } else {
                     document.getElementById('precioMonto').textContent = 'Total a pagar: $' + viaje.precio;
                     document.getElementById('nombreCond').textContent = viaje.conductor_nombre || "Carlos Cueva";
-                    document.getElementById('autoCond').textContent = viaje.conductor_auto || "Fiat 500 (Patente: JCP 478)";
+                    document.getElementById('autoCond').textContent = viaje.conductor_auto || "Ford Fiesta Max (Patente: JCP 478)";
                     
                     if(viaje.estado === 'aceptado' && localStorage.getItem('pasajero_visto_en_puerta') === 'si') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A TU PUERTA! 🔔";
@@ -270,26 +286,21 @@
                 (payload) => {
                     const de = payload.new;
                     
-                    // 1. Cuando el chofer acepta el viaje originalmente
                     if (de.conductor_nombre && de.estado === 'pendiente') {
                         document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
                         document.getElementById('nombreCond').textContent = de.conductor_nombre;
                         document.getElementById('autoCond').textContent = de.conductor_auto;
-                        document.getElementById('estadoViajePasajero').innerHTML = "Análisis: El móvil va en camino 🚗";
+                        document.getElementById('estadoViajePasajero').innerHTML = "El móvil va en camino 🚗";
                         mostrarPaso('pasoPrecio');
                     }
                     
-                    // 2. ¡MAGIA! Cuando el chofer marca "Ya llegué a la puerta" (Cambia a aceptado tras el aviso)
                     if (de.estado === 'aceptado' && localStorage.getItem('pasajero_visto_en_puerta') !== 'si') {
                         localStorage.setItem('pasajero_visto_en_puerta', 'si');
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A TU PUERTA! 🔔";
                         mostrarMsg('¡Tu móvil está en la puerta!', 'success');
-                        
-                        // Hacer sonar la campana en el celular del pasajero
                         timbreLlegadaPuerta.play().catch(() => {});
                     }
 
-                    // 3. Cuando inicia el viaje
                     if (de.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
                     }
@@ -333,8 +344,17 @@
                     if (rutaTrazada) mapa.removeLayer(rutaTrazada);
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#007aff', weight: 5, opacity: 0.85 }).addTo(mapa);
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
-                    precioCalculado = Math.round(TARIFA_BASE + (distanciaKm * TARIFA_KM));
-                    document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado;
+                    
+                    // LÓGICA DE PRECIO BASE + KM
+                    let subTotal = TARIFA_BASE + (distanciaKm * TARIFA_KM);
+                    
+                    // APLICACIÓN AUTOMÁTICA DEL 50% NOCTURNO SI CORRESPONDE
+                    if (esHorarioNocturno()) {
+                        subTotal = subTotal * 1.50;
+                    }
+
+                    precioCalculado = Math.round(subTotal);
+                    document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado + (esHorarioNocturno() ? " (Nocturno)" : "");
                     document.getElementById('txtKmLive').textContent = distanciaKm;
                     document.getElementById('precioEstimadoBox').style.display = 'block';
                     document.getElementById('bottomPanel').classList.add('con-ruta');
@@ -375,6 +395,7 @@
             if (!destinoTexto || !origenCoords || !destinoCoords) { mostrarMsg('Seleccioná un destino válido.', 'error'); return; }
 
             try {
+                // SOLUCIÓN ADAPTADA: Quitamos 'origen_direccion' y 'destino_direccion' para evitar el error de esquema de tu Supabase
                 const { data, error } = await supabaseClient
                     .from('viajes')
                     .insert({
@@ -383,8 +404,6 @@
                         pasajero_telefono: pasajeroTelefono,
                         origen_lat: origenCoords.lat,
                         origen_lng: origenCoords.lng,
-                        origen_direccion: document.getElementById('origenDisplay').value,
-                        destino_direccion: destinoTexto,
                         destino_lat: destinoCoords.lat,
                         destino_lng: destinoCoords.lng,
                         precio: precioCalculado,
@@ -399,7 +418,6 @@
             } catch (e) { mostrarMsg('Error: ' + e.message, 'error'); }
         }
 
-        async function confirmarViaje() { try { await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeId); } catch(e) {} }
         async function cancelarViaje() { if(viajeId) { await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeId); } limpiarMemoriaPasajero(); location.reload(); }
         function volverAtras() { cancelarViaje(); }
         function mostrarPaso(id) { ['pasoDatos', 'pasoEsperando', 'pasoPrecio'].forEach(p => document.getElementById(p).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
