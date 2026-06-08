@@ -36,7 +36,7 @@
             font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto;
         }
 
-        /* ===== PANEL INFERIOR DINÁMICO (MÁXIMO 25% ALTO INICIAL) ===== */
+        /* PANEL INFERIOR DINÁMICO */
         .bottom-panel {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
             background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155;
@@ -44,13 +44,11 @@
             height: 25vh; overflow-y: auto; transition: height 0.4s ease;
             color: #f1f5f9; -webkit-overflow-scrolling: touch;
         }
-        .bottom-panel:focus-within, .bottom-panel:active { height: 55vh; }
-        .bottom-panel.viaje-entrante { height: 35vh; animation: alertaParpadeo 1.5s infinite alternate; }
-        @keyframes alertaParpadeo { from { border-top-color: #334155; } to { border-top-color: #3b82f6; } }
+        .bottom-panel.viaje-entrante { height: 35vh; animation: alertaParpadeo 1s infinite alternate; }
+        @keyframes alertaParpadeo { from { border-top-color: #334155; background: #1e293b; } to { border-top-color: #ef4444; background: #2d1a22; } }
 
         .panel-handle { width: 40px; height: 5px; background: #475569; border-radius: 3px; margin: 0 auto 10px; }
 
-        /* DETALLES DEL VIAJE TRABAJADO */
         .viaje-info-box { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
         .viaje-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; }
         .viaje-pasajero { font-size: 1.1rem; font-weight: 700; color: #fff; }
@@ -71,10 +69,10 @@
             text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: background 0.2s;
         }
         .btn-espera { background: #334155; color: #94a3b8; cursor: not-allowed; }
-        .btn-aceptar { background: #3b82f6; } /* Azul */
-        .btn-llegué { background: #06b6d4; } /* Cian */
+        .btn-aceptar { background: #10b981; font-size: 1.1rem; } /* Verde éxito */
+        .btn-llegué { background: #3b82f6; } /* Azul */
         .btn-iniciar { background: #8b5cf6; } /* Violeta */
-        .btn-finalizar { background: #10b981; } /* Verde Éxito */
+        .btn-finalizar { background: #e11d48; } /* Rojo */
 
         /* ICONOS MAPA */
         .chofer-icon { background: #3b82f6; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px #3b82f6; }
@@ -85,7 +83,6 @@
         .msg { padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.8rem; text-align: center; display: none; font-weight: 600; }
         .msg.show { display: block; }
         .msg-success { background: #065f46; color: #34d399; }
-        .msg-info { background: #1e3a8a; color: #93c5fd; }
     </style>
 </head>
 <body>
@@ -105,7 +102,7 @@
 
         <div id="vistaEspera">
             <div style="text-align: center; padding: 20px 0;">
-                <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 10px;">Esperando solicitudes de viaje en San Miguel/Moreno...</p>
+                <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 10px;">Esperando solicitudes de viaje...</p>
                 <div class="btn-action btn-espera">Buscando Pasajeros...</div>
             </div>
         </div>
@@ -138,29 +135,24 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // CONFIG CHOFER CONSTANTE (Podés cambiar Carlos por el chofer que quieras)
-        const NOMBRE_CHOFER = "Carlos";
-        const AUTO_CHOFER = "Fiat 500 (Azul)";
+        // ===== DATOS REALES CORPORATIVOS =====
+        const NOMBRE_CHOFER = "Carlos Cueva";
+        const AUTO_CHOFER = "Fiat 500 (Patente: JCP 478)"; 
+
+        // TIMBRE DE ALERTA DE NUEVO VIAJE (Sonido nativo digital limpio)
+        const timbreNuevoViaje = new Audio("https://assets.mixkit.co/active_storage/sfx/911/911-84.wav");
+        timbreNuevoViaje.loop = true; // Hace que suene sin parar hasta que lo atiendas
 
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
-        let mapa = null;
-        let markerChofer = null;
-        let markerOrigen = null;
-        let markerDestino = null;
-        let rutaTrazada = null;
-
-        let choferCoords = { lat: -34.545, lng: -58.715 }; // Posición inicial simulada cerca
+        let mapa = null, markerChofer = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
+        let choferCoords = { lat: -34.545, lng: -58.715 }; 
         let viajeActivo = null;
-        let estadoFlujo = 'pendiente'; // pendiente -> aceptado -> en_puerta -> en_viaje
+        let estadoFlujo = 'pendiente'; 
 
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(mapa);
-            
-            // Pintar marcador del chofer inicial
-            markerChofer = L.marker([choferCoords.lat, choferCoords.lng], {
-                icon: L.divIcon({ className: 'chofer-icon' })
-            }).addTo(mapa);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
+            markerChofer = L.marker([choferCoords.lat, choferCoords.lng], { icon: L.divIcon({ className: 'chofer-icon' }) }).addTo(mapa);
         }
 
         function obtenerUbicacionChofer() {
@@ -173,7 +165,6 @@
             }
         }
 
-        // ===== ESCUCHA EN TIEMPO REAL: DETECTAR NUEVOS VIAJES =====
         function escucharNuevosViajes() {
             supabaseClient
                 .channel('despacho-chofer')
@@ -183,9 +174,10 @@
                     }
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes' }, (payload) => {
-                    // Si el pasajero cancela mientras estamos yendo
                     if (viajeActivo && payload.new.id === viajeActivo.id && payload.new.estado === 'cancelado') {
-                        mostrarMsg('El pasajero canceló el viaje.', 'info');
+                        timbreNuevoViaje.pause();
+                        mostrarMsg('El pasajero canceló el viaje.', 'success');
+                        limpiarMemoriaConductor();
                         setTimeout(() => location.reload(), 3000);
                     }
                 })
@@ -196,6 +188,9 @@
             viajeActivo = viaje;
             estadoFlujo = 'pendiente';
 
+            // ¡ACTIVAR TIMBRE DE VIAJE ENTRANTE!
+            timbreNuevoViaje.play().catch(e => console.log("Permiso de audio requerido clickeando la pantalla primero"));
+
             document.getElementById('vistaEspera').classList.add('hidden');
             document.getElementById('vistaViaje').classList.remove('hidden');
             document.getElementById('panelConductor').classList.add('viaje-entrante');
@@ -203,35 +198,29 @@
             document.getElementById('lblPasajero').textContent = viaje.pasajero_nombre;
             document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
             document.getElementById('lblOrigen').textContent = viaje.origen_direccion || "Origen Marcado";
-            document.getElementById('lblDestino').textContent = viaje.destino || viaje.destino_direccion || "Destino Marcado";
+            document.getElementById('lblDestino').textContent = viaje.destino_direccion || "Destino Marcado";
 
-            // Colocar marcadores en el mapa
             if (markerOrigen) mapa.removeLayer(markerOrigen);
             if (markerDestino) mapa.removeLayer(markerDestino);
 
-            markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], {
-                icon: L.divIcon({ className: 'pasajero-origen-icon' })
-            }).addTo(mapa);
+            markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
+            markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
 
-            markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], {
-                icon: L.divIcon({ className: 'pasajero-destino-icon' })
-            }).addTo(mapa);
-
-            // Trazar línea de guía directa inicial
             trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
         }
 
-        // ===== LÓGICA MUTANTE DEL BOTÓN PRINCIPAL =====
         async function procesarLojicaViaje() {
             const btn = document.getElementById('btnAccionPrincipal');
 
             if (estadoFlujo === 'pendiente') {
-                // ACCIÓN: Aceptar el viaje en la Base de Datos
+                // DETENER EL TIMBRE porque ya tocaste la pantalla para aceptar
+                timbreNuevoViaje.pause();
+                timbreNuevoViaje.currentTime = 0;
+
                 try {
                     const { error } = await supabaseClient
                         .from('viajes')
                         .update({
-                            estado: 'pendiente', // Sigue pendiente hasta el OK final del pasajero
                             conductor_nombre: NOMBRE_CHOFER,
                             conductor_auto: AUTO_CHOFER
                         }).eq('id', viajeActivo.id);
@@ -239,78 +228,111 @@
                     if (error) throw error;
 
                     estadoFlujo = 'aceptado';
+                    localStorage.setItem('conductor_viaje_id', viajeActivo.id);
+                    localStorage.setItem('conductor_estado_flujo', 'aceptado');
+
                     document.getElementById('panelConductor').classList.remove('viaje-entrante');
                     btn.className = "btn-action btn-llegué";
                     btn.textContent = "Ya llegué a la puerta 🔓";
                     document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
-                    mostrarMsg('Viaje tomado. Conducí hacia el Origen.', 'success');
+                    mostrarMsg('Viaje tomado con éxito.', 'success');
 
-                } catch (e) { alert("El viaje ya fue tomado por otro móvil: " + e.message); location.reload(); }
+                } catch (e) { alert("El viaje ya fue tomado."); location.reload(); }
                 return;
             }
 
             if (estadoFlujo === 'aceptado') {
-                // ACCIÓN: Avisarle al pasajero que el auto está afuera
                 estadoFlujo = 'en_puerta';
+                localStorage.setItem('conductor_estado_flujo', 'en_puerta');
                 btn.className = "btn-action btn-iniciar";
                 btn.textContent = "Iniciar Viaje 🛫";
                 document.getElementById('txtEstadoChofer').textContent = "En la Puerta 📍";
                 
-                // Cambiamos el estado a aceptado para gatillar alertas en el pasajero
+                // Cambiar el estado a 'aceptado' en Supabase gatilla el timbre en el celular del pasajero
                 await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeActivo.id);
-                mostrarMsg('Notificación enviada al Pasajero.', 'success');
+                mostrarMsg('Notificación de llegada enviada.', 'success');
                 return;
             }
 
             if (estadoFlujo === 'en_puerta') {
-                // ACCIÓN: Pasajero arriba del auto, trazar ruta al destino final
                 estadoFlujo = 'en_viaje';
+                localStorage.setItem('conductor_estado_flujo', 'en_viaje');
                 btn.className = "btn-action btn-finalizar";
                 btn.textContent = "Finalizar Viaje y Cobrar 💵";
                 document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
 
-                // Cambiar trazado del mapa para que guíe al destino final
+                await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
                 trazarRutaCalles(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
                 return;
             }
 
             if (estadoFlujo === 'en_viaje') {
-                // ACCIÓN: Viaje completado con éxito
                 await supabaseClient.from('viajes').update({ estado: 'finalizado' }).eq('id', viajeActivo.id);
                 mostrarMsg('¡Viaje Finalizado! Cobrá $' + viajeActivo.precio, 'success');
+                limpiarMemoriaConductor();
                 setTimeout(() => location.reload(), 4000);
             }
         }
 
-        // ===== MOTOR DE RUTAS POR CALLES REALES (OSRM) =====
+        async function verificarViajeActivoConductor() {
+            const guardadoId = localStorage.getItem('conductor_viaje_id');
+            const guardadoEstado = localStorage.getItem('conductor_estado_flujo');
+            if (!guardadoId) return;
+
+            try {
+                const { data: viaje } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
+                if (!viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') { limpiarMemoriaConductor(); return; }
+
+                viajeActivo = viaje;
+                estadoFlujo = guardadoEstado || 'aceptado';
+
+                document.getElementById('vistaEspera').classList.add('hidden');
+                document.getElementById('vistaViaje').classList.remove('hidden');
+
+                document.getElementById('lblPasajero').textContent = viaje.pasajero_nombre;
+                document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
+                document.getElementById('lblOrigen').textContent = viaje.origen_direccion;
+                document.getElementById('lblDestino').textContent = viaje.destino_direccion;
+
+                markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
+                markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
+
+                const btn = document.getElementById('btnAccionPrincipal');
+                if (estadoFlujo === 'aceptado') {
+                    btn.className = "btn-action btn-llegué"; btn.textContent = "Ya llegué a la puerta 🔓";
+                    document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
+                    trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
+                } else if (estadoFlujo === 'en_puerta') {
+                    btn.className = "btn-action btn-iniciar"; btn.textContent = "Iniciar Viaje 🛫";
+                    document.getElementById('txtEstadoChofer').textContent = "En la Puerta 📍";
+                    trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
+                } else if (estadoFlujo === 'en_viaje') {
+                    btn.className = "btn-action btn-finalizar"; btn.textContent = "Finalizar Viaje y Cobrar 💵";
+                    document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
+                    trazarRutaCalles(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+                }
+            } catch (e) { limpiarMemoriaConductor(); }
+        }
+
+        function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id'); localStorage.removeItem('conductor_estado_flujo'); }
+
         async function trazarRutaCalles(lat1, lon1, lat2, lon2) {
             try {
                 const url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`;
-                const res = await fetch(url);
-                const data = await res.json();
-
+                const res = await fetch(url); const data = await res.json();
                 if (data.code === 'Ok' && data.routes.length > 0) {
                     if (rutaTrazada) mapa.removeLayer(rutaTrazada);
-
-                    const coordinates = data.routes[0].geometry.coordinates;
-                    const puntosCalle = coordinates.map(coord => [coord[1], coord[0]]);
-
-                    rutaTrazada = L.polyline(puntosCalle, { color: '#3b82f6', weight: 6, opacity: 0.9 }).addTo(mapa);
+                    rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#3b82f6', weight: 6, opacity: 0.9 }).addTo(mapa);
                     mapa.fitBounds(rutaTrazada.getBounds(), { padding: [40, 40] });
                 }
-            } catch (e) { console.error("Error ruteando chofer:", e); }
+            } catch (e) {}
         }
 
-        function mostrarMsg(texto, tipo) {
-            const msg = document.getElementById('msgChofer');
-            msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show';
-            setTimeout(() => msg.classList.remove('show'), 4000);
-        }
+        function mostrarMsg(texto, tipo) { const msg = document.getElementById('msgChofer'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
 
         window.addEventListener('DOMContentLoaded', () => {
-            initMapa();
-            escucharNuevosViajes();
-            setTimeout(() => obtenerUbicacionChofer(), 1000);
+            initMapa(); escucharNuevosViajes();
+            setTimeout(async () => { obtenerUbicacionChofer(); await verificarViajeActivoConductor(); }, 1000);
         });
     </script>
 </body>
