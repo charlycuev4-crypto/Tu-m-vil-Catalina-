@@ -44,30 +44,17 @@
         }
         .mapa-hint.visible { display: block; }
 
-        /* ===== MENÚ ULTRA COMPACTO CON SCROLL DINÁMICO (25% ALTO MÁXIMO INICIAL) ===== */
+        /* MENÚ COMPACTO (25% ALTO INICIAL) */
         .bottom-panel {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
             background: white; border-radius: 24px 24px 0 0;
             box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 12px 20px 20px;
-            
-            /* Restringido estrictamente a un cuarto de la pantalla para dar prioridad al mapa */
-            height: 25vh; 
-            overflow-y: auto; 
-            transition: height 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            height: 25vh; overflow-y: auto; transition: height 0.4s ease;
             -webkit-overflow-scrolling: touch;
         }
-        
-        /* Cuando el usuario desliza o hace foco en los datos, se expande de forma elástica */
-        .bottom-panel:focus-within, .bottom-panel:active {
-            height: 60vh;
-        }
-        /* Clase añadida automáticamente al tener una ruta activa para mostrar tarifa cómodamente */
-        .bottom-panel.con-ruta {
-            height: 30vh;
-        }
-        .bottom-panel.con-ruta:focus-within {
-            height: 65vh;
-        }
+        .bottom-panel:focus-within, .bottom-panel:active { height: 60vh; }
+        .bottom-panel.con-ruta { height: 30vh; }
+        .bottom-panel.con-ruta:focus-within { height: 65vh; }
 
         .panel-handle { width: 40px; height: 5px; background: #e0e0e0; border-radius: 3px; margin: 0 auto 10px; }
 
@@ -94,7 +81,6 @@
         }
         .sugerencias.activo { display: block; }
         .sugerencia-item { padding: 10px 12px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 0.85rem; }
-        .sugerencia-item:active { background: #f5f5f7; }
 
         .price-box-live {
             background: #eef2ff; color: #3b5bdb; padding: 10px; border-radius: 14px;
@@ -106,7 +92,6 @@
             border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer;
             box-shadow: 0 4px 12px rgba(44,212,74,0.3); text-align: center; margin-top: 5px;
         }
-        .btn-green-action:active { transform: scale(0.98); background: #24b83f; }
 
         .pasajero-ping-icon { background: #007aff; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
         .destino-ping-icon { background: #ff4757; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
@@ -130,8 +115,8 @@
         <div class="header-row">
             <button class="back-btn" onclick="volverAtras()">‹</button>
             <div class="right-buttons">
-                <button class="gps-btn" id="gpsBtn" title="Mi ubicación GPS" onclick="obtenerGPS()">🎯</button>
-                <button class="manual-btn" id="manualBtn" title="Marcar Destino en Mapa" onclick="activarModoManualDestino()">📌</button>
+                <button class="gps-btn" id="gpsBtn" onclick="obtenerGPS()">🎯</button>
+                <button class="manual-btn" id="manualBtn" onclick="activarModoManualDestino()">📌</button>
             </div>
         </div>
     </div>
@@ -162,7 +147,7 @@
                 </div>
                 <div class="input-row">
                     <div class="dot dot-red"></div>
-                    <input type="text" id="destino" placeholder="¿A dónde vamos? (o usá el pin de arriba)" autocomplete="off" oninput="buscarDireccion(this.value)">
+                    <input type="text" id="destino" placeholder="¿A dónde vamos?" autocomplete="off" oninput="buscarDireccion(this.value)">
                 </div>
             </div>
             <div class="sugerencias" id="sugerencias"></div>
@@ -206,7 +191,6 @@
         const TARIFA_BASE = 3000;
         const TARIFA_KM = 800;
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212]; 
-        const ZOOM_DEFAULT = 15;
 
         let viajeId = null;
         let subViaje = null;
@@ -215,150 +199,93 @@
         let precioCalculado = 0;
         let distanciaKm = 0;
         let modoDestinoManual = false;
-
-        let mapa = null;
-        let markerOrigen = null;
-        let markerDestino = null;
-        let rutaTrazada = null;
+        let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
 
         function initMapa() {
-            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false })
-                    .setView(ESTACION_SAN_MIGUEL, ZOOM_DEFAULT);
-
+            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 15);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(mapa);
-
-            mapa.on('click', function(e) {
-                if (modoDestinoManual) {
-                    marcarDestinoManual(e.latlng.lat, e.latlng.lng);
-                }
-            });
+            mapa.on('click', (e) => { if (modoDestinoManual) marcarDestinoManual(e.latlng.lat, e.latlng.lng); });
         }
 
-        // ===== NUEVA LÓGICA: MARCADOR MANUAL EXCLUSIVO PARA EL DESTINO =====
         function activarModoManualDestino() {
             modoDestinoManual = true;
             document.getElementById('manualBtn').classList.add('activo');
             document.getElementById('hintManual').classList.add('visible');
-            mostrarMsg('Seleccioná el punto de destino tocando el mapa.', 'success');
-        }
-
-        function desactivarModoManualDestino() {
-            modoDestinoManual = false;
-            document.getElementById('manualBtn').classList.remove('activo');
-            document.getElementById('hintManual').classList.remove('visible');
         }
 
         function marcarDestinoManual(lat, lng) {
             destinoCoords = { lat, lng };
             if (markerDestino) mapa.removeLayer(markerDestino);
-
-            markerDestino = L.marker([lat, lng], {
-                icon: L.divIcon({ className: 'destino-ping-icon' })
-            }).addTo(mapa);
-
+            markerDestino = L.marker([lat, lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
             document.getElementById('destino').value = "Punto marcado en mapa";
-            desactivarModoManualDestino();
+            modoDestinoManual = false;
+            document.getElementById('manualBtn').classList.remove('activo');
+            document.getElementById('hintManual').classList.remove('visible');
             recalcularRutaYPrecio();
         }
 
         function marcarOrigen(lat, lng, label) {
             origenCoords = { lat, lng };
             if (markerOrigen) mapa.removeLayer(markerOrigen);
-
-            markerOrigen = L.marker([lat, lng], {
-                icon: L.divIcon({ className: 'pasajero-ping-icon' })
-            }).addTo(mapa);
-
+            markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
             document.getElementById('origenDisplay').value = label || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
             recalcularRutaYPrecio();
         }
 
         function obtenerGPS() {
-            desactivarModoManualDestino();
-            const btn = document.getElementById('gpsBtn');
-            btn.classList.add('buscando');
-
-            if (!navigator.geolocation) {
-                forzarCentroSanMiguel();
-                return;
-            }
-
+            if (!navigator.geolocation) { forzarCentroSanMiguel(); return; }
+            document.getElementById('gpsBtn').classList.add('buscando');
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
-                    btn.classList.remove('buscando');
+                    document.getElementById('gpsBtn').classList.remove('buscando');
                     marcarOrigen(pos.coords.latitude, pos.coords.longitude, "Mi ubicación actual");
-                    mapa.setView([pos.coords.latitude, pos.coords.longitude], ZOOM_DEFAULT);
+                    mapa.setView([pos.coords.latitude, pos.coords.longitude], 15);
                 },
-                (err) => {
-                    btn.classList.remove('buscando');
-                    forzarCentroSanMiguel();
-                },
+                () => { document.getElementById('gpsBtn').classList.remove('buscando'); forzarCentroSanMiguel(); },
                 { enableHighAccuracy: true, timeout: 7000 }
             );
         }
 
         function forzarCentroSanMiguel() {
             marcarOrigen(ESTACION_SAN_MIGUEL[0], ESTACION_SAN_MIGUEL[1], "Estación San Miguel (Por defecto)");
-            mapa.setView(ESTACION_SAN_MIGUEL, ZOOM_DEFAULT);
+            mapa.setView(ESTACION_SAN_MIGUEL, 15);
         }
 
-        // ===== ENRUTAMIENTO REAL POR CALLES Y CAMBIOS DINÁMICOS =====
         async function recalcularRutaYPrecio() {
             if (!origenCoords || !destinoCoords) return;
-
             try {
                 const url = `https://router.project-osrm.org/route/v1/driving/${origenCoords.lng},${origenCoords.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson`;
-                const res = await fetch(url);
-                const data = await res.json();
-
+                const res = await fetch(url); const data = await res.json();
                 if (data.code === 'Ok' && data.routes.length > 0) {
                     if (rutaTrazada) mapa.removeLayer(rutaTrazada);
-
                     const coordinates = data.routes[0].geometry.coordinates;
                     const puntosCalle = coordinates.map(coord => [coord[1], coord[0]]);
-
                     rutaTrazada = L.polyline(puntosCalle, { color: '#007aff', weight: 5, opacity: 0.85 }).addTo(mapa);
-
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     precioCalculado = Math.round(TARIFA_BASE + (distanciaKm * TARIFA_KM));
-
                     document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado;
                     document.getElementById('txtKmLive').textContent = distanciaKm;
                     document.getElementById('precioEstimadoBox').style.display = 'block';
-
-                    // Modificación estética para que expanda un cachito más la tarjeta por la tarifa
                     document.getElementById('bottomPanel').classList.add('con-ruta');
-
-                    // Encuadre óptimo con un zoom más cerrado (más específico)
                     mapa.fitBounds(rutaTrazada.getBounds(), { padding: [40, 40], maxZoom: 16 });
                 }
-            } catch (e) {
-                console.error("Error en ruteo:", e);
-            }
+            } catch (e) { console.error(e); }
         }
 
-        // ===== SUGERENCIAS INTELIGENTES =====
         let timeoutBusqueda = null;
         function buscarDireccion(query) {
-            const sugerenciasDiv = document.getElementById('sugerencias');
             clearTimeout(timeoutBusqueda);
-            if (query.length < 3) { sugerenciasDiv.classList.remove('activo'); return; }
-
+            if (query.length < 3) { document.getElementById('sugerencias').classList.remove('activo'); return; }
             timeoutBusqueda = setTimeout(async () => {
                 try {
                     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Buenos Aires')}&limit=4`;
-                    const res = await fetch(url);
-                    const datos = await res.json();
-
-                    sugerenciasDiv.innerHTML = datos.map(lugar => {
-                        const primario = lugar.display_name.split(',')[0];
-                        return `<div class="sugerencia-item" onclick="seleccionarDestino('${lugar.display_name.replace(/'/g, "")}', ${lugar.lat}, ${lugar.lon})">
-                            <strong>🎯 ${primario}</strong>
+                    const res = await fetch(url); const datos = await res.json();
+                    document.getElementById('sugerencias').innerHTML = datos.map(lugar => `
+                        <div class="sugerencia-item" onclick="seleccionarDestino('${lugar.display_name.replace(/'/g, "")}', ${lugar.lat}, ${lugar.lon})">
+                            <strong>🎯 ${lugar.display_name.split(',')[0]}</strong>
                             <div style="font-size:0.75rem; color:#777;">${lugar.display_name.split(',').slice(1,3).join(',')}</div>
-                        </div>`;
-                    }).join('');
-
-                    if (datos.length > 0) sugerenciasDiv.classList.add('activo');
+                        </div>`).join('');
+                    if (datos.length > 0) document.getElementById('sugerencias').classList.add('activo');
                 } catch (e) { console.error(e); }
             }, 400);
         }
@@ -367,28 +294,22 @@
             document.getElementById('destino').value = direccion.split(',')[0];
             document.getElementById('sugerencias').classList.remove('activo');
             destinoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
-
             if (markerDestino) mapa.removeLayer(markerDestino);
-            markerDestino = L.marker([lat, lng], {
-                icon: L.divIcon({ className: 'destino-ping-icon' })
-            }).addTo(mapa);
-            
+            markerDestino = L.marker([lat, lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
             recalcularRutaYPrecio();
         }
 
-        // ===== ENVÍO SEGURO A SUPABASE =====
         async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value.trim();
             const telefono = document.getElementById('telefono').value.trim();
             const destinoTexto = document.getElementById('destino').value.trim();
 
             if (!nombre || !telefono || !destinoTexto || !origenCoords || !destinoCoords) {
-                mostrarMsg('Completá tus datos y seleccioná un destino.', 'error');
-                return;
+                mostrarMsg('Completá tus datos y seleccioná un destino.', 'error'); return;
             }
 
             try {
-                // Soportamos de manera redundante ambas columnas por compatibilidad
+                // Sincronizado exactamente con las nuevas columnas SQL
                 const { data, error } = await supabaseClient
                     .from('viajes')
                     .insert({
@@ -398,8 +319,7 @@
                         origen_lat: origenCoords.lat,
                         origen_lng: origenCoords.lng,
                         origen_direccion: document.getElementById('origenDisplay').value,
-                        destino: destinoTexto, 
-                        destino_direccion: destinoTexto, 
+                        destino_direccion: destinoTexto,
                         destino_lat: destinoCoords.lat,
                         destino_lng: destinoCoords.lng,
                         precio: precioCalculado,
@@ -407,13 +327,10 @@
                     }).select().single();
 
                 if (error) throw error;
-
                 viajeId = data.id;
                 mostrarPaso('pasoEsperando');
                 iniciarEscuchaRealtime(viajeId);
-            } catch (e) {
-                mostrarMsg('Error de conexión: ' + e.message, 'error');
-            }
+            } catch (e) { mostrarMsg('Error de conexión: ' + e.message, 'error'); }
         }
 
         function iniciarEscuchaRealtime(id) {
@@ -422,49 +339,26 @@
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes', filter: 'id=eq.' + id }, 
                 (payload) => {
                     const de = payload.new;
-                    if (de.estado === 'pendiente' && de.conductor_nombre) {
-                        document.getElementById('precioMonto').textContent = 'Total a pagar: $' + (de.precio || precioCalculado);
+                    if (de.conductor_nombre && de.estado === 'pendiente') {
+                        document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
                         document.getElementById('nombreCond').textContent = de.conductor_nombre;
                         document.getElementById('autoCond').textContent = de.conductor_auto || "Móvil Registrado";
                         mostrarPaso('pasoPrecio');
                     }
-                    if (de.estado === 'aceptado') {
-                        mostrarMsg('¡Chofer confirmado en camino hacia vos!', 'success');
-                    }
-                    if (de.estado === 'cancelado') {
-                        mostrarMsg('El viaje fue cancelado.', 'error');
-                        setTimeout(() => location.reload(), 2000);
-                    }
+                    if (de.estado === 'aceptado') { mostrarMsg('¡Chofer confirmado en camino!', 'success'); }
+                    if (de.estado === 'cancelado') { mostrarMsg('El viaje fue cancelado.', 'error'); setTimeout(() => location.reload(), 2000); }
                 }).subscribe();
         }
 
         async function confirmarViaje() {
-            try {
-                await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeId);
-                mostrarMsg('¡Viaje confirmado con éxito!', 'success');
-            } catch(e) { console.error(e); }
+            try { await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeId); mostrarMsg('¡Viaje confirmado!', 'success'); } catch(e) { console.error(e); }
         }
-
-        async function cancelarViaje() {
-            if(viajeId) { await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeId); }
-            location.reload();
-        }
-
+        async function cancelarViaje() { if(viajeId) { await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeId); } location.reload(); }
         function volverAtras() { cancelarViaje(); }
-        function mostrarPaso(id) {
-            ['pasoDatos', 'pasoEsperando', 'pasoPrecio'].forEach(p => document.getElementById(p).classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-        }
-        function mostrarMsg(texto, tipo) {
-            const msg = document.getElementById('msg');
-            msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show';
-            setTimeout(() => msg.classList.remove('show'), 4000);
-        }
+        function mostrarPaso(id) { ['pasoDatos', 'pasoEsperando', 'pasoPrecio'].forEach(p => document.getElementById(p).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
+        function mostrarMsg(texto, tipo) { const msg = document.getElementById('msg'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            initMapa();
-            setTimeout(() => obtenerGPS(), 500);
-        });
+        window.addEventListener('DOMContentLoaded', () => { initMapa(); setTimeout(() => obtenerGPS(), 500); });
     </script>
 </body>
 </html>
