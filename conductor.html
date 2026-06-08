@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TuMovil Las Catalinas - Conductor</title>
+    <!-- Supabase & Leaflet -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -98,12 +99,37 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // ===== CONFIGURACIÓN ACTUALIZADA DEL PROPIETARIO =====
         const NOMBRE_CHOFER = "Carlos Cueva";
         const AUTO_CHOFER = "Ford Fiesta Max (Patente: JCP 478)"; 
 
-        const timbreNuevoViaje = new Audio("https://assets.mixkit.co/active_storage/sfx/911/911-84.wav");
-        timbreNuevoViaje.loop = true;
+        // SISTEMA INTEGRADO DE SIRENA DE ALERTA CONTINUA
+        let loopAudioAlerta = null;
+        function comenzarSirenaAlerta() {
+            if (loopAudioAlerta) return;
+            try {
+                const contexto = new (window.AudioContext || window.webkitAudioContext)();
+                loopAudioAlerta = setInterval(() => {
+                    let osc = contexto.createOscillator();
+                    let gain = contexto.createGain();
+                    osc.type = 'sawtooth'; // Sonido electrónico penetrante
+                    osc.frequency.setValueAtTime(880, contexto.currentTime); // Tono de alerta alto
+                    osc.frequency.exponentialRampToValueAtTime(440, contexto.currentTime + 0.3); // Modulación descendente
+                    gain.gain.setValueAtTime(0.3, contexto.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, contexto.currentTime + 0.35);
+                    osc.connect(gain);
+                    gain.connect(contexto.destination);
+                    osc.start();
+                    osc.stop(contexto.currentTime + 0.4);
+                }, 500); // Se repite de manera infinita cada medio segundo
+            } catch (e) {}
+        }
+
+        function detenerSirenaAlerta() {
+            if (loopAudioAlerta) {
+                clearInterval(loopAudioAlerta);
+                loopAudioAlerta = null;
+            }
+        }
 
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
         let mapa = null, markerChofer = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
@@ -137,7 +163,7 @@
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes' }, (payload) => {
                     if (viajeActivo && payload.new.id === viajeActivo.id && payload.new.estado === 'cancelado') {
-                        timbreNuevoViaje.pause();
+                        detenerSirenaAlerta();
                         mostrarMsg('El pasajero canceló el viaje.', 'success');
                         limpiarMemoriaConductor();
                         setTimeout(() => location.reload(), 3000);
@@ -150,7 +176,8 @@
             viajeActivo = viaje;
             estadoFlujo = 'pendiente';
 
-            timbreNuevoViaje.play().catch(e => console.log("Haga clic en la pantalla primero."));
+            // ACTIVAR LA SIRENA REPETITIVA DE ALERTA AL RECIBIR EL VIAJE
+            comenzarSirenaAlerta();
 
             document.getElementById('vistaEspera').classList.add('hidden');
             document.getElementById('vistaViaje').classList.remove('hidden');
@@ -173,8 +200,8 @@
             const btn = document.getElementById('btnAccionPrincipal');
 
             if (estadoFlujo === 'pendiente') {
-                timbreNuevoViaje.pause();
-                timbreNuevoViaje.currentTime = 0;
+                // APAGAR LA SIRENA CUANDO EL CONDUCTOR COMPROMETE EL VIAJE
+                detenerSirenaAlerta();
 
                 try {
                     const { error } = await supabaseClient
