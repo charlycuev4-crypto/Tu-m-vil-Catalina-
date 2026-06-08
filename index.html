@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TuMovil Las Catalinas - Pasajero</title>
+    <!-- Supabase & Leaflet -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -30,7 +31,7 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             margin-bottom: 25px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); border: 1px solid #334155;
         }
-        .splash-logo-box img { width: 85px; height: auto; border-radius: 8px; margin-bottom: 4px; }
+        .splash-logo-box img { width: 85px; height: 60px; border-radius: 8px; margin-bottom: 4px; object-fit: cover; }
         .splash-logo-box span { font-size: 0.8rem; font-weight: 700; color: #ffcc00; letter-spacing: 1px; }
         
         .splash-form { width: 100%; max-width: 300px; display: none; flex-direction: column; gap: 12px; margin-top: 15px; }
@@ -99,7 +100,8 @@
 
     <div id="splashScreen">
         <div class="splash-logo-box">
-            <img src="https://i.ibb.co/VpyXw99v/1000310012.jpg" alt="Tu Móvil">
+            <!-- Foto Optimizada del Fiesta de Carlos -->
+            <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Tu Móvil">
             <span>TU MÓVIL</span>
         </div>
         <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 8px; font-size: 1.4rem;">Cargando...</h2>
@@ -130,13 +132,15 @@
         <div class="panel-handle"></div>
         <div class="msg" id="msg"></div>
 
+        <!-- PASO 1: PEDIDO -->
         <div id="pasoDatos">
             <div class="driver-card-preview">
                 <div class="driver-img-box">
-                    <img src="https://i.ibb.co/VpyXw99v/1000310012.jpg" alt="Ford Fiesta Max">
+                    <!-- Foto Optimizada del Fiesta de Carlos -->
+                    <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Ford Fiesta Max">
                 </div>
                 <div class="driver-info-box">
-                    <h3>Tu派Móvil (Ford Fiesta)</h3>
+                    <h3>Tu Móvil (Ford Fiesta)</h3>
                     <p id="txtEstructuraTarifa">Base $3.000 + $600 x Kilómetro</p>
                     <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +50% Recargo Nocturno Activo</div>
                 </div>
@@ -158,6 +162,7 @@
             <button class="btn-green-action" onclick="solicitarViaje()">Confirmar Tu Móvil</button>
         </div>
 
+        <!-- PASO 2: ESPERA -->
         <div id="pasoEsperando" class="hidden">
             <div style="text-align: center; padding: 10px 0;">
                 <h4 style="margin-bottom: 4px;">Buscando conductor cercano...</h4>
@@ -166,11 +171,12 @@
             </div>
         </div>
 
+        <!-- PASO 3: PRECIO Y CHOFER ASIGNADO -->
         <div id="pasoPrecio" class="hidden">
             <div class="price-box-live" style="display:block; background:#dbeafe; color:#1e40af;" id="precioMonto">$0.00</div>
             <div class="driver-card-preview">
                 <div class="driver-img-box">
-                    <img src="https://i.ibb.co/VpyXw99v/1000310012.jpg" alt="Ford Fiesta Max">
+                    <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Ford Fiesta Max">
                 </div>
                 <div class="driver-info-box">
                     <h3 id="nombreCond">Carlos Cueva</h3>
@@ -188,19 +194,28 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // ===== NUEVAS TARIFAS OPTIMIZADAS =====
         const TARIFA_BASE = 3000;
-        const TARIFA_KM = 600; // Reducido de 800 a 600 por tu solicitud
+        const TARIFA_KM = 600;
 
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212]; 
-        const timbreLlegadaPuerta = new Audio("https://assets.mixkit.co/active_storage/sfx/1655/1655-84.wav");
 
         let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
         let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
         let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "";
 
-        // FUNCIÓN AUTOMÁTICA PARA CONTROLAR EL HORARIO NOCTURNO (22hs a 07hs)
+        // FUNCIÓN POR VOZ PARA AVISAR AL PASAJERO
+        function hablarAnuncioPasajero(texto) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Detener cualquier sonido previo
+                const enunciado = new SpeechSynthesisUtterance(texto);
+                enunciado.lang = 'es-AR'; // Español de Argentina
+                enunciado.rate = 0.9;     // Velocidad natural
+                enunciado.pitch = 1.0;    // Tono de voz estándar
+                window.speechSynthesis.speak(enunciado);
+            }
+        }
+
         function esHorarioNocturno() {
             const horaActual = new Date().getHours();
             return (horaActual >= 22 || horaActual < 7);
@@ -211,7 +226,6 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             mapa.on('click', (e) => { if (modoDestinoManual) marcarDestinoManual(e.latlng.lat, e.latlng.lng); });
             
-            // Verificar visualmente si corresponde alertar recargo nocturno en la UI
             if(esHorarioNocturno()) {
                 document.getElementById('badgeNocturnoAviso').classList.remove('hidden');
                 document.getElementById('txtEstructuraTarifa').innerHTML = "Base $3.000 + $600 x Km <br><b>(Tarifa nocturna aplicada)</b>";
@@ -298,7 +312,9 @@
                         localStorage.setItem('pasajero_visto_en_puerta', 'si');
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A TU PUERTA! 🔔";
                         mostrarMsg('¡Tu móvil está en la puerta!', 'success');
-                        timbreLlegadaPuerta.play().catch(() => {});
+                        
+                        // DICTADO POR VOZ REAL AL PASAJERO
+                        hablarAnuncioPasajero("Tu móvil ya llegó a la puerta.");
                     }
 
                     if (de.estado === 'en_viaje') {
@@ -345,13 +361,8 @@
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#007aff', weight: 5, opacity: 0.85 }).addTo(mapa);
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
-                    // LÓGICA DE PRECIO BASE + KM
                     let subTotal = TARIFA_BASE + (distanciaKm * TARIFA_KM);
-                    
-                    // APLICACIÓN AUTOMÁTICA DEL 50% NOCTURNO SI CORRESPONDE
-                    if (esHorarioNocturno()) {
-                        subTotal = subTotal * 1.50;
-                    }
+                    if (esHorarioNocturno()) { subTotal = subTotal * 1.50; }
 
                     precioCalculado = Math.round(subTotal);
                     document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado + (esHorarioNocturno() ? " (Nocturno)" : "");
@@ -395,7 +406,6 @@
             if (!destinoTexto || !origenCoords || !destinoCoords) { mostrarMsg('Seleccioná un destino válido.', 'error'); return; }
 
             try {
-                // SOLUCIÓN ADAPTADA: Quitamos 'origen_direccion' y 'destino_direccion' para evitar el error de esquema de tu Supabase
                 const { data, error } = await supabaseClient
                     .from('viajes')
                     .insert({
