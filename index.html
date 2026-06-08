@@ -18,6 +18,36 @@
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
+        /* ===== PANTALLA SPLASH DE BIENVENIDA Y REGISTRO ===== */
+        #splashScreen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #11121a; color: white; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 30px; text-align: center; transition: opacity 0.5s ease;
+        }
+        .splash-logo-box {
+            width: 140px; height: 110px; background: #1e293b; border-radius: 20px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            margin-bottom: 25px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); border: 1px solid #334155;
+        }
+        .splash-logo-box img { width: 70px; height: auto; margin-bottom: 4px; }
+        .splash-logo-box span { font-size: 0.8rem; font-weight: 700; color: #ffcc00; letter-spacing: 1px; }
+        
+        .splash-form { width: 100%; max-width: 300px; display: none; flex-direction: column; gap: 12px; margin-top: 15px; }
+        .splash-form input {
+            background: #1e293b; border: 1px solid #334155; color: white; padding: 14px;
+            border-radius: 14px; outline: none; font-size: 1rem; text-align: center;
+        }
+        .splash-form input::placeholder { color: #64748b; }
+        
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #2cd44a; border-radius: 50%; animation: spin 1s infinite linear;
+            margin-top: 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* BOTONES FLOTANTES */
         .header-float {
             position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000;
             display: flex; flex-direction: column; gap: 10px; pointer-events: none;
@@ -39,12 +69,11 @@
             position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000;
             background: rgba(255, 71, 87, 0.95); color: white; padding: 10px 18px;
             border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none;
-            display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            text-align: center; width: 85%; max-width: 320px;
+            display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-align: center; width: 85%; max-width: 320px;
         }
         .mapa-hint.visible { display: block; }
 
-        /* MENÚ COMPACTO (25% ALTO INICIAL) */
+        /* ===== MENÚ INFERIOR ULTRA REDUCIDO (YA NO TIENE INPUTS DE NOMBRE/TELÉFONO) ===== */
         .bottom-panel {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
             background: white; border-radius: 24px 24px 0 0;
@@ -52,9 +81,8 @@
             height: 25vh; overflow-y: auto; transition: height 0.4s ease;
             -webkit-overflow-scrolling: touch;
         }
-        .bottom-panel:focus-within, .bottom-panel:active { height: 60vh; }
+        .bottom-panel:focus-within, .bottom-panel:active { height: 45vh; }
         .bottom-panel.con-ruta { height: 30vh; }
-        .bottom-panel.con-ruta:focus-within { height: 65vh; }
 
         .panel-handle { width: 40px; height: 5px; background: #e0e0e0; border-radius: 3px; margin: 0 auto 10px; }
 
@@ -105,6 +133,24 @@
 </head>
 <body>
 
+    <div id="splashScreen">
+        <div class="splash-logo-box">
+            <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&h=80&fit=crop" alt="Tu Móvil">
+            <span>TU MÓVIL</span>
+        </div>
+        
+        <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 8px; font-size: 1.4rem;">Cargando...</h2>
+        <p id="splashSub" style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Preparando tu viaje seguro</p>
+
+        <div class="spinner" id="splashLoader"></div>
+
+        <div class="splash-form" id="splashForm">
+            <input type="text" id="regNombre" placeholder="Ingresá tu nombre">
+            <input type="tel" id="regTelefono" placeholder="Tu número de teléfono">
+            <button class="btn-green-action" onclick="guardarRegistroPerfil()">Comenzar a Viajar</button>
+        </div>
+    </div>
+
     <div class="mapa-hint" id="hintManual">📍 Modo Manual: Tocá el mapa para marcar tu DESTINO</div>
 
     <div id="mapaContainer">
@@ -152,11 +198,6 @@
             </div>
             <div class="sugerencias" id="sugerencias"></div>
 
-            <div class="input-group">
-                <div class="input-row"><input type="text" id="nombre" placeholder="Tu nombre"></div>
-                <div class="input-row"><input type="tel" id="telefono" placeholder="Tu teléfono"></div>
-            </div>
-
             <button class="btn-green-action" onclick="solicitarViaje()">Confirmar Tu Móvil</button>
         </div>
 
@@ -192,14 +233,14 @@
         const TARIFA_KM = 800;
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212]; 
 
-        let viajeId = null;
-        let subViaje = null;
-        let origenCoords = null;
-        let destinoCoords = null;
-        let precioCalculado = 0;
-        let distanciaKm = 0;
-        let modoDestinoManual = false;
+        let viajeId = null, subViaje = null;
+        let origenCoords = null, destinoCoords = null;
+        let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
         let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
+
+        // DATOS DEL CLIENTE RECUPERADOS AUTOMÁTICAMENTE
+        let pasajeroNombre = "";
+        let pasajeroTelefono = "";
 
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 15);
@@ -207,23 +248,103 @@
             mapa.on('click', (e) => { if (modoDestinoManual) marcarDestinoManual(e.latlng.lat, e.latlng.lng); });
         }
 
-        function activarModoManualDestino() {
-            modoDestinoManual = true;
-            document.getElementById('manualBtn').classList.add('activo');
-            document.getElementById('hintManual').classList.add('visible');
+        // ===== CONTROL DEL SPLASH SCREEN INTELIGENTE =====
+        function procesarSplashDeBienvenida() {
+            pasajeroNombre = localStorage.getItem('perfil_nombre');
+            pasajeroTelefono = localStorage.getItem('perfil_telefono');
+
+            if (!pasajeroNombre || !pasajeroTelefono) {
+                // Es su primera vez en la app: Mostramos el formulario de registro
+                document.getElementById('splashTitulo').textContent = "¡Te damos la bienvenida!";
+                document.getElementById('splashSub').textContent = "Registrate por única vez para pedir viajes";
+                document.getElementById('splashLoader').style.display = "none";
+                document.getElementById('splashForm').style.display = "flex";
+            } else {
+                // Ya está registrado: Flujo directo e invisible
+                document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
+                setTimeout(async () => {
+                    await verificarViajeActivoPasajero();
+                    cerrarSplash();
+                    if (!viajeId) obtenerGPS();
+                }, 1200);
+            }
         }
 
+        function guardarRegistroPerfil() {
+            const nom = document.getElementById('regNombre').value.trim();
+            const tel = document.getElementById('regTelefono').value.trim();
+
+            if (!nom || !tel) { alert("Por favor completa tu nombre y teléfono."); return; }
+
+            localStorage.setItem('perfil_nombre', nom);
+            localStorage.setItem('perfil_telefono', tel);
+            pasajeroNombre = nom;
+            pasajeroTelefono = tel;
+
+            document.getElementById('splashForm').style.display = "none";
+            document.getElementById('splashLoader').style.display = "block";
+            document.getElementById('splashTitulo').textContent = "Configurando Todo...";
+
+            setTimeout(() => {
+                cerrarSplash();
+                obtenerGPS();
+            }, 1000);
+        }
+
+        function cerrarSplash() {
+            const splash = document.getElementById('splashScreen');
+            splash.style.opacity = "0";
+            setTimeout(() => splash.style.display = "none", 500);
+        }
+
+        // ===== RE-ESTABILIZACIÓN ANTE REFRESCADAS (LOCALSTORAGE) =====
+        async function verificarViajeActivoPasajero() {
+            const guardadoId = localStorage.getItem('pasajero_viaje_id');
+            if (!guardadoId) return;
+
+            try {
+                const { data: viaje, error } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
+                if (error || !viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') {
+                    limpiarMemoriaPasajero(); return;
+                }
+
+                viajeId = viaje.id;
+                origenCoords = { lat: viaje.origen_lat, lng: viaje.origen_lng };
+                destinoCoords = { lat: viaje.destino_lat, lng: viaje.destino_lng };
+                precioCalculado = viaje.precio; distanciaKm = viaje.distancia_km;
+
+                markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
+                markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
+                
+                document.getElementById('origenDisplay').value = viaje.origen_direccion || "Ubicación actual";
+                document.getElementById('destino').value = viaje.destino_direccion || "Destino seleccionado";
+
+                await recalcularRutaYPrecio();
+
+                if (viaje.estado === 'pendiente' && !viaje.conductor_nombre) {
+                    mostrarPaso('pasoEsperando');
+                } else {
+                    document.getElementById('precioMonto').textContent = 'Total a pagar: $' + viaje.precio;
+                    document.getElementById('nombreCond').textContent = viaje.conductor_nombre;
+                    document.getElementById('autoCond').textContent = viaje.conductor_auto || "Móvil en camino";
+                    mostrarPaso('pasoPrecio');
+                }
+                iniciarEscuchaRealtime(viajeId);
+            } catch (e) { limpiarMemoriaPasajero(); }
+        }
+
+        function limpiarMemoriaPasajero() { localStorage.removeItem('pasajero_viaje_id'); }
+
+        // MÓDULO AUXILIAR DE GPS Y DIRECCIONES
+        function activarModoManualDestino() { modoDestinoManual = true; document.getElementById('manualBtn').classList.add('activo'); document.getElementById('hintManual').classList.add('visible'); }
         function marcarDestinoManual(lat, lng) {
             destinoCoords = { lat, lng };
             if (markerDestino) mapa.removeLayer(markerDestino);
             markerDestino = L.marker([lat, lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
             document.getElementById('destino').value = "Punto marcado en mapa";
-            modoDestinoManual = false;
-            document.getElementById('manualBtn').classList.remove('activo');
-            document.getElementById('hintManual').classList.remove('visible');
+            modoDestinoManual = false; document.getElementById('manualBtn').classList.remove('activo'); document.getElementById('hintManual').classList.remove('visible');
             recalcularRutaYPrecio();
         }
-
         function marcarOrigen(lat, lng, label) {
             origenCoords = { lat, lng };
             if (markerOrigen) mapa.removeLayer(markerOrigen);
@@ -231,7 +352,6 @@
             document.getElementById('origenDisplay').value = label || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
             recalcularRutaYPrecio();
         }
-
         function obtenerGPS() {
             if (!navigator.geolocation) { forzarCentroSanMiguel(); return; }
             document.getElementById('gpsBtn').classList.add('buscando');
@@ -245,11 +365,7 @@
                 { enableHighAccuracy: true, timeout: 7000 }
             );
         }
-
-        function forzarCentroSanMiguel() {
-            marcarOrigen(ESTACION_SAN_MIGUEL[0], ESTACION_SAN_MIGUEL[1], "Estación San Miguel (Por defecto)");
-            mapa.setView(ESTACION_SAN_MIGUEL, 15);
-        }
+        function forzarCentroSanMiguel() { marcarOrigen(ESTACION_SAN_MIGUEL[0], ESTACION_SAN_MIGUEL[1], "Estación San Miguel"); mapa.setView(ESTACION_SAN_MIGUEL, 15); }
 
         async function recalcularRutaYPrecio() {
             if (!origenCoords || !destinoCoords) return;
@@ -258,9 +374,7 @@
                 const res = await fetch(url); const data = await res.json();
                 if (data.code === 'Ok' && data.routes.length > 0) {
                     if (rutaTrazada) mapa.removeLayer(rutaTrazada);
-                    const coordinates = data.routes[0].geometry.coordinates;
-                    const puntosCalle = coordinates.map(coord => [coord[1], coord[0]]);
-                    rutaTrazada = L.polyline(puntosCalle, { color: '#007aff', weight: 5, opacity: 0.85 }).addTo(mapa);
+                    rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#007aff', weight: 5, opacity: 0.85 }).addTo(mapa);
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     precioCalculado = Math.round(TARIFA_BASE + (distanciaKm * TARIFA_KM));
                     document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado;
@@ -299,23 +413,21 @@
             recalcularRutaYPrecio();
         }
 
+        // ===== ENVÍO SEGURO UTILIZANDO LOS DATOS DEL PERFIL INYECTADO =====
         async function solicitarViaje() {
-            const nombre = document.getElementById('nombre').value.trim();
-            const telefono = document.getElementById('telefono').value.trim();
             const destinoTexto = document.getElementById('destino').value.trim();
 
-            if (!nombre || !telefono || !destinoTexto || !origenCoords || !destinoCoords) {
-                mostrarMsg('Completá tus datos y seleccioná un destino.', 'error'); return;
+            if (!destinoTexto || !origenCoords || !destinoCoords) {
+                mostrarMsg('Seleccioná un destino válido antes de continuar.', 'error'); return;
             }
 
             try {
-                // Sincronizado exactamente con las nuevas columnas SQL
                 const { data, error } = await supabaseClient
                     .from('viajes')
                     .insert({
                         estado: 'pendiente',
-                        pasajero_nombre: nombre,
-                        pasajero_telefono: telefono,
+                        pasajero_nombre: pasajeroNombre,
+                        pasajero_telefono: pasajeroTelefono,
                         origen_lat: origenCoords.lat,
                         origen_lng: origenCoords.lng,
                         origen_direccion: document.getElementById('origenDisplay').value,
@@ -328,9 +440,10 @@
 
                 if (error) throw error;
                 viajeId = data.id;
+                localStorage.setItem('pasajero_viaje_id', data.id); // Guardamos persistencia de viaje
                 mostrarPaso('pasoEsperando');
                 iniciarEscuchaRealtime(viajeId);
-            } catch (e) { mostrarMsg('Error de conexión: ' + e.message, 'error'); }
+            } catch (e) { mostrarMsg('Error: ' + e.message, 'error'); }
         }
 
         function iniciarEscuchaRealtime(id) {
@@ -345,20 +458,24 @@
                         document.getElementById('autoCond').textContent = de.conductor_auto || "Móvil Registrado";
                         mostrarPaso('pasoPrecio');
                     }
-                    if (de.estado === 'aceptado') { mostrarMsg('¡Chofer confirmado en camino!', 'success'); }
-                    if (de.estado === 'cancelado') { mostrarMsg('El viaje fue cancelado.', 'error'); setTimeout(() => location.reload(), 2000); }
+                    if (de.estado === 'aceptado') { mostrarMsg('¡Chofer en camino!', 'success'); }
+                    if (de.estado === 'cancelado') { mostrarMsg('El viaje fue cancelado.', 'error'); limpiarMemoriaPasajero(); setTimeout(() => location.reload(), 2000); }
+                    if (de.estado === 'finalizado') { mostrarMsg('¡Viaje completado! Gracias por viajar.', 'success'); limpiarMemoriaPasajero(); setTimeout(() => location.reload(), 3000); }
                 }).subscribe();
         }
 
         async function confirmarViaje() {
             try { await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeId); mostrarMsg('¡Viaje confirmado!', 'success'); } catch(e) { console.error(e); }
         }
-        async function cancelarViaje() { if(viajeId) { await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeId); } location.reload(); }
+        async function cancelarViaje() { if(viajeId) { await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeId); } limpiarMemoriaPasajero(); location.reload(); }
         function volverAtras() { cancelarViaje(); }
         function mostrarPaso(id) { ['pasoDatos', 'pasoEsperando', 'pasoPrecio'].forEach(p => document.getElementById(p).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
         function mostrarMsg(texto, tipo) { const msg = document.getElementById('msg'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
 
-        window.addEventListener('DOMContentLoaded', () => { initMapa(); setTimeout(() => obtenerGPS(), 500); });
+        window.addEventListener('DOMContentLoaded', () => { 
+            initMapa(); 
+            procesarSplashDeBienvenida(); 
+        });
     </script>
 </body>
 </html>
