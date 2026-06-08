@@ -32,38 +32,56 @@
             box-shadow: 0 3px 10px rgba(0,0,0,0.2); pointer-events: auto;
         }
         .gps-btn.buscando { background: #fff3cd; animation: pulse 1s infinite; }
-        .manual-btn.activo { background: #007aff; color: white; }
+        .manual-btn.activo { background: #ff4757; color: white; animation: pulse 1s infinite; }
         @keyframes pulse { 50% { transform: scale(1.1); } }
 
         .mapa-hint {
             position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000;
-            background: rgba(0, 0, 0, 0.75); color: white; padding: 8px 16px;
+            background: rgba(255, 71, 87, 0.95); color: white; padding: 10px 18px;
             border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none;
-            display: none;
+            display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            text-align: center; width: 85%; max-width: 320px;
         }
         .mapa-hint.visible { display: block; }
 
-        /* ===== PANEL INFERIOR COMPACTO CON SCROLL NATIVO ===== */
+        /* ===== MENÚ ULTRA COMPACTO CON SCROLL DINÁMICO (25% ALTO MÁXIMO INICIAL) ===== */
         .bottom-panel {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
             background: white; border-radius: 24px 24px 0 0;
-            box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 16px 20px 24px;
-            max-height: 42vh; overflow-y: auto; transition: max-height 0.3s ease;
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 12px 20px 20px;
+            
+            /* Restringido estrictamente a un cuarto de la pantalla para dar prioridad al mapa */
+            height: 25vh; 
+            overflow-y: auto; 
+            transition: height 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            -webkit-overflow-scrolling: touch;
         }
-        .bottom-panel:focus-within { max-height: 80vh; }
-        .panel-handle { width: 40px; height: 5px; background: #e0e0e0; border-radius: 3px; margin: 0 auto 12px; }
+        
+        /* Cuando el usuario desliza o hace foco en los datos, se expande de forma elástica */
+        .bottom-panel:focus-within, .bottom-panel:active {
+            height: 60vh;
+        }
+        /* Clase añadida automáticamente al tener una ruta activa para mostrar tarifa cómodamente */
+        .bottom-panel.con-ruta {
+            height: 30vh;
+        }
+        .bottom-panel.con-ruta:focus-within {
+            height: 65vh;
+        }
 
-        .driver-card-preview { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .panel-handle { width: 40px; height: 5px; background: #e0e0e0; border-radius: 3px; margin: 0 auto 10px; }
+
+        .driver-card-preview { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
         .driver-img-box {
-            width: 70px; height: 55px; border-radius: 12px; background: #f5f5f7;
+            width: 65px; height: 50px; border-radius: 12px; background: #f5f5f7;
             display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;
         }
         .driver-img-box img { width: 100%; height: 100%; object-fit: contain; }
-        .driver-info-box h3 { font-size: 1.1rem; font-weight: 700; color: #111; }
-        .driver-info-box p { font-size: 0.85rem; color: #666; }
+        .driver-info-box h3 { font-size: 1.05rem; font-weight: 700; color: #111; }
+        .driver-info-box p { font-size: 0.8rem; color: #666; }
 
-        .input-group { background: #f5f5f7; border-radius: 16px; padding: 2px 14px; margin-bottom: 14px; }
-        .input-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
+        .input-group { background: #f5f5f7; border-radius: 16px; padding: 2px 14px; margin-bottom: 12px; }
+        .input-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; }
         .input-row:not(:last-child) { border-bottom: 1px solid #e8e8e8; }
         .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
         .dot-green { background: #2ed573; }
@@ -71,7 +89,7 @@
         .input-row input { flex: 1; border: none; font-size: 0.9rem; color: #1a1a1a; background: transparent; outline: none; }
 
         .sugerencias {
-            background: white; border-radius: 12px; max-height: 140px; overflow-y: auto; display: none;
+            background: white; border-radius: 12px; max-height: 130px; overflow-y: auto; display: none;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 12px; border: 1px solid #eee;
         }
         .sugerencias.activo { display: block; }
@@ -79,14 +97,14 @@
         .sugerencia-item:active { background: #f5f5f7; }
 
         .price-box-live {
-            background: #eef2ff; color: #3b5bdb; padding: 12px; border-radius: 14px;
-            text-align: center; font-weight: 700; margin-bottom: 14px; display: none; font-size: 1rem;
+            background: #eef2ff; color: #3b5bdb; padding: 10px; border-radius: 14px;
+            text-align: center; font-weight: 700; margin-bottom: 12px; display: none; font-size: 0.95rem;
         }
 
         .btn-green-action {
-            width: 100%; background: #2cd44a; color: white; border: none; padding: 15px;
+            width: 100%; background: #2cd44a; color: white; border: none; padding: 14px;
             border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(44,212,74,0.3); text-align: center;
+            box-shadow: 0 4px 12px rgba(44,212,74,0.3); text-align: center; margin-top: 5px;
         }
         .btn-green-action:active { transform: scale(0.98); background: #24b83f; }
 
@@ -102,7 +120,7 @@
 </head>
 <body>
 
-    <div class="mapa-hint" id="hintManual">📍 Tocá cualquier punto del mapa para fijar tu Origen</div>
+    <div class="mapa-hint" id="hintManual">📍 Modo Manual: Tocá el mapa para marcar tu DESTINO</div>
 
     <div id="mapaContainer">
         <div id="mapaLeaflet"></div>
@@ -112,8 +130,8 @@
         <div class="header-row">
             <button class="back-btn" onclick="volverAtras()">‹</button>
             <div class="right-buttons">
-                <button class="gps-btn" id="gpsBtn" title="Ubicación Automática GPS" onclick="obtenerGPS()">🎯</button>
-                <button class="manual-btn" id="manualBtn" title="Fijar Origen Manual" onclick="activarModoManual()">📌</button>
+                <button class="gps-btn" id="gpsBtn" title="Mi ubicación GPS" onclick="obtenerGPS()">🎯</button>
+                <button class="manual-btn" id="manualBtn" title="Marcar Destino en Mapa" onclick="activarModoManualDestino()">📌</button>
             </div>
         </div>
     </div>
@@ -129,7 +147,7 @@
                 </div>
                 <div class="driver-info-box">
                     <h3>Tu Móvil</h3>
-                    <p>Tarifa: $3.000 Base + $800 por Kilómetro</p>
+                    <p>Base $3.000 + $800 x Kilómetro</p>
                 </div>
             </div>
 
@@ -144,7 +162,7 @@
                 </div>
                 <div class="input-row">
                     <div class="dot dot-red"></div>
-                    <input type="text" id="destino" placeholder="¿A dónde vamos?" autocomplete="off" oninput="buscarDireccion(this.value)">
+                    <input type="text" id="destino" placeholder="¿A dónde vamos? (o usá el pin de arriba)" autocomplete="off" oninput="buscarDireccion(this.value)">
                 </div>
             </div>
             <div class="sugerencias" id="sugerencias"></div>
@@ -158,9 +176,9 @@
         </div>
 
         <div id="pasoEsperando" class="hidden">
-            <div style="text-align: center; padding: 15px 0;">
-                <h4 style="margin-bottom: 6px;">Buscando conductor cercano...</h4>
-                <p style="color: #666; font-size: 0.8rem; margin-bottom: 14px;">Solicitud enviada al centro de control.</p>
+            <div style="text-align: center; padding: 10px 0;">
+                <h4 style="margin-bottom: 4px;">Buscando conductor cercano...</h4>
+                <p style="color: #666; font-size: 0.8rem; margin-bottom: 12px;">Tu solicitud está en el centro de despacho.</p>
                 <button class="btn-green-action" style="background: #ff4757;" onclick="cancelarViaje()">Cancelar</button>
             </div>
         </div>
@@ -196,7 +214,7 @@
         let destinoCoords = null;
         let precioCalculado = 0;
         let distanciaKm = 0;
-        let modoManualActivo = false;
+        let modoDestinoManual = false;
 
         let mapa = null;
         let markerOrigen = null;
@@ -210,24 +228,37 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(mapa);
 
             mapa.on('click', function(e) {
-                if (modoManualActivo) {
-                    marcarOrigen(e.latlng.lat, e.latlng.lng, "Ubicación fijada manualmente");
-                    desactivarModoManual();
+                if (modoDestinoManual) {
+                    marcarDestinoManual(e.latlng.lat, e.latlng.lng);
                 }
             });
         }
 
-        function activarModoManual() {
-            modoManualActivo = true;
+        // ===== NUEVA LÓGICA: MARCADOR MANUAL EXCLUSIVO PARA EL DESTINO =====
+        function activarModoManualDestino() {
+            modoDestinoManual = true;
             document.getElementById('manualBtn').classList.add('activo');
             document.getElementById('hintManual').classList.add('visible');
-            mostrarMsg('Modo manual activo: Tocá el mapa donde querés que te busquemos.', 'success');
+            mostrarMsg('Seleccioná el punto de destino tocando el mapa.', 'success');
         }
 
-        function desactivarModoManual() {
-            modoManualActivo = false;
+        function desactivarModoManualDestino() {
+            modoDestinoManual = false;
             document.getElementById('manualBtn').classList.remove('activo');
             document.getElementById('hintManual').classList.remove('visible');
+        }
+
+        function marcarDestinoManual(lat, lng) {
+            destinoCoords = { lat, lng };
+            if (markerDestino) mapa.removeLayer(markerDestino);
+
+            markerDestino = L.marker([lat, lng], {
+                icon: L.divIcon({ className: 'destino-ping-icon' })
+            }).addTo(mapa);
+
+            document.getElementById('destino').value = "Punto marcado en mapa";
+            desactivarModoManualDestino();
+            recalcularRutaYPrecio();
         }
 
         function marcarOrigen(lat, lng, label) {
@@ -243,7 +274,7 @@
         }
 
         function obtenerGPS() {
-            desactivarModoManual();
+            desactivarModoManualDestino();
             const btn = document.getElementById('gpsBtn');
             btn.classList.add('buscando');
 
@@ -271,12 +302,11 @@
             mapa.setView(ESTACION_SAN_MIGUEL, ZOOM_DEFAULT);
         }
 
-        // ===== ENRUTAMIENTO REAL POR CALLES (OSRM GRATUITO) =====
+        // ===== ENRUTAMIENTO REAL POR CALLES Y CAMBIOS DINÁMICOS =====
         async function recalcularRutaYPrecio() {
             if (!origenCoords || !destinoCoords) return;
 
             try {
-                // Consultamos el servidor público de OSRM para trazar sobre las calles reales
                 const url = `https://router.project-osrm.org/route/v1/driving/${origenCoords.lng},${origenCoords.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson`;
                 const res = await fetch(url);
                 const data = await res.json();
@@ -285,12 +315,10 @@
                     if (rutaTrazada) mapa.removeLayer(rutaTrazada);
 
                     const coordinates = data.routes[0].geometry.coordinates;
-                    // OSRM devuelve [long, lat], Leaflet usa [lat, long], hay que invertirlos:
                     const puntosCalle = coordinates.map(coord => [coord[1], coord[0]]);
 
                     rutaTrazada = L.polyline(puntosCalle, { color: '#007aff', weight: 5, opacity: 0.85 }).addTo(mapa);
 
-                    // Distancia exacta calculada por las calles en metros (convertimos a km)
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     precioCalculado = Math.round(TARIFA_BASE + (distanciaKm * TARIFA_KM));
 
@@ -298,15 +326,18 @@
                     document.getElementById('txtKmLive').textContent = distanciaKm;
                     document.getElementById('precioEstimadoBox').style.display = 'block';
 
-                    // Encuadre optimizado con un 20% más de Zoom específico como pediste
-                    mapa.fitBounds(rutaTrazada.getBounds(), { padding: [30, 30], maxZoom: 16 });
+                    // Modificación estética para que expanda un cachito más la tarjeta por la tarifa
+                    document.getElementById('bottomPanel').classList.add('con-ruta');
+
+                    // Encuadre óptimo con un zoom más cerrado (más específico)
+                    mapa.fitBounds(rutaTrazada.getBounds(), { padding: [40, 40], maxZoom: 16 });
                 }
             } catch (e) {
-                console.error("Error en ruteo por calles, usando respaldo lineal:", e);
+                console.error("Error en ruteo:", e);
             }
         }
 
-        // ===== BUSCADOR =====
+        // ===== SUGERENCIAS INTELIGENTES =====
         let timeoutBusqueda = null;
         function buscarDireccion(query) {
             const sugerenciasDiv = document.getElementById('sugerencias');
@@ -345,7 +376,7 @@
             recalcularRutaYPrecio();
         }
 
-        // ===== GUARDAR EN BASE DE DATOS CONTROLANDO EL NOMBRE DE COLUMNAS =====
+        // ===== ENVÍO SEGURO A SUPABASE =====
         async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value.trim();
             const telefono = document.getElementById('telefono').value.trim();
@@ -357,7 +388,7 @@
             }
 
             try {
-                // Corrección estructural: enviamos 'destino' y 'destino_direccion' en simultáneo para evitar el error de Schema
+                // Soportamos de manera redundante ambas columnas por compatibilidad
                 const { data, error } = await supabaseClient
                     .from('viajes')
                     .insert({
@@ -381,7 +412,7 @@
                 mostrarPaso('pasoEsperando');
                 iniciarEscuchaRealtime(viajeId);
             } catch (e) {
-                mostrarMsg('Error de base de datos: ' + e.message, 'error');
+                mostrarMsg('Error de conexión: ' + e.message, 'error');
             }
         }
 
