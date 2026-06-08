@@ -18,7 +18,7 @@
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
-        /* ===== PANTALLA SPLASH DE BIENVENIDA Y REGISTRO ===== */
+        /* SPLASH SCREEN DE BIENVENIDA */
         #splashScreen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: #11121a; color: white; z-index: 9999;
@@ -38,59 +38,32 @@
             background: #1e293b; border: 1px solid #334155; color: white; padding: 14px;
             border-radius: 14px; outline: none; font-size: 1rem; text-align: center;
         }
-        .splash-form input::placeholder { color: #64748b; }
         
-        .spinner {
-            width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1);
-            border-top-color: #2cd44a; border-radius: 50%; animation: spin 1s infinite linear;
-            margin-top: 20px;
-        }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top-color: #2cd44a; border-radius: 50%; animation: spin 1s infinite linear; margin-top: 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* BOTONES FLOTANTES */
-        .header-float {
-            position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000;
-            display: flex; flex-direction: column; gap: 10px; pointer-events: none;
-        }
+        .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .header-row { display: flex; justify-content: space-between; width: 100%; }
         .right-buttons { display: flex; flex-direction: column; gap: 10px; }
 
-        .back-btn, .gps-btn, .manual-btn {
-            width: 44px; height: 44px; border-radius: 50%; background: white;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem; cursor: pointer; border: none;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.2); pointer-events: auto;
-        }
+        .back-btn, .gps-btn, .manual-btn { width: 44px; height: 44px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border: none; box-shadow: 0 3px 10px rgba(0,0,0,0.2); pointer-events: auto; }
         .gps-btn.buscando { background: #fff3cd; animation: pulse 1s infinite; }
         .manual-btn.activo { background: #ff4757; color: white; animation: pulse 1s infinite; }
         @keyframes pulse { 50% { transform: scale(1.1); } }
 
-        .mapa-hint {
-            position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000;
-            background: rgba(255, 71, 87, 0.95); color: white; padding: 10px 18px;
-            border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none;
-            display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-align: center; width: 85%; max-width: 320px;
-        }
+        .mapa-hint { position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 71, 87, 0.95); color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-align: center; width: 85%; max-width: 320px; }
         .mapa-hint.visible { display: block; }
 
-        /* ===== MENÚ INFERIOR ULTRA REDUCIDO (YA NO TIENE INPUTS DE NOMBRE/TELÉFONO) ===== */
-        .bottom-panel {
-            position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
-            background: white; border-radius: 24px 24px 0 0;
-            box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 12px 20px 20px;
-            height: 25vh; overflow-y: auto; transition: height 0.4s ease;
-            -webkit-overflow-scrolling: touch;
-        }
+        /* MENÚ INFERIOR */
+        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: white; border-radius: 24px 24px 0 0; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 12px 20px 20px; height: 25vh; overflow-y: auto; transition: height 0.4s ease; -webkit-overflow-scrolling: touch; }
         .bottom-panel:focus-within, .bottom-panel:active { height: 45vh; }
         .bottom-panel.con-ruta { height: 30vh; }
 
         .panel-handle { width: 40px; height: 5px; background: #e0e0e0; border-radius: 3px; margin: 0 auto 10px; }
 
         .driver-card-preview { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .driver-img-box {
-            width: 65px; height: 50px; border-radius: 12px; background: #f5f5f7;
-            display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;
-        }
+        .driver-img-box { width: 65px; height: 50px; border-radius: 12px; background: #f5f5f7; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
         .driver-img-box img { width: 100%; height: 100%; object-fit: contain; }
         .driver-info-box h3 { font-size: 1.05rem; font-weight: 700; color: #111; }
         .driver-info-box p { font-size: 0.8rem; color: #666; }
@@ -103,23 +76,12 @@
         .dot-red { background: #ff4757; }
         .input-row input { flex: 1; border: none; font-size: 0.9rem; color: #1a1a1a; background: transparent; outline: none; }
 
-        .sugerencias {
-            background: white; border-radius: 12px; max-height: 130px; overflow-y: auto; display: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 12px; border: 1px solid #eee;
-        }
+        .sugerencias { background: white; border-radius: 12px; max-height: 130px; overflow-y: auto; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 12px; border: 1px solid #eee; }
         .sugerencias.activo { display: block; }
         .sugerencia-item { padding: 10px 12px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 0.85rem; }
 
-        .price-box-live {
-            background: #eef2ff; color: #3b5bdb; padding: 10px; border-radius: 14px;
-            text-align: center; font-weight: 700; margin-bottom: 12px; display: none; font-size: 0.95rem;
-        }
-
-        .btn-green-action {
-            width: 100%; background: #2cd44a; color: white; border: none; padding: 14px;
-            border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(44,212,74,0.3); text-align: center; margin-top: 5px;
-        }
+        .price-box-live { background: #eef2ff; color: #3b5bdb; padding: 10px; border-radius: 14px; text-align: center; font-weight: 700; margin-bottom: 12px; display: none; font-size: 0.95rem; }
+        .btn-green-action { width: 100%; background: #2cd44a; color: white; border: none; padding: 14px; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(44,212,74,0.3); text-align: center; margin-top: 5px; }
 
         .pasajero-ping-icon { background: #007aff; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
         .destino-ping-icon { background: #ff4757; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
@@ -138,12 +100,9 @@
             <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&h=80&fit=crop" alt="Tu Móvil">
             <span>TU MÓVIL</span>
         </div>
-        
         <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 8px; font-size: 1.4rem;">Cargando...</h2>
         <p id="splashSub" style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Preparando tu viaje seguro</p>
-
         <div class="spinner" id="splashLoader"></div>
-
         <div class="splash-form" id="splashForm">
             <input type="text" id="regNombre" placeholder="Ingresá tu nombre">
             <input type="tel" id="regTelefono" placeholder="Tu número de teléfono">
@@ -153,9 +112,7 @@
 
     <div class="mapa-hint" id="hintManual">📍 Modo Manual: Tocá el mapa para marcar tu DESTINO</div>
 
-    <div id="mapaContainer">
-        <div id="mapaLeaflet"></div>
-    </div>
+    <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
     <div class="header-float">
         <div class="header-row">
@@ -182,9 +139,7 @@
                 </div>
             </div>
 
-            <div class="price-box-live" id="precioEstimadoBox">
-                Tarifa Estimada: <span id="txtPrecioLive">$0</span> (<span id="txtKmLive">0</span> km)
-            </div>
+            <div class="price-box-live" id="precioEstimadoBox">Tarifa Estimada: <span id="txtPrecioLive">$0</span> (<span id="txtKmLive">0</span> km)</div>
 
             <div class="input-group">
                 <div class="input-row">
@@ -197,7 +152,6 @@
                 </div>
             </div>
             <div class="sugerencias" id="sugerencias"></div>
-
             <button class="btn-green-action" onclick="solicitarViaje()">Confirmar Tu Móvil</button>
         </div>
 
@@ -216,11 +170,13 @@
                     <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=200&h=150&fit=crop" alt="Auto">
                 </div>
                 <div class="driver-info-box">
-                    <h3 id="nombreCond">Chofer Asignado</h3>
-                    <p id="autoCond">Cargando móvil...</p>
+                    <h3 id="nombreCond">Carlos Cueva</h3>
+                    <p id="autoCond">Fiat 500 (Patente: JCP 478)</p>
                 </div>
             </div>
-            <button class="btn-green-action" onclick="confirmarViaje()">Aceptar y Viajar</button>
+            <div style="text-align: center; padding: 10px 0; color: #475569; font-weight: 600; font-size: 0.9rem;" id="estadoViajePasajero">
+                El móvil aceptó el viaje y va en camino 🚗
+            </div>
         </div>
     </div>
 
@@ -229,84 +185,52 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const TARIFA_BASE = 3000;
-        const TARIFA_KM = 800;
+        const TARIFA_BASE = 3000, TARIFA_KM = 800;
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212]; 
 
-        let viajeId = null, subViaje = null;
-        let origenCoords = null, destinoCoords = null;
+        // TIMBRE DE LLEGADA DEL CHOFER EN LA PUERTA (Ding Dong nítido)
+        const timbreLlegadaPuerta = new Audio("https://assets.mixkit.co/active_storage/sfx/1655/1655-84.wav");
+
+        let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
         let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
         let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
-
-        // DATOS DEL CLIENTE RECUPERADOS AUTOMÁTICAMENTE
-        let pasajeroNombre = "";
-        let pasajeroTelefono = "";
+        let pasajeroNombre = "", pasajeroTelefono = "";
 
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(mapa);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             mapa.on('click', (e) => { if (modoDestinoManual) marcarDestinoManual(e.latlng.lat, e.latlng.lng); });
         }
 
-        // ===== CONTROL DEL SPLASH SCREEN INTELIGENTE =====
         function procesarSplashDeBienvenida() {
             pasajeroNombre = localStorage.getItem('perfil_nombre');
             pasajeroTelefono = localStorage.getItem('perfil_telefono');
-
             if (!pasajeroNombre || !pasajeroTelefono) {
-                // Es su primera vez en la app: Mostramos el formulario de registro
                 document.getElementById('splashTitulo').textContent = "¡Te damos la bienvenida!";
-                document.getElementById('splashSub').textContent = "Registrate por única vez para pedir viajes";
                 document.getElementById('splashLoader').style.display = "none";
                 document.getElementById('splashForm').style.display = "flex";
             } else {
-                // Ya está registrado: Flujo directo e invisible
                 document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
-                setTimeout(async () => {
-                    await verificarViajeActivoPasajero();
-                    cerrarSplash();
-                    if (!viajeId) obtenerGPS();
-                }, 1200);
+                setTimeout(async () => { await verificarViajeActivoPasajero(); cerrarSplash(); if (!viajeId) obtenerGPS(); }, 1200);
             }
         }
 
         function guardarRegistroPerfil() {
             const nom = document.getElementById('regNombre').value.trim();
             const tel = document.getElementById('regTelefono').value.trim();
-
-            if (!nom || !tel) { alert("Por favor completa tu nombre y teléfono."); return; }
-
-            localStorage.setItem('perfil_nombre', nom);
-            localStorage.setItem('perfil_telefono', tel);
-            pasajeroNombre = nom;
-            pasajeroTelefono = tel;
-
-            document.getElementById('splashForm').style.display = "none";
-            document.getElementById('splashLoader').style.display = "block";
-            document.getElementById('splashTitulo').textContent = "Configurando Todo...";
-
-            setTimeout(() => {
-                cerrarSplash();
-                obtenerGPS();
-            }, 1000);
+            if (!nom || !tel) { alert("Completa tus datos."); return; }
+            localStorage.setItem('perfil_nombre', nom); localStorage.setItem('perfil_telefono', tel);
+            pasajeroNombre = nom; pasajeroTelefono = tel;
+            cerrarSplash(); obtenerGPS();
         }
+        function cerrarSplash() { const splash = document.getElementById('splashScreen'); splash.style.opacity = "0"; setTimeout(() => splash.style.display = "none", 500); }
 
-        function cerrarSplash() {
-            const splash = document.getElementById('splashScreen');
-            splash.style.opacity = "0";
-            setTimeout(() => splash.style.display = "none", 500);
-        }
-
-        // ===== RE-ESTABILIZACIÓN ANTE REFRESCADAS (LOCALSTORAGE) =====
         async function verificarViajeActivoPasajero() {
             const guardadoId = localStorage.getItem('pasajero_viaje_id');
             if (!guardadoId) return;
-
             try {
-                const { data: viaje, error } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
-                if (error || !viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') {
-                    limpiarMemoriaPasajero(); return;
-                }
+                const { data: viaje } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
+                if (!viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') { limpiarMemoriaPasajero(); return; }
 
                 viajeId = viaje.id;
                 origenCoords = { lat: viaje.origen_lat, lng: viaje.origen_lng };
@@ -315,9 +239,8 @@
 
                 markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
                 markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
-                
-                document.getElementById('origenDisplay').value = viaje.origen_direccion || "Ubicación actual";
-                document.getElementById('destino').value = viaje.destino_direccion || "Destino seleccionado";
+                document.getElementById('origenDisplay').value = viaje.origen_direccion || "Origen";
+                document.getElementById('destino').value = viaje.destino_direccion || "Destino";
 
                 await recalcularRutaYPrecio();
 
@@ -325,29 +248,67 @@
                     mostrarPaso('pasoEsperando');
                 } else {
                     document.getElementById('precioMonto').textContent = 'Total a pagar: $' + viaje.precio;
-                    document.getElementById('nombreCond').textContent = viaje.conductor_nombre;
-                    document.getElementById('autoCond').textContent = viaje.conductor_auto || "Móvil en camino";
+                    document.getElementById('nombreCond').textContent = viaje.conductor_nombre || "Carlos Cueva";
+                    document.getElementById('autoCond').textContent = viaje.conductor_auto || "Fiat 500 (Patente: JCP 478)";
+                    
+                    if(viaje.estado === 'aceptado' && localStorage.getItem('pasajero_visto_en_puerta') === 'si') {
+                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A TU PUERTA! 🔔";
+                    } else if (viaje.estado === 'en_viaje') {
+                        document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
+                    }
                     mostrarPaso('pasoPrecio');
                 }
                 iniciarEscuchaRealtime(viajeId);
             } catch (e) { limpiarMemoriaPasajero(); }
         }
+        function limpiarMemoriaPasajero() { localStorage.removeItem('pasajero_viaje_id'); localStorage.removeItem('pasajero_visto_en_puerta'); }
 
-        function limpiarMemoriaPasajero() { localStorage.removeItem('pasajero_viaje_id'); }
+        function iniciarEscuchaRealtime(id) {
+            subViaje = supabaseClient
+                .channel('viaje-' + id)
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes', filter: 'id=eq.' + id }, 
+                (payload) => {
+                    const de = payload.new;
+                    
+                    // 1. Cuando el chofer acepta el viaje originalmente
+                    if (de.conductor_nombre && de.estado === 'pendiente') {
+                        document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
+                        document.getElementById('nombreCond').textContent = de.conductor_nombre;
+                        document.getElementById('autoCond').textContent = de.conductor_auto;
+                        document.getElementById('estadoViajePasajero').innerHTML = "Análisis: El móvil va en camino 🚗";
+                        mostrarPaso('pasoPrecio');
+                    }
+                    
+                    // 2. ¡MAGIA! Cuando el chofer marca "Ya llegué a la puerta" (Cambia a aceptado tras el aviso)
+                    if (de.estado === 'aceptado' && localStorage.getItem('pasajero_visto_en_puerta') !== 'si') {
+                        localStorage.setItem('pasajero_visto_en_puerta', 'si');
+                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A TU PUERTA! 🔔";
+                        mostrarMsg('¡Tu móvil está en la puerta!', 'success');
+                        
+                        // Hacer sonar la campana en el celular del pasajero
+                        timbreLlegadaPuerta.play().catch(() => {});
+                    }
 
-        // MÓDULO AUXILIAR DE GPS Y DIRECCIONES
+                    // 3. Cuando inicia el viaje
+                    if (de.estado === 'en_viaje') {
+                        document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
+                    }
+                    
+                    if (de.estado === 'cancelado') { mostrarMsg('Viaje cancelado.', 'error'); limpiarMemoriaPasajero(); setTimeout(() => location.reload(), 2000); }
+                    if (de.estado === 'finalizado') { mostrarMsg('¡Viaje completado!', 'success'); limpiarMemoriaPasajero(); setTimeout(() => location.reload(), 3000); }
+                }).subscribe();
+        }
+
         function activarModoManualDestino() { modoDestinoManual = true; document.getElementById('manualBtn').classList.add('activo'); document.getElementById('hintManual').classList.add('visible'); }
         function marcarDestinoManual(lat, lng) {
-            destinoCoords = { lat, lng };
-            if (markerDestino) mapa.removeLayer(markerDestino);
+            destinoCoords = { lat, lng }; if (markerDestino) mapa.removeLayer(markerDestino);
             markerDestino = L.marker([lat, lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
             document.getElementById('destino').value = "Punto marcado en mapa";
             modoDestinoManual = false; document.getElementById('manualBtn').classList.remove('activo'); document.getElementById('hintManual').classList.remove('visible');
             recalcularRutaYPrecio();
         }
         function marcarOrigen(lat, lng, label) {
-            origenCoords = { lat, lng };
-            if (markerOrigen) mapa.removeLayer(markerOrigen);
+            origenCoords = { lat, lng }; if (markerOrigen) mapa.removeLayer(markerOrigen);
             markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
             document.getElementById('origenDisplay').value = label || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
             recalcularRutaYPrecio();
@@ -356,11 +317,7 @@
             if (!navigator.geolocation) { forzarCentroSanMiguel(); return; }
             document.getElementById('gpsBtn').classList.add('buscando');
             navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    document.getElementById('gpsBtn').classList.remove('buscando');
-                    marcarOrigen(pos.coords.latitude, pos.coords.longitude, "Mi ubicación actual");
-                    mapa.setView([pos.coords.latitude, pos.coords.longitude], 15);
-                },
+                (pos) => { document.getElementById('gpsBtn').classList.remove('buscando'); marcarOrigen(pos.coords.latitude, pos.coords.longitude, "Mi ubicación actual"); mapa.setView([pos.coords.latitude, pos.coords.longitude], 15); },
                 () => { document.getElementById('gpsBtn').classList.remove('buscando'); forzarCentroSanMiguel(); },
                 { enableHighAccuracy: true, timeout: 7000 }
             );
@@ -383,7 +340,7 @@
                     document.getElementById('bottomPanel').classList.add('con-ruta');
                     mapa.fitBounds(rutaTrazada.getBounds(), { padding: [40, 40], maxZoom: 16 });
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) {}
         }
 
         let timeoutBusqueda = null;
@@ -400,7 +357,7 @@
                             <div style="font-size:0.75rem; color:#777;">${lugar.display_name.split(',').slice(1,3).join(',')}</div>
                         </div>`).join('');
                     if (datos.length > 0) document.getElementById('sugerencias').classList.add('activo');
-                } catch (e) { console.error(e); }
+                } catch (e) {}
             }, 400);
         }
 
@@ -413,13 +370,9 @@
             recalcularRutaYPrecio();
         }
 
-        // ===== ENVÍO SEGURO UTILIZANDO LOS DATOS DEL PERFIL INYECTADO =====
         async function solicitarViaje() {
             const destinoTexto = document.getElementById('destino').value.trim();
-
-            if (!destinoTexto || !origenCoords || !destinoCoords) {
-                mostrarMsg('Seleccioná un destino válido antes de continuar.', 'error'); return;
-            }
+            if (!destinoTexto || !origenCoords || !destinoCoords) { mostrarMsg('Seleccioná un destino válido.', 'error'); return; }
 
             try {
                 const { data, error } = await supabaseClient
@@ -440,42 +393,19 @@
 
                 if (error) throw error;
                 viajeId = data.id;
-                localStorage.setItem('pasajero_viaje_id', data.id); // Guardamos persistencia de viaje
+                localStorage.setItem('pasajero_viaje_id', data.id);
                 mostrarPaso('pasoEsperando');
                 iniciarEscuchaRealtime(viajeId);
             } catch (e) { mostrarMsg('Error: ' + e.message, 'error'); }
         }
 
-        function iniciarEscuchaRealtime(id) {
-            subViaje = supabaseClient
-                .channel('viaje-' + id)
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes', filter: 'id=eq.' + id }, 
-                (payload) => {
-                    const de = payload.new;
-                    if (de.conductor_nombre && de.estado === 'pendiente') {
-                        document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
-                        document.getElementById('nombreCond').textContent = de.conductor_nombre;
-                        document.getElementById('autoCond').textContent = de.conductor_auto || "Móvil Registrado";
-                        mostrarPaso('pasoPrecio');
-                    }
-                    if (de.estado === 'aceptado') { mostrarMsg('¡Chofer en camino!', 'success'); }
-                    if (de.estado === 'cancelado') { mostrarMsg('El viaje fue cancelado.', 'error'); limpiarMemoriaPasajero(); setTimeout(() => location.reload(), 2000); }
-                    if (de.estado === 'finalizado') { mostrarMsg('¡Viaje completado! Gracias por viajar.', 'success'); limpiarMemoriaPasajero(); setTimeout(() => location.reload(), 3000); }
-                }).subscribe();
-        }
-
-        async function confirmarViaje() {
-            try { await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeId); mostrarMsg('¡Viaje confirmado!', 'success'); } catch(e) { console.error(e); }
-        }
+        async function confirmarViaje() { try { await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeId); } catch(e) {} }
         async function cancelarViaje() { if(viajeId) { await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeId); } limpiarMemoriaPasajero(); location.reload(); }
         function volverAtras() { cancelarViaje(); }
         function mostrarPaso(id) { ['pasoDatos', 'pasoEsperando', 'pasoPrecio'].forEach(p => document.getElementById(p).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
         function mostrarMsg(texto, tipo) { const msg = document.getElementById('msg'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
 
-        window.addEventListener('DOMContentLoaded', () => { 
-            initMapa(); 
-            procesarSplashDeBienvenida(); 
-        });
+        window.addEventListener('DOMContentLoaded', () => { initMapa(); procesarSplashDeBienvenida(); });
     </script>
 </body>
 </html>
