@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TuMovil Las Catalinas - Pasajero</title>
+    <!-- Supabase & Leaflet -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -12,165 +13,82 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f4f4f6;
-            height: 100vh;
-            overflow: hidden;
-            color: #1a1a1a;
+            background: #f4f4f6; height: 100vh; overflow: hidden; color: #1a1a1a;
         }
 
-        /* ===== MAPA OCUPA TODA LA PANTALLA DE FONDO ===== */
-        #mapaContainer {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            height: 100vh;
-            z-index: 1;
-        }
-        #mapaLeaflet {
-            width: 100%; height: 100%;
-        }
+        #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
+        #mapaLeaflet { width: 100%; height: 100%; }
 
-        /* ===== BOTONES FLOTANTES MINIMALISTAS (COMO LA IMAGEN) ===== */
         .header-float {
-            position: fixed;
-            top: 16px; left: 16px; right: 16px;
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: none;
+            position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000;
+            display: flex; justify-content: space-between; pointer-events: none;
         }
         .back-btn, .gps-btn {
-            width: 42px; height: 42px;
-            border-radius: 50%;
-            background: white;
+            width: 44px; height: 44px; border-radius: 50%; background: white;
             display: flex; align-items: center; justify-content: center;
             font-size: 1.2rem; cursor: pointer; border: none;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
-            pointer-events: auto;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2); pointer-events: auto;
         }
         .gps-btn.buscando { background: #fff3cd; animation: pulse 1s infinite; }
         @keyframes pulse { 50% { transform: scale(1.1); } }
 
-        /* ANUNCIO / HINT FLOTANTE */
         .mapa-hint {
-            position: fixed;
-            top: 70px; left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.75);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            pointer-events: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            position: fixed; top: 75px; left: 50%; transform: translateX(-50%); z-index: 1000;
+            background: rgba(0, 0, 0, 0.75); color: white; padding: 8px 16px;
+            border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none;
         }
 
-        /* ===== PANEL INFERIOR COMPACTO (SÓLO 20-25% INICIAL + SCROLLABLE) ===== */
+        /* ===== PANEL INFERIOR COMPACTO CON SCROLL NATIVO ===== */
         .bottom-panel {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            z-index: 200;
-            background: white;
-            border-radius: 24px 24px 0 0;
-            box-shadow: 0 -5px 25px rgba(0,0,0,0.15);
-            padding: 16px 20px 24px;
-            /* Altura inicial corta, pero permite expandirse con scroll si el contenido es largo */
-            max-height: 40vh; 
-            overflow-y: auto;
-            transition: max-height 0.3s ease;
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+            background: white; border-radius: 24px 24px 0 0;
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 16px 20px 24px;
+            max-height: 42vh; overflow-y: auto; transition: max-height 0.3s ease;
         }
-        /* Cuando el usuario hace foco en inputs, permitimos que suba para comodidad */
-        .bottom-panel:focus-within {
-            max-height: 75vh;
-        }
-        .panel-handle {
-            width: 40px; height: 5px;
-            background: #e0e0e0;
-            border-radius: 3px;
-            margin: 0 auto 12px;
-        }
+        .bottom-panel:focus-within { max-height: 80vh; }
+        .panel-handle { width: 40px; height: 5px; background: #e0e0e0; border-radius: 3px; margin: 0 auto 12px; }
 
-        /* VISTA PREVIA DEL AUTO COMPACTO (COMO LA CAPTURA) */
-        .driver-card-preview {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 14px;
-        }
+        .driver-card-preview { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
         .driver-img-box {
-            width: 70px; height: 55px;
-            border-radius: 12px;
-            background: #f5f5f7;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden; flex-shrink: 0;
+            width: 70px; height: 55px; border-radius: 12px; background: #f5f5f7;
+            display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;
         }
         .driver-img-box img { width: 100%; height: 100%; object-fit: contain; }
         .driver-info-box h3 { font-size: 1.1rem; font-weight: 700; color: #111; }
         .driver-info-box p { font-size: 0.85rem; color: #666; }
 
-        /* BLOQUES DE ENTRADA ELEGANTES */
-        .input-group {
-            background: #f5f5f7;
-            border-radius: 16px;
-            padding: 2px 14px;
-            margin-bottom: 14px;
-        }
-        .input-row {
-            display: flex; align-items: center; gap: 10px;
-            padding: 10px 0;
-        }
+        .input-group { background: #f5f5f7; border-radius: 16px; padding: 2px 14px; margin-bottom: 14px; }
+        .input-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
         .input-row:not(:last-child) { border-bottom: 1px solid #e8e8e8; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
         .dot-green { background: #2ed573; }
         .dot-red { background: #ff4757; }
-        
-        .input-row input {
-            flex: 1; border: none; font-size: 0.9rem;
-            color: #1a1a1a; background: transparent; outline: none;
-        }
+        .input-row input { flex: 1; border: none; font-size: 0.9rem; color: #1a1a1a; background: transparent; outline: none; }
 
-        /* MENÚ DE SUGERENCIAS EN LA NAVEGACIÓN */
         .sugerencias {
-            background: white; border-radius: 12px;
-            max-height: 140px; overflow-y: auto; display: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            margin-bottom: 12px; border: 1px solid #eee;
+            background: white; border-radius: 12px; max-height: 140px; overflow-y: auto; display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 12px; border: 1px solid #eee;
         }
         .sugerencias.activo { display: block; }
         .sugerencia-item { padding: 10px 12px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 0.85rem; }
         .sugerencia-item:active { background: #f5f5f7; }
 
-        /* BOTÓN DE ACCIÓN PRINCIPAL VERDE DE LA FOTO */
+        /* PRECIO ESTIMADO */
+        .price-box-live {
+            background: #eef2ff; color: #3b5bdb; padding: 12px; border-radius: 14px;
+            text-align: center; font-weight: 700; margin-bottom: 14px; display: none; font-size: 1rem;
+        }
+
         .btn-green-action {
-            width: 100%;
-            background: #2cd44a;
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 50px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(44,212,74,0.3);
-            text-align: center;
+            width: 100%; background: #2cd44a; color: white; border: none; padding: 15px;
+            border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(44,212,74,0.3); text-align: center;
         }
         .btn-green-action:active { transform: scale(0.98); background: #24b83f; }
 
-        /* MARCADOR AZUL DEL PASAJERO */
-        .pasajero-ping-icon {
-            background: #007aff;
-            width: 14px !important; height: 14px !important;
-            border: 2px solid white;
-            border-radius: 50%;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-        }
-
-        .price-tag {
-            background: #eef2ff; color: #4c6ef5;
-            padding: 10px; border-radius: 12px;
-            text-align: center; font-weight: 700; margin-bottom: 12px;
-        }
+        /* ICONOS MARCADORES */
+        .pasajero-ping-icon { background: #007aff; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+        .destino-ping-icon { background: #ff4757; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
 
         .hidden { display: none !important; }
         .msg { padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.8rem; text-align: center; display: none; font-weight: 600; }
@@ -196,6 +114,7 @@
         <div class="panel-handle"></div>
         <div class="msg" id="msg"></div>
 
+        <!-- PASO 1: PEDIR -->
         <div id="pasoDatos">
             <div class="driver-card-preview">
                 <div class="driver-img-box">
@@ -203,18 +122,23 @@
                 </div>
                 <div class="driver-info-box">
                     <h3>Tu Móvil</h3>
-                    <p>Móvil prioritario • Las Catalinas</p>
+                    <p>Tarifa: $3.000 Base + $800 por Kilómetro</p>
                 </div>
+            </div>
+
+            <!-- Caja de precio dinámico calculada en vivo -->
+            <div class="price-box-live" id="precioEstimadoBox">
+                Tarifa Estimada: <span id="txtPrecioLive">$0</span> (<span id="txtKmLive">0</span> km)
             </div>
 
             <div class="input-group">
                 <div class="input-row">
                     <div class="dot dot-green"></div>
-                    <input type="text" id="origenDisplay" placeholder="Buscando tu ubicación..." readonly>
+                    <input type="text" id="origenDisplay" placeholder="Marcando tu ubicación..." readonly>
                 </div>
                 <div class="input-row">
                     <div class="dot dot-red"></div>
-                    <input type="text" id="destino" placeholder="¿A dónde vamos?" autocomplete="off" oninput="buscarDireccion(this.value)">
+                    <input type="text" id="destino" placeholder="¿A dónde vamos desde San Miguel/Moreno?" autocomplete="off" oninput="buscarDireccion(this.value)">
                 </div>
             </div>
             <div class="sugerencias" id="sugerencias"></div>
@@ -227,16 +151,18 @@
             <button class="btn-green-action" onclick="solicitarViaje()">Confirmar Tu Móvil</button>
         </div>
 
+        <!-- PASO 2: ESPERANDO -->
         <div id="pasoEsperando" class="hidden">
-            <div style="text-align: center; padding: 10px 0;">
+            <div style="text-align: center; padding: 15px 0;">
                 <h4 style="margin-bottom: 6px;">Buscando conductor cercano...</h4>
-                <p style="color: #666; font-size: 0.8rem; margin-bottom: 14px;">Tu viaje fue enviado al centro de San Miguel y Moreno.</p>
+                <p style="color: #666; font-size: 0.8rem; margin-bottom: 14px;">Solicitud enviada al centro de control.</p>
                 <button class="btn-green-action" style="background: #ff4757;" onclick="cancelarViaje()">Cancelar</button>
             </div>
         </div>
 
+        <!-- PASO 3: CONFIRMACIÓN DE CHOFER -->
         <div id="pasoPrecio" class="hidden">
-            <div class="price-tag" id="precioMonto">$0.00</div>
+            <div class="price-box-live" style="display:block; background:#dbeafe; color:#1e40af;" id="precioMonto">$0.00</div>
             <div class="driver-card-preview">
                 <div class="driver-img-box">
                     <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=200&h=150&fit=crop" alt="Auto">
@@ -252,10 +178,14 @@
 
     <script>
         const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3yncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // PUNTO EXACTO EXACTO: Estación de San Miguel (Centro neurálgico de cobertura)
+        // VALORES DE TARIFAS SOLICITADOS
+        const TARIFA_BASE = 3000;
+        const TARIFA_KM = 800;
+
+        // COORDENADAS FIJAS DE CONTROL: Estación de San Miguel
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212]; 
         const ZOOM_DEFAULT = 14;
 
@@ -263,22 +193,23 @@
         let subViaje = null;
         let origenCoords = null;
         let destinoCoords = null;
+        let precioCalculado = 0;
+        let distanciaKm = 0;
+
         let mapa = null;
         let markerOrigen = null;
+        let markerDestino = null;
+        let rutaTrazada = null;
 
-        // ===== MAPA OPENSTREETMAP LIBRE =====
+        // ===== INICIALIZAR MAPA (OPENSTREETMAP EN VIVO) =====
         function initMapa() {
-            mapa = L.map('mapaLeaflet', {
-                zoomControl: false,
-                attributionControl: false
-            }).setView(ESTACION_SAN_MIGUEL, ZOOM_DEFAULT);
+            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false })
+                    .setView(ESTACION_SAN_MIGUEL, ZOOM_DEFAULT);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19
-            }).addTo(mapa);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(mapa);
 
             mapa.on('click', function(e) {
-                marcarOrigen(e.latlng.lat, e.latlng.lng, "Ubicación seleccionada en mapa");
+                marcarOrigen(e.latlng.lat, e.latlng.lng, "Ubicación manual en mapa");
             });
         }
 
@@ -291,15 +222,16 @@
             }).addTo(mapa);
 
             document.getElementById('origenDisplay').value = label || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+            recalcularRutaYPrecio();
         }
 
-        // ===== GEOLOCALIZACIÓN DIRECTA =====
+        // ===== GEOLOCALIZACIÓN DEL PASAJERO CORREGIDA =====
         function obtenerGPS() {
             const btn = document.getElementById('gpsBtn');
             btn.classList.add('buscando');
 
             if (!navigator.geolocation) {
-                forzarCentroSanMiguel("Sin soporte GPS");
+                forzarCentroSanMiguel();
                 return;
             }
 
@@ -311,20 +243,57 @@
                 },
                 (err) => {
                     btn.classList.remove('buscando');
-                    forzarCentroSanMiguel("Permiso denegado/Timeout");
+                    forzarCentroSanMiguel();
                 },
-                { enableHighAccuracy: true, timeout: 6000 }
+                { enableHighAccuracy: true, timeout: 7000 }
             );
         }
 
-        function forzarCentroSanMiguel(motivo) {
-            console.log("GPS Alternativo activado:", motivo);
+        function forzarCentroSanMiguel() {
             marcarOrigen(ESTACION_SAN_MIGUEL[0], ESTACION_SAN_MIGUEL[1], "Estación San Miguel (Centro)");
             mapa.setView(ESTACION_SAN_MIGUEL, ZOOM_DEFAULT);
-            mostrarMsg('Ubicado en Estación San Miguel. Podés tocar el mapa para ajustar.', 'success');
+            mostrarMsg('Ubicado en Estación San Miguel por defecto.', 'success');
         }
 
-        // ===== SUGERENCIAS LOCALES =====
+        // ===== TRAZADO DE RUTA Y CÁLCULO DE PRECIO EN LÍNEA =====
+        function calcularDistanciaKilometros(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radio de la tierra en km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function recalcularRutaYPrecio() {
+            if (!origenCoords || !destinoCoords) return;
+
+            // 1. Dibujar e integrar el trazado en el mapa
+            if (rutaTrazada) mapa.removeLayer(rutaTrazada);
+            
+            const puntosRuta = [
+                [origenCoords.lat, origenCoords.lng],
+                [destinoCoords.lat, destinoCoords.lng]
+            ];
+            
+            rutaTrazada = L.polyline(puntosRuta, { color: '#007aff', weight: 4, opacity: 0.8 }).addTo(mapa);
+
+            // 2. Calcular distancia matemática y coste real ($3000 + $800/km)
+            distanciaKm = parseFloat(calcularDistanciaKilometros(origenCoords.lat, origenCoords.lng, destinoCoords.lat, destinoCoords.lng).toFixed(2));
+            precioCalculado = Math.round(TARIFA_BASE + (distanciaKm * TARIFA_KM));
+
+            // 3. Imprimir visualmente en la tarjeta
+            document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado;
+            document.getElementById('txtKmLive').textContent = distanciaKm;
+            document.getElementById('precioEstimadoBox').style.display = 'block';
+
+            // Ajustar encuadre de pantalla automáticamente
+            mapa.fitBounds(rutaTrazada.getBounds(), { padding: [50, 50] });
+        }
+
+        // ===== BUSCADOR OPTIMIZADO =====
         let timeoutBusqueda = null;
         function buscarDireccion(query) {
             const sugerenciasDiv = document.getElementById('sugerencias');
@@ -333,8 +302,7 @@
 
             timeoutBusqueda = setTimeout(async () => {
                 try {
-                    // Restringimos los resultados para que priorice fuerte la zona Oeste
-                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', San Miguel, Buenos Aires')}&limit=4`;
+                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Buenos Aires')}&limit=4`;
                     const res = await fetch(url);
                     const datos = await res.json();
 
@@ -355,19 +323,23 @@
             document.getElementById('destino').value = direccion.split(',')[0];
             document.getElementById('sugerencias').classList.remove('activo');
             destinoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
+
+            if (markerDestino) mapa.removeLayer(markerDestino);
+            markerDestino = L.marker([lat, lng], {
+                icon: L.divIcon({ className: 'destino-ping-icon' })
+            }).addTo(mapa);
             
-            const bounds = L.latLngBounds([origenCoords.lat, origenCoords.lng], [lat, lng]);
-            mapa.fitBounds(bounds, { padding: [40, 40] });
+            recalcularRutaYPrecio();
         }
 
-        // ===== PERSISTENCIA Y FLUJO =====
+        // ===== SOLICITAR E INTEGRAR SUPABASE =====
         async function solicitarViaje() {
             const nombre = document.getElementById('nombre').value.trim();
             const telefono = document.getElementById('telefono').value.trim();
             const destinoTexto = document.getElementById('destino').value.trim();
 
-            if (!nombre || !telefono || !destinoTexto || !origenCoords) {
-                mostrarMsg('Completá los campos vacíos para pedir el móvil.', 'error');
+            if (!nombre || !telefono || !destinoTexto || !origenCoords || !destinoCoords) {
+                mostrarMsg('Completá tus datos y seleccioná un destino válido.', 'error');
                 return;
             }
 
@@ -382,8 +354,10 @@
                         origen_lng: origenCoords.lng,
                         origen_direccion: document.getElementById('origenDisplay').value,
                         destino_direccion: destinoTexto,
-                        destino_lat: destinoCoords?.lat || null,
-                        destino_lng: destinoCoords?.lng || null
+                        destino_lat: destinoCoords.lat,
+                        destino_lng: destinoCoords.lng,
+                        precio: precioCalculado, // Guardamos el valor estipulado
+                        distancia_km: distanciaKm
                     }).select().single();
 
                 if (error) throw error;
@@ -402,17 +376,17 @@
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes', filter: 'id=eq.' + id }, 
                 (payload) => {
                     const de = payload.new;
-                    if (de.precio !== null && de.estado === 'pendiente') {
-                        document.getElementById('precioMonto').textContent = '$' + de.precio;
-                        document.getElementById('nombreCond').textContent = de.conductor_nombre || "Móvil En Camino";
-                        document.getElementById('autoCond').textContent = de.conductor_auto || "Vehículo Registrado";
+                    if (de.estado === 'pendiente' && de.conductor_nombre) {
+                        document.getElementById('precioMonto').textContent = 'Total a pagar: $' + (de.precio || precioCalculado);
+                        document.getElementById('nombreCond').textContent = de.conductor_nombre;
+                        document.getElementById('autoCond').textContent = de.conductor_auto || "Móvil Registrado";
                         mostrarPaso('pasoPrecio');
                     }
                     if (de.estado === 'aceptado') {
-                        mostrarMsg('¡Chofer confirmado! Está viajando hacia vos.', 'success');
+                        mostrarMsg('¡Chofer confirmado e iniciando viaje hacia vos!', 'success');
                     }
                     if (de.estado === 'cancelado') {
-                        mostrarMsg('Viaje cancelado.', 'error');
+                        mostrarMsg('El viaje fue cancelado.', 'error');
                         setTimeout(() => location.reload(), 2000);
                     }
                 }).subscribe();
@@ -421,7 +395,7 @@
         async function confirmarViaje() {
             try {
                 await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeId);
-                mostrarMsg('¡Viaje iniciado exitosamente!', 'success');
+                mostrarMsg('¡Viaje confirmado! Que tengas un excelente viaje.', 'success');
             } catch(e) { console.error(e); }
         }
 
@@ -432,19 +406,14 @@
             location.reload();
         }
 
-        function volverAtras() {
-            cancelarViaje();
-        }
-
+        function volverAtras() { cancelarViaje(); }
         function mostrarPaso(id) {
             ['pasoDatos', 'pasoEsperando', 'pasoPrecio'].forEach(p => document.getElementById(p).classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         }
-
         function mostrarMsg(texto, tipo) {
             const msg = document.getElementById('msg');
-            msg.textContent = texto;
-            msg.className = 'msg msg-' + tipo + ' show';
+            msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show';
             setTimeout(() => msg.classList.remove('show'), 4000);
         }
 
