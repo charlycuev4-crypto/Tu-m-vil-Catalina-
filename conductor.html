@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TuMovil Las Catalinas - Conductor</title>
-    <!-- Supabase & Leaflet -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -21,12 +20,14 @@
 
         .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
         
-        /* Modificado para que visualmente se note que es un botón interactivo */
         .status-badge { background: #1e293b; color: #38bdf8; padding: 10px 16px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto; border: 1px solid #334155; cursor: pointer; user-select: none; transition: all 0.2s ease; }
         .status-badge.activo { background: #059669; color: #ffffff; border-color: #10b981; }
         .status-badge.inactivo { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
 
         .gps-btn { width: 44px; height: 44px; border-radius: 50%; background: #1e293b; color: white; display: flex; align-items: center; justify-content: center; border: 1px solid #334155; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto; }
+        .gps-btn.seguimiento-on { background: #059669; border-color: #10b981; animation: pulsoGps 2s infinite; }
+
+        @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
         .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); padding: 12px 20px 20px; height: 25vh; overflow-y: auto; transition: height 0.4s ease; color: #f1f5f9; -webkit-overflow-scrolling: touch; }
         .bottom-panel.viaje-entrante { height: 35vh; animation: alertaParpadeo 1s infinite alternate; }
@@ -54,7 +55,8 @@
         .btn-iniciar { background: #8b5cf6; }
         .btn-finalizar { background: #e11d48; }
 
-        .chofer-icon { background: #3b82f6; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px #3b82f6; }
+        /* Ajustada la flecha de chofer para que pueda rotar según hacia donde manejes */
+        .chofer-icon { background: #3b82f6; width: 18px !important; height: 18px !important; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 12px #3b82f6; transition: transform 0.3s ease; }
         .pasajero-origen-icon { background: #10b981; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
         .pasajero-destino-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
 
@@ -69,9 +71,8 @@
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
     <div class="header-float">
-        <!-- El badge ahora ejecuta la función para alternar estado al hacerle clic -->
         <div class="status-badge activo" id="txtEstadoChofer" onclick="conmutarEstadoConexion()">Móvil en Línea 🟢</div>
-        <button class="gps-btn" onclick="obtenerUbicacionChofer()">🎯</button>
+        <button class="gps-btn" id="btnGpsCentro" onclick="alternarSeguimientoManual()">🎯</button>
     </div>
 
     <div class="bottom-panel" id="panelConductor">
@@ -109,17 +110,16 @@
 
         let loopAudioAlerta = null;
         let canalSupabase = null;
-        let estaConectado = true; // Control de estado En Línea / Fuera de Línea
-        let wakeLock = null; // Mantiene la pantalla encendida
+        let estaConectado = true; 
+        let wakeLock = null; 
+        let idRastreadorGps = null; // Guardará el ID del watchPosition continuo
+        let autocentrarMapa = true;  // Si el conductor mueve el mapa a mano, se congela el centrado automático temporalmente
 
-        // MANEJO DE PANTALLA SIEMPRE ENCENDIDA (WAKE LOCK)
         async function solicitarWakeLock() {
             if (!('wakeLock' in navigator)) return;
             try {
-                if (!wakeLock) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                }
-            } catch (err) { console.log("WakeLock bloqueado o no soportado."); }
+                if (!wakeLock) wakeLock = await navigator.wakeLock.request('screen');
+            } catch (err) { console.log("WakeLock bloqueado."); }
         }
 
         function liberarWakeLock() {
@@ -166,57 +166,70 @@
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             markerChofer = L.marker([choferCoords.lat, choferCoords.lng], { icon: L.divIcon({ className: 'chofer-icon' }) }).addTo(mapa);
+
+            // Si el chofer arrastra el mapa con el dedo, apagamos el centrado automático para dejarlo explorar el mapa
+            mapa.on('dragstart', () => {
+                autocentrarMapa = false;
+                document.getElementById('btnGpsCentro').classList.remove('seguimiento-on');
+            });
         }
 
-        function obtenerUbicacionChofer() {
+        // RASTREADOR GPS EN TIEMPO REAL CONTINUO (ACOMPAÑA AL AUTO EN MOVIMIENTO)
+        function iniciarRastreoGpsContinuo() {
+            if (idRastreadorGps) return;
+
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    choferCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    markerChofer.setLatLng([choferCoords.lat, choferCoords.lng]);
-                    mapa.setView([choferCoords.lat, choferCoords.lng], 15);
-                }, () => {}, { enableHighAccuracy: true });
+                idRastreadorGps = navigator.geolocation.watchPosition((pos) => {
+                    const nuevaLat = pos.coords.latitude;
+                    const nuevaLng = pos.coords.longitude;
+                    
+                    choferCoords = { lat: nuevaLat, lng: nuevaLng };
+                    
+                    // 1. Movemos el puntito azul del auto en el mapa de forma fluida
+                    if (markerChofer) {
+                        markerChofer.setLatLng([nuevaLat, nuevaLng]);
+                    }
+
+                    // 2. Si el autocentrado está prendido, movemos la cámara con Zoom del 17 (+30% más de acercamiento)
+                    if (autocentrarMapa) {
+                        // Si está haciendo un viaje, mantenemos un zoom cerrado de navegación (17), si está esperando usa 15
+                        let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
+                        mapa.setView([nuevaLat, nuevaLng], zoomActual);
+                        document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
+                    }
+
+                    // 3. Opcional: Actualizamos la ruta trazada si el conductor se está moviendo hacia el origen
+                    if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
+                        actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng);
+                    }
+
+                }, (error) => {
+                    console.log("Error de lectura GPS continua.");
+                }, {
+                    enableHighAccuracy: true, // Forzar uso de antena GPS de alta precisión
+                    maximumAge: 0,            // No usar posiciones viejas guardadas en memoria
+                    timeout: 5000             // Re-intentar cada 5 segundos si se nubla la señal
+                });
             }
         }
 
-        // CONTROL DE CONEXIÓN (BOTÓN SUPERIOR)
-        function conmutarEstadoConexion() {
-            if (viajeActivo) {
-                alert("No podés desconectarte mientras estás en un viaje activo.");
-                return;
+        function detenerRastreoGps() {
+            if (idRastreadorGps) {
+                navigator.geolocation.clearWatch(idRastreadorGps);
+                idRastreadorGps = null;
             }
+        }
 
-            estaConectado = !estaConectado;
-            const badge = document.getElementById('txtEstadoChofer');
-            const subtexto = document.getElementById('lblSubtextoEspera');
-            const btnEspera = document.getElementById('btnEstadoEsperaTexto');
-
-            if (estaConectado) {
-                // VOLVER EN LÍNEA
-                badge.textContent = "Móvil en Línea 🟢";
-                badge.className = "status-badge activo";
-                subtexto.textContent = "Esperando solicitudes de viaje en San Miguel...";
-                btnEspera.textContent = "Buscando Pasajeros...";
-                btnEspera.className = "btn-action btn-espera";
-                
-                solicitarWakeLock();
-                escucharNuevosViajes();
-                mostrarMsg('Te pusiste en línea.', 'success');
-            } else {
-                // FUERA DE LÍNEA
-                badge.textContent = "Fuera de Línea 🔴";
-                badge.className = "status-badge inactivo";
-                subtexto.textContent = "Estás desconectado. No recibirás alertas.";
-                btnEspera.textContent = "Turno Pausado";
-                btnEspera.className = "btn-action btn-desconectado";
-                
-                liberarWakeLock();
-                apagarEscuchaViajes();
-                mostrarMsg('Turno pausado. Desconectado.', 'success');
-            }
+        // Botón manual para obligar al mapa a volver a centrarse en el auto y activar el seguimiento dinámico
+        function alternarSeguimientoManual() {
+            autocentrarMapa = true;
+            document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
+            let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
+            mapa.setView([choferCoords.lat, choferCoords.lng], zoomActual);
         }
 
         function escucharNuevosViajes() {
-            if (canalSupabase) return; // Evita duplicar escuchas
+            if (canalSupabase) return;
 
             canalSupabase = supabaseClient.channel('despacho-chofer');
             
@@ -244,6 +257,42 @@
             }
         }
 
+        function conmutarEstadoConexion() {
+            if (viajeActivo) {
+                alert("No podés desconectarte mientras estás en un viaje activo.");
+                return;
+            }
+
+            estaConectado = !estaConectado;
+            const badge = document.getElementById('txtEstadoChofer');
+            const subtexto = document.getElementById('lblSubtextoEspera');
+            const btnEspera = document.getElementById('btnEstadoEsperaTexto');
+
+            if (estaConectado) {
+                badge.textContent = "Móvil en Línea 🟢";
+                badge.className = "status-badge activo";
+                subtexto.textContent = "Esperando solicitudes de viaje en San Miguel...";
+                btnEspera.textContent = "Buscando Pasajeros...";
+                btnEspera.className = "btn-action btn-espera";
+                
+                solicitarWakeLock();
+                iniciarRastreoGpsContinuo();
+                escucharNuevosViajes();
+                mostrarMsg('Te pusiste en línea.', 'success');
+            } else {
+                badge.textContent = "Fuera de Línea 🔴";
+                badge.className = "status-badge inactivo";
+                subtexto.textContent = "Estás desconectado. No recibirás alertas.";
+                btnEspera.textContent = "Turno Pausado";
+                btnEspera.className = "btn-action btn-desconectado";
+                
+                liberarWakeLock();
+                detenerRastreoGps();
+                apagarEscuchaViajes();
+                mostrarMsg('Turno pausado. Desconectado.', 'success');
+            }
+        }
+
         function montarViajeEntrante(viaje) {
             viajeActivo = viaje;
             estadoFlujo = 'pendiente';
@@ -264,6 +313,7 @@
             markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
             markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
 
+            autocentrarMapa = true; // Forzamos centrado dinámico al recibir alerta
             trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
         }
 
@@ -292,6 +342,8 @@
                     btn.textContent = "Ya llegué a la puerta 🔓";
                     document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
                     mostrarMsg('Viaje tomado con éxito.', 'success');
+                    
+                    autocentrarMapa = true; // Ajusta la cámara con zoom de viaje cerrado
 
                 } catch (e) { alert("Error al asignar."); location.reload(); }
                 return;
@@ -317,6 +369,7 @@
                 document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
 
                 await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
+                autocentrarMapa = true;
                 trazarRutaCalles(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
                 return;
             }
@@ -326,6 +379,7 @@
                 mostrarMsg('¡Viaje completado con éxito! Cobrá $' + viajeActivo.precio, 'success');
                 limpiarMemoriaConductor();
                 liberarWakeLock();
+                detenerRastreoGps();
                 setTimeout(() => location.reload(), 4000);
             }
         }
@@ -353,6 +407,8 @@
                 markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
 
                 const btn = document.getElementById('btnAccionPrincipal');
+                autocentrarMapa = true;
+
                 if (estadoFlujo === 'aceptado') {
                     btn.className = "btn-action btn-llegué"; btn.textContent = "Ya llegué a la puerta 🔓";
                     document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
@@ -378,14 +434,27 @@
                 if (data.code === 'Ok' && data.routes.length > 0) {
                     if (rutaTrazada) mapa.removeLayer(rutaTrazada);
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#3b82f6', weight: 6, opacity: 0.9 }).addTo(mapa);
-                    mapa.fitBounds(rutaTrazada.getBounds(), { padding: [40, 40] });
+                    
+                    // Solo encuadra los dos puntos juntos al inicio del viaje, luego el rastreador se encarga de fijar la cámara en el auto
+                    if(autocentrarMapa && estadoFlujo === 'pendiente') {
+                        mapa.fitBounds(rutaTrazada.getBounds(), { padding: [40, 40] });
+                    }
                 }
             } catch (e) {}
         }
 
+        // Función auxiliar para recalcular trazado de calles suavemente si avanzamos muchas cuadras
+        let ultimoCalculoRuta = 0;
+        function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
+            let ahora = Date.now();
+            if (ahora - ultimoCalculoRuta > 10000) { // Máximo una vez cada 10 segundos para no saturar el servidor de mapas
+                trazarRutaCalles(lat1, lon1, lat2, lon2);
+                ultimoCalculoRuta = ahora;
+            }
+        }
+
         function mostrarMsg(texto, tipo) { const msg = document.getElementById('msgChofer'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
 
-        // Evento que re-activa el wake lock si el usuario minimiza y vuelve a abrir la app
         document.addEventListener('visibilitychange', async () => {
             if (document.visibilityState === 'visible' && estaConectado) {
                 await solicitarWakeLock();
@@ -395,8 +464,9 @@
         window.addEventListener('DOMContentLoaded', () => {
             initMapa(); 
             escucharNuevosViajes();
-            solicitarWakeLock(); // Arranca encendido por defecto
-            setTimeout(async () => { obtenerUbicacionChofer(); await verificarViajeActivoConductor(); }, 1000);
+            solicitarWakeLock(); 
+            iniciarRastreoGpsContinuo(); // Activa el rastreador en tiempo real desde que abre la pantalla
+            setTimeout(async () => { await verificarViajeActivoConductor(); }, 1000);
         });
     </script>
 </body>
