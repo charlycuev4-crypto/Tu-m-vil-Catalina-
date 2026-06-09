@@ -27,6 +27,27 @@
         .gps-btn { width: 44px; height: 44px; border-radius: 50%; background: #1e293b; color: white; display: flex; align-items: center; justify-content: center; border: 1px solid #334155; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto; }
         .gps-btn.seguimiento-on { background: #059669; border-color: #10b981; animation: pulsoGps 2s infinite; }
 
+        /* Botón de Google Maps flotante */
+        .google-maps-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #ffffff;
+            color: #1a73e8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #dadce0;
+            font-size: 1.3rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            pointer-events: auto;
+            transition: background 0.2s;
+        }
+        .google-maps-btn:active {
+            background: #f1f3f4;
+        }
+
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
         .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); padding: 12px 20px 20px; height: 25vh; overflow-y: auto; transition: height 0.4s ease; color: #f1f5f9; -webkit-overflow-scrolling: touch; }
@@ -55,7 +76,6 @@
         .btn-iniciar { background: #8b5cf6; }
         .btn-finalizar { background: #e11d48; }
 
-        /* Ajustada la flecha de chofer para que pueda rotar según hacia donde manejes */
         .chofer-icon { background: #3b82f6; width: 18px !important; height: 18px !important; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 12px #3b82f6; transition: transform 0.3s ease; }
         .pasajero-origen-icon { background: #10b981; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
         .pasajero-destino-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
@@ -72,7 +92,10 @@
 
     <div class="header-float">
         <div class="status-badge activo" id="txtEstadoChofer" onclick="conmutarEstadoConexion()">Móvil en Línea 🟢</div>
-        <button class="gps-btn" id="btnGpsCentro" onclick="alternarSeguimientoManual()">🎯</button>
+        <div style="display: flex; gap: 8px;">
+            <button class="google-maps-btn" id="btnAbrirGoogleMaps" onclick="abrirNavegacionGoogleMaps()" title="Abrir en Google Maps">🗺️</button>
+            <button class="gps-btn" id="btnGpsCentro" onclick="alternarSeguimientoManual()">🎯</button>
+        </div>
     </div>
 
     <div class="bottom-panel" id="panelConductor">
@@ -112,8 +135,8 @@
         let canalSupabase = null;
         let estaConectado = true; 
         let wakeLock = null; 
-        let idRastreadorGps = null; // Guardará el ID del watchPosition continuo
-        let autocentrarMapa = true;  // Si el conductor mueve el mapa a mano, se congela el centrado automático temporalmente
+        let idRastreadorGps = null; 
+        let autocentrarMapa = true;  
 
         async function solicitarWakeLock() {
             if (!('wakeLock' in navigator)) return;
@@ -167,14 +190,12 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             markerChofer = L.marker([choferCoords.lat, choferCoords.lng], { icon: L.divIcon({ className: 'chofer-icon' }) }).addTo(mapa);
 
-            // Si el chofer arrastra el mapa con el dedo, apagamos el centrado automático para dejarlo explorar el mapa
             mapa.on('dragstart', () => {
                 autocentrarMapa = false;
                 document.getElementById('btnGpsCentro').classList.remove('seguimiento-on');
             });
         }
 
-        // RASTREADOR GPS EN TIEMPO REAL CONTINUO (ACOMPAÑA AL AUTO EN MOVIMIENTO)
         function iniciarRastreoGpsContinuo() {
             if (idRastreadorGps) return;
 
@@ -185,20 +206,25 @@
                     
                     choferCoords = { lat: nuevaLat, lng: nuevaLng };
                     
-                    // 1. Movemos el puntito azul del auto en el mapa de forma fluida
                     if (markerChofer) {
                         markerChofer.setLatLng([nuevaLat, nuevaLng]);
                     }
 
-                    // 2. Si el autocentrado está prendido, movemos la cámara con Zoom del 17 (+30% más de acercamiento)
                     if (autocentrarMapa) {
-                        // Si está haciendo un viaje, mantenemos un zoom cerrado de navegación (17), si está esperando usa 15
                         let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
-                        mapa.setView([nuevaLat, nuevaLng], zoomActual);
+                        
+                        // Ajuste de offset para que el punto no quede ocultado por los paneles inferiores
+                        let latAjustada = nuevaLat;
+                        if (estadoFlujo !== 'pendiente' && viajeActivo) {
+                            latAjustada = nuevaLat - 0.0015; 
+                        } else {
+                            latAjustada = nuevaLat - 0.0035; 
+                        }
+                        
+                        mapa.setView([latAjustada, nuevaLng], zoomActual);
                         document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                     }
 
-                    // 3. Opcional: Actualizamos la ruta trazada si el conductor se está moviendo hacia el origen
                     if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
                         actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng);
                     }
@@ -206,9 +232,9 @@
                 }, (error) => {
                     console.log("Error de lectura GPS continua.");
                 }, {
-                    enableHighAccuracy: true, // Forzar uso de antena GPS de alta precisión
-                    maximumAge: 0,            // No usar posiciones viejas guardadas en memoria
-                    timeout: 5000             // Re-intentar cada 5 segundos si se nubla la señal
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
                 });
             }
         }
@@ -220,12 +246,35 @@
             }
         }
 
-        // Botón manual para obligar al mapa a volver a centrarse en el auto y activar el seguimiento dinámico
         function alternarSeguimientoManual() {
             autocentrarMapa = true;
             document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
             let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
             mapa.setView([choferCoords.lat, choferCoords.lng], zoomActual);
+        }
+
+        function abrirNavegacionGoogleMaps() {
+            if (!viajeActivo) {
+                alert("Primero necesitas tener un viaje entrante o activo para iniciar la navegación de Google Maps.");
+                return;
+            }
+
+            let urlGoogleMaps = "";
+
+            // Caso 1: Yendo a buscar al pasajero
+            if (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta') {
+                urlGoogleMaps = `https://www.google.com/maps/dir/?api=1&origin=${choferCoords.lat},${choferCoords.lng}&destination=${viajeActivo.origen_lat},${viajeActivo.origen_lng}&travelmode=driving`;
+            } 
+            // Caso 2: Pasajero arriba, viajando al destino final
+            else if (estadoFlujo === 'en_viaje') {
+                urlGoogleMaps = `https://www.google.com/maps/dir/?api=1&origin=${choferCoords.lat},${choferCoords.lng}&destination=${viajeActivo.destino_lat},${viajeActivo.destino_lng}&travelmode=driving`;
+            } 
+            // Caso 3: Alerta en pantalla (Pendiente de aceptación)
+            else {
+                urlGoogleMaps = `https://www.google.com/maps/dir/?api=1&origin=${viajeActivo.origen_lat},${viajeActivo.origen_lng}&destination=${viajeActivo.destino_lat},${viajeActivo.destino_lng}&travelmode=driving`;
+            }
+
+            window.open(urlGoogleMaps, '_blank');
         }
 
         function escucharNuevosViajes() {
@@ -313,7 +362,7 @@
             markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
             markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
 
-            autocentrarMapa = true; // Forzamos centrado dinámico al recibir alerta
+            autocentrarMapa = true; 
             trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
         }
 
@@ -343,7 +392,7 @@
                     document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
                     mostrarMsg('Viaje tomado con éxito.', 'success');
                     
-                    autocentrarMapa = true; // Ajusta la cámara con zoom de viaje cerrado
+                    autocentrarMapa = true; 
 
                 } catch (e) { alert("Error al asignar."); location.reload(); }
                 return;
@@ -375,99 +424,4 @@
             }
 
             if (estadoFlujo === 'en_viaje') {
-                await supabaseClient.from('viajes').update({ estado: 'finalizado' }).eq('id', viajeActivo.id);
-                mostrarMsg('¡Viaje completado con éxito! Cobrá $' + viajeActivo.precio, 'success');
-                limpiarMemoriaConductor();
-                liberarWakeLock();
-                detenerRastreoGps();
-                setTimeout(() => location.reload(), 4000);
-            }
-        }
-
-        async function verificarViajeActivoConductor() {
-            const guardadoId = localStorage.getItem('conductor_viaje_id');
-            const guardadoEstado = localStorage.getItem('conductor_estado_flujo');
-            if (!guardadoId) return;
-
-            try {
-                const { data: viaje } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
-                if (!viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') { limpiarMemoriaConductor(); return; }
-
-                viajeActivo = viaje;
-                estadoFlujo = guardadoEstado || 'aceptado';
-
-                document.getElementById('vistaEspera').classList.add('hidden');
-                document.getElementById('vistaViaje').classList.remove('hidden');
-
-                document.getElementById('lblPasajero').textContent = viaje.pasajero_nombre || "Pasajero Web";
-                document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
-                document.getElementById('lblDistancia').textContent = viaje.distancia_km || "0";
-
-                markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
-                markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
-
-                const btn = document.getElementById('btnAccionPrincipal');
-                autocentrarMapa = true;
-
-                if (estadoFlujo === 'aceptado') {
-                    btn.className = "btn-action btn-llegué"; btn.textContent = "Ya llegué a la puerta 🔓";
-                    document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
-                    trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
-                } else if (estadoFlujo === 'en_puerta') {
-                    btn.className = "btn-action btn-iniciar"; btn.textContent = "Iniciar Viaje 🛫";
-                    document.getElementById('txtEstadoChofer').textContent = "En la Puerta 📍";
-                    trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
-                } else if (estadoFlujo === 'en_viaje') {
-                    btn.className = "btn-action btn-finalizar"; btn.textContent = "Finalizar Viaje y Cobrar 💵";
-                    document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
-                    trazarRutaCalles(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
-                }
-            } catch (e) { limpiarMemoriaConductor(); }
-        }
-
-        function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id'); localStorage.removeItem('conductor_estado_flujo'); }
-
-        async function trazarRutaCalles(lat1, lon1, lat2, lon2) {
-            try {
-                const url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`;
-                const res = await fetch(url); const data = await res.json();
-                if (data.code === 'Ok' && data.routes.length > 0) {
-                    if (rutaTrazada) mapa.removeLayer(rutaTrazada);
-                    rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#3b82f6', weight: 6, opacity: 0.9 }).addTo(mapa);
-                    
-                    // Solo encuadra los dos puntos juntos al inicio del viaje, luego el rastreador se encarga de fijar la cámara en el auto
-                    if(autocentrarMapa && estadoFlujo === 'pendiente') {
-                        mapa.fitBounds(rutaTrazada.getBounds(), { padding: [40, 40] });
-                    }
-                }
-            } catch (e) {}
-        }
-
-        // Función auxiliar para recalcular trazado de calles suavemente si avanzamos muchas cuadras
-        let ultimoCalculoRuta = 0;
-        function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
-            let ahora = Date.now();
-            if (ahora - ultimoCalculoRuta > 10000) { // Máximo una vez cada 10 segundos para no saturar el servidor de mapas
-                trazarRutaCalles(lat1, lon1, lat2, lon2);
-                ultimoCalculoRuta = ahora;
-            }
-        }
-
-        function mostrarMsg(texto, tipo) { const msg = document.getElementById('msgChofer'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
-
-        document.addEventListener('visibilitychange', async () => {
-            if (document.visibilityState === 'visible' && estaConectado) {
-                await solicitarWakeLock();
-            }
-        });
-
-        window.addEventListener('DOMContentLoaded', () => {
-            initMapa(); 
-            escucharNuevosViajes();
-            solicitarWakeLock(); 
-            iniciarRastreoGpsContinuo(); // Activa el rastreador en tiempo real desde que abre la pantalla
-            setTimeout(async () => { await verificarViajeActivoConductor(); }, 1000);
-        });
-    </script>
-</body>
-</html>
+                await supabaseClient.
