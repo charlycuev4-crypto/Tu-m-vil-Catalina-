@@ -15,7 +15,6 @@
             background: #11121a; height: 100vh; overflow: hidden; color: #ffffff;
         }
 
-        /* Contenedor del mapa corregido para evitar pantallas en negro */
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; background: #11121a; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
@@ -28,7 +27,6 @@
         .gps-btn { width: 44px; height: 44px; border-radius: 50%; background: #1e293b; color: white; display: flex; align-items: center; justify-content: center; border: 1px solid #334155; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto; }
         .gps-btn.seguimiento-on { background: #059669; border-color: #10b981; animation: pulsoGps 2s infinite; }
 
-        /* Botón de Google Maps Flotante */
         .google-maps-btn {
             width: 44px;
             height: 44px;
@@ -73,7 +71,6 @@
         .btn-iniciar { background: #8b5cf6; }
         .btn-finalizar { background: #e11d48; }
 
-        /* Iconos Leaflet */
         .chofer-icon { background: #3b82f6; width: 18px !important; height: 18px !important; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 12px #3b82f6; }
         .pasajero-origen-icon { background: #10b981; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
         .pasajero-destino-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
@@ -126,7 +123,6 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Configuración de la Flota Familiar (Vinculada a tu nuevo panel de control)
         const PERFIL_CHOFER = {
             nombre: "Carlos Cueva",
             vehiculo: "Ford Fiesta Max",
@@ -173,7 +169,6 @@
         let estadoFlujo = 'pendiente'; 
 
         function initMapa() {
-            // Se fuerza el renderizado correcto del mapa Leaflet
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             markerChofer = L.marker([choferCoords.lat, choferCoords.lng], { icon: L.divIcon({ className: 'chofer-icon' }) }).addTo(mapa);
@@ -183,7 +178,6 @@
                 document.getElementById('btnGpsCentro').classList.remove('seguimiento-on');
             });
 
-            // Evita fallas de carga asincrónica o pantallas oscuras
             setTimeout(() => { mapa.invalidateSize(); }, 500);
         }
 
@@ -201,7 +195,6 @@
                         let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
                         let latAjustada = nuevaLat;
                         
-                        // Margen para que los menús inferiores no tapen los marcadores
                         if (estadoFlujo !== 'pendiente' && viajeActivo) {
                             latAjustada = nuevaLat - 0.0015; 
                         } else {
@@ -227,10 +220,9 @@
             mapa.setView([choferCoords.lat, choferCoords.lng], zoomActual);
         }
 
-        // Lógica corregida para abrir la navegación externa de Google Maps
         function abrirNavegacionGoogleMaps() {
             if (!viajeActivo) {
-                alert("Primero necesitás un viaje entrante o activo para iniciar Google Maps.");
+                alert("Primero necesitas un viaje entrante o activo para iniciar Google Maps.");
                 return;
             }
 
@@ -242,7 +234,6 @@
                 destinoLng = viajeActivo.destino_lng;
             }
 
-            // Enlace nativo optimizado para evitar desvíos fluviales y riachuelos
             const urlGoogleMaps = `https://www.google.com/maps/dir/?api=1&origin=${choferCoords.lat},${choferCoords.lng}&destination=${destinoLat},${destinoLng}&travelmode=driving`;
             window.open(urlGoogleMaps, '_blank');
         }
@@ -319,6 +310,7 @@
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
+                    // SE CORRIGE EL FLUJO: Cambia el estado a 'aceptado' de manera limpia y sincronizada
                     const { error } = await supabaseClient.from('viajes').update({
                         conductor_nombre: PERFIL_CHOFER.nombre,
                         conductor_auto: `${PERFIL_CHOFER.vehiculo} (Patente: ${PERFIL_CHOFER.patente})`,
@@ -335,7 +327,7 @@
                     btn.className = "btn-action btn-llegué"; btn.textContent = "Ya llegué a la puerta 🔓";
                     document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
                     autocentrarMapa = true; 
-                } catch (e) { alert("Error al asignar."); location.reload(); }
+                } catch (e) { alert("Error al asignar el viaje."); location.reload(); }
                 return;
             }
 
@@ -344,6 +336,8 @@
                 localStorage.setItem('conductor_estado_flujo', 'en_puerta');
                 btn.className = "btn-action btn-iniciar"; btn.textContent = "Iniciar Viaje 🛫";
                 document.getElementById('txtEstadoChofer').textContent = "En la Puerta 📍";
+                
+                await supabaseClient.from('viajes').update({ estado: 'en_puerta' }).eq('id', viajeActivo.id);
                 mostrarMsg('Notificación enviada al pasajero.', 'success');
                 return;
             }
