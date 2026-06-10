@@ -150,24 +150,32 @@
             }
         }
 
+        /* Función de Campanilla de Alerta Potente Estilo Repique */
         function comenzarSirenaAlerta() {
             if (loopAudioAlerta) return;
             try {
                 const contexto = new (window.AudioContext || window.webkitAudioContext)();
+                
                 loopAudioAlerta = setInterval(() => {
                     let osc = contexto.createOscillator();
                     let gain = contexto.createGain();
-                    osc.type = 'sawtooth'; 
-                    osc.frequency.setValueAtTime(880, contexto.currentTime); 
-                    osc.frequency.exponentialRampToValueAtTime(440, contexto.currentTime + 0.3); 
-                    gain.gain.setValueAtTime(0.3, contexto.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, contexto.currentTime + 0.35);
+                    
+                    osc.type = 'triangle'; // Tono metálico de campana
+                    osc.frequency.setValueAtTime(1200, contexto.currentTime); // Agudo y estridente
+                    
+                    gain.gain.setValueAtTime(0.8, contexto.currentTime); // Volumen alto
+                    gain.gain.exponentialRampToValueAtTime(0.01, contexto.currentTime + 0.6);
+                    
                     osc.connect(gain);
                     gain.connect(contexto.destination);
                     osc.start();
-                    osc.stop(contexto.currentTime + 0.4);
-                }, 500); 
-            } catch (e) {}
+                    osc.stop(contexto.currentTime + 0.6);
+                }, 700); // Ritmo de campana insistente
+                
+                console.log("Sistema de campanilla activado.");
+            } catch (e) {
+                console.log("Error de audio:", e);
+            }
         }
 
         function detenerSirenaAlerta() {
@@ -242,7 +250,6 @@
             mapa.setView([choferCoords.lat, choferCoords.lng], zoomActual);
         }
 
-        // Función de Google Maps integrada usando las coordenadas del viaje activo
         function abrirNavegacionGoogleMaps() {
             if (!viajeActivo) {
                 alert("Primero necesitas un viaje entrante o activo para iniciar Google Maps.");
@@ -340,7 +347,6 @@
             document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
             document.getElementById('lblDistancia').textContent = viaje.distancia_km || "0";
 
-            // Mostrar categoría si el viaje la incluye
             const badgeCat = document.getElementById('lblCategoriaViaje');
             if (viaje.categoria) {
                 badgeCat.textContent = viaje.categoria.toUpperCase();
@@ -366,7 +372,6 @@
                 detenerSirenaAlerta();
 
                 try {
-                    // SE MANTIENEN EXÁCTAMENTE TUS CAMPOS ORIGINALES PARA NO CORTAR LA COMUNICACIÓN
                     const { error } = await supabaseClient
                         .from('viajes')
                         .update({
@@ -399,7 +404,6 @@
                 btn.textContent = "Iniciar Viaje 🛫";
                 document.getElementById('txtEstadoChofer').textContent = "En la Puerta 📍";
                 
-                // Mantiene tu actualización exacta para avisar al pasajero
                 await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeActivo.id);
                 mostrarMsg('Notificación de llegada enviada al Pasajero.', 'success');
                 return;
@@ -497,7 +501,7 @@
             let ahora = Date.now();
             if (ahora - ultimoCalculoRuta > 10000) { 
                 trazarRutaCalles(lat1, lon1, lat2, lon2);
-                ultimoCalculoRuta = ahora;
+                ultimoCalculoRuta = moved;
             }
         }
 
