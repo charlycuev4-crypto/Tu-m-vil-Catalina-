@@ -33,6 +33,14 @@
             font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto;
         }
 
+        /* Botón de prueba de sonido flotante abajo a la izquierda */
+        .test-audio-btn {
+            position: fixed; bottom: 27vh; left: 16px; z-index: 1000;
+            background: #ea580c; color: white; border: none; padding: 10px 14px;
+            border-radius: 20px; font-weight: bold; font-size: 0.8rem; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 6px;
+        }
+
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
         .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); padding: 12px 20px 20px; height: 25vh; overflow-y: auto; transition: height 0.4s ease; color: #f1f5f9; -webkit-overflow-scrolling: touch; }
@@ -66,14 +74,9 @@
         .hidden { display: none !important; }
         .msg { padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.8rem; text-align: center; display: none; font-weight: 600; }
         .msg.show { display: block; }
-        .msg-success { background: #065f46; color: #34d399; }
     </style>
 </head>
-<body onclick="activarPermisoAudioInicial()">
-
-    <audio id="audioCampanaAlerta" loop preload="auto">
-        <source src="https://assets.mixkit.co/active_storage/sfx/911/911-84.wav" type="audio/wav">
-    </audio>
+<body onclick="forzarHabilitacionAudio()">
 
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
@@ -85,13 +88,15 @@
         </div>
     </div>
 
+    <button class="test-audio-btn" id="btnTestSonido" onclick="probarCampanaManual(event)">🔊 Probar Timbre</button>
+
     <div class="bottom-panel" id="panelConductor">
         <div class="panel-handle"></div>
         <div class="msg" id="msgChofer"></div>
 
         <div id="vistaEspera">
             <div style="text-align: center; padding: 20px 0;">
-                <p id="lblSubtextoEspera" style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 10px;">Esperando solicitudes en San Miguel... (Toca la pantalla al iniciar)</p>
+                <p id="lblSubtextoEspera" style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 10px;">Esperando solicitudes en San Miguel... (Tocá el mapa al abrir)</p>
                 <div class="btn-action btn-espera" id="btnEstadoEsperaTexto">Buscando Pasajeros...</div>
             </div>
         </div>
@@ -123,51 +128,81 @@
         let wakeLock = null; 
         let idRastreadorGps = null; 
         let autocentrarMapa = true;  
-        let audioPermitido = false;
+        
+        // Variables para la Campanilla Electrónica Sintetizada
+        let audioCtx = null;
+        let intervaloCampana = null;
 
         async function solicitarWakeLock() {
             if (!('wakeLock' in navigator)) return;
             try {
                 if (!wakeLock) wakeLock = await navigator.wakeLock.request('screen');
-                console.log("Pantalla bloqueada para que no se apague.");
-            } catch (err) { console.log("WakeLock bloqueado."); }
+            } catch (err) {}
         }
 
-        function liberarWakeLock() {
-            if (wakeLock) { wakeLock.release(); wakeLock = null; }
-        }
+        function liberarWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; } }
 
-        // Se activa con cualquier toque inicial en la pantalla para ganarle al bloqueo de Chrome
-        function activarPermisoAudioInicial() {
-            if (!audioPermitido) {
-                const audio = document.getElementById('audioCampanaAlerta');
-                audio.play().then(() => {
-                    audio.pause();
-                    audio.currentTime = 0;
-                    audioPermitido = true;
-                    console.log("Permiso de audio multimedia concedido.");
-                }).catch(e => console.log("Esperando toque válido..."));
+        // Inicializa el motor de audio con la primera interacción del chofer
+        function forzarHabilitacionAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                console.log("Motor de audio desbloqueado correctamente.");
+            } else if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
             }
         }
 
-        function comenzarSirenaAlerta() {
+        // Toca un timbre de campana limpia de alta frecuencia
+        function tocarUnRepiqueDeCampana() {
+            if (!audioCtx) return;
             try {
-                const audio = document.getElementById('audioCampanaAlerta');
-                audio.volume = 1.0; // Volumen al máximo
-                audio.play().catch(e => {
-                    console.log("Bloqueado por el sistema, reintentando de fondo...");
-                    // Intento forzado de reproducción en segundo plano
-                    setTimeout(() => { audio.play(); }, 500);
-                });
-            } catch (e) { console.log("Error al reproducir alarma:", e); }
+                let osc = audioCtx.createOscillator();
+                let gainNode = audioCtx.createGain();
+                
+                osc.type = 'sine';
+                // Dos frecuencias combinadas para simular el metal de una campanilla
+                osc.frequency.setValueAtTime(1475, audioCtx.currentTime); 
+                
+                gainNode.gain.setValueAtTime(0.9, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+                
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.8);
+            } catch(e) { console.log(e); }
+        }
+
+        function comenzarSirenaAlerta() {
+            if (intervaloCampana) return;
+            forzarHabilitacionAudio();
+            // Repica dos veces por segundo
+            intervaloCampana = setInterval(() => {
+                tocarUnRepiqueDeCampana();
+            }, 500);
         }
 
         function detenerSirenaAlerta() {
-            try {
-                const audio = document.getElementById('audioCampanaAlerta');
-                audio.pause();
-                audio.currentTime = 0;
-            } catch (e) {}
+            if (intervaloCampana) {
+                clearInterval(intervaloCampana);
+                intervaloCampana = null;
+            }
+        }
+
+        // Función del botón naranja para asegurarse de que el volumen ande bien
+        function probarCampanaManual(e) {
+            e.stopPropagation(); // Evita conflictos
+            forzarHabilitacionAudio();
+            tocarUnRepiqueDeCampana();
+            
+            const btn = document.getElementById('btnTestSonido');
+            btn.textContent = "🔔 ¡Sonando Ok!";
+            btn.style.background = "#059669";
+            setTimeout(() => {
+                btn.textContent = "🔊 Probar Timbre";
+                btn.style.background = "#ea580c";
+            }, 2000);
         }
 
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
@@ -221,7 +256,7 @@
         }
 
         function abrirNavegacionGoogleMaps() {
-            if (!viajeActivo) { alert("Necesitás un viaje entrante o activo."); return; }
+            if (!viajeActivo) { alert("Necesitás un viaje activo."); return; }
             let destLat = (estadoFlujo === 'en_viaje') ? viajeActivo.destino_lat : viajeActivo.origen_lat;
             let destLng = (estadoFlujo === 'en_viaje') ? viajeActivo.destino_lng : viajeActivo.origen_lng;
             window.open(`https://www.google.com/maps/dir/?api=1&origin=${choferCoords.lat},${choferCoords.lng}&destination=${destLat},${destLng}&travelmode=driving`, '_blank');
@@ -256,7 +291,7 @@
 
             if (estaConectado) {
                 badge.textContent = "Móvil en Línea 🟢"; badge.className = "status-badge activo";
-                subtexto.textContent = "Esperando solicitudes en San Miguel... (Toca la pantalla)";
+                subtexto.textContent = "Esperando solicitudes en San Miguel... (Tocá el mapa)";
                 btnEspera.textContent = "Buscando Pasajeros..."; btnEspera.className = "btn-action btn-espera";
                 solicitarWakeLock(); iniciarRastreoGpsContinuo(); escucharNuevosViajes();
             } else {
