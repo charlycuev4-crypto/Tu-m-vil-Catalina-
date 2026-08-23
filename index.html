@@ -369,7 +369,7 @@
             } catch (e) {}
         }
 
-        // BUSCADOR ACTUALIZADO CON PHOTON (GRATIS, SIN API KEY, RÁPIDO Y OPTIMIZADO PARA ZONA BUENOS AIRES)
+        // BUSCADOR INTELIGENTE NOMINATIM (GRATIS, SIN API KEY, ESPECIAL PARA CALLES Y ALTURAS EN ARGENTINA)
         let timeoutBusqueda = null;
         function buscarDireccion(query) {
             clearTimeout(timeoutBusqueda);
@@ -379,39 +379,37 @@
             }
             timeoutBusqueda = setTimeout(async () => {
                 try {
-                    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lat=-34.54&lon=-58.71&lang=es`;
-                    const res = await fetch(url); 
-                    const data = await res.json();
+                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Buenos Aires, Argentina')}&countrycodes=ar&limit=5&addressdetails=1`;
+                    const res = await fetch(url, {
+                        headers: { 'Accept-Language': 'es' }
+                    }); 
+                    const datos = await res.json();
                     
                     const contenedorSugerencias = document.getElementById('sugerencias');
                     
-                    if (data && data.features && data.features.length > 0) {
-                        contenedorSugerencias.innerHTML = data.features.map(item => {
-                            const props = item.properties;
-                            const nombreLugar = props.name || "Lugar sin nombre";
-                            const ciudad = props.city || props.county || props.state || "";
-                            const street = props.street ? props.street + (props.housenumber ? ' ' + props.housenumber : '') : '';
-                            const lat = item.geometry.coordinates[1];
-                            const lng = item.geometry.coordinates[0];
-
+                    if (datos && datos.length > 0) {
+                        contenedorSugerencias.innerHTML = datos.map(lugar => {
+                            const nombrePrincipal = lugar.display_name.split(',')[0];
+                            const restoDireccion = lugar.display_name.split(',').slice(1, 3).join(',');
                             return `
-                                <div class="sugerencia-item" onclick="seleccionarDestino('${nombreLugar.replace(/'/g, "")}', ${lat}, ${lng})">
-                                    <strong>🎯 ${nombreLugar}</strong>
-                                    <div style="font-size:0.75rem; color:#777;">${street} ${ciudad ? '· ' + ciudad : ''}</div>
+                                <div class="sugerencia-item" onclick="seleccionarDestino('${lugar.display_name.replace(/'/g, "")}', ${lugar.lat}, ${lugar.lon})">
+                                    <strong>🎯 ${nombrePrincipal}</strong>
+                                    <div style="font-size:0.75rem; color:#777;">${restoDireccion}</div>
                                 </div>`;
                         }).join('');
                         contenedorSugerencias.classList.add('activo');
                     } else {
-                        contenedorSugerencias.innerHTML = `<div class="sugerencia-item" style="color:#666;">No se encontraron resultados</div>`;
+                        contenedorSugerencias.innerHTML = `<div class="sugerencia-item" style="color:#666;">No se encontraron resultados exactos. Probá marcando el punto en el mapa con el botón 📌</div>`;
                         contenedorSugerencias.classList.add('activo');
                     }
                 } catch (e) {
-                    console.error("Error en búsqueda con Photon:", e);
+                    console.error("Error en búsqueda con Nominatim:", e);
                 }
-            }, 300);
+            }, 400);
         }
 
-        function seleccionarDestino(nombreLugar, lat, lng) {
+        function seleccionarDestino(direccionCompleta, lat, lng) {
+            const nombreLugar = direccionCompleta.split(',')[0];
             document.getElementById('destino').value = nombreLugar;
             document.getElementById('sugerencias').classList.remove('activo');
             destinoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
