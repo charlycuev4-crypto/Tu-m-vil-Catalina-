@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TuMovil Las Catalinas - Pasajero</title>
+    <title>TuMovil - Pasajero</title>
     <!-- Supabase & Leaflet -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -100,7 +100,6 @@
 
     <div id="splashScreen">
         <div class="splash-logo-box">
-            <!-- Foto Optimizada del Fiesta de Carlos -->
             <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Tu Móvil">
             <span>TU MÓVIL</span>
         </div>
@@ -132,15 +131,14 @@
         <div class="panel-handle"></div>
         <div class="msg" id="msg"></div>
 
-        <!-- PASO 1: PEDIDO -->
+        <!-- PASO 1: PEDIDO (Título general genérico) -->
         <div id="pasoDatos">
             <div class="driver-card-preview">
                 <div class="driver-img-box">
-                    <!-- Foto Optimizada del Fiesta de Carlos -->
-                    <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Ford Fiesta Max">
+                    <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Tu Móvil">
                 </div>
                 <div class="driver-info-box">
-                    <h3>Tu Móvil (Ford Fiesta)</h3>
+                    <h3>Tu Móvil - Central</h3>
                     <p id="txtEstructuraTarifa">Base $3.000 + $600 x Kilómetro</p>
                     <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +50% Recargo Nocturno Activo</div>
                 </div>
@@ -159,28 +157,28 @@
                 </div>
             </div>
             <div class="sugerencias" id="sugerencias"></div>
-            <button class="btn-green-action" onclick="solicitarViaje()">Confirmar Tu Móvil</button>
+            <button class="btn-green-action" onclick="solicitarViaje()">Confirmar Solicitud</button>
         </div>
 
         <!-- PASO 2: ESPERA -->
         <div id="pasoEsperando" class="hidden">
             <div style="text-align: center; padding: 10px 0;">
                 <h4 style="margin-bottom: 4px;">Buscando conductor cercano...</h4>
-                <p style="color: #666; font-size: 0.8rem; margin-bottom: 12px;">Tu solicitud está en el centro de despacho.</p>
+                <p style="color: #666; font-size: 0.8rem; margin-bottom: 12px;">Tu solicitud está siendo asignada al móvil más cercano.</p>
                 <button class="btn-green-action" style="background: #ff4757;" onclick="cancelarViaje()">Cancelar</button>
             </div>
         </div>
 
-        <!-- PASO 3: PRECIO Y CHOFER ASIGNADO -->
+        <!-- PASO 3: PRECIO Y CHOFER ASIGNADO (Muestra los datos reales del chofer que aceptó) -->
         <div id="pasoPrecio" class="hidden">
             <div class="price-box-live" style="display:block; background:#dbeafe; color:#1e40af;" id="precioMonto">$0.00</div>
             <div class="driver-card-preview">
                 <div class="driver-img-box">
-                    <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Ford Fiesta Max">
+                    <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Vehículo Asignado">
                 </div>
                 <div class="driver-info-box">
-                    <h3 id="nombreCond">Carlos Cueva</h3>
-                    <p id="autoCond">Ford Fiesta Max (Patente: JCP 478)</p>
+                    <h3 id="nombreCond">Asignando chofer...</h3>
+                    <p id="autoCond">Espere un momento</p>
                 </div>
             </div>
             <div style="text-align: center; padding: 10px 0; color: #475569; font-weight: 600; font-size: 0.9rem;" id="estadoViajePasajero">
@@ -204,14 +202,13 @@
         let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "";
 
-        // FUNCIÓN POR VOZ PARA AVISAR AL PASAJERO
         function hablarAnuncioPasajero(texto) {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Detener cualquier sonido previo
+                window.speechSynthesis.cancel();
                 const enunciado = new SpeechSynthesisUtterance(texto);
-                enunciado.lang = 'es-AR'; // Español de Argentina
-                enunciado.rate = 0.9;     // Velocidad natural
-                enunciado.pitch = 1.0;    // Tono de voz estándar
+                enunciado.lang = 'es-AR';
+                enunciado.rate = 0.9;
+                enunciado.pitch = 1.0;
                 window.speechSynthesis.speak(enunciado);
             }
         }
@@ -278,8 +275,8 @@
                     mostrarPaso('pasoEsperando');
                 } else {
                     document.getElementById('precioMonto').textContent = 'Total a pagar: $' + viaje.precio;
-                    document.getElementById('nombreCond').textContent = viaje.conductor_nombre || "Carlos Cueva";
-                    document.getElementById('autoCond').textContent = viaje.conductor_auto || "Ford Fiesta Max (Patente: JCP 478)";
+                    document.getElementById('nombreCond').textContent = viaje.conductor_nombre || "Conductor Asignado";
+                    document.getElementById('autoCond').textContent = viaje.conductor_auto || "Vehículo en camino";
                     
                     if(viaje.estado === 'aceptado' && localStorage.getItem('pasajero_visto_en_puerta') === 'si') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A TU PUERTA! 🔔";
@@ -300,7 +297,7 @@
                 (payload) => {
                     const de = payload.new;
                     
-                    if (de.conductor_nombre && de.estado === 'pendiente') {
+                    if (de.conductor_nombre) {
                         document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
                         document.getElementById('nombreCond').textContent = de.conductor_nombre;
                         document.getElementById('autoCond').textContent = de.conductor_auto;
@@ -312,8 +309,6 @@
                         localStorage.setItem('pasajero_visto_en_puerta', 'si');
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A TU PUERTA! 🔔";
                         mostrarMsg('¡Tu móvil está en la puerta!', 'success');
-                        
-                        // DICTADO POR VOZ REAL AL PASAJERO
                         hablarAnuncioPasajero("Tu móvil ya llegó a la puerta.");
                     }
 
