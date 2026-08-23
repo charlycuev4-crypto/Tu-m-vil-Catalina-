@@ -100,7 +100,6 @@
 
     <div id="splashScreen">
         <div class="splash-logo-box">
-            <!-- Foto Optimizada del Fiesta de Carlos -->
             <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Tu Móvil">
             <span>TU MÓVIL</span>
         </div>
@@ -136,7 +135,6 @@
         <div id="pasoDatos">
             <div class="driver-card-preview">
                 <div class="driver-img-box">
-                    <!-- Foto Optimizada del Fiesta de Carlos -->
                     <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Ford Fiesta Max">
                 </div>
                 <div class="driver-info-box">
@@ -155,7 +153,7 @@
                 </div>
                 <div class="input-row">
                     <div class="dot dot-red"></div>
-                    <input type="text" id="destino" placeholder="¿A dónde vamos?" autocomplete="off" oninput="buscarDireccion(this.value)">
+                    <input type="text" id="destino" placeholder="¿A dónde vamos? (San Miguel / Trujui)" autocomplete="off" oninput="buscarDireccion(this.value)">
                 </div>
             </div>
             <div class="sugerencias" id="sugerencias"></div>
@@ -204,14 +202,13 @@
         let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "";
 
-        // FUNCIÓN POR VOZ PARA AVISAR AL PASAJERO
         function hablarAnuncioPasajero(texto) {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Detener cualquier sonido previo
+                window.speechSynthesis.cancel();
                 const enunciado = new SpeechSynthesisUtterance(texto);
-                enunciado.lang = 'es-AR'; // Español de Argentina
-                enunciado.rate = 0.9;     // Velocidad natural
-                enunciado.pitch = 1.0;    // Tono de voz estándar
+                enunciado.lang = 'es-AR';
+                enunciado.rate = 0.9;
+                enunciado.pitch = 1.0;
                 window.speechSynthesis.speak(enunciado);
             }
         }
@@ -312,8 +309,6 @@
                         localStorage.setItem('pasajero_visto_en_puerta', 'si');
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A TU PUERTA! 🔔";
                         mostrarMsg('¡Tu móvil está en la puerta!', 'success');
-                        
-                        // DICTADO POR VOZ REAL AL PASAJERO
                         hablarAnuncioPasajero("Tu móvil ya llegó a la puerta.");
                     }
 
@@ -349,7 +344,7 @@
                 { enableHighAccuracy: true, timeout: 7000 }
             );
         }
-        function forzarCentroSanMiguel() { marcarOrigen(ESTACION_SAN_MIGUEL[0], ESTACION_SAN_MIGUEL[1], "Estación San Miguel"); mapa.setView(ESTACION_SAN_MIGUEL, 15); }
+        function forzarCentroSanMiguel() { marcarOrigen(ESTACION_SAN_MIGUEL[0], ESTACION_SAN_MIGUEL[1], "Estación San Miguel (Zona base)"); mapa.setView(ESTACION_SAN_MIGUEL, 15); }
 
         async function recalcularRutaYPrecio() {
             if (!origenCoords || !destinoCoords) return;
@@ -380,7 +375,8 @@
             if (query.length < 3) { document.getElementById('sugerencias').classList.remove('activo'); return; }
             timeoutBusqueda = setTimeout(async () => {
                 try {
-                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Buenos Aires')}&limit=4`;
+                    // MEJORA: Búsqueda restringida y enfocada en San Miguel / Partido de San Miguel / Zona Noroeste Buenos Aires
+                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', San Miguel, Buenos Aires')}&limit=4`;
                     const res = await fetch(url); const datos = await res.json();
                     document.getElementById('sugerencias').innerHTML = datos.map(lugar => `
                         <div class="sugerencia-item" onclick="seleccionarDestino('${lugar.display_name.replace(/'/g, "")}', ${lugar.lat}, ${lugar.lon})">
