@@ -19,33 +19,45 @@
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
-        /* SPLASH SCREEN DE BIENVENIDA Y FOTO */
+        /* SPLASH SCREEN DE BIENVENIDA Y SELFIE GUIADA ESTILO DIDI */
         #splashScreen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: #11121a; color: white; z-index: 9999;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 30px; text-align: center; transition: opacity 0.5s ease;
+            padding: 20px; text-align: center; transition: opacity 0.5s ease;
         }
         .splash-logo-box {
-            width: 140px; height: 110px; background: #1e293b; border-radius: 20px;
+            width: 100px; height: 80px; background: #1e293b; border-radius: 16px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            margin-bottom: 25px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); border: 1px solid #334155;
+            margin-bottom: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); border: 1px solid #334155;
         }
-        .splash-logo-box img { width: 85px; height: 60px; border-radius: 8px; margin-bottom: 4px; object-fit: cover; }
-        .splash-logo-box span { font-size: 0.8rem; font-weight: 700; color: #ffcc00; letter-spacing: 1px; }
+        .splash-logo-box img { width: 60px; height: 45px; border-radius: 6px; margin-bottom: 2px; object-fit: cover; }
+        .splash-logo-box span { font-size: 0.7rem; font-weight: 700; color: #ffcc00; letter-spacing: 1px; }
         
-        .splash-form { width: 100%; max-width: 300px; display: none; flex-direction: column; gap: 12px; margin-top: 15px; }
+        .splash-form { width: 100%; max-width: 300px; display: none; flex-direction: column; gap: 10px; margin-top: 5px; }
         .splash-form input {
-            background: #1e293b; border: 1px solid #334155; color: white; padding: 14px;
-            border-radius: 14px; outline: none; font-size: 1rem; text-align: center;
+            background: #1e293b; border: 1px solid #334155; color: white; padding: 12px;
+            border-radius: 14px; outline: none; font-size: 0.95rem; text-align: center;
         }
 
-        .foto-preview-container {
-            width: 90px; height: 90px; border-radius: 50%; background: #1e293b; border: 2px dashed #334155;
-            margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;
+        /* CONTENEDOR GUÍA TIPO DIDI (CÍRCULO CON SILUETA) */
+        .selfie-guia-container {
+            width: 110px; height: 110px; border-radius: 50%; background: #1e293b;
+            border: 3px dashed #2cd44a; margin: 0 auto 5px; display: flex; align-items: center; 
+            justify-content: center; overflow: hidden; position: relative; cursor: pointer;
+            box-shadow: 0 0 15px rgba(44,212,74,0.3);
         }
-        .foto-preview-container img { width: 100%; height: 100%; object-fit: cover; }
+        .selfie-guia-container img { width: 100%; height: 100%; object-fit: cover; }
         
+        /* Silueta interna simulando guía de rostro */
+        .silueta-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.35); pointer-events: none; transition: opacity 0.3s;
+        }
+        .silueta-overlay svg { width: 50px; height: 50px; fill: rgba(255,255,255,0.7); margin-bottom: 2px; }
+        .silueta-overlay span { font-size: 0.65rem; color: #fff; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top-color: #2cd44a; border-radius: 50%; animation: spin 1s infinite linear; margin-top: 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -109,18 +121,22 @@
             <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Tu Móvil">
             <span>TU MÓVIL</span>
         </div>
-        <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 8px; font-size: 1.4rem;">Cargando...</h2>
-        <p id="splashSub" style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Preparando tu viaje seguro</p>
+        <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 4px; font-size: 1.3rem;">Cargando...</h2>
+        <p id="splashSub" style="color: #64748b; font-size: 0.85rem; margin-bottom: 12px;">Identificación obligatoria para tu viaje</p>
         <div class="spinner" id="splashLoader"></div>
         
         <div class="splash-form" id="splashForm">
-            <div class="foto-preview-container" onclick="document.getElementById('inputFotoReal').click()">
-                <img id="imgPreview" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Foto perfil">
+            <!-- GUÍA VISUAL TIPO DIDI PARA LA SELFIE -->
+            <div class="selfie-guia-container" onclick="document.getElementById('inputFotoReal').click()">
+                <img id="imgPreview" src="" alt="Selfie" style="display:none;">
+                <div class="silueta-overlay" id="siluetaOverlay">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                    <span>Toca para tu Selfie</span>
+                </div>
             </div>
-            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 5px;">Toca la imagen para tomar o subir tu selfie</p>
-            <input type="file" id="inputFotoReal" accept="image/*" capture="user" style="display:none" onchange="procesarFotoSelfie(this)">
             
-            <input type="text" id="regNombre" placeholder="Ingresá tu nombre">
+            <input type="file" id="inputFotoReal" accept="image/*" capture="user" style="display:none" onchange="procesarFotoSelfie(this)">
+            <input type="text" id="regNombre" placeholder="Ingresá tu nombre y apellido">
             <input type="tel" id="regTelefono" placeholder="Tu número de teléfono">
             <button class="btn-green-action" onclick="guardarRegistroPerfil()">Comenzar a Viajar</button>
         </div>
@@ -207,13 +223,12 @@
 
         const TARIFA_BASE = 3000;
         const TARIFA_KM = 600;
-
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212]; 
 
         let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
         let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
         let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
-        let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
+        let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
 
         function hablarAnuncioPasajero(texto) {
             if ('speechSynthesis' in window) {
@@ -246,10 +261,16 @@
             pasajeroNombre = localStorage.getItem('perfil_nombre');
             pasajeroTelefono = localStorage.getItem('perfil_telefono');
             const fotoGuardada = localStorage.getItem('perfil_foto');
-            if (fotoGuardada) { pasajeroBase64Foto = fotoGuardada; document.getElementById('imgPreview').src = fotoGuardada; }
+            
+            if (fotoGuardada) {
+                pasajeroBase64Foto = fotoGuardada;
+                document.getElementById('imgPreview').src = fotoGuardada;
+                document.getElementById('imgPreview').style.display = "block";
+                document.getElementById('siluetaOverlay').style.opacity = "0";
+            }
 
-            if (!pasajeroNombre || !pasajeroTelefono) {
-                document.getElementById('splashTitulo').textContent = "¡Te damos la bienvenida!";
+            if (!pasajeroNombre || !pasajeroTelefono || !pasajeroBase64Foto) {
+                document.getElementById('splashTitulo').textContent = "¡Foto y Datos!";
                 document.getElementById('splashLoader').style.display = "none";
                 document.getElementById('splashForm').style.display = "flex";
             } else {
@@ -258,12 +279,28 @@
             }
         }
 
+        // Procesador para comprimir la imagen de la selfie y que entre perfecta en la base de datos
         function procesarFotoSelfie(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    pasajeroBase64Foto = e.target.result;
-                    document.getElementById('imgPreview').src = pasajeroBase64Foto;
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        // Redimensionamos a un tamaño óptimo para perfil (ej: 300x300 px)
+                        canvas.width = 300;
+                        canvas.height = 300;
+                        ctx.drawImage(img, 0, 0, 300, 300);
+                        
+                        // Guardamos comprimido en JPEG calidad 0.8
+                        pasajeroBase64Foto = canvas.toDataURL('image/jpeg', 0.8);
+                        
+                        document.getElementById('imgPreview').src = pasajeroBase64Foto;
+                        document.getElementById('imgPreview').style.display = "block";
+                        document.getElementById('siluetaOverlay').style.opacity = "0.2";
+                    }
+                    img.src = e.target.result;
                 }
                 reader.readAsDataURL(input.files[0]);
             }
@@ -272,6 +309,7 @@
         function guardarRegistroPerfil() {
             const nom = document.getElementById('regNombre').value.trim();
             const tel = document.getElementById('regTelefono').value.trim();
+            if (!pasajeroBase64Foto) { alert("Por favor toca el círculo para tomarte la selfie de seguridad."); return; }
             if (!nom || !tel) { alert("Por favor completa tu nombre y teléfono."); return; }
             
             localStorage.setItem('perfil_nombre', nom); 
@@ -308,9 +346,7 @@
                     document.getElementById('precioMonto').textContent = 'Total a pagar: $' + viaje.precio;
                     document.getElementById('nombreCond').textContent = viaje.conductor_nombre || "Conductor Asignado";
                     document.getElementById('autoCond').textContent = viaje.conductor_auto || "Vehículo en camino";
-                    if(viaje.conductor_foto) {
-                        document.getElementById('imgCondFoto').src = viaje.conductor_foto;
-                    }
+                    if(viaje.conductor_foto) { document.getElementById('imgCondFoto').src = viaje.conductor_foto; }
                     
                     if(viaje.estado === 'aceptado' && localStorage.getItem('pasajero_visto_en_puerta') === 'si') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A TU PUERTA! 🔔";
@@ -330,29 +366,23 @@
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes', filter: 'id=eq.' + id }, 
                 (payload) => {
                     const de = payload.new;
-                    
                     if (de.conductor_nombre && de.estado === 'pendiente') {
                         document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
                         document.getElementById('nombreCond').textContent = de.conductor_nombre;
                         document.getElementById('autoCond').textContent = de.conductor_auto;
-                        if(de.conductor_foto) {
-                            document.getElementById('imgCondFoto').src = de.conductor_foto;
-                        }
+                        if(de.conductor_foto) { document.getElementById('imgCondFoto').src = de.conductor_foto; }
                         document.getElementById('estadoViajePasajero').innerHTML = "El móvil va en camino 🚗";
                         mostrarPaso('pasoPrecio');
                     }
-                    
                     if (de.estado === 'aceptado' && localStorage.getItem('pasajero_visto_en_puerta') !== 'si') {
                         localStorage.setItem('pasajero_visto_en_puerta', 'si');
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A TU PUERTA! 🔔";
                         mostrarMsg('¡Tu móvil está en la puerta!', 'success');
                         hablarAnuncioPasajero("Tu móvil ya llegó a la puerta.");
                     }
-
                     if (de.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
                     }
-                    
                     if (de.estado === 'cancelado') { mostrarMsg('Viaje cancelado.', 'error'); limpiarMemoriaPasajero(); setTimeout(() => location.reload(), 2000); }
                     if (de.estado === 'finalizado') { mostrarMsg('¡Viaje completado!', 'success'); limpiarMemoriaPasajero(); setTimeout(() => location.reload(), 3000); }
                 }).subscribe();
@@ -444,7 +474,7 @@
                         estado: 'pendiente',
                         pasajero_nombre: pasajeroNombre,
                         pasajero_telefono: pasajeroTelefono,
-                        pasajero_foto: pasajeroBase64Foto, // Envía la selfie tomada o predeterminada correctamente
+                        pasajero_foto: pasajeroBase64Foto, // Envía la foto perfectamente adaptada
                         origen_lat: origenCoords.lat,
                         origen_lng: origenCoords.lng,
                         destino_lat: destinoCoords.lat,
