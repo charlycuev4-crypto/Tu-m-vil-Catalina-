@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TuMovil - Pasajero</title>
+    <title>TuMovil Las Catalinas - Pasajero</title>
     <!-- Supabase & Leaflet -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -19,7 +19,7 @@
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
-        /* SPLASH SCREEN DE BIENVENIDA */
+        /* SPLASH SCREEN DE BIENVENIDA Y REGISTRO */
         #splashScreen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: #11121a; color: white; z-index: 9999;
@@ -29,16 +29,27 @@
         .splash-logo-box {
             width: 140px; height: 110px; background: #1e293b; border-radius: 20px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            margin-bottom: 25px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); border: 1px solid #334155;
+            margin-bottom: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); border: 1px solid #334155;
         }
         .splash-logo-box img { width: 85px; height: 60px; border-radius: 8px; margin-bottom: 4px; object-fit: cover; }
         .splash-logo-box span { font-size: 0.8rem; font-weight: 700; color: #ffcc00; letter-spacing: 1px; }
         
-        .splash-form { width: 100%; max-width: 300px; display: none; flex-direction: column; gap: 12px; margin-top: 15px; }
+        .splash-form { width: 100%; max-width: 300px; display: none; flex-direction: column; gap: 10px; margin-top: 10px; }
         .splash-form input {
-            background: #1e293b; border: 1px solid #334155; color: white; padding: 14px;
-            border-radius: 14px; outline: none; font-size: 1rem; text-align: center;
+            background: #1e293b; border: 1px solid #334155; color: white; padding: 12px;
+            border-radius: 12px; outline: none; font-size: 0.95rem; text-align: center;
         }
+
+        /* SECCIÓN DE CAPTURA DE SELFIE */
+        .selfie-container {
+            display: flex; flex-direction: column; align-items: center; gap: 6px; margin-bottom: 4px;
+        }
+        .selfie-preview {
+            width: 70px; height: 70px; border-radius: 50%; background: #334155; border: 2px dashed #64748b;
+            display: flex; align-items: center; justify-content: center; overflow: hidden; object-fit: cover; cursor: pointer;
+        }
+        .selfie-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .selfie-label { font-size: 0.75rem; color: #94a3b8; cursor: pointer; text-decoration: underline; }
         
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top-color: #2cd44a; border-radius: 50%; animation: spin 1s infinite linear; margin-top: 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -103,12 +114,20 @@
             <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Tu Móvil">
             <span>TU MÓVIL</span>
         </div>
-        <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 8px; font-size: 1.4rem;">Cargando...</h2>
-        <p id="splashSub" style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Preparando tu viaje seguro</p>
+        <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 8px; font-size: 1.3rem;">Cargando...</h2>
+        <p id="splashSub" style="color: #64748b; font-size: 0.85rem; margin-bottom: 10px;">Preparando tu viaje seguro</p>
         <div class="spinner" id="splashLoader"></div>
+        
         <div class="splash-form" id="splashForm">
-            <input type="text" id="regNombre" placeholder="Ingresá tu nombre">
-            <input type="tel" id="regTelefono" placeholder="Tu número de teléfono">
+            <div class="selfie-container">
+                <div class="selfie-preview" id="previewBox" onclick="document.getElementById('inputSelfie').click()">
+                    <span style="font-size: 1.5rem;">📸</span>
+                </div>
+                <input type="file" id="inputSelfie" accept="image/*" capture="user" style="display:none" onchange="procesarSelfie(this)">
+                <span class="selfie-label" onclick="document.getElementById('inputSelfie').click()">Tomar tu selfie</span>
+            </div>
+            <input type="text" id="regNombre" placeholder="Tu Nombre">
+            <input type="tel" id="regWhatsapp" placeholder="Tu número de WhatsApp">
             <button class="btn-green-action" onclick="guardarRegistroPerfil()">Comenzar a Viajar</button>
         </div>
     </div>
@@ -131,14 +150,14 @@
         <div class="panel-handle"></div>
         <div class="msg" id="msg"></div>
 
-        <!-- PASO 1: PEDIDO (Título general genérico) -->
+        <!-- PASO 1: PEDIDO -->
         <div id="pasoDatos">
             <div class="driver-card-preview">
                 <div class="driver-img-box">
-                    <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Tu Móvil">
+                    <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Ford Fiesta Max">
                 </div>
                 <div class="driver-info-box">
-                    <h3>Tu Móvil - Central</h3>
+                    <h3>Tu Móvil (Ford Fiesta)</h3>
                     <p id="txtEstructuraTarifa">Base $3.000 + $600 x Kilómetro</p>
                     <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +50% Recargo Nocturno Activo</div>
                 </div>
@@ -157,28 +176,28 @@
                 </div>
             </div>
             <div class="sugerencias" id="sugerencias"></div>
-            <button class="btn-green-action" onclick="solicitarViaje()">Confirmar Solicitud</button>
+            <button class="btn-green-action" onclick="solicitarViaje()">Confirmar Tu Móvil</button>
         </div>
 
         <!-- PASO 2: ESPERA -->
         <div id="pasoEsperando" class="hidden">
             <div style="text-align: center; padding: 10px 0;">
                 <h4 style="margin-bottom: 4px;">Buscando conductor cercano...</h4>
-                <p style="color: #666; font-size: 0.8rem; margin-bottom: 12px;">Tu solicitud está siendo asignada al móvil más cercano.</p>
+                <p style="color: #666; font-size: 0.8rem; margin-bottom: 12px;">Tu solicitud está en el centro de despacho.</p>
                 <button class="btn-green-action" style="background: #ff4757;" onclick="cancelarViaje()">Cancelar</button>
             </div>
         </div>
 
-        <!-- PASO 3: PRECIO Y CHOFER ASIGNADO (Muestra los datos reales del chofer que aceptó) -->
+        <!-- PASO 3: PRECIO Y CHOFER ASIGNADO -->
         <div id="pasoPrecio" class="hidden">
             <div class="price-box-live" style="display:block; background:#dbeafe; color:#1e40af;" id="precioMonto">$0.00</div>
             <div class="driver-card-preview">
                 <div class="driver-img-box">
-                    <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Vehículo Asignado">
+                    <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Ford Fiesta Max">
                 </div>
                 <div class="driver-info-box">
-                    <h3 id="nombreCond">Asignando chofer...</h3>
-                    <p id="autoCond">Espere un momento</p>
+                    <h3 id="nombreCond">Carlos Cueva</h3>
+                    <p id="autoCond">Ford Fiesta Max (Patente: JCP 478)</p>
                 </div>
             </div>
             <div style="text-align: center; padding: 10px 0; color: #475569; font-weight: 600; font-size: 0.9rem;" id="estadoViajePasajero">
@@ -194,13 +213,12 @@
 
         const TARIFA_BASE = 3000;
         const TARIFA_KM = 600;
-
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212]; 
 
         let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
         let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
         let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
-        let pasajeroNombre = "", pasajeroTelefono = "";
+        let pasajeroNombre = "", pasajeroWhatsapp = "", pasajeroSelfie = "";
 
         function hablarAnuncioPasajero(texto) {
             if ('speechSynthesis' in window) {
@@ -229,10 +247,41 @@
             }
         }
 
+        function procesarSelfie(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const MAX_WIDTH = 300;
+                        const MAX_HEIGHT = 300;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                        } else {
+                            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                        }
+                        canvas.width = width; canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+                        pasajeroSelfie = canvas.toDataURL('image/jpeg', 0.7);
+                        document.getElementById('previewBox').innerHTML = `<img src="${pasajeroSelfie}" alt="Selfie">`;
+                    }
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
         function procesarSplashDeBienvenida() {
             pasajeroNombre = localStorage.getItem('perfil_nombre');
-            pasajeroTelefono = localStorage.getItem('perfil_telefono');
-            if (!pasajeroNombre || !pasajeroTelefono) {
+            pasajeroWhatsapp = localStorage.getItem('perfil_whatsapp');
+            pasajeroSelfie = localStorage.getItem('perfil_selfie');
+
+            if (!pasajeroNombre || !pasajeroWhatsapp || !pasajeroSelfie) {
                 document.getElementById('splashTitulo').textContent = "¡Te damos la bienvenida!";
                 document.getElementById('splashLoader').style.display = "none";
                 document.getElementById('splashForm').style.display = "flex";
@@ -244,12 +293,18 @@
 
         function guardarRegistroPerfil() {
             const nom = document.getElementById('regNombre').value.trim();
-            const tel = document.getElementById('regTelefono').value.trim();
-            if (!nom || !tel) { alert("Completa tus datos."); return; }
-            localStorage.setItem('perfil_nombre', nom); localStorage.setItem('perfil_telefono', tel);
-            pasajeroNombre = nom; pasajeroTelefono = tel;
+            const wpp = document.getElementById('regWhatsapp').value.trim();
+            if (!nom || !wpp) { alert("Completá tu nombre y tu WhatsApp."); return; }
+            if (!pasajeroSelfie) { alert("Por favor tomate una selfie."); return; }
+
+            localStorage.setItem('perfil_nombre', nom);
+            localStorage.setItem('perfil_whatsapp', wpp);
+            localStorage.setItem('perfil_selfie', pasajeroSelfie);
+            
+            pasajeroNombre = nom; pasajeroWhatsapp = wpp;
             cerrarSplash(); obtenerGPS();
         }
+
         function cerrarSplash() { const splash = document.getElementById('splashScreen'); splash.style.opacity = "0"; setTimeout(() => splash.style.display = "none", 500); }
 
         async function verificarViajeActivoPasajero() {
@@ -266,7 +321,7 @@
 
                 markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
                 markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
-                document.getElementById('origenDisplay').value = "Ubicación inicial";
+                document.getElementById('origenDisplay').value = viaje.origen_direccion || "Ubicación inicial";
                 document.getElementById('destino').value = "Destino seleccionado";
 
                 await recalcularRutaYPrecio();
@@ -275,8 +330,8 @@
                     mostrarPaso('pasoEsperando');
                 } else {
                     document.getElementById('precioMonto').textContent = 'Total a pagar: $' + viaje.precio;
-                    document.getElementById('nombreCond').textContent = viaje.conductor_nombre || "Conductor Asignado";
-                    document.getElementById('autoCond').textContent = viaje.conductor_auto || "Vehículo en camino";
+                    document.getElementById('nombreCond').textContent = viaje.conductor_nombre || "Carlos Cueva";
+                    document.getElementById('autoCond').textContent = viaje.conductor_auto || "Ford Fiesta Max (Patente: JCP 478)";
                     
                     if(viaje.estado === 'aceptado' && localStorage.getItem('pasajero_visto_en_puerta') === 'si') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A TU PUERTA! 🔔";
@@ -297,7 +352,7 @@
                 (payload) => {
                     const de = payload.new;
                     
-                    if (de.conductor_nombre) {
+                    if (de.conductor_nombre && de.estado === 'pendiente') {
                         document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
                         document.getElementById('nombreCond').textContent = de.conductor_nombre;
                         document.getElementById('autoCond').textContent = de.conductor_auto;
@@ -398,6 +453,7 @@
 
         async function solicitarViaje() {
             const destinoTexto = document.getElementById('destino').value.trim();
+            const origenDireccionTexto = document.getElementById('origenDisplay').value.trim();
             if (!destinoTexto || !origenCoords || !destinoCoords) { mostrarMsg('Seleccioná un destino válido.', 'error'); return; }
 
             try {
@@ -406,7 +462,9 @@
                     .insert({
                         estado: 'pendiente',
                         pasajero_nombre: pasajeroNombre,
-                        pasajero_telefono: pasajeroTelefono,
+                        pasajero_whatsapp: pasajeroWhatsapp,
+                        pasajero_selfie: pasajeroSelfie,
+                        origen_direccion: origenDireccionTexto,
                         origen_lat: origenCoords.lat,
                         origen_lng: origenCoords.lng,
                         destino_lat: destinoCoords.lat,
