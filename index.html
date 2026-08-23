@@ -19,7 +19,7 @@
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
-        /* SPLASH SCREEN DE BIENVENIDA */
+        /* SPLASH SCREEN DE BIENVENIDA Y FOTO */
         #splashScreen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: #11121a; color: white; z-index: 9999;
@@ -39,6 +39,12 @@
             background: #1e293b; border: 1px solid #334155; color: white; padding: 14px;
             border-radius: 14px; outline: none; font-size: 1rem; text-align: center;
         }
+
+        .foto-preview-container {
+            width: 90px; height: 90px; border-radius: 50%; background: #1e293b; border: 2px dashed #334155;
+            margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;
+        }
+        .foto-preview-container img { width: 100%; height: 100%; object-fit: cover; }
         
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top-color: #2cd44a; border-radius: 50%; animation: spin 1s infinite linear; margin-top: 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -106,7 +112,14 @@
         <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 8px; font-size: 1.4rem;">Cargando...</h2>
         <p id="splashSub" style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Preparando tu viaje seguro</p>
         <div class="spinner" id="splashLoader"></div>
+        
         <div class="splash-form" id="splashForm">
+            <div class="foto-preview-container" onclick="document.getElementById('inputFotoReal').click()">
+                <img id="imgPreview" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Foto perfil">
+            </div>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 5px;">Toca la imagen para tomar o subir tu selfie</p>
+            <input type="file" id="inputFotoReal" accept="image/*" capture="user" style="display:none" onchange="procesarFotoSelfie(this)">
+            
             <input type="text" id="regNombre" placeholder="Ingresá tu nombre">
             <input type="tel" id="regTelefono" placeholder="Tu número de teléfono">
             <button class="btn-green-action" onclick="guardarRegistroPerfil()">Comenzar a Viajar</button>
@@ -169,12 +182,11 @@
             </div>
         </div>
 
-        <!-- PASO 3: PRECIO Y CHOFER ASIGNADO (AHORA DINÁMICO) -->
+        <!-- PASO 3: PRECIO Y CHOFER ASIGNADO (SIN WHATSAPP) -->
         <div id="pasoPrecio" class="hidden">
             <div class="price-box-live" style="display:block; background:#dbeafe; color:#1e40af;" id="precioMonto">$0.00</div>
             <div class="driver-card-preview">
                 <div class="driver-img-box" id="imgCondBoxContainer">
-                    <!-- Foto dinámica del chofer que acepte -->
                     <img id="imgCondFoto" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Conductor">
                 </div>
                 <div class="driver-info-box">
@@ -201,7 +213,7 @@
         let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
         let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
         let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
-        let pasajeroNombre = "", pasajeroTelefono = "";
+        let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
 
         function hablarAnuncioPasajero(texto) {
             if ('speechSynthesis' in window) {
@@ -233,6 +245,9 @@
         function procesarSplashDeBienvenida() {
             pasajeroNombre = localStorage.getItem('perfil_nombre');
             pasajeroTelefono = localStorage.getItem('perfil_telefono');
+            const fotoGuardada = localStorage.getItem('perfil_foto');
+            if (fotoGuardada) { pasajeroBase64Foto = fotoGuardada; document.getElementById('imgPreview').src = fotoGuardada; }
+
             if (!pasajeroNombre || !pasajeroTelefono) {
                 document.getElementById('splashTitulo').textContent = "¡Te damos la bienvenida!";
                 document.getElementById('splashLoader').style.display = "none";
@@ -243,11 +258,26 @@
             }
         }
 
+        function procesarFotoSelfie(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    pasajeroBase64Foto = e.target.result;
+                    document.getElementById('imgPreview').src = pasajeroBase64Foto;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
         function guardarRegistroPerfil() {
             const nom = document.getElementById('regNombre').value.trim();
             const tel = document.getElementById('regTelefono').value.trim();
-            if (!nom || !tel) { alert("Completa tus datos."); return; }
-            localStorage.setItem('perfil_nombre', nom); localStorage.setItem('perfil_telefono', tel);
+            if (!nom || !tel) { alert("Por favor completa tu nombre y teléfono."); return; }
+            
+            localStorage.setItem('perfil_nombre', nom); 
+            localStorage.setItem('perfil_telefono', tel);
+            localStorage.setItem('perfil_foto', pasajeroBase64Foto);
+            
             pasajeroNombre = nom; pasajeroTelefono = tel;
             cerrarSplash(); obtenerGPS();
         }
@@ -414,6 +444,7 @@
                         estado: 'pendiente',
                         pasajero_nombre: pasajeroNombre,
                         pasajero_telefono: pasajeroTelefono,
+                        pasajero_foto: pasajeroBase64Foto, // Envía la selfie tomada o predeterminada correctamente
                         origen_lat: origenCoords.lat,
                         origen_lng: origenCoords.lng,
                         destino_lat: destinoCoords.lat,
