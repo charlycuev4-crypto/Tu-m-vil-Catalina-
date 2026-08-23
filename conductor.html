@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TuMovil Las Catalinas - Conductor</title>
+    <title>TuMovil - Conductor</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -33,7 +33,6 @@
             font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto;
         }
 
-        /* Botón de prueba de sonido flotante abajo a la izquierda */
         .test-audio-btn {
             position: fixed; bottom: 27vh; left: 16px; z-index: 1000;
             background: #ea580c; color: white; border: none; padding: 10px 14px;
@@ -96,7 +95,7 @@
 
         <div id="vistaEspera">
             <div style="text-align: center; padding: 20px 0;">
-                <p id="lblSubtextoEspera" style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 10px;">Esperando solicitudes en San Miguel... (Tocá el mapa al abrir)</p>
+                <p id="lblSubtextoEspera" style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 10px;">Buscando solicitudes cercanas (Radio 10 km)...</p>
                 <div class="btn-action btn-espera" id="btnEstadoEsperaTexto">Buscando Pasajeros...</div>
             </div>
         </div>
@@ -120,8 +119,17 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const NOMBRE_CHOFER = "Carlos Cueva";
-        const AUTO_CHOFER = "Ford Fiesta Max (Patente: JCP 478)"; 
+        // --- SISTEMA DE PERFIL PERSONALIZADO POR DISPOSITIVO ---
+        let NOMBRE_CHOFER = localStorage.getItem('remis_nombre_chofer');
+        let AUTO_CHOFER = localStorage.getItem('remis_auto_chofer');
+
+        if (!NOMBRE_CHOFER || !AUTO_CHOFER) {
+            NOMBRE_CHOFER = prompt("Ingrese su Nombre y Apellido:", "Carlos Cueva") || "Chofer";
+            AUTO_CHOFER = prompt("Ingrese su Vehículo y Patente:", "Ford Fiesta (ABC 123)") || "Vehículo";
+            
+            localStorage.setItem('remis_nombre_chofer', NOMBRE_CHOFER);
+            localStorage.setItem('remis_auto_chofer', AUTO_CHOFER);
+        }
 
         let canalSupabase = null;
         let estaConectado = true; 
@@ -129,7 +137,6 @@
         let idRastreadorGps = null; 
         let autocentrarMapa = true;  
         
-        // Variables para la Campanilla Electrónica Sintetizada
         let audioCtx = null;
         let intervaloCampana = null;
 
@@ -142,17 +149,14 @@
 
         function liberarWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; } }
 
-        // Inicializa el motor de audio con la primera interacción del chofer
         function forzarHabilitacionAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                console.log("Motor de audio desbloqueado correctamente.");
             } else if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
         }
 
-        // Toca un timbre de campana limpia de alta frecuencia
         function tocarUnRepiqueDeCampana() {
             if (!audioCtx) return;
             try {
@@ -160,7 +164,6 @@
                 let gainNode = audioCtx.createGain();
                 
                 osc.type = 'sine';
-                // Dos frecuencias combinadas para simular el metal de una campanilla
                 osc.frequency.setValueAtTime(1475, audioCtx.currentTime); 
                 
                 gainNode.gain.setValueAtTime(0.9, audioCtx.currentTime);
@@ -171,13 +174,12 @@
                 
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.8);
-            } catch(e) { console.log(e); }
+            } catch(e) {}
         }
 
         function comenzarSirenaAlerta() {
             if (intervaloCampana) return;
             forzarHabilitacionAudio();
-            // Repica dos veces por segundo
             intervaloCampana = setInterval(() => {
                 tocarUnRepiqueDeCampana();
             }, 500);
@@ -190,9 +192,8 @@
             }
         }
 
-        // Función del botón naranja para asegurarse de que el volumen ande bien
         function probarCampanaManual(e) {
-            e.stopPropagation(); // Evita conflictos
+            e.stopPropagation();
             forzarHabilitacionAudio();
             tocarUnRepiqueDeCampana();
             
@@ -205,14 +206,27 @@
             }, 2000);
         }
 
-        const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
+        // --- CÁLCULO DE DISTANCIA (Fórmula Haversine en KM) ---
+        function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        const PUNTO_INICIAL_DEFAULT = [-34.54291, -58.71212];
         let mapa = null, markerChofer = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
         let choferCoords = { lat: -34.545, lng: -58.715 }; 
         let viajeActivo = null;
         let estadoFlujo = 'pendiente'; 
 
         function initMapa() {
-            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
+            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(PUNTO_INICIAL_DEFAULT, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             markerChofer = L.marker([choferCoords.lat, choferCoords.lng], { icon: L.divIcon({ className: 'chofer-icon' }) }).addTo(mapa);
 
@@ -267,8 +281,20 @@
             canalSupabase = supabaseClient.channel('despacho-chofer');
             canalSupabase
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, (payload) => {
-                    if (payload.new.estado === 'pendiente' && !viajeActivo && estaConectado) {
-                        montarViajeEntrante(payload.new);
+                    const viaje = payload.new;
+                    if (viaje.estado === 'pendiente' && !viajeActivo && estaConectado) {
+                        
+                        // FILTRO DE 10 KM A LA REDONDA
+                        const distanciaAlViaje = calcularDistanciaKm(
+                            choferCoords.lat, choferCoords.lng, 
+                            viaje.origen_lat, viaje.origen_lng
+                        );
+
+                        if (distanciaAlViaje <= 10) {
+                            montarViajeEntrante(viaje);
+                        } else {
+                            console.log(`Viaje ignorado (Lejos: ${distanciaAlViaje.toFixed(1)} km).`);
+                        }
                     }
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes' }, (payload) => {
@@ -291,7 +317,7 @@
 
             if (estaConectado) {
                 badge.textContent = "Móvil en Línea 🟢"; badge.className = "status-badge activo";
-                subtexto.textContent = "Esperando solicitudes en San Miguel... (Tocá el mapa)";
+                subtexto.textContent = "Buscando solicitudes cercanas (Radio 10 km)...";
                 btnEspera.textContent = "Buscando Pasajeros..."; btnEspera.className = "btn-action btn-espera";
                 solicitarWakeLock(); iniciarRastreoGpsContinuo(); escucharNuevosViajes();
             } else {
@@ -333,8 +359,20 @@
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
-                    const { error } = await supabaseClient.from('viajes').update({ conductor_nombre: NOMBRE_CHOFER, conductor_auto: AUTO_CHOFER }).eq('id', viajeActivo.id);
-                    if (error) throw error;
+                    // BLOQUEO ATÓMICO: Solo actualiza si nadie más lo tomó antes
+                    const { data, error } = await supabaseClient
+                        .from('viajes')
+                        .update({ conductor_nombre: NOMBRE_CHOFER, conductor_auto: AUTO_CHOFER, estado: 'aceptado' })
+                        .eq('id', viajeActivo.id)
+                        .eq('estado', 'pendiente')
+                        .select();
+
+                    if (error || !data || data.length === 0) {
+                        alert("Lo siento, este viaje ya fue tomado por otro conductor.");
+                        location.reload();
+                        return;
+                    }
+
                     estadoFlujo = 'aceptado';
                     localStorage.setItem('conductor_viaje_id', viajeActivo.id);
                     localStorage.setItem('conductor_estado_flujo', 'aceptado');
@@ -348,7 +386,6 @@
                 estadoFlujo = 'en_puerta'; localStorage.setItem('conductor_estado_flujo', 'en_puerta');
                 btn.className = "btn-action btn-iniciar"; btn.textContent = "Iniciar Viaje 🛫";
                 document.getElementById('txtEstadoChofer').textContent = "En la Puerta 📍";
-                await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeActivo.id);
                 return;
             }
             if (estadoFlujo === 'en_puerta') {
