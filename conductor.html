@@ -18,9 +18,11 @@
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
-        .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
+        .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
         
-        .status-badge { background: #1e293b; color: #38bdf8; padding: 10px 16px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto; border: 1px solid #334155; cursor: pointer; user-select: none; transition: all 0.2s ease; }
+        .header-left-col { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
+        
+        .status-badge { background: #1e293b; color: #38bdf8; padding: 10px 16px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #334155; cursor: pointer; user-select: none; text-align: center; }
         .status-badge.activo { background: #059669; color: #ffffff; border-color: #10b981; }
         .status-badge.inactivo { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
 
@@ -34,22 +36,36 @@
         }
 
         .test-audio-btn {
-            position: fixed; bottom: 27vh; left: 16px; z-index: 1000;
-            background: #ea580c; color: white; border: none; padding: 10px 14px;
-            border-radius: 20px; font-weight: bold; font-size: 0.8rem; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 6px;
+            background: #ea580c; color: white; border: none; padding: 8px 14px;
+            border-radius: 20px; font-weight: bold; font-size: 0.75rem; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; gap: 6px;
+            border: 1px solid #c2410c; width: fit-content;
         }
 
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
         .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); padding: 12px 20px 20px; height: 25vh; overflow-y: auto; transition: height 0.4s ease; color: #f1f5f9; -webkit-overflow-scrolling: touch; }
-        .bottom-panel.viaje-entrante { height: 35vh; animation: alertaParpadeo 1s infinite alternate; }
+        .bottom-panel.viaje-entrante { height: 40vh; animation: alertaParpadeo 1s infinite alternate; }
         @keyframes alertaParpadeo { from { border-top-color: #334155; background: #1e293b; } to { border-top-color: #ef4444; background: #2d1a22; } }
 
         .panel-handle { width: 40px; height: 5px; background: #475569; border-radius: 3px; margin: 0 auto 10px; }
-        .viaje-info-box { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-        .viaje-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; }
-        .viaje-pasajero { font-size: 1.1rem; font-weight: 700; color: #fff; }
+        
+        .viaje-info-box { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+        .viaje-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+        
+        .pasajero-perfil-container { display: flex; align-items: center; gap: 10px; }
+        .pasajero-foto-box { width: 45px; height: 45px; border-radius: 50%; background: #334155; overflow: hidden; border: 2px solid #3b82f6; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .pasajero-foto-box img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .viaje-pasajero { font-size: 1rem; font-weight: 700; color: #fff; }
+        
+        /* Botón de WhatsApp integrado */
+        .whatsapp-btn {
+            background: #25d366; color: white; border: none; padding: 4px 10px;
+            border-radius: 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 3px;
+        }
+
         .viaje-precio { font-size: 1.2rem; font-weight: 800; color: #10b981; }
 
         .input-group { background: #0f172a; border-radius: 16px; padding: 4px 14px; margin-bottom: 12px; }
@@ -80,14 +96,15 @@
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
     <div class="header-float">
-        <div class="status-badge activo" id="txtEstadoChofer" onclick="conmutarEstadoConexion()">Móvil en Línea 🟢</div>
-        <div style="display: flex; gap: 8px;">
+        <div class="header-left-col">
+            <div class="status-badge activo" id="txtEstadoChofer" onclick="conmutarEstadoConexion()">Móvil en Línea 🟢</div>
+            <button class="test-audio-btn" id="btnTestSonido" onclick="probarCampanaManual(event)">🔊 Probar Timbre</button>
+        </div>
+        <div style="display: flex; gap: 8px; pointer-events: auto;">
             <button class="google-maps-btn" id="btnAbrirGoogleMaps" onclick="abrirNavegacionGoogleMaps()">🗺️</button>
             <button class="gps-btn" id="btnGpsCentro" onclick="alternarSeguimientoManual()">🎯</button>
         </div>
     </div>
-
-    <button class="test-audio-btn" id="btnTestSonido" onclick="probarCampanaManual(event)">🔊 Probar Timbre</button>
 
     <div class="bottom-panel" id="panelConductor">
         <div class="panel-handle"></div>
@@ -103,11 +120,23 @@
         <div id="vistaViaje" class="hidden">
             <div class="viaje-info-box">
                 <div class="viaje-header">
-                    <div class="viaje-pasajero">Pasajero: <span id="lblPasajero" style="color:#3b82f6;">-</span> <b id="lblCategoriaViaje" style="font-size:0.75rem; background:#475569; padding:2px 6px; border-radius:4px; margin-left:6px; display:none;"></b></div>
+                    <div class="pasajero-perfil-container">
+                        <div class="pasajero-foto-box">
+                            <img id="imgPasajeroFoto" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Pasajero">
+                        </div>
+                        <div>
+                            <div class="viaje-pasajero" id="lblPasajero">-</div>
+                            <a id="linkWhatsapp" href="#" target="_blank" class="whatsapp-btn hidden">💬 WhatsApp</a>
+                        </div>
+                    </div>
                     <div class="viaje-precio" id="lblPrecio">$0</div>
                 </div>
                 <div class="input-group">
-                    <div class="input-row"><div class="dot dot-green"></div>Distancia Estimada: <span id="lblDistancia">-</span> km</div>
+                    <div class="input-row">
+                        <div class="dot dot-green"></div>
+                        Distancia Estimada: <span id="lblDistancia">-</span> km
+                        <b id="lblCategoriaViaje" style="font-size:0.75rem; background:#475569; padding:2px 6px; border-radius:4px; margin-left:auto; display:none;"></b>
+                    </div>
                 </div>
             </div>
             <button class="btn-action btn-aceptar" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje</button>
@@ -119,7 +148,6 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // --- CONFIGURACIÓN DINÁMICA DEL CONDUCTOR (POR DISPOSITIVO) ---
         let NOMBRE_CHOFER = localStorage.getItem('cfg_nombre_chofer');
         let AUTO_CHOFER = localStorage.getItem('cfg_auto_chofer');
 
@@ -133,7 +161,6 @@
             localStorage.setItem('cfg_nombre_chofer', NOMBRE_CHOFER);
             localStorage.setItem('cfg_auto_chofer', AUTO_CHOFER);
         }
-        // -------------------------------------------------------------
 
         let canalSupabase = null;
         let estaConectado = true; 
@@ -306,9 +333,21 @@
             document.getElementById('vistaViaje').classList.remove('hidden');
             document.getElementById('panelConductor').classList.add('viaje-entrante');
 
-            document.getElementById('lblPasajero').textContent = viaje.pasajero_nombre || "Pasajero Web";
+            document.getElementById('lblPasajero').textContent = viaje.pasajero_nombre || "Pasajero";
             document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
             document.getElementById('lblDistancia').textContent = viaje.distancia_km || "0";
+
+            if (viaje.pasajero_foto) {
+                document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
+            }
+
+            // Configurar WhatsApp si existe el número
+            if (viaje.pasajero_telefono) {
+                let telLimpio = viaje.pasajero_telefono.replace(/\D/g, '');
+                const btnWp = document.getElementById('linkWhatsapp');
+                btnWp.href = `https://wa.me/549${telLimpio}?text=Hola%20${encodeURIComponent(viaje.pasajero_nombre)},%20soy%20tu%20chofer%20de%20Tu%20Móvil.`;
+                btnWp.classList.remove('hidden');
+            }
 
             const badgeCat = document.getElementById('lblCategoriaViaje');
             if (viaje.categoria) { badgeCat.textContent = viaje.categoria.toUpperCase(); badgeCat.style.display = 'inline-block'; }
@@ -328,7 +367,6 @@
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
-                    // Guarda el nombre y auto específico de ESTE dispositivo en Supabase
                     const { error } = await supabaseClient.from('viajes').update({ conductor_nombre: NOMBRE_CHOFER, conductor_auto: AUTO_CHOFER }).eq('id', viajeActivo.id);
                     if (error) throw error;
                     
@@ -373,9 +411,20 @@
                 viajeActivo = viaje; estadoFlujo = guardadoEstado || 'aceptado';
                 document.getElementById('vistaEspera').classList.add('hidden');
                 document.getElementById('vistaViaje').classList.remove('hidden');
-                document.getElementById('lblPasajero').textContent = viaje.pasajero_nombre || "Pasajero Web";
+                document.getElementById('lblPasajero').textContent = viaje.pasajero_nombre || "Pasajero";
                 document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
                 document.getElementById('lblDistancia').textContent = viaje.distancia_km || "0";
+
+                if (viaje.pasajero_foto) {
+                    document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
+                }
+
+                if (viaje.pasajero_telefono) {
+                    let telLimpio = viaje.pasajero_telefono.replace(/\D/g, '');
+                    const btnWp = document.getElementById('linkWhatsapp');
+                    btnWp.href = `https://wa.me/549${telLimpio}?text=Hola%20${encodeURIComponent(viaje.pasajero_nombre)},%20soy%20tu%20chofer%20de%20Tu%20Móvil.`;
+                    btnWp.classList.remove('hidden');
+                }
 
                 markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
                 markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
