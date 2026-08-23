@@ -47,6 +47,7 @@
         .selfie-preview {
             width: 70px; height: 70px; border-radius: 50%; background: #334155; border: 2px dashed #64748b;
             display: flex; align-items: center; justify-content: center; overflow: hidden; object-fit: cover; cursor: pointer;
+            margin: 0 auto;
         }
         .selfie-preview img { width: 100%; height: 100%; object-fit: cover; }
         .selfie-label { font-size: 0.75rem; color: #94a3b8; cursor: pointer; text-decoration: underline; }
@@ -61,6 +62,7 @@
 
         .back-btn, .gps-btn, .manual-btn { width: 44px; height: 44px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border: none; box-shadow: 0 3px 10px rgba(0,0,0,0.2); pointer-events: auto; }
         .gps-btn.buscando { background: #fff3cd; animation: pulse 1s infinite; }
+        .gps-btn.esperando-permiso { background: #cfe2ff; color: #0d6efd; }
         .manual-btn.activo { background: #ff4757; color: white; animation: pulse 1s infinite; }
         @keyframes pulse { 50% { transform: scale(1.1); } }
 
@@ -68,9 +70,9 @@
         .mapa-hint.visible { display: block; }
 
         /* MENÚ INFERIOR */
-        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: white; border-radius: 24px 24px 0 0; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 12px 20px 20px; height: 28vh; overflow-y: auto; transition: height 0.4s ease; -webkit-overflow-scrolling: touch; }
-        .bottom-panel:focus-within, .bottom-panel:active { height: 48vh; }
-        .bottom-panel.con-ruta { height: 35vh; }
+        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: white; border-radius: 24px 24px 0 0; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 12px 20px 20px; height: 30vh; overflow-y: auto; transition: height 0.4s ease; -webkit-overflow-scrolling: touch; }
+        .bottom-panel:focus-within, .bottom-panel:active { height: 55vh; }
+        .bottom-panel.con-ruta { height: 37vh; }
 
         .panel-handle { width: 40px; height: 5px; background: #e0e0e0; border-radius: 3px; margin: 0 auto 10px; }
 
@@ -121,7 +123,7 @@
         <div class="splash-form" id="splashForm">
             <div class="selfie-container">
                 <div class="selfie-preview" id="previewBox" onclick="document.getElementById('inputSelfie').click()">
-                    <span style="font-size: 1.5rem;">📸</span>
+                    <span style="font-size: 1.5rem; color: #94a3b8;">📸</span>
                 </div>
                 <input type="file" id="inputSelfie" accept="image/*" capture="user" style="display:none" onchange="procesarSelfie(this)">
                 <span class="selfie-label" onclick="document.getElementById('inputSelfie').click()">Tomar tu selfie</span>
@@ -158,14 +160,4 @@
                 </div>
                 <div class="driver-info-box">
                     <h3>Tu Móvil (Ford Fiesta)</h3>
-                    <p id="txtEstructuraTarifa">Base $3.000 + $600 x Kilómetro</p>
-                    <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +50% Recargo Nocturno Activo</div>
-                </div>
-            </div>
-
-            <div class="price-box-live" id="precioEstimadoBox">Tarifa Estimada: <span id="txtPrecioLive">$0</span> (<span id="txtKmLive">0</span> km)</div>
-
-            <div class="input-group">
-                <div class="input-row">
-                    <div class="dot dot-green"></div>
-                    <input type="text" id="origenDisplay" placeholder="Obteniendo tu ubicación..." readonly>
+                    <p id="txtEstructuraTarifa">Base $3.000 + $600 x
