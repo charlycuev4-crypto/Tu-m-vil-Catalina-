@@ -139,9 +139,9 @@
         
         /* Ícono del auto del chofer en movimiento */
         .auto-chofer-icon {
-            background: #2563eb; width: 28px !important; height: 28px !important;
+            background: #2563eb; width: 34px !important; height: 34px !important;
             border: 2px solid white; border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; font-size: 14px; box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            justify-content: center; font-size: 16px; box-shadow: 0 3px 10px rgba(0,0,0,0.4);
         }
 
         .hidden { display: none !important; }
@@ -427,7 +427,7 @@
                     mostrarPaso('pasoPrecio');
                 }
 
-                // Si el chofer ya reportó una ubicación del auto, la mostramos de entrada
+                // Mostrar la posición del auto inmediatamente si ya hay datos de GPS del chofer
                 if (viaje.chofer_lat && viaje.chofer_lng) {
                     actualizarPosicionChoferEnMapa(viaje.chofer_lat, viaje.chofer_lng);
                 }
@@ -443,12 +443,10 @@
         function actualizarPosicionChoferEnMapa(lat, lng) {
             if (!lat || !lng) return;
             if (!markerChofer) {
-                // Crear marcador del auto en movimiento
                 markerChofer = L.marker([lat, lng], {
-                    icon: L.divIcon({ className: 'auto-chofer-icon', html: '🚗', iconSize: [28, 28] })
+                    icon: L.divIcon({ className: 'auto-chofer-icon', html: '🚗' })
                 }).addTo(mapa);
             } else {
-                // Mover marcador suavemente a la nueva posición
                 markerChofer.setLatLng([lat, lng]);
             }
         }
@@ -461,7 +459,7 @@
                 (payload) => {
                     const de = payload.new;
 
-                    // Escuchar movimiento en tiempo real del GPS del chofer
+                    // Actualizar en tiempo real las coordenadas del chofer en el mapa del pasajero
                     if (de.chofer_lat && de.chofer_lng) {
                         actualizarPosicionChoferEnMapa(de.chofer_lat, de.chofer_lng);
                     }
