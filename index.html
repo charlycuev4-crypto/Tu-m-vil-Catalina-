@@ -107,7 +107,7 @@
             display: flex; align-items: center; gap: 10px; background: #ffffff; border: 1px solid #dcd3c1;
             border-radius: 14px; padding: 8px 12px; margin-bottom: 8px;
         }
-        .chofer-foto-box { width: 52px; height: 48px; border-radius: 10px; background: #e2e8f0; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid #cbd5e1; }
+        .chofer-foto-box { width: 56px; height: 50px; border-radius: 10px; background: #f8fafc; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid #cbd5e1; }
         .chofer-foto-box img { width: 100%; height: 100%; object-fit: cover; }
         .chofer-info { flex: 1; }
         .chofer-nombre { font-size: 0.95rem; font-weight: 700; color: #0f172a; }
@@ -217,7 +217,7 @@
             <div id="pasoEsperando" class="hidden">
                 <div class="chofer-card">
                     <div class="chofer-foto-box">
-                        <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Tu Móvil">
+                        <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Tu Móvil" style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
                     <div class="chofer-info">
                         <div class="chofer-nombre">Buscando conductor...</div>
@@ -235,8 +235,8 @@
                 <div class="precio-banner activo" id="precioMonto">Total a pagar: $0</div>
                 <div class="chofer-card">
                     <div class="chofer-foto-box">
-                        <!-- FOTO POR DEFECTO DEL AUTO SI LA DEL CONDUCTOR ESTÁ VACÍA O ROTA -->
-                        <img id="imgCondFoto" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Conductor" onerror="this.src='https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'">
+                        <!-- FOTO ESTABLE DEL AUTO OCUPANDO TODO EL CUADRO -->
+                        <img id="imgCondFoto" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Conductor" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'">
                     </div>
                     <div class="chofer-info">
                         <div class="chofer-nombre" id="nombreCond">Conductor Asignado</div>
@@ -258,6 +258,7 @@
 
         const TARIFA_BASE = 3000;
         const TARIFA_KM = 400;
+        const KM_LIBRES_BASE = 2.0; // Los primeros 2 km están cubiertos por la base
         const RECARGO_NOCTURNO = 1.30; 
         const UBICACION_DEFAULT = [-34.54291, -58.71212];
         const FOTO_AUTO_DEFAULT = 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
@@ -405,7 +406,6 @@
                     document.getElementById('nombreCond').textContent = viaje.conductor_nombre || "Conductor Asignado";
                     document.getElementById('autoCond').textContent = viaje.conductor_auto || "Vehículo en camino";
                     
-                    // Asignación segura de la foto del conductor o fallback al auto por defecto
                     const fotoCondElem = document.getElementById('imgCondFoto');
                     if (viaje.conductor_foto && viaje.conductor_foto.trim() !== "" && viaje.conductor_foto !== "null") {
                         fotoCondElem.src = viaje.conductor_foto;
@@ -528,7 +528,10 @@
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#059669', weight: 5, opacity: 0.85 }).addTo(mapa);
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
-                    let subTotal = TARIFA_BASE + (distanciaKm * TARIFA_KM);
+                    // Cálculo de tarifa: Base incluye los primeros 2 km. Solo cobra extra a partir de los 2 km.
+                    let kmExcedentes = Math.max(0, distanciaKm - KM_LIBRES_BASE);
+                    let subTotal = TARIFA_BASE + (kmExcedentes * TARIFA_KM);
+                    
                     if (esHorarioNocturno()) { subTotal = subTotal * RECARGO_NOCTURNO; }
 
                     precioCalculado = Math.round(subTotal);
