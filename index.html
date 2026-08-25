@@ -136,6 +136,13 @@
 
         .pasajero-ping-icon { background: #059669; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
         .destino-ping-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+        
+        /* Ícono del auto del chofer en movimiento */
+        .auto-chofer-icon {
+            background: #2563eb; width: 28px !important; height: 28px !important;
+            border: 2px solid white; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 14px; box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        }
 
         .hidden { display: none !important; }
         .msg { padding: 8px; border-radius: 10px; margin-bottom: 8px; font-size: 0.8rem; text-align: center; display: none; font-weight: 600; }
@@ -255,9 +262,8 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // NUEVAS TARIFAS CONFIGURADAS
         const TARIFA_BASE = 3000;
-        const TARIFA_KM = 725; // Ajustado a $725 para que el viaje de 42 km quede exactamente en $32.000
+        const TARIFA_KM = 725; 
         const KM_LIBRES_BASE = 2.0; 
         const RECARGO_NOCTURNO = 1.30; 
         const UBICACION_DEFAULT = [-34.54291, -58.71212];
@@ -265,7 +271,7 @@
 
         let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
         let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
-        let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
+        let mapa = null, markerOrigen = null, markerDestino = null, markerChofer = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
 
         function hablarAnuncioPasajero(texto) {
@@ -281,7 +287,6 @@
 
         function esHorarioNocturno() {
             const horaActual = new Date().getHours();
-            // Horario nocturno actualizado de 20:00 a 08:00 hs
             return (horaActual >= 20 || horaActual < 8);
         }
 
@@ -421,12 +426,31 @@
                     }
                     mostrarPaso('pasoPrecio');
                 }
+
+                // Si el chofer ya reportó una ubicación del auto, la mostramos de entrada
+                if (viaje.chofer_lat && viaje.chofer_lng) {
+                    actualizarPosicionChoferEnMapa(viaje.chofer_lat, viaje.chofer_lng);
+                }
+
                 iniciarEscuchaRealtime(viajeId);
             } catch (e) { limpiarMemoriaPasajero(); }
         }
 
         function limpiarMemoriaPasajero() { 
             localStorage.removeItem('pasajero_viaje_id'); 
+        }
+
+        function actualizarPosicionChoferEnMapa(lat, lng) {
+            if (!lat || !lng) return;
+            if (!markerChofer) {
+                // Crear marcador del auto en movimiento
+                markerChofer = L.marker([lat, lng], {
+                    icon: L.divIcon({ className: 'auto-chofer-icon', html: '🚗', iconSize: [28, 28] })
+                }).addTo(mapa);
+            } else {
+                // Mover marcador suavemente a la nueva posición
+                markerChofer.setLatLng([lat, lng]);
+            }
         }
 
         function iniciarEscuchaRealtime(id) {
@@ -436,6 +460,12 @@
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes', filter: 'id=eq.' + id }, 
                 (payload) => {
                     const de = payload.new;
+
+                    // Escuchar movimiento en tiempo real del GPS del chofer
+                    if (de.chofer_lat && de.chofer_lng) {
+                        actualizarPosicionChoferEnMapa(de.chofer_lat, de.chofer_lng);
+                    }
+
                     if (de.conductor_nombre && de.estado === 'pendiente') {
                         document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
                         document.getElementById('nombreCond').textContent = de.conductor_nombre;
