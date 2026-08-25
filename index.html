@@ -73,7 +73,9 @@
         .mapa-hint.visible { display: block; }
 
         /* MENÚ INFERIOR */
-        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: white; border-radius: 24px 24px 0 0; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 12px 20px 20px; max-height: 85vh; overflow-y: auto; transition: height 0.4s ease; -webkit-overflow-scrolling: touch; }
+        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: white; border-radius: 24px 24px 0 0; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 12px 20px 20px; height: 28vh; overflow-y: auto; transition: height 0.4s ease; -webkit-overflow-scrolling: touch; }
+        .bottom-panel:focus-within, .bottom-panel:active { height: 48vh; }
+        .bottom-panel.con-ruta { height: 35vh; }
 
         .panel-handle { width: 40px; height: 5px; background: #e0e0e0; border-radius: 3px; margin: 0 auto 10px; }
 
@@ -158,25 +160,12 @@
 
         <!-- PASO 1: PEDIDO -->
         <div id="pasoDatos">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-                <div id="cardAuto" onclick="cambiarCategoria('auto')" style="background: #f1f5f9; border: 2px solid #0f172a; border-radius: 14px; padding: 10px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                    <span style="font-size: 1.2rem;">🚕</span>
-                    <span style="font-weight: 700; font-size: 0.85rem;">Auto</span>
-                    <small style="font-size: 0.7rem; color: #64748b;">Estándar</small>
-                </div>
-                <div id="cardMoto" onclick="cambiarCategoria('moto')" style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 14px; padding: 10px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                    <span style="font-size: 1.2rem;">🏍️</span>
-                    <span style="font-weight: 700; font-size: 0.85rem;">Moto</span>
-                    <small style="font-size: 0.7rem; color: #166534; font-weight: 700;">40% Menos</small>
-                </div>
-            </div>
-
             <div class="driver-card-preview" style="background: #f8fafc; border: 1px dashed #cbd5e1;">
                 <div class="driver-img-box" style="background: #e2e8f0;">
-                    <span id="iconoVehiculoPreview" style="font-size: 1.2rem;">🚕</span>
+                    <span style="font-size: 1.2rem;">🚕</span>
                 </div>
                 <div class="driver-info-box">
-                    <h3 id="txtTituloCategoria">Tu Móvil Las Catalinas (Auto)</h3>
+                    <h3 style="color: #334155;">Tu Móvil Las Catalinas</h3>
                     <p id="txtEstructuraTarifa">Base $3.000 + $400 x Kilómetro</p>
                     <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +30% Recargo Nocturno Activo</div>
                 </div>
@@ -195,7 +184,7 @@
                 </div>
             </div>
             <div class="sugerencias" id="sugerencias"></div>
-            <button class="btn-green-action" id="btnConfirmarViaje" onclick="solicitarViaje()">Confirmar Tu Móvil 🚗</button>
+            <button class="btn-green-action" onclick="solicitarViaje()">Confirmar Tu Móvil</button>
         </div>
 
         <!-- PASO 2: ESPERA -->
@@ -239,7 +228,6 @@
         let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
         let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
-        let categoriaSeleccionada = 'auto'; 
 
         function hablarAnuncioPasajero(texto) {
             if ('speechSynthesis' in window) {
@@ -255,37 +243,6 @@
         function esHorarioNocturno() {
             const horaActual = new Date().getHours();
             return (horaActual >= 22 || horaActual < 7);
-        }
-
-        function cambiarCategoria(cat) {
-            categoriaSeleccionada = cat;
-            const esNoct = esHorarioNocturno();
-
-            if (cat === 'auto') {
-                document.getElementById('cardAuto').style.border = "2px solid #0f172a";
-                document.getElementById('cardAuto').style.background = "#f1f5f9";
-                document.getElementById('cardMoto').style.border = "2px solid #e2e8f0";
-                document.getElementById('cardMoto').style.background = "#f8fafc";
-                
-                document.getElementById('iconoVehiculoPreview').textContent = "🚕";
-                document.getElementById('txtTituloCategoria').textContent = "Tu Móvil Las Catalinas (Auto)";
-                document.getElementById('txtEstructuraTarifa').innerHTML = esNoct ? "Base $3.000 + $400 x Km <br><b>(Tarifa nocturna 30% aplicada)</b>" : "Base $3.000 + $400 x Kilómetro";
-                document.getElementById('btnConfirmarViaje').textContent = "Confirmar Tu Móvil 🚗";
-            } else {
-                document.getElementById('cardMoto').style.border = "2px solid #166534";
-                document.getElementById('cardMoto').style.background = "#f0fdf4";
-                document.getElementById('cardAuto').style.border = "2px solid #e2e8f0";
-                document.getElementById('cardAuto').style.background = "#f8fafc";
-
-                document.getElementById('iconoVehiculoPreview').textContent = "🏍️";
-                document.getElementById('txtTituloCategoria').textContent = "Tu Móvil Las Catalinas (Moto)";
-                document.getElementById('txtEstructuraTarifa').innerHTML = "Tarifa Moto (40% de descuento aplicado)";
-                document.getElementById('btnConfirmarViaje').textContent = "Confirmar Tu Moto 🏍️";
-            }
-            
-            if (distanciaKm > 0) {
-                calcularYMostrarPrecioFinal();
-            }
         }
 
         function initMapa() {
@@ -396,7 +353,6 @@
                 destinoCoords = { lat: viaje.destino_lat, lng: viaje.destino_lng };
                 precioCalculado = viaje.precio; 
                 distanciaKm = viaje.distancia_km;
-                if(viaje.categoria) categoriaSeleccionada = viaje.categoria;
 
                 markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
                 markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
@@ -413,7 +369,11 @@
                     document.getElementById('autoCond').textContent = viaje.conductor_auto || "Vehículo en camino";
                     if(viaje.conductor_foto) { document.getElementById('imgCondFoto').src = viaje.conductor_foto; }
                     
-                    actualizarTextoEstadoPasajero(viaje.estado);
+                    if(viaje.estado === 'aceptado') {
+                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
+                    } else if (viaje.estado === 'en_viaje') {
+                        document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
+                    }
                     mostrarPaso('pasoPrecio');
                 }
                 iniciarEscuchaRealtime(viajeId);
@@ -424,67 +384,34 @@
             localStorage.removeItem('pasajero_viaje_id'); 
         }
 
-        function actualizarTextoEstadoPasajero(estado) {
-            const estadoDiv = document.getElementById('estadoViajePasajero');
-            if (estado === 'aceptado') {
-                estadoDiv.innerHTML = "El móvil aceptó el viaje y va en camino 🚗";
-            } else if (estado === 'llegado') {
-                estadoDiv.innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
-            } else if (estado === 'en_viaje') {
-                estadoDiv.innerHTML = "🧭 Viajando seguro hacia tu destino...";
-            } else {
-                estadoDiv.innerHTML = "El móvil va en camino 🚗";
-            }
-        }
-
         function iniciarEscuchaRealtime(id) {
             if (subViaje) supabaseClient.removeChannel(subViaje);
             subViaje = supabaseClient
                 .channel('viaje-' + id)
-                .on('postgres_changes', { 
-                    event: 'UPDATE', 
-                    schema: 'public', 
-                    table: 'viajes', 
-                    filter: 'id=eq.' + id 
-                }, 
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes', filter: 'id=eq.' + id }, 
                 (payload) => {
                     const de = payload.new;
-                    
-                    // Si el chofer ya aceptó o actualizó datos, saltamos automáticamente al panel de precio/chofer
-                    if (de.conductor_nombre || de.estado === 'aceptado' || de.estado === 'llegado' || de.estado === 'en_viaje') {
+                    if (de.conductor_nombre && de.estado === 'pendiente') {
                         document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
-                        document.getElementById('nombreCond').textContent = de.conductor_nombre || "Conductor Asignado";
-                        document.getElementById('autoCond').textContent = de.conductor_auto || "Vehículo en camino";
-                        
-                        if(de.conductor_foto) { 
-                            document.getElementById('imgCondFoto').src = de.conductor_foto; 
-                        }
-                        
+                        document.getElementById('nombreCond').textContent = de.conductor_nombre;
+                        document.getElementById('autoCond').textContent = de.conductor_auto;
+                        if(de.conductor_foto) { document.getElementById('imgCondFoto').src = de.conductor_foto; }
+                        document.getElementById('estadoViajePasajero').innerHTML = "El móvil va en camino 🚗";
                         mostrarPaso('pasoPrecio');
                     }
-
-                    // Manejo sincronizado de los estados exactos enviados por el chofer
                     if (de.estado === 'aceptado') {
-                        actualizarTextoEstadoPasajero('aceptado');
-                    }
-                    
-                    if (de.estado === 'llegado') {
-                        actualizarTextoEstadoPasajero('llegado');
+                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
                         mostrarMsg('¡Tu móvil está en la puerta!', 'success');
-                        hablarAnuncioPasajero("Tu móvil ya llegó a la puerta de tu casa.");
+                        hablarAnuncioPasajero("Tu móvil ya llegó a la puerta.");
                     }
-                    
                     if (de.estado === 'en_viaje') {
-                        actualizarTextoEstadoPasajero('en_viaje');
-                        hablarAnuncioPasajero("Iniciando tu camino al destino.");
+                        document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
                     }
-                    
                     if (de.estado === 'cancelado') { 
                         mostrarMsg('Viaje cancelado.', 'error'); 
                         limpiarMemoriaPasajero(); 
                         setTimeout(() => location.reload(), 2000); 
                     }
-                    
                     if (de.estado === 'finalizado') { 
                         mostrarMsg('¡Viaje completado!', 'success'); 
                         limpiarMemoriaPasajero(); 
@@ -550,30 +477,17 @@
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 5, opacity: 0.85 }).addTo(mapa);
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
-                    calcularYMostrarPrecioFinal();
+                    let subTotal = TARIFA_BASE + (distanciaKm * TARIFA_KM);
+                    if (esHorarioNocturno()) { subTotal = subTotal * RECARGO_NOCTURNO; }
+
+                    precioCalculado = Math.round(subTotal);
+                    document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado + (esHorarioNocturno() ? " (Nocturno 30%)" : "");
+                    document.getElementById('txtKmLive').textContent = distanciaKm;
+                    document.getElementById('precioEstimadoBox').style.display = 'block';
+                    document.getElementById('bottomPanel').classList.add('con-ruta');
                     mapa.fitBounds(rutaTrazada.getBounds(), { padding: [40, 40], maxZoom: 16 });
                 }
             } catch (e) {}
-        }
-
-        function calcularYMostrarPrecioFinal() {
-            let subTotal = TARIFA_BASE + (distanciaKm * TARIFA_KM);
-            if (esHorarioNocturno()) { 
-                subTotal = subTotal * RECARGO_NOCTURNO; 
-            }
-
-            if (categoriaSeleccionada === 'moto') {
-                subTotal = subTotal * 0.60;
-            }
-
-            precioCalculado = Math.round(subTotal);
-            let textoExtra = "";
-            if (esHorarioNocturno()) textoExtra += " (Nocturno 30%)";
-            if (categoriaSeleccionada === 'moto') textoExtra += " (Moto -40%)";
-
-            document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado + textoExtra;
-            document.getElementById('txtKmLive').textContent = distanciaKm;
-            document.getElementById('precioEstimadoBox').style.display = 'block';
         }
 
         let timeoutBusqueda = null;
@@ -620,13 +534,12 @@
                         destino_lat: destinoCoords.lat,
                         destino_lng: destinoCoords.lng,
                         precio: precioCalculado,
-                        distancia_km: distanciaKm,
-                        categoria: categoriaSeleccionada
+                        distancia_km: distanciaKm
                     }).select().single();
 
                 if (error) throw error;
                 viajeId = data.id;
-                localStorage.setItem('pasajero_viaje_id', data.id);
+                localStorage.setItem('pasajero_viaje_id', data.id); // Evita viajes fantasmas al recargar
                 mostrarPaso('pasoEsperando');
                 iniciarEscuchaRealtime(viajeId);
             } catch (e) { mostrarMsg('Error al solicitar: ' + e.message, 'error'); }
