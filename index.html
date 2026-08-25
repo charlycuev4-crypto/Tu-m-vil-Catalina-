@@ -279,10 +279,8 @@
                 } else {
                     document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
                     setTimeout(async () => { 
-                        // Verificación automática en Supabase para evitar viajes fantasmas si recargan la página
-                        await verificarViajeActivoPorPerfil(pasajeroTelefono);
                         cerrarSplash(); 
-                        if (!viajeId) obtenerGPS(); 
+                        await verificarViajeActivoSeguro();
                     }, 1000);
                 }
             } catch (err) {
@@ -292,56 +290,49 @@
             }
         }
 
-        async function verificarViajeActivoPorPerfil(telefono) {
-            if (!telefono) return;
+        async function verificarViajeActivoSeguro() {
             try {
-                // Buscamos si hay un viaje pendiente, aceptado o en curso asociado a este teléfono
-                const { data: viajes, error } = await supabaseClient
-                    .from('viajes')
-                    .select('*')
-                    .eq('pasajero_telefono', telefono)
-                    .in('estado', ['pendiente', 'aceptado', 'en_viaje'])
-                    .order('created_at', { ascending: false })
-                    .limit(1);
+                const guardadoId = localStorage.getItem('pasajero_viaje_id');
+                if (!guardadoId) { obtenerGPS(); return; }
 
-                if ( viajes && viajes.length > 0 ) {
-                    const viajeActivo = viajes[0];
-                    viajeId = viajeActivo.id;
-                    localStorage.setItem('pasajero_viaje_id', viajeId);
-                    
-                    origenCoords = { lat: viajeActivo.origen_lat, lng: viajeActivo.origen_lng };
-                    destinoCoords = { lat: viajeActivo.destino_lat, lng: viajeActivo.destino_lng };
-                    precioCalculado = viajeActivo.precio; 
-                    distanciaKm = viajeActivo.distancia_km;
-
-                    markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
-                    markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
-                    document.getElementById('origenDisplay').value = "Ubicación inicial";
-                    document.getElementById('destino').value = "Destino seleccionado";
-
-                    await recalcularRutaYPrecio();
-
-                    if (viajeActivo.estado === 'pendiente' && !viajeActivo.conductor_nombre) {
-                        mostrarPaso('pasoEsperando');
-                    } else {
-                        document.getElementById('precioMonto').textContent = 'Total a pagar: $' + viajeActivo.precio;
-                        document.getElementById('nombreCond').textContent = viajeActivo.conductor_nombre || "Conductor Asignado";
-                        document.getElementById('autoCond').textContent = viajeActivo.conductor_auto || "Vehículo en camino";
-                        if(viajeActivo.conductor_foto) { document.getElementById('imgCondFoto').src = viajeActivo.conductor_foto; }
-                        
-                        if(viajeActivo.estado === 'aceptado') {
-                            document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A TU PUERTA! 🔔";
-                        } else if (viajeActivo.estado === 'en_viaje') {
-                            document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
-                        }
-                        mostrarPaso('pasoPrecio');
-                    }
-                    iniciarEscuchaRealtime(viajeId);
-                } else {
-                    await verificarViajeActivoPasajero();
+                const { data: viaje, error } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
+                if (error || !viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') { 
+                    limpiarMemoriaPasajero(); 
+                    obtenerGPS(); 
+                    return; 
                 }
-            } catch(e) {
-                await verificarViajeActivoPasajero();
+
+                viajeId = viaje.id;
+                origenCoords = { lat: viaje.origen_lat, lng: viaje.origen_lng };
+                destinoCoords = { lat: viaje.destino_lat, lng: viaje.destino_lng };
+                precioCalculado = viaje.precio; distanciaKm = viaje.distancia_km;
+
+                markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
+                markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
+                document.getElementById('origenDisplay').value = "Ubicación inicial";
+                document.getElementById('destino').value = "Destino seleccionado";
+
+                await recalcularRutaYPrecio();
+
+                if (viaje.estado === 'pendiente' && !viaje.conductor_nombre) {
+                    mostrarPaso('pasoEsperando');
+                } else {
+                    document.getElementById('precioMonto').textContent = 'Total a pagar: $' + viaje.precio;
+                    document.getElementById('nombreCond').textContent = viaje.conductor_nombre || "Conductor Asignado";
+                    document.getElementById('autoCond').textContent = viaje.conductor_auto || "Vehículo en camino";
+                    if(viaje.conductor_foto) { document.getElementById('imgCondFoto').src = viaje.conductor_foto; }
+                    
+                    if(viaje.estado === 'aceptado') {
+                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
+                    } else if (viaje.estado === 'en_viaje') {
+                        document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
+                    }
+                    mostrarPaso('pasoPrecio');
+                }
+                iniciarEscuchaRealtime(viajeId);
+            } catch (e) { 
+                limpiarMemoriaPasajero(); 
+                obtenerGPS(); 
             }
         }
 
@@ -393,44 +384,6 @@
                 splash.style.opacity = "0"; 
                 setTimeout(() => splash.style.display = "none", 500); 
             }
-        }
-
-        async function verificarViajeActivoPasajero() {
-            const guardadoId = localStorage.getItem('pasajero_viaje_id');
-            if (!guardadoId) return;
-            try {
-                const { data: viaje } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
-                if (!viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') { limpiarMemoriaPasajero(); return; }
-
-                viajeId = viaje.id;
-                origenCoords = { lat: viaje.origen_lat, lng: viaje.origen_lng };
-                destinoCoords = { lat: viaje.destino_lat, lng: viaje.destino_lng };
-                precioCalculado = viaje.precio; distanciaKm = viaje.distancia_km;
-
-                markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
-                markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
-                document.getElementById('origenDisplay').value = "Ubicación inicial";
-                document.getElementById('destino').value = "Destino seleccionado";
-
-                await recalcularRutaYPrecio();
-
-                if (viaje.estado === 'pendiente' && !viaje.conductor_nombre) {
-                    mostrarPaso('pasoEsperando');
-                } else {
-                    document.getElementById('precioMonto').textContent = 'Total a pagar: $' + viaje.precio;
-                    document.getElementById('nombreCond').textContent = viaje.conductor_nombre || "Conductor Asignado";
-                    document.getElementById('autoCond').textContent = viaje.conductor_auto || "Vehículo en camino";
-                    if(viaje.conductor_foto) { document.getElementById('imgCondFoto').src = viaje.conductor_foto; }
-                    
-                    if(viaje.estado === 'aceptado') {
-                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
-                    } else if (viaje.estado === 'en_viaje') {
-                        document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
-                    }
-                    mostrarPaso('pasoPrecio');
-                }
-                iniciarEscuchaRealtime(viajeId);
-            } catch (e) { limpiarMemoriaPasajero(); }
         }
 
         function limpiarMemoriaPasajero() { 
@@ -575,9 +528,9 @@
                     .from('viajes')
                     .insert({
                         estado: 'pendiente',
-                        pasajero_nombre: pasajeroNombre,
-                        pasajero_telefono: pasajeroTelefono,
-                        pasajero_foto: pasajeroBase64Foto,
+                        pasajero_nombre: pasajeroNombre || "Pasajero",
+                        pasajero_telefono: pasajeroTelefono || "Sin teléfono",
+                        pasajero_foto: pasajeroBase64Foto || "",
                         origen_lat: origenCoords.lat,
                         origen_lng: origenCoords.lng,
                         destino_lat: destinoCoords.lat,
