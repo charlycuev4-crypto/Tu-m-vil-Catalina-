@@ -19,7 +19,7 @@
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
-        /* SPLASH SCREEN DE BIENVENIDA Y SELFIE GUIADA */
+        /* SPLASH SCREEN DE BIENVENIDA Y SELFIE */
         #splashScreen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: #0f172a; color: white; z-index: 9999;
@@ -256,7 +256,7 @@
             }
         }
 
-        async function procesarSplashDeBienvenida() {
+        function procesarSplashDeBienvenida() {
             try {
                 pasajeroNombre = localStorage.getItem('perfil_nombre') || "";
                 pasajeroTelefono = localStorage.getItem('perfil_telefono') || "";
@@ -278,10 +278,7 @@
                     document.getElementById('splashForm').style.display = "flex";
                 } else {
                     document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
-                    setTimeout(async () => { 
-                        cerrarSplash(); 
-                        await verificarViajeActivoSeguro();
-                    }, 1000);
+                    setTimeout(() => { cerrarSplash(); obtenerGPS(); verificarViajePendientePrevio(); }, 800);
                 }
             } catch (err) {
                 document.getElementById('splashTitulo').textContent = "¡Bienvenido!";
@@ -290,49 +287,34 @@
             }
         }
 
-        async function verificarViajeActivoSeguro() {
+        async function verificarViajePendientePrevio() {
+            const viajeGuardado = localStorage.getItem('tu_movil_viaje_activo');
+            if (!viajeGuardado) return;
+
             try {
-                const guardadoId = localStorage.getItem('pasajero_viaje_id');
-                if (!guardadoId) { obtenerGPS(); return; }
+                const { data, error } = await supabaseClient
+                    .from('viajes')
+                    .select('estado, conductor_nombre, conductor_auto, conductor_foto, precio')
+                    .eq('id', viajeGuardado)
+                    .single();
 
-                const { data: viaje, error } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
-                if (error || !viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') { 
-                    limpiarMemoriaPasajero(); 
-                    obtenerGPS(); 
-                    return; 
-                }
-
-                viajeId = viaje.id;
-                origenCoords = { lat: viaje.origen_lat, lng: viaje.origen_lng };
-                destinoCoords = { lat: viaje.destino_lat, lng: viaje.destino_lng };
-                precioCalculado = viaje.precio; distanciaKm = viaje.distancia_km;
-
-                markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
-                markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
-                document.getElementById('origenDisplay').value = "Ubicación inicial";
-                document.getElementById('destino').value = "Destino seleccionado";
-
-                await recalcularRutaYPrecio();
-
-                if (viaje.estado === 'pendiente' && !viaje.conductor_nombre) {
-                    mostrarPaso('pasoEsperando');
-                } else {
-                    document.getElementById('precioMonto').textContent = 'Total a pagar: $' + viaje.precio;
-                    document.getElementById('nombreCond').textContent = viaje.conductor_nombre || "Conductor Asignado";
-                    document.getElementById('autoCond').textContent = viaje.conductor_auto || "Vehículo en camino";
-                    if(viaje.conductor_foto) { document.getElementById('imgCondFoto').src = viaje.conductor_foto; }
-                    
-                    if(viaje.estado === 'aceptado') {
-                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
-                    } else if (viaje.estado === 'en_viaje') {
-                        document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
+                if (data && (data.estado === 'pendiente' || data.estado === 'aceptado' || data.estado === 'en_viaje')) {
+                    viajeId = viajeGuardado;
+                    if (data.estado === 'pendiente') {
+                        mostrarPaso('pasoEsperando');
+                    } else {
+                        document.getElementById('precioMonto').textContent = 'Total a pagar: $' + data.precio;
+                        document.getElementById('nombreCond').textContent = data.conductor_nombre || "Conductor Asignado";
+                        document.getElementById('autoCond').textContent = data.conductor_auto || "Vehículo en camino";
+                        if(data.conductor_foto) { document.getElementById('imgCondFoto').src = data.conductor_foto; }
+                        mostrarPaso('pasoPrecio');
                     }
-                    mostrarPaso('pasoPrecio');
+                    iniciarEscuchaRealtime(viajeId);
+                } else {
+                    localStorage.removeItem('tu_movil_viaje_activo');
                 }
-                iniciarEscuchaRealtime(viajeId);
-            } catch (e) { 
-                limpiarMemoriaPasajero(); 
-                obtenerGPS(); 
+            } catch (e) {
+                localStorage.removeItem('tu_movil_viaje_activo');
             }
         }
 
@@ -376,6 +358,7 @@
             pasajeroNombre = nom; pasajeroTelefono = tel;
             cerrarSplash(); 
             obtenerGPS();
+            verificarViajePendientePrevio();
         }
 
         function cerrarSplash() { 
@@ -384,13 +367,6 @@
                 splash.style.opacity = "0"; 
                 setTimeout(() => splash.style.display = "none", 500); 
             }
-        }
-
-        function limpiarMemoriaPasajero() { 
-            try {
-                localStorage.removeItem('pasajero_viaje_id'); 
-                localStorage.removeItem('pasajero_visto_en_puerta'); 
-            } catch(e) {}
         }
 
         function iniciarEscuchaRealtime(id) {
@@ -408,8 +384,7 @@
                         document.getElementById('estadoViajePasajero').innerHTML = "El móvil va en camino 🚗";
                         mostrarPaso('pasoPrecio');
                     }
-                    if (de.estado === 'aceptado' && localStorage.getItem('pasajero_visto_en_puerta') !== 'si') {
-                        localStorage.setItem('pasajero_visto_en_puerta', 'si');
+                    if (de.estado === 'aceptado') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
                         mostrarMsg('¡Tu móvil está en la puerta!', 'success');
                         hablarAnuncioPasajero("Tu móvil ya llegó a la puerta.");
@@ -417,8 +392,16 @@
                     if (de.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
                     }
-                    if (de.estado === 'cancelado') { mostrarMsg('Viaje cancelado.', 'error'); limpiarMemoriaPasajero(); setTimeout(() => location.reload(), 2000); }
-                    if (de.estado === 'finalizado') { mostrarMsg('¡Viaje completado!', 'success'); limpiarMemoriaPasajero(); setTimeout(() => location.reload(), 3000); }
+                    if (de.estado === 'cancelado') { 
+                        localStorage.removeItem('tu_movil_viaje_activo');
+                        mostrarMsg('Viaje cancelado.', 'error'); 
+                        setTimeout(() => location.reload(), 2000); 
+                    }
+                    if (de.estado === 'finalizado') { 
+                        localStorage.removeItem('tu_movil_viaje_activo');
+                        mostrarMsg('¡Viaje completado!', 'success'); 
+                        setTimeout(() => location.reload(), 3000); 
+                    }
                 }).subscribe();
         }
 
@@ -541,13 +524,23 @@
 
                 if (error) throw error;
                 viajeId = data.id;
-                localStorage.setItem('pasajero_viaje_id', data.id);
+                
+                // Guardamos el viaje en curso para evitar fantasmas si se recarga la página
+                localStorage.setItem('tu_movil_viaje_activo', viajeId);
+
                 mostrarPaso('pasoEsperando');
                 iniciarEscuchaRealtime(viajeId);
-            } catch (e) { mostrarMsg('Error: ' + e.message, 'error'); }
+            } catch (e) { mostrarMsg('Error al solicitar: ' + e.message, 'error'); }
         }
 
-        async function cancelarViaje() { if(viajeId) { await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeId); } limpiarMemoriaPasajero(); location.reload(); }
+        async function cancelarViaje() { 
+            if(viajeId) { 
+                await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeId); 
+            } 
+            localStorage.removeItem('tu_movil_viaje_activo');
+            location.reload(); 
+        }
+
         function volverAtras() { cancelarViaje(); }
         function mostrarPaso(id) { ['pasoDatos', 'pasoEsperando', 'pasoPrecio'].forEach(p => document.getElementById(p).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
         function mostrarMsg(texto, tipo) { const msg = document.getElementById('msg'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
