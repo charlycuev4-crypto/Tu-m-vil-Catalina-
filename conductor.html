@@ -97,7 +97,20 @@
         .tipo-btn { background: #0f172a; border: 2px solid #334155; border-radius: 12px; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; color: #94a3b8; }
         .tipo-btn.activo-tipo { border-color: #3b82f6; background: rgba(59,130,246,0.15); color: #fff; }
 
-        .chofer-icon { background: #3b82f6; width: 18px !important; height: 18px !important; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 12px #3b82f6; }
+        /* Ícono rediseñado como vehículo destacado */
+        .chofer-icon { 
+            background: #3b82f6; 
+            width: 28px !important; 
+            height: 28px !important; 
+            border: 3px solid white; 
+            border-radius: 50%; 
+            box-shadow: 0 0 15px #3b82f6; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
         .pasajero-origen-icon { background: #10b981; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
         .pasajero-destino-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
 
@@ -108,7 +121,7 @@
 </head>
 <body onclick="forzarHabilitacionAudio()">
 
-    <!-- MODAL DE CONFIGURACIÓN DE CHOFER (Se abre si no está configurado) -->
+    <!-- MODAL DE CONFIGURACIÓN DE CHOFER -->
     <div id="modalConfigChofer" class="hidden">
         <div class="modal-box">
             <h3>⚙️ Perfil del Móvil</h3>
@@ -137,7 +150,6 @@
         <div class="header-left-col">
             <div class="status-badge activo" id="txtEstadoChofer" onclick="conmutarEstadoConexion()">Móvil en Línea 🟢</div>
             
-            <!-- Tarjeta con resumen del chofer y botón para cambiar de perfil si maneja otro día -->
             <div class="driver-info-card">
                 <span id="lblResumenChofer">Chofer: -</span>
                 <button class="btn-editar-perfil" onclick="abrirConfiguracionChofer()">Editar</button>
@@ -196,12 +208,12 @@
 
     <script>
         const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIIsInJvbGUiOiJhbm9uIiwiaWF0IjoxN3c5NDgyMjMyLCJleHAiOjIwOTUwNTgyMzJ9.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer');
         let AUTO_CHOFER = localStorage.getItem('cfg_auto_modelo');
-        let TIPO_VEHICULO_CHOFER = localStorage.getItem('cfg_vehiculo_chofer') || "auto"; // 'auto' o 'moto'
+        let TIPO_VEHICULO_CHOFER = localStorage.getItem('cfg_vehiculo_chofer') || "auto";
 
         let canalSupabase = null;
         let estaConectado = true; 
@@ -326,9 +338,15 @@
         let estadoFlujo = 'pendiente'; 
 
         function initMapa() {
-            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
+            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 17);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
-            markerChofer = L.marker([choferCoords.lat, choferCoords.lng], { icon: L.divIcon({ className: 'chofer-icon' }) }).addTo(mapa);
+            
+            // Ícono dinámico del vehículo según sea Auto o Moto
+            let iconoVehiculoHtml = TIPO_VEHICULO_CHOFER === 'moto' ? '🏍️' : '🚗';
+            markerChofer = L.marker([choferCoords.lat, choferCoords.lng], { 
+                icon: L.divIcon({ className: 'chofer-icon', html: iconoVehiculoHtml }) 
+            }).addTo(mapa);
+
             mapa.on('dragstart', () => { autocentrarMapa = false; document.getElementById('btnGpsCentro').classList.remove('seguimiento-on'); });
         }
 
@@ -339,7 +357,9 @@
                     choferCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                     if (markerChofer) markerChofer.setLatLng([choferCoords.lat, choferCoords.lng]);
                     if (autocentrarMapa) {
-                        mapa.setView([choferCoords.lat, choferCoords.lng], (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15);
+                        // Zoom un 20% más cercano (Aprox 17.5 por defecto y 18.5 en viaje activo)
+                        let nivelZoom = (estadoFlujo !== 'pendiente' && viajeActivo) ? 18.5 : 17.5;
+                        mapa.setView([choferCoords.lat, choferCoords.lng], nivelZoom);
                         document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                     }
                     if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
@@ -350,7 +370,12 @@
         }
 
         function detenerRastreoGps() { if (idRastreadorGps) { navigator.geolocation.clearWatch(idRastreadorGps); idRastreadorGps = null; } }
-        function alternarSeguimientoManual() { autocentrarMapa = true; document.getElementById('btnGpsCentro').classList.add('seguimiento-on'); mapa.setView([choferCoords.lat, choferCoords.lng], (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15); }
+        function alternarSeguimientoManual() { 
+            autocentrarMapa = true; 
+            document.getElementById('btnGpsCentro').classList.add('seguimiento-on'); 
+            let nivelZoom = (estadoFlujo !== 'pendiente' && viajeActivo) ? 18.5 : 17.5;
+            mapa.setView([choferCoords.lat, choferCoords.lng], nivelZoom); 
+        }
 
         function abrirNavegacionGoogleMaps() {
             if (!viajeActivo) return;
@@ -365,13 +390,8 @@
             canalSupabase
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, (payload) => {
                     if (payload.new.estado === 'pendiente' && !viajeActivo && estaConectado) {
-                        
-                        // FILTRADO ESTRICTO DE VEHÍCULO:
                         let categoriaViaje = payload.new.categoria || 'auto';
-                        if (categoriaViaje !== TIPO_VEHICULO_CHOFER) {
-                            console.log(`Viaje ignorado: el pasajero pidió ${categoriaViaje} y este móvil es ${TIPO_VEHICULO_CHOFER}`);
-                            return;
-                        }
+                        if (categoriaViaje !== TIPO_VEHICULO_CHOFER) return;
 
                         const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, payload.new.origen_lat, payload.new.origen_lng);
                         if (distanciaAlViaje > 5) return;
