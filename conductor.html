@@ -454,12 +454,11 @@
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
-                    // AQUÍ ESTÁ EL CAMBIO CLAVE: Agregamos el estado 'aceptado'
                     await supabaseClient.from('viajes').update({ 
                         conductor_nombre: NOMBRE_CHOFER, 
                         conductor_auto: AUTO_CHOFER,
                         conductor_foto: "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg",
-                        estado: 'aceptado' // <--- ESTO DESBLOQUEA AL PASAJERO AL INSTANTE
+                        estado: 'aceptado' 
                     }).eq('id', viajeActivo.id);
 
                     estadoFlujo = 'aceptado';
@@ -480,14 +479,27 @@
                 estadoFlujo = 'en_puerta'; localStorage.setItem('conductor_estado_flujo', 'en_puerta');
                 btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Iniciar Viaje 🛫";
                 document.getElementById('txtEstadoChofer').textContent = "En la Puerta 📍";
-                await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeActivo.id);
+                
+                await supabaseClient.from('viajes').update({ 
+                    estado: 'llegado',
+                    conductor_nombre: NOMBRE_CHOFER, 
+                    conductor_auto: AUTO_CHOFER,
+                    conductor_foto: "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg"
+                }).eq('id', viajeActivo.id);
                 return;
             }
             if (estadoFlujo === 'en_puerta') {
                 estadoFlujo = 'en_viaje'; localStorage.setItem('conductor_estado_flujo', 'en_viaje');
                 btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
                 document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
-                await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
+                
+                await supabaseClient.from('viajes').update({ 
+                    estado: 'en_viaje',
+                    conductor_nombre: NOMBRE_CHOFER, 
+                    conductor_auto: AUTO_CHOFER,
+                    conductor_foto: "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg"
+                }).eq('id', viajeActivo.id);
+                
                 trazarRutaCalles(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
                 return;
             }
