@@ -131,7 +131,7 @@
             <form id="formConfigChofer" onsubmit="guardarConfigChofer(event)">
                 <div class="config-field">
                     <label>Nombre y Apellido</label>
-                    <input type="text" id="inpNombre" placeholder="Ej: Carlos Cueva" required>
+                    <input type="text" id="inpNombre" placeholder="Ej: Juan Pérez" required>
                 </div>
                 <div class="config-field">
                     <label>Número de WhatsApp</label>
@@ -139,15 +139,15 @@
                 </div>
                 <div class="config-field">
                     <label>Marca y Modelo del Auto</label>
-                    <input type="text" id="inpModelo" placeholder="Ej: Ford Fiesta Max" required>
+                    <input type="text" id="inpModelo" placeholder="Ej: Fiat Cronos" required>
                 </div>
                 <div class="config-field">
                     <label>Color del Auto</label>
-                    <input type="text" id="inpColor" placeholder="Ej: Gris Plata" required>
+                    <input type="text" id="inpColor" placeholder="Ej: Blanco" required>
                 </div>
                 <div class="config-field">
                     <label>Patente / Dominio</label>
-                    <input type="text" id="inpPatente" placeholder="Ej: JCP 478" required>
+                    <input type="text" id="inpPatente" placeholder="Ej: AB123CD" required>
                 </div>
                 <button type="submit" class="btn-action btn-aceptar" style="margin-top: 10px;">Guardar y Empezar ✅</button>
             </form>
@@ -217,7 +217,6 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Variables del Chofer cargadas de localStorage
         let NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "";
         let AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " - " + (localStorage.getItem('cfg_auto_color') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
 
@@ -500,7 +499,6 @@
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
-                    // Actualiza en Supabase asignando nombre y auto del chofer registrado
                     const { error } = await supabaseClient.from('viajes').update({ conductor_nombre: NOMBRE_CHOFER, conductor_auto: AUTO_CHOFER }).eq('id', viajeActivo.id);
                     if (error) throw error;
                     
