@@ -71,7 +71,7 @@
         .mapa-hint { position: fixed; top: 75px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(5, 150, 105, 0.95); color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-align: center; width: 85%; max-width: 320px; }
         .mapa-hint.visible { display: block; }
 
-        /* PANEL INFERIOR COMPACTO EN TONO BEIGE CÁLIDO MÁS PROFUNDO */
+        /* PANEL INFERIOR COMPACTO EN TONO BEIGE CÁLIDO */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
             background: #f0ece1; 
@@ -216,8 +216,8 @@
             <!-- PASO 2: BUSCANDO CHOFER -->
             <div id="pasoEsperando" class="hidden">
                 <div class="chofer-card">
-                    <div class="chofer-foto-box" style="background: #e2e8f0;">
-                        <span style="font-size: 1.2rem;">⏳</span>
+                    <div class="chofer-foto-box">
+                        <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Tu Móvil">
                     </div>
                     <div class="chofer-info">
                         <div class="chofer-nombre">Buscando conductor...</div>
@@ -234,8 +234,9 @@
             <div id="pasoPrecio" class="hidden">
                 <div class="precio-banner activo" id="precioMonto">Total a pagar: $0</div>
                 <div class="chofer-card">
-                    <div class="chofer-foto-box" id="imgCondBoxContainer">
-                        <img id="imgCondFoto" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Conductor">
+                    <div class="chofer-foto-box">
+                        <!-- FOTO POR DEFECTO DEL AUTO SI LA DEL CONDUCTOR ESTÁ VACÍA O ROTA -->
+                        <img id="imgCondFoto" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Conductor" onerror="this.src='https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'">
                     </div>
                     <div class="chofer-info">
                         <div class="chofer-nombre" id="nombreCond">Conductor Asignado</div>
@@ -259,6 +260,7 @@
         const TARIFA_KM = 400;
         const RECARGO_NOCTURNO = 1.30; 
         const UBICACION_DEFAULT = [-34.54291, -58.71212];
+        const FOTO_AUTO_DEFAULT = 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
 
         let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
         let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
@@ -402,7 +404,14 @@
                     document.getElementById('precioMonto').textContent = 'Total a pagar: $' + viaje.precio;
                     document.getElementById('nombreCond').textContent = viaje.conductor_nombre || "Conductor Asignado";
                     document.getElementById('autoCond').textContent = viaje.conductor_auto || "Vehículo en camino";
-                    if(viaje.conductor_foto) { document.getElementById('imgCondFoto').src = viaje.conductor_foto; }
+                    
+                    // Asignación segura de la foto del conductor o fallback al auto por defecto
+                    const fotoCondElem = document.getElementById('imgCondFoto');
+                    if (viaje.conductor_foto && viaje.conductor_foto.trim() !== "" && viaje.conductor_foto !== "null") {
+                        fotoCondElem.src = viaje.conductor_foto;
+                    } else {
+                        fotoCondElem.src = FOTO_AUTO_DEFAULT;
+                    }
                     
                     if(viaje.estado === 'aceptado') {
                         document.getElementById('estadoViajePasajero').innerHTML = "<span>🔔 ¡El móvil ya llegó a la puerta!</span>";
@@ -430,7 +439,14 @@
                         document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
                         document.getElementById('nombreCond').textContent = de.conductor_nombre;
                         document.getElementById('autoCond').textContent = de.conductor_auto;
-                        if(de.conductor_foto) { document.getElementById('imgCondFoto').src = de.conductor_foto; }
+                        
+                        const fotoCondElem = document.getElementById('imgCondFoto');
+                        if (de.conductor_foto && de.conductor_foto.trim() !== "" && de.conductor_foto !== "null") {
+                            fotoCondElem.src = de.conductor_foto;
+                        } else {
+                            fotoCondElem.src = FOTO_AUTO_DEFAULT;
+                        }
+
                         document.getElementById('estadoViajePasajero').innerHTML = "<span>🚗 El móvil va en camino a buscarte</span>";
                         mostrarPaso('pasoPrecio');
                     }
