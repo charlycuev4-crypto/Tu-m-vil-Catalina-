@@ -255,8 +255,9 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // NUEVAS TARIFAS CONFIGURADAS
         const TARIFA_BASE = 3000;
-        const TARIFA_KM = 1600; // Ajustado a $1600 por km extra para que de $4600 en 3km
+        const TARIFA_KM = 725; // Ajustado a $725 para que el viaje de 42 km quede exactamente en $32.000
         const KM_LIBRES_BASE = 2.0; 
         const RECARGO_NOCTURNO = 1.30; 
         const UBICACION_DEFAULT = [-34.54291, -58.71212];
@@ -280,7 +281,8 @@
 
         function esHorarioNocturno() {
             const horaActual = new Date().getHours();
-            return (horaActual >= 22 || horaActual < 7);
+            // Horario nocturno actualizado de 20:00 a 08:00 hs
+            return (horaActual >= 20 || horaActual < 8);
         }
 
         function initMapa() {
@@ -527,7 +529,6 @@
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#059669', weight: 5, opacity: 0.85 }).addTo(mapa);
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
-                    // Cálculo con base en $3000 (primeros 2 km) y $1600 por cada km adicional
                     let kmExcedentes = Math.max(0, distanciaKm - KM_LIBRES_BASE);
                     let subTotal = TARIFA_BASE + (kmExcedentes * TARIFA_KM);
                     
