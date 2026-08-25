@@ -138,7 +138,15 @@
                     </div>
                 </div>
             </div>
-            <button class="btn-action btn-aceptar" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje</button>
+
+            <!-- Botones de decisión para viaje entrante -->
+            <div id="contenedorBotonesPendiente" style="display: flex; gap: 10px;">
+                <button class="btn-action" style="background: #ef4444; flex: 1;" onclick="rechazarViajeEntrante()">Rechazar ❌</button>
+                <button class="btn-action btn-aceptar" style="flex: 2;" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje ✅</button>
+            </div>
+
+            <!-- Botón único para cuando el viaje ya está en curso -->
+            <button class="btn-action btn-aceptar hidden" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
         </div>
     </div>
 
@@ -159,7 +167,6 @@
         let audioCtx = null;
         let intervaloCampana = null;
 
-        // Función matemática para calcular distancia en km (Fórmula de Haversine)
         function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
             const R = 6371; 
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -291,8 +298,6 @@
             canalSupabase
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, (payload) => {
                     if (payload.new.estado === 'pendiente' && !viajeActivo && estaConectado) {
-                        
-                        // FILTRO DE RADIO DE 5 KM
                         const distanciaAlViaje = calcularDistanciaKm(
                             choferCoords.lat, 
                             choferCoords.lng, 
@@ -301,7 +306,7 @@
                         );
 
                         if (distanciaAlViaje > 5) {
-                            console.log(`Viaje descartado por distancia: ${distanciaAlViaje.toFixed(1)} km (fuera del radio de 5km)`);
+                            console.log(`Viaje descartado por distancia: ${distanciaAlViaje.toFixed(1)} km`);
                             return;
                         }
 
@@ -348,6 +353,10 @@
             document.getElementById('vistaViaje').classList.remove('hidden');
             document.getElementById('panelConductor').classList.add('viaje-entrante');
 
+            // Mostrar botones de decisión y ocultar botón en curso
+            document.getElementById('contenedorBotonesPendiente').classList.remove('hidden');
+            document.getElementById('btnAccionEnCurso').classList.add('hidden');
+
             document.getElementById('lblPasajero').textContent = viaje.pasajero_nombre || "Pasajero";
             document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
             document.getElementById('lblDistancia').textContent = viaje.distancia_km || "0";
@@ -376,8 +385,26 @@
             trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
         }
 
+        function rechazarViajeEntrante() {
+            detenerSirenaAlerta();
+            limpiarMemoriaConductor();
+
+            if (markerOrigen) { mapa.removeLayer(markerOrigen); markerOrigen = null; }
+            if (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
+            if (rutaTrazada) { mapa.removeLayer(rutaTrazada); rutaTrazada = null; }
+
+            viajeActivo = null;
+            estadoFlujo = 'pendiente';
+
+            document.getElementById('vistaViaje').classList.add('hidden');
+            document.getElementById('vistaEspera').classList.remove('hidden');
+            document.getElementById('panelConductor').classList.remove('viaje-entrante');
+            document.getElementById('linkWhatsapp').classList.add('hidden');
+
+            mostrarMsg('Viaje rechazado. Buscando nuevos pasajeros...', 'success');
+        }
+
         async function procesarLojicaViaje() {
-            const btn = document.getElementById('btnAccionPrincipal');
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
@@ -388,21 +415,30 @@
                     localStorage.setItem('conductor_viaje_id', viajeActivo.id);
                     localStorage.setItem('conductor_estado_flujo', 'aceptado');
                     document.getElementById('panelConductor').classList.remove('viaje-entrante');
-                    btn.className = "btn-action btn-llegué"; btn.textContent = "Ya llegué a la puerta 🔓";
+                    
+                    // Ocultar botones de decisión y activar botón en curso
+                    document.getElementById('contenedorBotonesPendiente').classList.add('hidden');
+                    const btnEnCurso = document.getElementById('btnAccionEnCurso');
+                    btnEnCurso.classList.remove('hidden');
+                    btnEnCurso.className = "btn-action btn-llegué"; 
+                    btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
+
                     document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
                 } catch (e) { location.reload(); }
                 return;
             }
+
+            const btnEnCurso = document.getElementById('btnAccionEnCurso');
             if (estadoFlujo === 'aceptado') {
                 estadoFlujo = 'en_puerta'; localStorage.setItem('conductor_estado_flujo', 'en_puerta');
-                btn.className = "btn-action btn-iniciar"; btn.textContent = "Iniciar Viaje 🛫";
+                btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Iniciar Viaje 🛫";
                 document.getElementById('txtEstadoChofer').textContent = "En la Puerta 📍";
                 await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeActivo.id);
                 return;
             }
             if (estadoFlujo === 'en_puerta') {
                 estadoFlujo = 'en_viaje'; localStorage.setItem('conductor_estado_flujo', 'en_viaje');
-                btn.className = "btn-action btn-finalizar"; btn.textContent = "Finalizar Viaje y Cobrar 💵";
+                btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
                 document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
                 await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
                 trazarRutaCalles(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
@@ -423,6 +459,7 @@
                 const { data: viaje } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
                 if (!viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') { limpiarMemoriaConductor(); return; }
                 viajeActivo = viaje; estadoFlujo = guardadoEstado || 'aceptado';
+                
                 document.getElementById('vistaEspera').classList.add('hidden');
                 document.getElementById('vistaViaje').classList.remove('hidden');
                 document.getElementById('lblPasajero').textContent = viaje.pasajero_nombre || "Pasajero";
@@ -442,15 +479,19 @@
 
                 markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
                 markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
-                const btn = document.getElementById('btnAccionPrincipal');
+
+                document.getElementById('contenedorBotonesPendiente').classList.add('hidden');
+                const btnEnCurso = document.getElementById('btnAccionEnCurso');
+                btnEnCurso.classList.remove('hidden');
+
                 if (estadoFlujo === 'aceptado') {
-                    btn.className = "btn-action btn-llegué"; btn.textContent = "Ya llegué a la puerta 🔓";
+                    btnEnCurso.className = "btn-action btn-llegué"; btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
                     trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
                 } else if (estadoFlujo === 'en_puerta') {
-                    btn.className = "btn-action btn-iniciar"; btn.textContent = "Iniciar Viaje 🛫";
+                    btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Iniciar Viaje 🛫";
                     trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
                 } else if (estadoFlujo === 'en_viaje') {
-                    btn.className = "btn-action btn-finalizar"; btn.textContent = "Finalizar Viaje y Cobrar 💵";
+                    btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
                     trazarRutaCalles(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
                 }
             } catch (e) { limpiarMemoriaConductor(); }
