@@ -71,55 +71,78 @@
         .mapa-hint { position: fixed; top: 75px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(5, 150, 105, 0.95); color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-align: center; width: 85%; max-width: 320px; }
         .mapa-hint.visible { display: block; }
 
-        /* MENÚ INFERIOR ESTILO TARJETA MINIMALISTA */
-        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #ffffff; border-radius: 28px 28px 0 0; border-top: 1px solid #f1f5f9; box-shadow: 0 -10px 30px rgba(0,0,0,0.08); padding: 12px 20px 24px; transition: all 0.3s ease; }
-        .panel-handle { width: 40px; height: 5px; background: #cbd5e1; border-radius: 3px; margin: 0 auto 14px; }
+        /* PANEL INFERIOR COMPACTO EN TONO BEIGE ELEGANTE */
+        .bottom-panel { 
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
+            background: #f7f4ee; /* Tono Beige Cálido */
+            border-radius: 24px 24px 0 0; 
+            border-top: 1px solid #e5dfd5; 
+            box-shadow: 0 -8px 25px rgba(0,0,0,0.12); 
+            padding: 8px 16px 14px; 
+            max-height: 42vh; /* Altura máxima optimizada */
+            display: flex; flex-direction: column;
+        }
+
+        .panel-handle { 
+            width: 36px; height: 4px; background: #d6ceb8; 
+            border-radius: 2px; margin: 2px auto 8px; flex-shrink: 0;
+        }
+
+        /* Contenedor scrolleable del contenido del panel */
+        .panel-scrollable-content {
+            overflow-y: auto;
+            max-height: 100%;
+            padding-right: 2px;
+        }
+        /* Scrollbar discreto */
+        .panel-scrollable-content::-webkit-scrollbar { width: 4px; }
+        .panel-scrollable-content::-webkit-scrollbar-thumb { background: #d6ceb8; border-radius: 4px; }
 
         /* Banner de Precio Limpio */
         .precio-banner {
-            background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px; padding: 14px;
-            text-align: center; margin-bottom: 16px; font-size: 1.25rem; font-weight: 800; color: #059669;
+            background: #eaf5eb; border: 1px solid #c3e6c5; border-radius: 12px; padding: 8px 10px;
+            text-align: center; margin-bottom: 8px; font-size: 1.1rem; font-weight: 800; color: #059669;
         }
 
         /* Tarjeta del Chofer Asignado */
         .chofer-card {
-            display: flex; align-items: center; gap: 14px; background: #f8fafc; border: 1px solid #e2e8f0;
-            border-radius: 20px; padding: 14px; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 10px; background: #ffffff; border: 1px solid #e5dfd5;
+            border-radius: 14px; padding: 8px 12px; margin-bottom: 8px;
         }
-        .chofer-foto-box { width: 60px; height: 55px; border-radius: 14px; background: #e2e8f0; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid #cbd5e1; }
+        .chofer-foto-box { width: 48px; height: 44px; border-radius: 10px; background: #e2e8f0; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid #cbd5e1; }
         .chofer-foto-box img { width: 100%; height: 100%; object-fit: cover; }
         .chofer-info { flex: 1; }
-        .chofer-nombre { font-size: 1.05rem; font-weight: 700; color: #0f172a; }
-        .chofer-auto { font-size: 0.85rem; color: #64748b; margin-top: 2px; }
+        .chofer-nombre { font-size: 0.95rem; font-weight: 700; color: #0f172a; }
+        .chofer-auto { font-size: 0.78rem; color: #64748b; margin-top: 1px; }
 
-        .estado-viaje-box { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; font-weight: 600; color: #059669; margin-bottom: 16px; background: #f0fdf4; padding: 12px; border-radius: 14px; border: 1px solid #bbf7d0; text-align: center; }
+        .estado-viaje-box { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.82rem; font-weight: 600; color: #059669; margin-bottom: 8px; background: #eaf5eb; padding: 8px; border-radius: 10px; border: 1px solid #c3e6c5; text-align: center; }
 
         /* Inputs de Origen / Destino */
-        .input-group { background: #f8fafc; border-radius: 18px; padding: 4px 14px; margin-bottom: 14px; border: 1px solid #e2e8f0; }
-        .input-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
-        .input-row:not(:last-child) { border-bottom: 1px solid #e2e8f0; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .input-group { background: #ffffff; border-radius: 14px; padding: 2px 10px; margin-bottom: 8px; border: 1px solid #e5dfd5; }
+        .input-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+        .input-row:not(:last-child) { border-bottom: 1px solid #f0eae1; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
         .dot-green { background: #059669; }
         .dot-red { background: #ef4444; }
-        .input-row input { flex: 1; border: none; font-size: 0.95rem; color: #0f172a; background: transparent; outline: none; }
+        .input-row input { flex: 1; border: none; font-size: 0.88rem; color: #0f172a; background: transparent; outline: none; }
 
-        .sugerencias { background: white; border-radius: 14px; max-height: 140px; overflow-y: auto; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 14px; border: 1px solid #e2e8f0; }
+        .sugerencias { background: white; border-radius: 12px; max-height: 120px; overflow-y: auto; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 8px; border: 1px solid #e5dfd5; }
         .sugerencias.activo { display: block; }
-        .sugerencia-item { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 0.85rem; }
+        .sugerencia-item { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 0.8rem; }
 
-        .badge-nocturno { background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-top: 6px; border: 1px solid #fecaca; }
+        .badge-nocturno { background: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; display: inline-block; margin-top: 4px; border: 1px solid #fecaca; }
 
         /* Botones de Acción Estilizados */
-        .btn-action { width: 100%; color: white; border: none; padding: 14px; border-radius: 50px; font-size: 1.05rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 15px rgba(5,150,105,0.25); transition: background 0.2s; }
+        .btn-action { width: 100%; color: white; border: none; padding: 10px; border-radius: 40px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 3px 10px rgba(5,150,105,0.2); transition: background 0.2s; }
         .btn-pedir { background: #059669; }
         .btn-pedir:hover { background: #047857; }
-        .btn-cancelar { background: #ef4444; box-shadow: 0 4px 15px rgba(239,68,68,0.25); }
+        .btn-cancelar { background: #ef4444; box-shadow: 0 3px 10px rgba(239,68,68,0.2); }
 
         .pasajero-ping-icon { background: #059669; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
         .destino-ping-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
 
         .hidden { display: none !important; }
-        .msg { padding: 10px; border-radius: 12px; margin-bottom: 10px; font-size: 0.85rem; text-align: center; display: none; font-weight: 600; }
+        .msg { padding: 8px; border-radius: 10px; margin-bottom: 8px; font-size: 0.8rem; text-align: center; display: none; font-weight: 600; }
         .msg.show { display: block; }
         .msg-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
         .msg-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
@@ -169,62 +192,65 @@
     <!-- PANEL INFERIOR -->
     <div class="bottom-panel" id="bottomPanel">
         <div class="panel-handle"></div>
-        <div class="msg" id="msg"></div>
+        
+        <div class="panel-scrollable-content">
+            <div class="msg" id="msg"></div>
 
-        <!-- PASO 1: SELECCIONAR DESTINO Y PEDIR -->
-        <div id="pasoDatos">
-            <div class="precio-banner" id="precioEstimadoBox">
-                Total a pagar: <span id="txtPrecioLive">$3240</span>
-                <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +30% Recargo Nocturno Activo</div>
+            <!-- PASO 1: SELECCIONAR DESTINO Y PEDIR -->
+            <div id="pasoDatos">
+                <div class="precio-banner" id="precioEstimadoBox">
+                    Total a pagar: <span id="txtPrecioLive">$3240</span>
+                    <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +30% Recargo Nocturno Activo</div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-row">
+                        <div class="dot dot-green"></div>
+                        <input type="text" id="origenDisplay" placeholder="Buscando tu ubicación..." readonly>
+                    </div>
+                    <div class="input-row">
+                        <div class="dot dot-red"></div>
+                        <input type="text" id="destino" placeholder="¿A dónde vamos?" autocomplete="off" oninput="buscarDireccion(this.value)">
+                    </div>
+                </div>
+                <div class="sugerencias" id="sugerencias"></div>
+                <button class="btn-action btn-pedir" onclick="solicitarViaje()">Pedir Tu Móvil 🚗</button>
             </div>
 
-            <div class="input-group">
-                <div class="input-row">
-                    <div class="dot dot-green"></div>
-                    <input type="text" id="origenDisplay" placeholder="Buscando tu ubicación..." readonly>
+            <!-- PASO 2: BUSCANDO CHOFER -->
+            <div id="pasoEsperando" class="hidden">
+                <div class="chofer-card">
+                    <div class="chofer-foto-box" style="background: #e2e8f0;">
+                        <span style="font-size: 1.2rem;">⏳</span>
+                    </div>
+                    <div class="chofer-info">
+                        <div class="chofer-nombre">Buscando conductor...</div>
+                        <div class="chofer-auto">Asignando unidad cercana</div>
+                    </div>
                 </div>
-                <div class="input-row">
-                    <div class="dot dot-red"></div>
-                    <input type="text" id="destino" placeholder="¿A dónde vamos?" autocomplete="off" oninput="buscarDireccion(this.value)">
+                <div class="estado-viaje-box">
+                    <span>⏱️ Tu solicitud está en el centro de despacho...</span>
                 </div>
+                <button class="btn-action btn-cancelar" onclick="cancelarViaje()">Cancelar Viaje ❌</button>
             </div>
-            <div class="sugerencias" id="sugerencias"></div>
-            <button class="btn-action btn-pedir" onclick="solicitarViaje()">Pedir Tu Móvil 🚗</button>
-        </div>
 
-        <!-- PASO 2: BUSCANDO CHOFER -->
-        <div id="pasoEsperando" class="hidden">
-            <div class="chofer-card">
-                <div class="chofer-foto-box" style="background: #e2e8f0;">
-                    <span style="font-size: 1.5rem;">⏳</span>
+            <!-- PASO 3: CHOFER ASIGNADO / EN VIAJE -->
+            <div id="pasoPrecio" class="hidden">
+                <div class="precio-banner" id="precioMonto">Total a pagar: $3240</div>
+                <div class="chofer-card">
+                    <div class="chofer-foto-box" id="imgCondBoxContainer">
+                        <img id="imgCondFoto" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Conductor">
+                    </div>
+                    <div class="chofer-info">
+                        <div class="chofer-nombre" id="nombreCond">Conductor Asignado</div>
+                        <div class="chofer-auto" id="autoCond">Vehículo en camino</div>
+                    </div>
                 </div>
-                <div class="chofer-info">
-                    <div class="chofer-nombre">Buscando conductor...</div>
-                    <div class="chofer-auto">Asignando unidad cercana</div>
+                <div class="estado-viaje-box" id="estadoViajePasajero">
+                    <span>🚗 El móvil va en camino a buscarte</span>
                 </div>
+                <button class="btn-action btn-cancelar" onclick="cancelarViaje()">Cancelar Viaje ❌</button>
             </div>
-            <div class="estado-viaje-box">
-                <span>⏱️ Tu solicitud está en el centro de despacho...</span>
-            </div>
-            <button class="btn-action btn-cancelar" onclick="cancelarViaje()">Cancelar Viaje ❌</button>
-        </div>
-
-        <!-- PASO 3: CHOFER ASIGNADO / EN VIAJE -->
-        <div id="pasoPrecio" class="hidden">
-            <div class="precio-banner" id="precioMonto">$3240</div>
-            <div class="chofer-card">
-                <div class="chofer-foto-box" id="imgCondBoxContainer">
-                    <img id="imgCondFoto" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Conductor">
-                </div>
-                <div class="chofer-info">
-                    <div class="chofer-nombre" id="nombreCond">Conductor Asignado</div>
-                    <div class="chofer-auto" id="autoCond">Vehículo en camino</div>
-                </div>
-            </div>
-            <div class="estado-viaje-box" id="estadoViajePasajero">
-                <span>🚗 El móvil va en camino a buscarte</span>
-            </div>
-            <button class="btn-action btn-cancelar" onclick="cancelarViaje()">Cancelar Viaje ❌</button>
         </div>
     </div>
 
