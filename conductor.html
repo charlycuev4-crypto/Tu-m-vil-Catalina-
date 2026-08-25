@@ -81,7 +81,20 @@
         .btn-iniciar { background: #8b5cf6; }
         .btn-finalizar { background: #e11d48; }
 
-        .chofer-icon { background: #3b82f6; width: 18px !important; height: 18px !important; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 12px #3b82f6; }
+        /* Estilo actualizado para el marcador del auto del chofer */
+        .chofer-auto-icon {
+            background: #1e293b;
+            width: 38px !important;
+            height: 38px !important;
+            border: 3px solid #38bdf8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
+        }
+
         .pasajero-origen-icon { background: #10b981; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
         .pasajero-destino-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
 
@@ -244,7 +257,15 @@
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
-            markerChofer = L.marker([choferCoords.lat, choferCoords.lng], { icon: L.divIcon({ className: 'chofer-icon' }) }).addTo(mapa);
+            
+            // Icono de auto personalizado para el chofer
+            const iconoAuto = L.divIcon({
+                className: 'chofer-auto-icon',
+                html: '🚗',
+                iconSize: [38, 38],
+                iconAnchor: [19, 19]
+            });
+            markerChofer = L.marker([choferCoords.lat, choferCoords.lng], { icon: iconoAuto }).addTo(mapa);
 
             mapa.on('dragstart', () => {
                 autocentrarMapa = false;
@@ -353,7 +374,6 @@
             document.getElementById('vistaViaje').classList.remove('hidden');
             document.getElementById('panelConductor').classList.add('viaje-entrante');
 
-            // Mostrar botones de decisión y ocultar botón en curso
             document.getElementById('contenedorBotonesPendiente').classList.remove('hidden');
             document.getElementById('btnAccionEnCurso').classList.add('hidden');
 
@@ -416,7 +436,6 @@
                     localStorage.setItem('conductor_estado_flujo', 'aceptado');
                     document.getElementById('panelConductor').classList.remove('viaje-entrante');
                     
-                    // Ocultar botones de decisión y activar botón en curso
                     document.getElementById('contenedorBotonesPendiente').classList.add('hidden');
                     const btnEnCurso = document.getElementById('btnAccionEnCurso');
                     btnEnCurso.classList.remove('hidden');
@@ -424,6 +443,12 @@
                     btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
 
                     document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
+
+                    // Forzar el centrado automático activo al aceptar el viaje
+                    autocentrarMapa = true;
+                    document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
+                    mapa.setView([choferCoords.lat, choferCoords.lng], 17);
+
                 } catch (e) { location.reload(); }
                 return;
             }
@@ -442,6 +467,10 @@
                 document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
                 await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
                 trazarRutaCalles(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
+                
+                // Mantener el centrado activo al iniciar el trayecto hacia el destino
+                autocentrarMapa = true;
+                document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                 return;
             }
             if (estadoFlujo === 'en_viaje') {
