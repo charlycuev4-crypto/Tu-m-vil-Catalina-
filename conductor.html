@@ -96,7 +96,6 @@
             font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         }
 
-        /* Modal de Configuración Inicial del Chofer */
         #modalConfigChofer {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(11, 15, 25, 0.92);
             z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
@@ -117,7 +116,6 @@
 </head>
 <body onclick="forzarHabilitacionAudio()">
 
-    <!-- MODAL DE DATOS DEL CHOFER (CAMPOS LIBRES Y PLACEHOLDERS LIMPIOS) -->
     <div id="modalConfigChofer" class="hidden">
         <div class="config-card">
             <h2>🚗 Configurar Perfil de Chofer</h2>
@@ -479,13 +477,7 @@
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
-                    const { data: viajeCheck, error: errCheck } = await supabaseClient
-                        .from('viajes').select('conductor_nombre, estado').eq('id', viajeActivo.id).single();
-
-                    if (errCheck || !viajeCheck || (viajeCheck.conductor_nombre && viajeCheck.conductor_nombre !== NOMBRE_CHOFER_COMPLETO)) {
-                        throw new Error("El viaje ya fue tomado por otro colega");
-                    }
-
+                    // Actualización directa y forzada para el único chofer del sistema
                     const { error } = await supabaseClient
                         .from('viajes')
                         .update({ 
@@ -493,8 +485,7 @@
                             conductor_auto: AUTO_CHOFER_COMPLETO,
                             conductor_telefono: CHOFER_WHATSAPP
                         })
-                        .eq('id', viajeActivo.id)
-                        .is('conductor_nombre', null);
+                        .eq('id', viajeActivo.id);
 
                     if (error) throw error;
                     
