@@ -80,7 +80,6 @@
         .tipo-btn { background: #0f172a; border: 2px solid #334155; border-radius: 12px; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; color: #94a3b8; }
         .tipo-btn.activo-tipo { border-color: #3b82f6; background: rgba(59,130,246,0.15); color: #fff; }
 
-        /* Ícono del vehículo en movimiento (con Zoom optimizado) */
         .chofer-icon { 
             background: #3b82f6; width: 30px !important; height: 30px !important; 
             border: 3px solid white; border-radius: 50%; box-shadow: 0 0 15px #3b82f6; 
@@ -316,7 +315,6 @@
         let estadoFlujo = 'pendiente'; 
 
         function initMapa() {
-            // Zoom base optimizado 20% más cercano (17.5)
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 17.5);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             
@@ -335,7 +333,6 @@
                     choferCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                     if (markerChofer) markerChofer.setLatLng([choferCoords.lat, choferCoords.lng]);
                     if (autocentrarMapa) {
-                        // Zoom 20% más cercano (17.5 en espera, 18.5 con viaje activo)
                         let nivelZoom = (estadoFlujo !== 'pendiente' && viajeActivo) ? 18.5 : 17.5;
                         mapa.setView([choferCoords.lat, choferCoords.lng], nivelZoom);
                         document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
@@ -368,7 +365,6 @@
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, (payload) => {
                     if (payload.new.estado === 'pendiente' && !viajeActivo && estaConectado) {
                         let categoriaViaje = payload.new.categoria || 'auto';
-                        // Si la categoría coincide, tomamos el viaje de inmediato
                         if (categoriaViaje === TIPO_VEHICULO_CHOFER) {
                             montarViajeEntrante(payload.new);
                         }
@@ -458,10 +454,12 @@
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
+                    // AQUÍ ESTÁ EL CAMBIO CLAVE: Agregamos el estado 'aceptado'
                     await supabaseClient.from('viajes').update({ 
                         conductor_nombre: NOMBRE_CHOFER, 
                         conductor_auto: AUTO_CHOFER,
-                        conductor_foto: "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" 
+                        conductor_foto: "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg",
+                        estado: 'aceptado' // <--- ESTO DESBLOQUEA AL PASAJERO AL INSTANTE
                     }).eq('id', viajeActivo.id);
 
                     estadoFlujo = 'aceptado';
