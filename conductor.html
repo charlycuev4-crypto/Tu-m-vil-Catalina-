@@ -26,6 +26,9 @@
         .status-badge.activo { background: #059669; color: #ffffff; border-color: #10b981; }
         .status-badge.inactivo { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
 
+        /* Selector de vehículo (Auto / Moto) */
+        .vehiculo-selector-badge { background: #1e293b; color: #f59e0b; padding: 8px 14px; border-radius: 30px; font-weight: 700; font-size: 0.8rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #d97706; cursor: pointer; user-select: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+
         .gps-btn { width: 44px; height: 44px; border-radius: 50%; background: #1e293b; color: white; display: flex; align-items: center; justify-content: center; border: 1px solid #334155; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto; }
         .gps-btn.seguimiento-on { background: #059669; border-color: #10b981; animation: pulsoGps 2s infinite; }
 
@@ -36,7 +39,7 @@
         }
 
         .test-audio-btn {
-            background: #ea580c; color: white; border: none; padding: 8px 14px;
+            background: #ea580c; color: white; border: none; padding: 6px 12px;
             border-radius: 20px; font-weight: bold; font-size: 0.75rem; cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; gap: 6px;
             border: 1px solid #c2410c; width: fit-content;
@@ -59,7 +62,6 @@
         
         .viaje-pasajero { font-size: 1rem; font-weight: 700; color: #fff; }
         
-        /* Botón de WhatsApp integrado */
         .whatsapp-btn {
             background: #25d366; color: white; border: none; padding: 4px 10px;
             border-radius: 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
@@ -98,6 +100,7 @@
     <div class="header-float">
         <div class="header-left-col">
             <div class="status-badge activo" id="txtEstadoChofer" onclick="conmutarEstadoConexion()">Móvil en Línea 🟢</div>
+            <div class="vehiculo-selector-badge" id="txtVehiculoActual" onclick="conmutarVehiculoTrabajo()">🚗 Auto (Carlos)</div>
             <button class="test-audio-btn" id="btnTestSonido" onclick="probarCampanaManual(event)">🔊 Probar Timbre</button>
         </div>
         <div style="display: flex; gap: 8px; pointer-events: auto;">
@@ -134,8 +137,8 @@
                 <div class="input-group">
                     <div class="input-row">
                         <div class="dot dot-green"></div>
-                        Distancia Estimada: <span id="lblDistancia">-</span> km
-                        <b id="lblCategoriaViaje" style="font-size:0.75rem; background:#475569; padding:2px 6px; border-radius:4px; margin-left:auto; display:none;"></b>
+                        Distancia: <span id="lblDistancia">-</span> km 
+                        <b id="lblCategoriaViaje" style="font-size:0.75rem; background:#d97706; padding:2px 8px; border-radius:4px; margin-left:auto; color:white;">Auto</b>
                     </div>
                 </div>
             </div>
@@ -149,17 +152,34 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let NOMBRE_CHOFER = localStorage.getItem('cfg_nombre_chofer');
-        let AUTO_CHOFER = localStorage.getItem('cfg_auto_chofer');
+        let VEHICULO_ACTIVO = localStorage.getItem('cfg_vehiculo_activo') || 'auto'; // 'auto' o 'moto'
 
-        if (!NOMBRE_CHOFER || !AUTO_CHOFER) {
+        if (!NOMBRE_CHOFER) {
             NOMBRE_CHOFER = prompt("Configuración de Conductor:\nIngresa tu Nombre y Apellido:", "Carlos Cueva");
             if (!NOMBRE_CHOFER) NOMBRE_CHOFER = "Conductor Anónimo";
-            
-            AUTO_CHOFER = prompt("Ingresa tu Modelo de Auto y Patente:\nEj: Ford Fiesta Max (Patente: JCP 478)", "Ford Fiesta Max (Patente: JCP 478)");
-            if (!AUTO_CHOFER) AUTO_CHOFER = "Auto Genérico";
-
             localStorage.setItem('cfg_nombre_chofer', NOMBRE_CHOFER);
-            localStorage.setItem('cfg_auto_chofer', AUTO_CHOFER);
+        }
+
+        function actualizarUI Vehiculo() {
+            const badgeVehiculo = document.getElementById('txtVehiculoActual');
+            if (VEHICULO_ACTIVO === 'auto') {
+                badgeVehiculo.textContent = "🚗 Auto (Carlos)";
+                badgeVehiculo.style.borderColor = "#d97706";
+            } else {
+                badgeVehiculo.textContent = "🏍️ Moto (Hijo)";
+                badgeVehiculo.style.borderColor = "#38bdf8";
+            }
+            localStorage.setItem('cfg_vehiculo_activo', VEHICULO_ACTIVO);
+        }
+
+        function conmutarVehiculoTrabajo() {
+            if (viajeIdActivoEnCurso()) return; // No cambiar de vehículo si hay un viaje en curso
+            VEHICULO_ACTIVO = (VEHICULO_ACTIVO === 'auto') ? 'moto' : 'auto';
+            actualizarUI Vehiculo();
+        }
+
+        function viajeIdActivoEnCurso() {
+            return viajeActivo !== null;
         }
 
         let canalSupabase = null;
@@ -290,7 +310,11 @@
             canalSupabase
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, (payload) => {
                     if (payload.new.estado === 'pendiente' && !viajeActivo && estaConectado) {
-                        montarViajeEntrante(payload.new);
+                        // FILTRO DE VEHÍCULO: Solo suena si el viaje coincide con el vehículo seleccionado (auto o moto)
+                        let categoriaViaje = (payload.new.categoria || 'auto').toLowerCase();
+                        if (categoriaViaje === VEHICULO_ACTIVO) {
+                            montarViajeEntrante(payload.new);
+                        }
                     }
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes' }, (payload) => {
@@ -341,7 +365,6 @@
                 document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
             }
 
-            // Configurar WhatsApp si existe el número
             if (viaje.pasajero_telefono) {
                 let telLimpio = viaje.pasajero_telefono.replace(/\D/g, '');
                 const btnWp = document.getElementById('linkWhatsapp');
@@ -350,7 +373,8 @@
             }
 
             const badgeCat = document.getElementById('lblCategoriaViaje');
-            if (viaje.categoria) { badgeCat.textContent = viaje.categoria.toUpperCase(); badgeCat.style.display = 'inline-block'; }
+            let catNombre = (viaje.categoria || 'auto').toUpperCase();
+            badgeCat.textContent = catNombre;
 
             if (markerOrigen) mapa.removeLayer(markerOrigen);
             if (markerDestino) mapa.removeLayer(markerDestino);
@@ -364,10 +388,12 @@
 
         async function procesarLojicaViaje() {
             const btn = document.getElementById('btnAccionPrincipal');
+            let infoVehiculoTexto = (VEHICULO_ACTIVO === 'auto') ? `Auto (${NOMBRE_CHOFER})` : `Moto (${NOMBRE_CHOFER}) info hijo`;
+
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
-                    const { error } = await supabaseClient.from('viajes').update({ conductor_nombre: NOMBRE_CHOFER, conductor_auto: AUTO_CHOFER }).eq('id', viajeActivo.id);
+                    const { error } = await supabaseClient.from('viajes').update({ conductor_nombre: infoVehiculoTexto, conductor_auto: VEHICULO_ACTIVO }).eq('id', viajeActivo.id);
                     if (error) throw error;
                     
                     estadoFlujo = 'aceptado';
@@ -422,7 +448,7 @@
                 if (viaje.pasajero_telefono) {
                     let telLimpio = viaje.pasajero_telefono.replace(/\D/g, '');
                     const btnWp = document.getElementById('linkWhatsapp');
-                    btnWp.href = `https://wa.me/549${telLimpio}?text=Hola%20${encodeURIComponent(viaje.pasajero_nombre)},%20soy%20tu%20chofer%20de%20Tu%20Móvil.`;
+                    btnWp.href = `https://wa.me/549${telLimpio}?text=Hola%20${encodeURIComponent(viaje.pasajero_nombre)},%20soy%20tu%20chofer.`;
                     btnWp.classList.remove('hidden');
                 }
 
@@ -468,6 +494,7 @@
         });
 
         window.addEventListener('DOMContentLoaded', () => {
+            actualizarUI Vehiculo();
             initMapa(); escucharNuevosViajes(); solicitarWakeLock(); iniciarRastreoGpsContinuo(); 
             setTimeout(async () => { await verificarViajeActivoConductor(); }, 1000);
         });
