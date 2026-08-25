@@ -414,7 +414,9 @@
                     document.getElementById('autoCond').textContent = viaje.conductor_auto || "Vehículo en camino";
                     if(viaje.conductor_foto) { document.getElementById('imgCondFoto').src = viaje.conductor_foto; }
                     
-                    if(viaje.estado === 'aceptado' || viaje.estado === 'llegado') {
+                    if(viaje.estado === 'aceptado') {
+                        document.getElementById('estadoViajePasajero').innerHTML = "El móvil aceptó el viaje y va en camino 🚗";
+                    } else if(viaje.estado === 'llegado') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
                     } else if (viaje.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
@@ -439,31 +441,36 @@
                 (payload) => {
                     const de = payload.new;
                     
-                    if (de.conductor_nombre) {
+                    // Sincronización robusta: si hay datos de conductor o cambio de estado clave, saltamos al panel activo
+                    if (de.conductor_nombre || de.estado === 'aceptado' || de.estado === 'llegado' || de.estado === 'en_viaje') {
                         document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
-                        document.getElementById('nombreCond').textContent = de.conductor_nombre;
+                        document.getElementById('nombreCond').textContent = de.conductor_nombre || "Conductor Asignado";
                         document.getElementById('autoCond').textContent = de.conductor_auto || "Vehículo en camino";
                         if(de.conductor_foto) { document.getElementById('imgCondFoto').src = de.conductor_foto; }
                         
-                        if (de.estado === 'pendiente' || de.estado === 'aceptado' || de.estado === 'en_viaje') {
-                            document.getElementById('estadoViajePasajero').innerHTML = "El móvil va en camino 🚗";
-                            mostrarPaso('pasoPrecio');
-                        }
+                        mostrarPaso('pasoPrecio');
                     }
 
-                    if (de.estado === 'aceptado' || de.estado === 'llegado') {
+                    if (de.estado === 'aceptado') {
+                        document.getElementById('estadoViajePasajero').innerHTML = "El móvil aceptó el viaje y va en camino 🚗";
+                    }
+
+                    if (de.estado === 'llegado') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
                         mostrarMsg('¡Tu móvil está en la puerta!', 'success');
                         hablarAnuncioPasajero("Tu móvil ya llegó a la puerta.");
                     }
+                    
                     if (de.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
                     }
+                    
                     if (de.estado === 'cancelado') { 
                         mostrarMsg('Viaje cancelado.', 'error'); 
                         limpiarMemoriaPasajero(); 
                         setTimeout(() => location.reload(), 2000); 
                     }
+                    
                     if (de.estado === 'finalizado') { 
                         mostrarMsg('¡Viaje completado!', 'success'); 
                         limpiarMemoriaPasajero(); 
@@ -541,7 +548,6 @@
                 subTotal = subTotal * RECARGO_NOCTURNO; 
             }
 
-            // Aplicar descuento de moto si corresponde (40% menos)
             if (categoriaSeleccionada === 'moto') {
                 subTotal = subTotal * 0.60;
             }
