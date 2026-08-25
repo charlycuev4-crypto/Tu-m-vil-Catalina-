@@ -81,7 +81,6 @@
         .btn-iniciar { background: #8b5cf6; }
         .btn-finalizar { background: #e11d48; }
 
-        /* Estilo actualizado para el marcador del auto del chofer */
         .chofer-auto-icon {
             background: #1e293b;
             width: 38px !important;
@@ -98,12 +97,62 @@
         .pasajero-origen-icon { background: #10b981; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
         .pasajero-destino-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
 
+        /* Estilos para el Modal de Registro de Conductor */
+        #modalConfigChofer {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.95);
+            z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .config-card {
+            background: #1e293b; border: 1px solid #334155; border-radius: 20px; width: 100%; max-width: 400px;
+            padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); color: #f1f5f9; max-height: 90vh; overflow-y: auto;
+        }
+        .config-card h2 { font-size: 1.25rem; margin-bottom: 6px; color: #38bdf8; text-align: center; }
+        .config-card p { font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px; text-align: center; }
+        .config-field { margin-bottom: 12px; }
+        .config-field label { display: block; font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; }
+        .config-field input {
+            width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px 14px;
+            color: white; font-size: 0.95rem; outline: none;
+        }
+        .config-field input:focus { border-color: #38bdf8; }
+
         .hidden { display: none !important; }
         .msg { padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.8rem; text-align: center; display: none; font-weight: 600; }
         .msg.show { display: block; }
     </style>
 </head>
 <body onclick="forzarHabilitacionAudio()">
+
+    <!-- MODAL DE CONFIGURACIÓN INICIAL DEL CONDUCTOR -->
+    <div id="modalConfigChofer" class="hidden">
+        <div class="config-card">
+            <h2>🚗 Registro de Conductor</h2>
+            <p>Ingresá tus datos para empezar a recibir viajes en Tu Móvil.</p>
+            <form id="formConfigChofer" onsubmit="guardarConfigChofer(event)">
+                <div class="config-field">
+                    <label>Nombre y Apellido</label>
+                    <input type="text" id="inpNombre" placeholder="Ej: Carlos Cueva" required>
+                </div>
+                <div class="config-field">
+                    <label>Número de WhatsApp</label>
+                    <input type="tel" id="inpTelefono" placeholder="Ej: 1123456789" required>
+                </div>
+                <div class="config-field">
+                    <label>Marca y Modelo del Auto</label>
+                    <input type="text" id="inpModelo" placeholder="Ej: Ford Fiesta Max" required>
+                </div>
+                <div class="config-field">
+                    <label>Color del Auto</label>
+                    <input type="text" id="inpColor" placeholder="Ej: Gris Plata" required>
+                </div>
+                <div class="config-field">
+                    <label>Patente / Dominio</label>
+                    <input type="text" id="inpPatente" placeholder="Ej: JCP 478" required>
+                </div>
+                <button type="submit" class="btn-action btn-aceptar" style="margin-top: 10px;">Guardar y Empezar ✅</button>
+            </form>
+        </div>
+    </div>
 
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
@@ -168,8 +217,9 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "Carlos Cueva";
-        let AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "Ford Fiesta Max") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "JCP 478") + ")";
+        // Variables del Chofer cargadas de localStorage
+        let NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "";
+        let AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " - " + (localStorage.getItem('cfg_auto_color') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
 
         let canalSupabase = null;
         let estaConectado = true; 
@@ -179,6 +229,33 @@
         
         let audioCtx = null;
         let intervaloCampana = null;
+
+        function verificarRegistroChofer() {
+            if (!localStorage.getItem('cfg_auto_chofer') || !localStorage.getItem('cfg_auto_patente')) {
+                document.getElementById('modalConfigChofer').classList.remove('hidden');
+            }
+        }
+
+        function guardarConfigChofer(e) {
+            e.preventDefault();
+            const nombre = document.getElementById('inpNombre').value.trim();
+            const telefono = document.getElementById('inpTelefono').value.trim();
+            const modelo = document.getElementById('inpModelo').value.trim();
+            const color = document.getElementById('inpColor').value.trim();
+            const patente = document.getElementById('inpPatente').value.trim();
+
+            localStorage.setItem('cfg_auto_chofer', nombre);
+            localStorage.setItem('cfg_auto_telefono', telefono);
+            localStorage.setItem('cfg_auto_modelo', modelo);
+            localStorage.setItem('cfg_auto_color', color);
+            localStorage.setItem('cfg_auto_patente', patente);
+
+            NOMBRE_CHOFER = nombre;
+            AUTO_CHOFER = `${modelo} - ${color} (Patente: ${patente})`;
+
+            document.getElementById('modalConfigChofer').classList.add('hidden');
+            location.reload();
+        }
 
         function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
             const R = 6371; 
@@ -258,7 +335,6 @@
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             
-            // Icono de auto personalizado para el chofer
             const iconoAuto = L.divIcon({
                 className: 'chofer-auto-icon',
                 html: '🚗',
@@ -326,11 +402,7 @@
                             payload.new.origen_lng
                         );
 
-                        if (distanciaAlViaje > 5) {
-                            console.log(`Viaje descartado por distancia: ${distanciaAlViaje.toFixed(1)} km`);
-                            return;
-                        }
-
+                        if (distanciaAlViaje > 5) return;
                         montarViajeEntrante(payload.new);
                     }
                 })
@@ -428,6 +500,7 @@
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
+                    // Actualiza en Supabase asignando nombre y auto del chofer registrado
                     const { error } = await supabaseClient.from('viajes').update({ conductor_nombre: NOMBRE_CHOFER, conductor_auto: AUTO_CHOFER }).eq('id', viajeActivo.id);
                     if (error) throw error;
                     
@@ -444,7 +517,6 @@
 
                     document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
 
-                    // Forzar el centrado automático activo al aceptar el viaje
                     autocentrarMapa = true;
                     document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                     mapa.setView([choferCoords.lat, choferCoords.lng], 17);
@@ -468,7 +540,6 @@
                 await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
                 trazarRutaCalles(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
                 
-                // Mantener el centrado activo al iniciar el trayecto hacia el destino
                 autocentrarMapa = true;
                 document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                 return;
@@ -552,6 +623,7 @@
         });
 
         window.addEventListener('DOMContentLoaded', () => {
+            verificarRegistroChofer();
             initMapa(); escucharNuevosViajes(); solicitarWakeLock(); iniciarRastreoGpsContinuo(); 
             setTimeout(async () => { await verificarViajeActivoConductor(); }, 1000);
         });
