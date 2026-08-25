@@ -441,7 +441,12 @@
             if (subViaje) supabaseClient.removeChannel(subViaje);
             subViaje = supabaseClient
                 .channel('viaje-' + id)
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes', filter: 'id=eq.' + id }, 
+                .on('postgres_changes', { 
+                    event: 'UPDATE', 
+                    schema: 'public', 
+                    table: 'viajes', 
+                    filter: 'id=eq.' + id 
+                }, 
                 (payload) => {
                     const de = payload.new;
                     
@@ -450,7 +455,10 @@
                         document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
                         document.getElementById('nombreCond').textContent = de.conductor_nombre || "Conductor Asignado";
                         document.getElementById('autoCond').textContent = de.conductor_auto || "Vehículo en camino";
-                        if(de.conductor_foto) { document.getElementById('imgCondFoto').src = de.conductor_foto; }
+                        
+                        if(de.conductor_foto) { 
+                            document.getElementById('imgCondFoto').src = de.conductor_foto; 
+                        }
                         
                         mostrarPaso('pasoPrecio');
                     }
