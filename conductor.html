@@ -96,7 +96,7 @@
             font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         }
 
-        /* Modal de Configuración Inicial del Chofer (Nombre, Apellido, WhatsApp, Auto, Patente) */
+        /* Modal de Configuración Inicial del Chofer */
         #modalConfigChofer {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(11, 15, 25, 0.92);
             z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
@@ -106,7 +106,8 @@
         .config-card p { font-size: 0.8rem; color: #94a3b8; margin-bottom: 16px; text-align: center; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 0.75rem; color: #cbd5e1; margin-bottom: 4px; font-weight: 600; }
-        .form-group input, .form-group select { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px 12px; color: white; font-size: 0.9rem; }
+        .form-group input { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px 12px; color: white; font-size: 0.9rem; }
+        .form-group input::placeholder { color: #475569; opacity: 1; }
         .btn-guardar-cfg { width: 100%; background: #059669; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 1rem; margin-top: 10px; cursor: pointer; }
 
         .hidden { display: none !important; }
@@ -116,37 +117,34 @@
 </head>
 <body onclick="forzarHabilitacionAudio()">
 
-    <!-- MODAL DE DATOS DEL CHOFER (SIN SELFIE, TODO LIMPIO) -->
+    <!-- MODAL DE DATOS DEL CHOFER (CAMPOS LIBRES Y PLACEHOLDERS LIMPIOS) -->
     <div id="modalConfigChofer" class="hidden">
         <div class="config-card">
             <h2>🚗 Configurar Perfil de Chofer</h2>
             <p>Ingresá tus datos para recibir viajes correctamente.</p>
             <div class="form-group">
                 <label>Nombre:</label>
-                <input type="text" id="cfgNombre" placeholder="Ej: Carlos">
+                <input type="text" id="cfgNombre" placeholder="Ej: Juan">
             </div>
             <div class="form-group">
                 <label>Apellido:</label>
-                <input type="text" id="cfgApellido" placeholder="Ej: Cueva">
+                <input type="text" id="cfgApellido" placeholder="Ej: Pérez">
             </div>
             <div class="form-group">
                 <label>WhatsApp (con característica):</label>
-                <input type="tel" id="cfgWhatsapp" placeholder="Ej: 1123456789">
+                <input type="tel" id="cfgWhatsapp" placeholder="Ej: 1198765432">
             </div>
             <div class="form-group">
-                <label>Tipo de Vehículo:</label>
-                <select id="cfgModeloAuto">
-                    <option value="Auto Estándar">Auto Estándar (Ford Fiesta, Chevrolet, etc.)</option>
-                    <option value="Moto">Moto</option>
-                </select>
+                <label>Auto / Modelo:</label>
+                <input type="text" id="cfgModeloAuto" placeholder="Ej: Fiat Cronos / Corsa">
             </div>
             <div class="form-group">
                 <label>Color del Auto:</label>
-                <input type="text" id="cfgColorAuto" placeholder="Ej: Gris Plata">
+                <input type="text" id="cfgColorAuto" placeholder="Ej: Blanco / Gris Oscuro">
             </div>
             <div class="form-group">
                 <label>Patente:</label>
-                <input type="text" id="cfgPatente" placeholder="Ej: JCP 478">
+                <input type="text" id="cfgPatente" placeholder="Ej: AB 123 CD">
             </div>
             <button class="btn-guardar-cfg" onclick="guardarConfigChofer()">Guardar y Comenzar 🟢</button>
         </div>
@@ -215,15 +213,14 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Variables de perfil del chofer (sin selfies)
         let CHOFER_NOMBRE = localStorage.getItem('cfg_nombre') || "";
         let CHOFER_APELLIDO = localStorage.getItem('cfg_apellido') || "";
         let CHOFER_WHATSAPP = localStorage.getItem('cfg_whatsapp') || "";
-        let CHOFER_AUTO = localStorage.getItem('cfg_modelo_auto') || "Auto Estándar";
+        let CHOFER_AUTO = localStorage.getItem('cfg_modelo_auto') || "";
         let CHOFER_COLOR = localStorage.getItem('cfg_color_auto') || "";
         let CHOFER_PATENTE = localStorage.getItem('cfg_patente') || "";
 
-        let NOMBRE_CHOFER_COMPLETO = `${CHOFER_NOMBRE} ${CHOFER_APELLIDO}`.trim() || "Carlos Cueva";
+        let NOMBRE_CHOFER_COMPLETO = `${CHOFER_NOMBRE} ${CHOFER_APELLIDO}`.trim();
         let AUTO_CHOFER_COMPLETO = `${CHOFER_AUTO} (${CHOFER_COLOR} - Patente: ${CHOFER_PATENTE})`;
 
         let canalSupabase = null;
@@ -244,12 +241,12 @@
             const nom = document.getElementById('cfgNombre').value.trim();
             const ape = document.getElementById('cfgApellido').value.trim();
             const wsp = document.getElementById('cfgWhatsapp').value.trim();
-            const auto = document.getElementById('cfgModeloAuto').value;
+            const auto = document.getElementById('cfgModeloAuto').value.trim();
             const color = document.getElementById('cfgColorAuto').value.trim();
             const patente = document.getElementById('cfgPatente').value.trim();
 
-            if (!nom || !ape || !patente) {
-                alert("Por favor completá nombre, apellido y patente.");
+            if (!nom || !ape || !auto || !patente) {
+                alert("Por favor completá nombre, apellido, modelo de auto y patente.");
                 return;
             }
 
