@@ -74,7 +74,7 @@
         /* PANEL INFERIOR COMPACTO EN TONO BEIGE CÁLIDO MÁS PROFUNDO */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
-            background: #f0ece1; /* Tono beige cálido más profundo y elegante */
+            background: #f0ece1; 
             border-radius: 24px 24px 0 0; 
             border-top: 1px solid #dcd3c1; 
             box-shadow: 0 -8px 25px rgba(0,0,0,0.15); 
@@ -99,7 +99,9 @@
         .precio-banner {
             background: #eaf5eb; border: 1px solid #c3e6c5; border-radius: 12px; padding: 8px 10px;
             text-align: center; margin-bottom: 8px; font-size: 1.1rem; font-weight: 800; color: #059669;
+            display: none;
         }
+        .precio-banner.activo { display: block; }
 
         .chofer-card {
             display: flex; align-items: center; gap: 10px; background: #ffffff; border: 1px solid #dcd3c1;
@@ -193,7 +195,7 @@
             <!-- PASO 1: SELECCIONAR DESTINO Y PEDIR -->
             <div id="pasoDatos">
                 <div class="precio-banner" id="precioEstimadoBox">
-                    Total a pagar: <span id="txtPrecioLive">$3240</span>
+                    Tarifa Estimada: <span id="txtPrecioLive">$0</span> (<span id="txtKmLive">0</span> km)
                     <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +30% Recargo Nocturno Activo</div>
                 </div>
 
@@ -230,7 +232,7 @@
 
             <!-- PASO 3: CHOFER ASIGNADO / EN VIAJE -->
             <div id="pasoPrecio" class="hidden">
-                <div class="precio-banner" id="precioMonto">Total a pagar: $3240</div>
+                <div class="precio-banner activo" id="precioMonto">Total a pagar: $0</div>
                 <div class="chofer-card">
                     <div class="chofer-foto-box" id="imgCondBoxContainer">
                         <img id="imgCondFoto" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Conductor">
@@ -259,7 +261,7 @@
         const UBICACION_DEFAULT = [-34.54291, -58.71212];
 
         let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
-        let precioCalculado = 3240, distanciaKm = 0, modoDestinoManual = false;
+        let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
         let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
 
@@ -485,7 +487,7 @@
                 (pos) => { 
                     document.getElementById('gpsBtn').classList.remove('buscando'); 
                     marcarOrigen(pos.coords.latitude, pos.coords.longitude, "Mi ubicación actual"); 
-                    mapa.setView([pos.coords.latitude, pos.coords.longitude], 16); /* Zoom optimizado para mayor acercamiento GPS */
+                    mapa.setView([pos.coords.latitude, pos.coords.longitude], 16); 
                 },
                 () => { 
                     document.getElementById('gpsBtn').classList.remove('buscando'); 
@@ -515,8 +517,9 @@
 
                     precioCalculado = Math.round(subTotal);
                     document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado;
+                    document.getElementById('txtKmLive').textContent = distanciaKm;
+                    document.getElementById('precioEstimadoBox').classList.add('activo');
                     
-                    // Ajuste con zoom dinámico mejorado para visualizar óptimamente la ruta completa
                     mapa.fitBounds(rutaTrazada.getBounds(), { padding: [50, 50], maxZoom: 16.5 });
                 }
             } catch (e) {}
