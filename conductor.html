@@ -165,7 +165,7 @@
         <div class="panel-handle"></div>
         <div class="msg" id="msgChofer"></div>
 
-        <div id="alerta-conflicto">⚠️ ¡Ups! Este viaje ya fue tomado por otro colega. Buscando nuevos pedidos...</div>
+        <div id="alerta-conflicto">⚠️ ¡Ups! Error de conexión con la base de datos. Reintentando...</div>
 
         <div id="vistaEspera">
             <div style="text-align: center; padding: 20px 0;">
@@ -467,18 +467,23 @@
             mostrarMsg('Viaje rechazado. Buscando nuevos pasajeros...', 'success');
         }
 
-        function mostrarAvisoConflicto() {
-            const alerta = document.getElementById('alerta-conflicto');
-            alerta.style.display = 'block';
-            setTimeout(() => { alerta.style.display = 'none'; }, 4500);
-        }
-
         async function procesarLojicaViaje() {
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
-                try {
-                    // Actualización directa y forzada para el único chofer del sistema
-                    const { error } = await supabaseClient
+                
+                // Intentamos actualizar sin filtros estrictos de estado previo para evitar rechazos por retardos
+                let { error } = await supabaseClient
+                    .from('viajes')
+                    .update({ 
+                        conductor_nombre: NOMBRE_CHOFER_COMPLETO, 
+                        conductor_auto: AUTO_CHOFER_COMPLETO,
+                        conductor_telefono: CHOFER_WHATSAPP
+                    })
+                    .eq('id', viajeActivo.id);
+
+                // Si hay error, intentamos un segundo intento de respaldo directo por ID
+                if (error) {
+                    let segundoIntento = await supabaseClient
                         .from('viajes')
                         .update({ 
                             conductor_nombre: NOMBRE_CHOFER_COMPLETO, 
@@ -486,39 +491,30 @@
                             conductor_telefono: CHOFER_WHATSAPP
                         })
                         .eq('id', viajeActivo.id);
-
-                    if (error) throw error;
                     
-                    estadoFlujo = 'aceptado';
-                    localStorage.setItem('conductor_viaje_id', viajeActivo.id);
-                    localStorage.setItem('conductor_estado_flujo', 'aceptado');
-                    document.getElementById('panelConductor').classList.remove('viaje-entrante');
-                    
-                    document.getElementById('contenedorBotonesPendiente').classList.add('hidden');
-                    const btnEnCurso = document.getElementById('btnAccionEnCurso');
-                    btnEnCurso.classList.remove('hidden');
-                    btnEnCurso.className = "btn-action btn-llegué"; 
-                    btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
-                    document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
-
-                    autocentrarMapa = true;
-                    document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
-                    mapa.setView([choferCoords.lat, choferCoords.lng], 17);
-
-                } catch (e) {
-                    detenerSirenaAlerta();
-                    mostrarAvisoConflicto();
-                    if (markerOrigen) { mapa.removeLayer(markerOrigen); markerOrigen = null; }
-                    if (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
-                    if (rutaTrazada) { mapa.removeLayer(rutaTrazada); rutaTrazada = null; }
-                    viajeActivo = null; estadoFlujo = 'pendiente';
-                    limpiarMemoriaConductor();
-
-                    document.getElementById('vistaViaje').classList.add('hidden');
-                    document.getElementById('vistaEspera').classList.remove('hidden');
-                    document.getElementById('panelConductor').classList.remove('viaje-entrante');
-                    document.getElementById('linkWhatsapp').classList.add('hidden');
+                    if (segundoIntento.error) {
+                        // Si persiste, es muy probable que sea una regla de seguridad RLS en Supabase
+                        console.error("Error de Supabase:", segundoIntento.error);
+                        alert("Error de permisos en Supabase (RLS). Desactivá RLS en la tabla viajes o revisá las políticas.");
+                        return;
+                    }
                 }
+                
+                estadoFlujo = 'aceptado';
+                localStorage.setItem('conductor_viaje_id', viajeActivo.id);
+                localStorage.setItem('conductor_estado_flujo', 'aceptado');
+                document.getElementById('panelConductor').classList.remove('viaje-entrante');
+                
+                document.getElementById('contenedorBotonesPendiente').classList.add('hidden');
+                const btnEnCurso = document.getElementById('btnAccionEnCurso');
+                btnEnCurso.classList.remove('hidden');
+                btnEnCurso.className = "btn-action btn-llegué"; 
+                btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
+                document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
+
+                autocentrarMapa = true;
+                document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
+                mapa.setView([choferCoords.lat, choferCoords.lng], 17);
                 return;
             }
 
