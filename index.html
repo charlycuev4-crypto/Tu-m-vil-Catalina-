@@ -158,7 +158,6 @@
 
         <!-- PASO 1: PEDIDO -->
         <div id="pasoDatos">
-            <!-- SELECTOR DE VEHICULO (AUTO / MOTO) -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
                 <div id="cardAuto" onclick="cambiarCategoria('auto')" style="background: #f1f5f9; border: 2px solid #0f172a; border-radius: 14px; padding: 10px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px;">
                     <span style="font-size: 1.2rem;">🚕</span>
@@ -240,7 +239,7 @@
         let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
         let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
-        let categoriaSeleccionada = 'auto'; // 'auto' o 'moto'
+        let categoriaSeleccionada = 'auto'; 
 
         function hablarAnuncioPasajero(texto) {
             if ('speechSynthesis' in window) {
@@ -414,15 +413,7 @@
                     document.getElementById('autoCond').textContent = viaje.conductor_auto || "Vehículo en camino";
                     if(viaje.conductor_foto) { document.getElementById('imgCondFoto').src = viaje.conductor_foto; }
                     
-                    if(viaje.estado === 'aceptado') {
-                        document.getElementById('estadoViajePasajero').innerHTML = "El móvil aceptó el viaje y va en camino 🚗";
-                    } else if(viaje.estado === 'llegado') {
-                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
-                    } else if (viaje.estado === 'en_viaje') {
-                        document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
-                    } else {
-                        document.getElementById('estadoViajePasajero').innerHTML = "El móvil va en camino 🚗";
-                    }
+                    actualizarTextoEstadoPasajero(viaje.estado);
                     mostrarPaso('pasoPrecio');
                 }
                 iniciarEscuchaRealtime(viajeId);
@@ -433,6 +424,19 @@
             localStorage.removeItem('pasajero_viaje_id'); 
         }
 
+        function actualizarTextoEstadoPasajero(estado) {
+            const estadoDiv = document.getElementById('estadoViajePasajero');
+            if (estado === 'aceptado') {
+                estadoDiv.innerHTML = "El móvil aceptó el viaje y va en camino 🚗";
+            } else if (estado === 'llegado') {
+                estadoDiv.innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
+            } else if (estado === 'en_viaje') {
+                estadoDiv.innerHTML = "🧭 Viajando seguro hacia tu destino...";
+            } else {
+                estadoDiv.innerHTML = "El móvil va en camino 🚗";
+            }
+        }
+
         function iniciarEscuchaRealtime(id) {
             if (subViaje) supabaseClient.removeChannel(subViaje);
             subViaje = supabaseClient
@@ -441,7 +445,7 @@
                 (payload) => {
                     const de = payload.new;
                     
-                    // Sincronización robusta: si hay datos de conductor o cambio de estado clave, saltamos al panel activo
+                    // Si el chofer ya aceptó o actualizó datos, saltamos automáticamente al panel de precio/chofer
                     if (de.conductor_nombre || de.estado === 'aceptado' || de.estado === 'llegado' || de.estado === 'en_viaje') {
                         document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
                         document.getElementById('nombreCond').textContent = de.conductor_nombre || "Conductor Asignado";
@@ -451,18 +455,20 @@
                         mostrarPaso('pasoPrecio');
                     }
 
+                    // Manejo sincronizado de los estados exactos enviados por el chofer
                     if (de.estado === 'aceptado') {
-                        document.getElementById('estadoViajePasajero').innerHTML = "El móvil aceptó el viaje y va en camino 🚗";
+                        actualizarTextoEstadoPasajero('aceptado');
                     }
-
+                    
                     if (de.estado === 'llegado') {
-                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
+                        actualizarTextoEstadoPasajero('llegado');
                         mostrarMsg('¡Tu móvil está en la puerta!', 'success');
-                        hablarAnuncioPasajero("Tu móvil ya llegó a la puerta.");
+                        hablarAnuncioPasajero("Tu móvil ya llegó a la puerta de tu casa.");
                     }
                     
                     if (de.estado === 'en_viaje') {
-                        document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
+                        actualizarTextoEstadoPasajero('en_viaje');
+                        hablarAnuncioPasajero("Iniciando tu camino al destino.");
                     }
                     
                     if (de.estado === 'cancelado') { 
