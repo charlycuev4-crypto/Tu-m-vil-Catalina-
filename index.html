@@ -166,7 +166,7 @@
                 <div class="driver-info-box">
                     <h3 style="color: #475569;">Tu Móvil Las Catalinas</h3>
                     <p id="txtEstructuraTarifa">Base $3.000 + $400 x Kilómetro</p>
-                    <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +50% Recargo Nocturno Activo</div>
+                    <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +30% Recargo Nocturno Activo</div>
                 </div>
             </div>
 
@@ -218,9 +218,10 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Tarifas corregidas: Base $3000 y $400 por kilómetro
+        // Tarifas: Base $3000 y $400 por kilómetro (Recargo nocturno 30%)
         const TARIFA_BASE = 3000;
         const TARIFA_KM = 400;
+        const RECARGO_NOCTURNO = 1.30; // 30% de recargo
         const UBICACION_DEFAULT = [-34.54291, -58.71212]; // Resguardo inicial por si el GPS tarda
 
         let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
@@ -251,7 +252,7 @@
             
             if(esHorarioNocturno()) {
                 document.getElementById('badgeNocturnoAviso').classList.remove('hidden');
-                document.getElementById('txtEstructuraTarifa').innerHTML = "Base $3.000 + $400 x Km <br><b>(Tarifa nocturna aplicada)</b>";
+                document.getElementById('txtEstructuraTarifa').innerHTML = "Base $3.000 + $400 x Km <br><b>(Tarifa nocturna 30% aplicada)</b>";
             }
         }
 
@@ -471,10 +472,10 @@
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
                     let subTotal = TARIFA_BASE + (distanciaKm * TARIFA_KM);
-                    if (esHorarioNocturno()) { subTotal = subTotal * 1.50; }
+                    if (esHorarioNocturno()) { subTotal = subTotal * RECARGO_NOCTURNO; }
 
                     precioCalculado = Math.round(subTotal);
-                    document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado + (esHorarioNocturno() ? " (Nocturno)" : "");
+                    document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado + (esHorarioNocturno() ? " (Nocturno 30%)" : "");
                     document.getElementById('txtKmLive').textContent = distanciaKm;
                     document.getElementById('precioEstimadoBox').style.display = 'block';
                     document.getElementById('bottomPanel').classList.add('con-ruta');
