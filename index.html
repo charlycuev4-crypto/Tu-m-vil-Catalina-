@@ -16,7 +16,7 @@
             background: #f4f4f6; height: 100vh; overflow: hidden; color: #1a1a1a;
         }
 
-        /* MAPA AMPLIO Y MODERNO */
+        /* MAPA CERCANO Y DINÁMICO */
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
@@ -283,8 +283,8 @@
         }
 
         function initMapa() {
-            // Zoom inicial más amplio y moderno (perspectiva extendida)
-            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(UBICACION_DEFAULT, 14);
+            // Zoom inicial más cercano y dinámico (igual al del conductor)
+            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(UBICACION_DEFAULT, 16);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             mapa.on('click', (e) => { if (modoDestinoManual) marcarDestinoManual(e.latlng.lat, e.latlng.lng); });
             
@@ -515,7 +515,7 @@
                 (pos) => { 
                     document.getElementById('gpsBtn').classList.remove('buscando'); 
                     marcarOrigen(pos.coords.latitude, pos.coords.longitude, "Mi ubicación actual"); 
-                    mapa.setView([pos.coords.latitude, pos.coords.longitude], 14); 
+                    mapa.setView([pos.coords.latitude, pos.coords.longitude], 16); 
                 },
                 () => { 
                     document.getElementById('gpsBtn').classList.remove('buscando'); 
@@ -527,7 +527,7 @@
 
         function usarUbicacionDefault() { 
             marcarOrigen(UBICACION_DEFAULT[0], UBICACION_DEFAULT[1], "Ubicación predeterminada"); 
-            mapa.setView(UBICACION_DEFAULT, 14); 
+            mapa.setView(UBICACION_DEFAULT, 16); 
         }
 
         async function recalcularRutaYPrecio() {
@@ -549,8 +549,8 @@
                     document.getElementById('precioEstimadoBox').style.display = 'block';
                     document.getElementById('bottomPanel').classList.add('con-ruta');
                     
-                    // Ajuste de límites con mayor amplitud (padding expandido para un 30% más de aire y visibilidad general)
-                    mapa.fitBounds(rutaTrazada.getBounds(), { padding: [70, 70], maxZoom: 14.5 });
+                    // Zoom de ruta ampliado y más cercano (40% más próximo, idéntico al estilo del conductor)
+                    mapa.fitBounds(rutaTrazada.getBounds(), { padding: [40, 40], maxZoom: 16.5 });
                 }
             } catch (e) {}
         }
