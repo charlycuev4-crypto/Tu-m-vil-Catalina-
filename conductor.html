@@ -19,6 +19,7 @@
         #mapaLeaflet { width: 100%; height: 100%; }
 
         .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+        
         .header-left-col { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
         
         .status-badge { background: #1e293b; color: #38bdf8; padding: 10px 16px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #334155; cursor: pointer; user-select: none; text-align: center; }
@@ -81,15 +82,22 @@
         .btn-finalizar { background: #e11d48; }
 
         .chofer-auto-icon {
-            background: #1e293b; width: 38px !important; height: 38px !important;
-            border: 3px solid #38bdf8; border-radius: 50%; display: flex;
-            align-items: center; justify-content: center; font-size: 1.1rem;
+            background: #1e293b;
+            width: 38px !important;
+            height: 38px !important;
+            border: 3px solid #38bdf8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
         }
 
         .pasajero-origen-icon { background: #10b981; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
         .pasajero-destino-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
 
+        /* Estilos para el Modal de Registro de Conductor */
         #modalConfigChofer {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.95);
             z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
@@ -115,6 +123,7 @@
 </head>
 <body onclick="forzarHabilitacionAudio()">
 
+    <!-- MODAL DE CONFIGURACIÓN INICIAL DEL CONDUCTOR -->
     <div id="modalConfigChofer" class="hidden">
         <div class="config-card">
             <h2>🚗 Registro de Conductor</h2>
@@ -192,11 +201,13 @@
                 </div>
             </div>
 
+            <!-- Botones de decisión para viaje entrante -->
             <div id="contenedorBotonesPendiente" style="display: flex; gap: 10px;">
                 <button class="btn-action" style="background: #ef4444; flex: 1;" onclick="rechazarViajeEntrante()">Rechazar ❌</button>
                 <button class="btn-action btn-aceptar" style="flex: 2;" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje ✅</button>
             </div>
 
+            <!-- Botón único para cuando el viaje ya está en curso -->
             <button class="btn-action btn-aceptar hidden" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
         </div>
     </div>
@@ -353,9 +364,6 @@
                         document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                     }
 
-                    // NOTA: Se eliminaron los 4 segundos de actualización a Supabase.
-                    // El movimiento local del GPS se encarga de mover el marcador instantáneamente en pantalla.
-
                     if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
                         actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng);
                     }
@@ -491,15 +499,7 @@
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
-                    // Al aceptar el viaje, enviamos de forma limpia los datos del chofer Y asignamos las coordenadas iniciales
-                    const { error } = await supabaseClient.from('viajes').update({ 
-                        conductor_nombre: NOMBRE_CHOFER, 
-                        conductor_auto: AUTO_CHOFER,
-                        chofer_lat: choferCoords.lat,
-                        chofer_lng: choferCoords.lng,
-                        estado: 'aceptado' 
-                    }).eq('id', viajeActivo.id);
-
+                    const { error } = await supabaseClient.from('viajes').update({ conductor_nombre: NOMBRE_CHOFER, conductor_auto: AUTO_CHOFER }).eq('id', viajeActivo.id);
                     if (error) throw error;
                     
                     estadoFlujo = 'aceptado';
