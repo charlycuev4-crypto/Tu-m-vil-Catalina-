@@ -224,7 +224,8 @@
         
         let audioCtx = null;
         let intervaloCampana = null;
-        let ultimaActualizacionSupabase = 0;
+        let ultimaLatEnviada = null;
+        let ultimaLngEnviada = null;
 
         function verificarRegistroChofer() {
             if (!localStorage.getItem('cfg_auto_chofer') || !localStorage.getItem('cfg_auto_patente')) {
@@ -361,25 +362,35 @@
                         document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                     }
 
-                    // TRANSMITIR UBICACIÓN A SUPABASE CADA 4 SEGUNDOS SI HAY UN VIAJE ACTIVO
-                    let ahora = Date.now();
-                    if (viajeActivo && viajeActivo.id && (ahora - ultimaActualizacionSupabase > 4000)) {
-                        ultimaActualizacionSupabase = ahora;
-                        try {
-                            await supabaseClient
-                                .from('viajes')
-                                .update({ 
-                                    chofer_lat: nuevaLat, 
-                                    chofer_lng: nuevaLng 
-                                })
-                                .eq('id', viajeActivo.id);
-                        } catch (err) {}
+                    // ENVÍO INTELIGENTE DE POSICIÓN: Solo transmite a Supabase si el auto se movió de verdad (aprox. > 10 metros)
+                    if (viajeActivo && viajeActivo.id) {
+                        let seMovioBastante = true;
+                        if (ultimaLatEnviada !== null && ultimaLngEnviada !== null) {
+                            let distanciaMovidaKm = calcularDistanciaKm(ultimaLatEnviada, ultimaLngEnviada, nuevaLat, nuevaLng);
+                            if (distanciaMovidaKm < 0.01) { // Menos de 10 metros, no gasta internet mandando la misma posición
+                                seMovioBastante = false;
+                            }
+                        }
+
+                        if (seMovioBastante) {
+                            ultimaLatEnviada = nuevaLat;
+                            ultimaLngEnviada = nuevaLng;
+                            try {
+                                await supabaseClient
+                                    .from('viajes')
+                                    .update({ 
+                                        chofer_lat: nuevaLat, 
+                                        chofer_lng: nuevaLng 
+                                    })
+                                    .eq('id', viajeActivo.id);
+                            } catch (err) {}
+                        }
                     }
 
                     if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
                         actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng);
                     }
-                }, (error) => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
+                }, (error) => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 6000 });
             }
         }
 
