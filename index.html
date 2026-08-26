@@ -140,8 +140,32 @@
         }
         .btn-green-action:hover { background: #25b83f; }
 
-        .pasajero-ping-icon { background: #2cd44a; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
-        .destino-ping-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+        /* ICONOS AGRANDADOS UN 20% MÁS */
+        .pasajero-ping-icon { 
+            background: #2cd44a; 
+            width: 18px !important;    /* Agrandado 20%+ (de 14 a 18px) */
+            height: 18px !important; 
+            border: 2px solid white; 
+            border-radius: 50%; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
+        }
+        .destino-ping-icon { 
+            background: #ef4444; 
+            width: 18px !important;    /* Agrandado 20%+ (de 14 a 18px) */
+            height: 18px !important; 
+            border: 2px solid white; 
+            border-radius: 50%; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
+        }
+        .auto-conductor-ping {
+            font-size: 36px !important;   /* Agrandado 20%+ (de 30 a 36px) */
+            width: 36px !important;
+            height: 36px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
 
         .hidden { display: none !important; }
         .msg { padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.8rem; text-align: center; display: none; font-weight: 600; }
@@ -283,8 +307,8 @@
         }
 
         function initMapa() {
-            // Zoom inicial más cercano y dinámico (igual al del conductor)
-            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(UBICACION_DEFAULT, 16);
+            // FASE 1: Búsqueda (Zoom amplio / estético inicial)
+            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(UBICACION_DEFAULT, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             mapa.on('click', (e) => { if (modoDestinoManual) marcarDestinoManual(e.latlng.lat, e.latlng.lng); });
             
@@ -397,6 +421,7 @@
 
                 viajeId = viaje.id;
                 origenCoords = { lat: viaje.origen_lat, lng: viaje.origen_lng };
+                destinoCoords = { lat: viaje.origen_lat, lng: viaje.destino_lng }; // Nota: asegurado en destino
                 destinoCoords = { lat: viaje.destino_lat, lng: viaje.destino_lng };
                 precioCalculado = viaje.precio; 
                 distanciaKm = viaje.distancia_km;
@@ -446,7 +471,7 @@
                                 icon: L.divIcon({ 
                                     className: 'auto-conductor-ping', 
                                     html: '🚗', 
-                                    iconSize: [30, 30] 
+                                    iconSize: [36, 36] 
                                 }) 
                             }).addTo(mapa);
                         } else {
@@ -460,6 +485,13 @@
                         document.getElementById('autoCond').textContent = de.conductor_auto;
                         if(de.conductor_foto) { document.getElementById('imgCondFoto').src = de.conductor_foto; }
                         document.getElementById('estadoViajePasajero').innerHTML = "El móvil va en camino 🚗";
+                        
+                        // FASE 2: Conductor acepta -> Zoom dinámico del 30% más enfocado entre pasajero y conductor
+                        if (markerConductor && markerOrigen) {
+                            const group = new L.featureGroup([markerOrigen, markerConductor]);
+                            mapa.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 17 });
+                        }
+
                         mostrarPaso('pasoPrecio');
                     }
                     if (de.estado === 'aceptado') {
@@ -469,6 +501,12 @@
                     }
                     if (de.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
+                        
+                        // FASE 3: Viaje iniciado -> Zoom del 50% más cercano (enfocado en ruta/destino directo, zoom alto)
+                        if (markerConductor && markerDestino) {
+                            const groupRuta = new L.featureGroup([markerConductor, markerDestino]);
+                            mapa.fitBounds(groupRuta.getBounds(), { padding: [40, 40], maxZoom: 18 });
+                        }
                     }
                     if (de.estado === 'cancelado') { 
                         mostrarMsg('Viaje cancelado.', 'error'); 
@@ -549,7 +587,7 @@
                     document.getElementById('precioEstimadoBox').style.display = 'block';
                     document.getElementById('bottomPanel').classList.add('con-ruta');
                     
-                    // Zoom de ruta ampliado y más cercano (40% más próximo, idéntico al estilo del conductor)
+                    // Ajuste de ruta inicial
                     mapa.fitBounds(rutaTrazada.getBounds(), { padding: [40, 40], maxZoom: 16.5 });
                 }
             } catch (e) {}
