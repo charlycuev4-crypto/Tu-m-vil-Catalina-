@@ -226,7 +226,7 @@
 
         let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
         let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
-        let mapa = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
+        let mapa = null, markerOrigen = null, markerDestino = null, markerConductor = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
 
         function hablarAnuncioPasajero(texto) {
@@ -391,6 +391,24 @@
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes', filter: 'id=eq.' + id }, 
                 (payload) => {
                     const de = payload.new;
+
+                    // 1. SI EL CONDUCTOR ACTUALIZA SU POSICIÓN EN VIVO, MOVEMOS EL AUTO 🚗
+                    if (de.conductor_lat && de.conductor_lng) {
+                        const latLngCond = [de.conductor_lat, de.conductor_lng];
+                        if (!markerConductor) {
+                            markerConductor = L.marker(latLngCond, { 
+                                icon: L.divIcon({ 
+                                    className: 'auto-conductor-ping', 
+                                    html: '🚗', 
+                                    iconSize: [30, 30] 
+                                }) 
+                            }).addTo(mapa);
+                        } else {
+                            markerConductor.setLatLng(latLngCond);
+                        }
+                    }
+
+                    // 2. DETALLES DEL CHOFER Y ESTADOS DEL VIAJE
                     if (de.conductor_nombre && de.estado === 'pendiente') {
                         document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
                         document.getElementById('nombreCond').textContent = de.conductor_nombre;
@@ -539,7 +557,7 @@
 
                 if (error) throw error;
                 viajeId = data.id;
-                localStorage.setItem('pasajero_viaje_id', data.id); // Evita viajes fantasmas al recargar
+                localStorage.setItem('pasajero_viaje_id', data.id);
                 mostrarPaso('pasoEsperando');
                 iniciarEscuchaRealtime(viajeId);
             } catch (e) { mostrarMsg('Error al solicitar: ' + e.message, 'error'); }
