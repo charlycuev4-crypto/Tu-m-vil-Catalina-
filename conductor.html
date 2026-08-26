@@ -351,7 +351,7 @@
         function iniciarRastreoGpsContinuo() {
             if (idRastreadorGps) return;
             if (navigator.geolocation) {
-                idRastreadorGps = navigator.geolocation.watchPosition((pos) => {
+                idRastreadorGps = navigator.geolocation.watchPosition(async (pos) => {
                     const nuevaLat = pos.coords.latitude;
                     const nuevaLng = pos.coords.longitude;
                     choferCoords = { lat: nuevaLat, lng: nuevaLng };
@@ -362,6 +362,21 @@
                         let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
                         mapa.setView([nuevaLat, nuevaLng], zoomActual);
                         document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
+                    }
+
+                    // 👉 ENVÍO AUTOMÁTICO DE LA UBICACIÓN DEL CHOFER A SUPABASE
+                    if (viajeActivo && viajeActivo.id) {
+                        try {
+                            await supabaseClient
+                                .from('viajes')
+                                .update({
+                                    conductor_lat: nuevaLat,
+                                    conductor_lng: nuevaLng
+                                })
+                                .eq('id', viajeActivo.id);
+                        } catch (err) {
+                            console.error("Error enviando ubicación:", err);
+                        }
                     }
 
                     if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
