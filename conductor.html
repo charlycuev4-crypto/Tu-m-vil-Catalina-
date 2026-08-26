@@ -97,7 +97,7 @@
         .pasajero-origen-icon { background: #10b981; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
         .pasajero-destino-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
 
-        /* Estilos para el Modal de Registro de Conductor */
+        /* Estilos actualizados para incluir la Selfie en el Modal */
         #modalConfigChofer {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.95);
             z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
@@ -108,6 +108,22 @@
         }
         .config-card h2 { font-size: 1.25rem; margin-bottom: 6px; color: #38bdf8; text-align: center; }
         .config-card p { font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px; text-align: center; }
+        
+        .selfie-guia-container {
+            width: 90px; height: 90px; border-radius: 50%; background: #0f172a;
+            border: 3px dashed #10b981; margin: 0 auto 16px; display: flex; align-items: center; 
+            justify-content: center; overflow: hidden; position: relative; cursor: pointer;
+            box-shadow: 0 0 15px rgba(16,185,129,0.3);
+        }
+        .selfie-guia-container img { width: 100%; height: 100%; object-fit: cover; }
+        .silueta-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.4); pointer-events: none;
+        }
+        .silueta-overlay svg { width: 36px; height: 36px; fill: rgba(255,255,255,0.7); margin-bottom: 2px; }
+        .silueta-overlay span { font-size: 0.6rem; color: #fff; font-weight: 600; }
+
         .config-field { margin-bottom: 12px; }
         .config-field label { display: block; font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; }
         .config-field input {
@@ -123,11 +139,21 @@
 </head>
 <body onclick="forzarHabilitacionAudio()">
 
-    <!-- MODAL DE CONFIGURACIÓN INICIAL DEL CONDUCTOR -->
+    <!-- MODAL DE CONFIGURACIÓN INICIAL DEL CONDUCTOR CON CAPTURA DE SELFIE -->
     <div id="modalConfigChofer" class="hidden">
         <div class="config-card">
             <h2>🚗 Registro de Conductor</h2>
-            <p>Ingresá tus datos para empezar a recibir viajes en Tu Móvil.</p>
+            <p>Tomate una selfie y completá tus datos para recibir viajes.</p>
+            
+            <div class="selfie-guia-container" onclick="document.getElementById('inputFotoReal').click()">
+                <img id="imgPreview" src="" alt="Selfie" style="display:none;">
+                <div class="silueta-overlay" id="siluetaOverlay">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                    <span>Tu Selfie</span>
+                </div>
+            </div>
+            <input type="file" id="inputFotoReal" accept="image/*" capture="user" style="display:none" onchange="procesarFotoSelfie(this)">
+
             <form id="formConfigChofer" onsubmit="guardarConfigChofer(event)">
                 <div class="config-field">
                     <label>Nombre y Apellido</label>
@@ -218,6 +244,8 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "";
+        let TELEFONO_CHOFER = localStorage.getItem('cfg_auto_telefono') || "";
+        let FOTO_CHOFER = localStorage.getItem('cfg_auto_foto') || "";
         let AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " - " + (localStorage.getItem('cfg_auto_color') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
 
         let canalSupabase = null;
@@ -230,13 +258,40 @@
         let intervaloCampana = null;
 
         function verificarRegistroChofer() {
-            if (!localStorage.getItem('cfg_auto_chofer') || !localStorage.getItem('cfg_auto_patente')) {
+            if (!localStorage.getItem('cfg_auto_chofer') || !localStorage.getItem('cfg_auto_patente') || !localStorage.getItem('cfg_auto_foto')) {
                 document.getElementById('modalConfigChofer').classList.remove('hidden');
+            }
+        }
+
+        function procesarFotoSelfie(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = 300;
+                        canvas.height = 300;
+                        ctx.drawImage(img, 0, 0, 300, 300);
+                        
+                        FOTO_CHOFER = canvas.toDataURL('image/jpeg', 0.8);
+                        
+                        const imgPrev = document.getElementById('imgPreview');
+                        imgPrev.src = FOTO_CHOFER;
+                        imgPrev.style.display = "block";
+                        document.getElementById('siluetaOverlay').style.opacity = "0.2";
+                    }
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
             }
         }
 
         function guardarConfigChofer(e) {
             e.preventDefault();
+            if (!FOTO_CHOFER) { alert("Por favor tomate la selfie tocando el círculo."); return; }
+
             const nombre = document.getElementById('inpNombre').value.trim();
             const telefono = document.getElementById('inpTelefono').value.trim();
             const modelo = document.getElementById('inpModelo').value.trim();
@@ -245,11 +300,13 @@
 
             localStorage.setItem('cfg_auto_chofer', nombre);
             localStorage.setItem('cfg_auto_telefono', telefono);
+            localStorage.setItem('cfg_auto_foto', FOTO_CHOFER);
             localStorage.setItem('cfg_auto_modelo', modelo);
             localStorage.setItem('cfg_auto_color', color);
             localStorage.setItem('cfg_auto_patente', patente);
 
             NOMBRE_CHOFER = nombre;
+            TELEFONO_CHOFER = telefono;
             AUTO_CHOFER = `${modelo} - ${color} (Patente: ${patente})`;
 
             document.getElementById('modalConfigChofer').classList.add('hidden');
@@ -364,7 +421,6 @@
                         document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                     }
 
-                    // 👉 ENVÍO AUTOMÁTICO DE LA UBICACIÓN DEL CHOFER A SUPABASE
                     if (viajeActivo && viajeActivo.id) {
                         try {
                             await supabaseClient
@@ -374,9 +430,7 @@
                                     conductor_lng: nuevaLng
                                 })
                                 .eq('id', viajeActivo.id);
-                        } catch (err) {
-                            console.error("Error enviando ubicación:", err);
-                        }
+                        } catch (err) {}
                     }
 
                     if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
@@ -514,7 +568,16 @@
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
-                    const { error } = await supabaseClient.from('viajes').update({ conductor_nombre: NOMBRE_CHOFER, conductor_auto: AUTO_CHOFER }).eq('id', viajeActivo.id);
+                    const { error } = await supabaseClient.from('viajes').update({ 
+                        conductor_nombre: NOMBRE_CHOFER, 
+                        conductor_telefono: TELEFONO_CHOFER,
+                        conductor_foto: FOTO_CHOFER,
+                        conductor_auto: AUTO_CHOFER,
+                        conductor_lat: choferCoords.lat,
+                        conductor_lng: choferCoords.lng,
+                        estado: 'pendiente_aceptado'
+                    }).eq('id', viajeActivo.id);
+
                     if (error) throw error;
                     
                     estadoFlujo = 'aceptado';
@@ -534,7 +597,7 @@
                     document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                     mapa.setView([choferCoords.lat, choferCoords.lng], 17);
 
-                } catch (e) { location.reload(); }
+                } catch (e) { alert("Error al aceptar: " + e.message); }
                 return;
             }
 
