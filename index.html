@@ -427,7 +427,6 @@
                     mostrarPaso('pasoPrecio');
                 }
 
-                // Mostrar la posición del auto inmediatamente si ya hay datos de GPS del chofer
                 if (viaje.chofer_lat && viaje.chofer_lng) {
                     actualizarPosicionChoferEnMapa(viaje.chofer_lat, viaje.chofer_lng);
                 }
@@ -459,7 +458,6 @@
                 (payload) => {
                     const de = payload.new;
 
-                    // Actualizar en tiempo real las coordenadas del chofer en el mapa del pasajero
                     if (de.chofer_lat && de.chofer_lng) {
                         actualizarPosicionChoferEnMapa(de.chofer_lat, de.chofer_lng);
                     }
