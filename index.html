@@ -143,7 +143,7 @@
         /* ICONOS AGRANDADOS UN 20% MÁS */
         .pasajero-ping-icon { 
             background: #2cd44a; 
-            width: 18px !important;    /* Agrandado 20%+ (de 14 a 18px) */
+            width: 18px !important; 
             height: 18px !important; 
             border: 2px solid white; 
             border-radius: 50%; 
@@ -151,14 +151,14 @@
         }
         .destino-ping-icon { 
             background: #ef4444; 
-            width: 18px !important;    /* Agrandado 20%+ (de 14 a 18px) */
+            width: 18px !important; 
             height: 18px !important; 
             border: 2px solid white; 
             border-radius: 50%; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
         }
         .auto-conductor-ping {
-            font-size: 36px !important;   /* Agrandado 20%+ (de 30 a 36px) */
+            font-size: 36px !important; 
             width: 36px !important;
             height: 36px !important;
             display: flex;
@@ -289,6 +289,7 @@
         let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
         let mapa = null, markerOrigen = null, markerDestino = null, markerConductor = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
+        let intervaloActualizacionRuta = null; // 👈 Bucle dinámico para recalcular si hay desvío
 
         function hablarAnuncioPasajero(texto) {
             if ('speechSynthesis' in window) {
@@ -307,7 +308,6 @@
         }
 
         function initMapa() {
-            // FASE 1: Búsqueda (Zoom amplio / estético inicial)
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(UBICACION_DEFAULT, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             mapa.on('click', (e) => { if (modoDestinoManual) marcarDestinoManual(e.latlng.lat, e.latlng.lng); });
@@ -421,7 +421,6 @@
 
                 viajeId = viaje.id;
                 origenCoords = { lat: viaje.origen_lat, lng: viaje.origen_lng };
-                destinoCoords = { lat: viaje.origen_lat, lng: viaje.destino_lng }; // Nota: asegurado en destino
                 destinoCoords = { lat: viaje.destino_lat, lng: viaje.destino_lng };
                 precioCalculado = viaje.precio; 
                 distanciaKm = viaje.distancia_km;
@@ -445,6 +444,7 @@
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
                     } else if (viaje.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
+                        iniciarMonitoreoDinamicoRuta(); // 👈 Arranca el recálculo inteligente en viaje
                     }
                     mostrarPaso('pasoPrecio');
                 }
@@ -454,6 +454,7 @@
 
         function limpiarMemoriaPasajero() { 
             localStorage.removeItem('pasajero_viaje_id'); 
+            if (intervaloActualizacionRuta) clearInterval(intervaloActualizacionRuta);
         }
 
         function iniciarEscuchaRealtime(id) {
@@ -486,7 +487,6 @@
                         if(de.conductor_foto) { document.getElementById('imgCondFoto').src = de.conductor_foto; }
                         document.getElementById('estadoViajePasajero').innerHTML = "El móvil va en camino 🚗";
                         
-                        // FASE 2: Conductor acepta -> Zoom dinámico del 30% más enfocado entre pasajero y conductor
                         if (markerConductor && markerOrigen) {
                             const group = new L.featureGroup([markerOrigen, markerConductor]);
                             mapa.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 17 });
@@ -501,8 +501,8 @@
                     }
                     if (de.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
+                        iniciarMonitoreoDinamicoRuta(); // 👈 Activa el recálculo constante si el chofer dobla en otra calle
                         
-                        // FASE 3: Viaje iniciado -> Zoom del 50% más cercano (enfocado en ruta/destino directo, zoom alto)
                         if (markerConductor && markerDestino) {
                             const groupRuta = new L.featureGroup([markerConductor, markerDestino]);
                             mapa.fitBounds(groupRuta.getBounds(), { padding: [40, 40], maxZoom: 18 });
@@ -568,14 +568,23 @@
             mapa.setView(UBICACION_DEFAULT, 16); 
         }
 
-        async function recalcularRutaYPrecio() {
-            if (!origenCoords || !destinoCoords) return;
+        // 🛣️ NUEVA FUNCIÓN DE RUTEO POR CALLES (OSRM) QUE EVITA LÍNEAS RECTAS Y CALCULOS ERRÓNEOS
+        async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
+            let inicio = puntoOrigenPersonalizado || origenCoords;
+            if (!inicio || !destinoCoords) return;
+            
             try {
-                const url = `https://router.project-osrm.org/route/v1/driving/${origenCoords.lng},${origenCoords.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson`;
-                const res = await fetch(url); const data = await res.json();
+                // Usamos OSRM para que trace la ruta estrictamente por calles y puentes reales
+                const url = `https://router.project-osrm.org/route/v1/driving/${inicio.lng},${inicio.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson`;
+                const res = await fetch(url); 
+                const data = await res.json();
+                
                 if (data.code === 'Ok' && data.routes.length > 0) {
                     if (rutaTrazada) mapa.removeLayer(rutaTrazada);
+                    
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 5, opacity: 0.85 }).addTo(mapa);
+                    
+                    // Distancia real en kilómetros calle por calle
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
                     let subTotal = TARIFA_BASE + (distanciaKm * TARIFA_KM);
@@ -587,10 +596,26 @@
                     document.getElementById('precioEstimadoBox').style.display = 'block';
                     document.getElementById('bottomPanel').classList.add('con-ruta');
                     
-                    // Ajuste de ruta inicial
-                    mapa.fitBounds(rutaTrazada.getBounds(), { padding: [40, 40], maxZoom: 16.5 });
+                    if (!puntoOrigenPersonalizado) {
+                        mapa.fitBounds(rutaTrazada.getBounds(), { padding: [40, 40], maxZoom: 16.5 });
+                    }
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error("Error al calcular ruta por calles:", e);
+            }
+        }
+
+        // 🔄 BUCLE DE MONITOREO DINÁMICO (RECÁLCULO SI EL CHOFER SE DESVÍA O CAMBIA DE CALLE)
+        function iniciarMonitoreoDinamicoRuta() {
+            if (intervaloActualizacionRuta) clearInterval(intervaloActualizacionRuta);
+            
+            intervaloActualizacionRuta = setInterval(async () => {
+                if (markerConductor && destinoCoords && viajeId) {
+                    const posActualChofer = markerConductor.getLatLng();
+                    // Recalcula la ruta desde donde está el auto actualmente hasta el destino en tiempo real
+                    await recalcularRutaYPrecio({ lat: posActualChofer.lat, lng: posActualChofer.lng });
+                }
+            }, 10000); // Se actualiza cada 10 segundos de forma automática
         }
 
         let timeoutBusqueda = null;
