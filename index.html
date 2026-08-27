@@ -574,11 +574,8 @@
             if (!inicio || !destinoCoords) return;
             
             try {
-                // 🛑 CORRECCIÓN DE RUTA: Punto intermedio forzado desplazado hacia la red vial de asfalto
-                let intermedioLng = (inicio.lng + destinoCoords.lng) / 2;
-                let intermedioLat = ((inicio.lat + destinoCoords.lat) / 2) + 0.001; 
-
-                const url = `https://router.project-osrm.org/route/v1/car/${inicio.lng},${inicio.lat};${intermedioLng},${intermedioLat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true`;
+                // Solicitud limpia a OSRM para que coincida exactamente con el conductor
+                const url = `https://router.project-osrm.org/route/v1/car/${inicio.lng},${inicio.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true`;
                 
                 const res = await fetch(url); 
                 const data = await res.json();
