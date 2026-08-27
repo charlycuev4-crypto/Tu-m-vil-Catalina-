@@ -302,9 +302,10 @@
             }
         }
 
+        // 🌙 HORARIO NOCTURNO AJUSTADO DE 20:00 A 08:00 HS
         function esHorarioNocturno() {
             const horaActual = new Date().getHours();
-            return (horaActual >= 22 || horaActual < 7);
+            return (horaActual >= 20 || horaActual < 8);
         }
 
         function initMapa() {
@@ -644,7 +645,6 @@
             const destinoTexto = document.getElementById('destino').value.trim();
             if (!destinoTexto || !origenCoords || !destinoCoords) { mostrarMsg('Seleccioná un destino válido.', 'error'); return; }
 
-            // 💡 RE-CONFIRMACIÓN DE PRECIO Y RECARGO NOCTURNO ANTES DE ENVIAR A SUPABASE
             let baseCalculo = TARIFA_BASE + (distanciaKm * TARIFA_KM);
             if (esHorarioNocturno()) { baseCalculo = baseCalculo * RECARGO_NOCTURNO; }
             precioCalculado = Math.round(baseCalculo);
@@ -661,7 +661,7 @@
                         origen_lng: origenCoords.lng,
                         destino_lat: destinoCoords.lat,
                         destino_lng: destinoCoords.lng,
-                        precio: precioCalculado, // 👈 Ahora viaja siempre con el 30% nocturno aplicado si corresponde
+                        precio: precioCalculado,
                         distancia_km: distanciaKm
                     }).select().single();
 
