@@ -302,7 +302,7 @@
             }
         }
 
-        // 🌙 HORARIO NOCTURNO AJUSTADO DE 20:00 A 08:00 HS
+        // 🌙 HORARIO NOCTURNO DE 20:00 A 08:00 HS
         function esHorarioNocturno() {
             const horaActual = new Date().getHours();
             return (horaActual >= 20 || horaActual < 8);
@@ -574,7 +574,8 @@
             if (!inicio || !destinoCoords) return;
             
             try {
-                const url = `https://router.project-osrm.org/route/v1/driving/${inicio.lng},${inicio.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson`;
+                // 🚗 USO DEL PERFIL ESTRICTO DE AUTO (/car/) PARA EVITAR CORTES POR ARROYOS O ESPACIOS VERDES
+                const url = `https://router.project-osrm.org/route/v1/car/${inicio.lng},${inicio.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true`;
                 const res = await fetch(url); 
                 const data = await res.json();
                 
@@ -599,7 +600,7 @@
                     }
                 }
             } catch (e) {
-                console.error("Error al calcular ruta por calles:", e);
+                console.error("Error al calcular ruta:", e);
             }
         }
 
