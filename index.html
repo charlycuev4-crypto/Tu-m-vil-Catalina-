@@ -574,8 +574,8 @@
             if (!inicio || !destinoCoords) return;
             
             try {
-                // Solicitud limpia a OSRM para que coincida exactamente con el conductor
-                const url = `https://router.project-osrm.org/route/v1/car/${inicio.lng},${inicio.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true`;
+                // Petición optimizada a OSRM para forzar calles transitables y evitar recortes extraños
+                const url = `https://router.project-osrm.org/route/v1/car/${inicio.lng},${inicio.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true&continue_straight=default`;
                 
                 const res = await fetch(url); 
                 const data = await res.json();
