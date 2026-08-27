@@ -20,25 +20,43 @@
 
         .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
         
-        .header-left-col { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
+        .header-left-col { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; max-width: 55%; }
         
-        .status-badge { background: #1e293b; color: #38bdf8; padding: 10px 16px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #334155; cursor: pointer; user-select: none; text-align: center; }
+        .status-badge { background: #1e293b; color: #38bdf8; padding: 8px 14px; border-radius: 30px; font-weight: 700; font-size: 0.8rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #334155; cursor: pointer; user-select: none; text-align: center; white-space: nowrap; }
         .status-badge.activo { background: #059669; color: #ffffff; border-color: #10b981; }
         .status-badge.inactivo { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
 
-        .gps-btn { width: 44px; height: 44px; border-radius: 50%; background: #1e293b; color: white; display: flex; align-items: center; justify-content: center; border: 1px solid #334155; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto; }
+        /* Contenedor de burbujas deslizables (Scroll Horizontal estilo Uber) */
+        .ganancias-scroll-container {
+            display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px 2px;
+            scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+        }
+        .ganancias-scroll-container::-webkit-scrollbar { display: none; }
+
+        .burbuja-stat {
+            background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(8px);
+            border: 1px solid #334155; padding: 6px 12px; border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4); flex: 0 0 auto; scroll-snap-align: start;
+            min-width: 130px; display: flex; flex-direction: column; justify-content: center;
+        }
+        .burbuja-label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
+        .burbuja-valor { font-size: 0.95rem; font-weight: 800; color: #38bdf8; }
+        .burbuja-valor.verde { color: #10b981; }
+
+        .header-right-col { display: flex; gap: 8px; pointer-events: auto; flex-direction: column; align-items: flex-end; }
+        .gps-btn { width: 44px; height: 44px; border-radius: 50%; background: #1e293b; color: white; display: flex; align-items: center; justify-content: center; border: 1px solid #334155; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .gps-btn.seguimiento-on { background: #059669; border-color: #10b981; animation: pulsoGps 2s infinite; }
 
         .google-maps-btn {
             width: 44px; height: 44px; border-radius: 50%; background: #ffffff; color: #1a73e8;
             display: flex; align-items: center; justify-content: center; border: 1px solid #dadce0;
-            font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto;
+            font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
         .test-audio-btn {
-            background: #ea580c; color: white; border: none; padding: 8px 14px;
-            border-radius: 20px; font-weight: bold; font-size: 0.75rem; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; gap: 6px;
+            background: #ea580c; color: white; border: none; padding: 6px 12px;
+            border-radius: 20px; font-weight: bold; font-size: 0.7rem; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; gap: 4px;
             border: 1px solid #c2410c; width: fit-content;
         }
 
@@ -82,22 +100,15 @@
         .btn-finalizar { background: #e11d48; }
 
         .chofer-auto-icon {
-            background: #1e293b;
-            width: 38px !important;
-            height: 38px !important;
-            border: 3px solid #38bdf8;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
+            background: #1e293b; width: 38px !important; height: 38px !important;
+            border: 3px solid #38bdf8; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 1.1rem;
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
         }
 
         .pasajero-origen-icon { background: #10b981; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
         .pasajero-destino-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
 
-        /* Estilos para el Modal de Registro de Conductor */
         #modalConfigChofer {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.95);
             z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
@@ -123,7 +134,7 @@
 </head>
 <body onclick="forzarHabilitacionAudio()">
 
-    <!-- MODAL DE CONFIGURACIÓN INICIAL DEL CONDUCTOR -->
+    <!-- MODAL DE CONFIGURACIÓN INICIAL -->
     <div id="modalConfigChofer" class="hidden">
         <div class="config-card">
             <h2>🚗 Registro de Conductor</h2>
@@ -159,9 +170,27 @@
     <div class="header-float">
         <div class="header-left-col">
             <div class="status-badge activo" id="txtEstadoChofer" onclick="conmutarEstadoConexion()">Móvil en Línea 🟢</div>
+            
+            <!-- BURBUJAS DESLIZABLES ESTILO UBER (Acumulado y Último Viaje) -->
+            <div class="ganancias-scroll-container">
+                <div class="burbuja-stat">
+                    <span class="burbuja-label">Total del Día</span>
+                    <span class="burbuja-valor verde" id="lblTotalDia">$0</span>
+                </div>
+                <div class="burbuja-stat">
+                    <span class="burbuja-label">Último Viaje</span>
+                    <span class="burbuja-valor" id="lblUltimoViaje">$0</span>
+                </div>
+                <div class="burbuja-stat">
+                    <span class="burbuja-label">Viajes Realizados</span>
+                    <span class="burbuja-valor" id="lblCantViajes">0</span>
+                </div>
+            </div>
+
             <button class="test-audio-btn" id="btnTestSonido" onclick="probarCampanaManual(event)">🔊 Probar Timbre</button>
         </div>
-        <div style="display: flex; gap: 8px; pointer-events: auto;">
+
+        <div class="header-right-col">
             <button class="google-maps-btn" id="btnAbrirGoogleMaps" onclick="abrirNavegacionGoogleMaps()">🗺️</button>
             <button class="gps-btn" id="btnGpsCentro" onclick="alternarSeguimientoManual()">🎯</button>
         </div>
@@ -201,13 +230,11 @@
                 </div>
             </div>
 
-            <!-- Botones de decisión para viaje entrante -->
             <div id="contenedorBotonesPendiente" style="display: flex; gap: 10px;">
                 <button class="btn-action" style="background: #ef4444; flex: 1;" onclick="rechazarViajeEntrante()">Rechazar ❌</button>
                 <button class="btn-action btn-aceptar" style="flex: 2;" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje ✅</button>
             </div>
 
-            <!-- Botón único para cuando el viaje ya está en curso -->
             <button class="btn-action btn-aceptar hidden" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
         </div>
     </div>
@@ -219,6 +246,17 @@
 
         let NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "";
         let AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " - " + (localStorage.getItem('cfg_auto_color') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
+
+        // Gestión de estadísticas locales (Ganancias)
+        let totalDia = parseFloat(localStorage.getItem('chofer_total_dia') || '0');
+        let ultimoViajeMonto = parseFloat(localStorage.getItem('chofer_ultimo_monto') || '0');
+        let cantViajesCount = parseInt(localStorage.getItem('chofer_cant_viajes') || '0');
+
+        function actualizarUIEstadisticas() {
+            document.getElementById('lblTotalDia').textContent = '$' + totalDia.toLocaleString('es-AR');
+            document.getElementById('lblUltimoViaje').textContent = '$' + ultimoViajeMonto.toLocaleString('es-AR');
+            document.getElementById('lblCantViajes').textContent = cantViajesCount;
+        }
 
         let canalSupabase = null;
         let estaConectado = true; 
@@ -249,9 +287,6 @@
             localStorage.setItem('cfg_auto_color', color);
             localStorage.setItem('cfg_auto_patente', patente);
 
-            NOMBRE_CHOFER = nombre;
-            AUTO_CHOFER = `${modelo} - ${color} (Patente: ${patente})`;
-
             document.getElementById('modalConfigChofer').classList.add('hidden');
             location.reload();
         }
@@ -260,29 +295,19 @@
             const R = 6371; 
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = 
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
         async function solicitarWakeLock() {
             if (!('wakeLock' in navigator)) return;
-            try {
-                if (!wakeLock) wakeLock = await navigator.wakeLock.request('screen');
-            } catch (err) {}
+            try { if (!wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
         }
-
         function liberarWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; } }
 
         function forzarHabilitacionAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            } else if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            else if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
         function tocarUnRepiqueDeCampana() {
@@ -290,14 +315,11 @@
             try {
                 let osc = audioCtx.createOscillator();
                 let gainNode = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(1475, audioCtx.currentTime); 
+                osc.type = 'sine'; osc.frequency.setValueAtTime(1475, audioCtx.currentTime); 
                 gainNode.gain.setValueAtTime(0.9, audioCtx.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
-                osc.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.8);
+                osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.8);
             } catch(e) {}
         }
 
@@ -306,7 +328,6 @@
             forzarHabilitacionAudio();
             intervaloCampana = setInterval(() => { tocarUnRepiqueDeCampana(); }, 500);
         }
-
         function detenerSirenaAlerta() {
             if (intervaloCampana) { clearInterval(intervaloCampana); intervaloCampana = null; }
         }
@@ -318,10 +339,7 @@
             const btn = document.getElementById('btnTestSonido');
             btn.textContent = "🔔 ¡Sonando Ok!";
             btn.style.background = "#059669";
-            setTimeout(() => {
-                btn.textContent = "🔊 Probar Timbre";
-                btn.style.background = "#ea580c";
-            }, 2000);
+            setTimeout(() => { btn.textContent = "🔊 Probar Timbre"; btn.style.background = "#ea580c"; }, 2000);
         }
 
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
@@ -334,12 +352,7 @@
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             
-            const iconoAuto = L.divIcon({
-                className: 'chofer-auto-icon',
-                html: '🚗',
-                iconSize: [38, 38],
-                iconAnchor: [19, 19]
-            });
+            const iconoAuto = L.divIcon({ className: 'chofer-auto-icon', html: '🚗', iconSize: [38, 38], iconAnchor: [19, 19] });
             markerChofer = L.marker([choferCoords.lat, choferCoords.lng], { icon: iconoAuto }).addTo(mapa);
 
             mapa.on('dragstart', () => {
@@ -364,19 +377,10 @@
                         document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                     }
 
-                    // 👉 ENVÍO AUTOMÁTICO DE LA UBICACIÓN DEL CHOFER A SUPABASE
                     if (viajeActivo && viajeActivo.id) {
                         try {
-                            await supabaseClient
-                                .from('viajes')
-                                .update({
-                                    conductor_lat: nuevaLat,
-                                    conductor_lng: nuevaLng
-                                })
-                                .eq('id', viajeActivo.id);
-                        } catch (err) {
-                            console.error("Error enviando ubicación:", err);
-                        }
+                            await supabaseClient.from('viajes').update({ conductor_lat: nuevaLat, conductor_lng: nuevaLng }).eq('id', viajeActivo.id);
+                        } catch (err) {}
                     }
 
                     if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
@@ -409,13 +413,7 @@
             canalSupabase
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, (payload) => {
                     if (payload.new.estado === 'pendiente' && !viajeActivo && estaConectado) {
-                        const distanciaAlViaje = calcularDistanciaKm(
-                            choferCoords.lat, 
-                            choferCoords.lng, 
-                            payload.new.origen_lat, 
-                            payload.new.origen_lng
-                        );
-
+                        const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, payload.new.origen_lat, payload.new.origen_lng);
                         if (distanciaAlViaje > 5) return;
                         montarViajeEntrante(payload.new);
                     }
@@ -467,9 +465,7 @@
             document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
             document.getElementById('lblDistancia').textContent = viaje.distancia_km || "0";
 
-            if (viaje.pasajero_foto) {
-                document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
-            }
+            if (viaje.pasajero_foto) document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
 
             if (viaje.pasajero_telefono) {
                 let telLimpio = viaje.pasajero_telefono.replace(/\D/g, '');
@@ -499,9 +495,7 @@
             if (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
             if (rutaTrazada) { mapa.removeLayer(rutaTrazada); rutaTrazada = null; }
 
-            viajeActivo = null;
-            estadoFlujo = 'pendiente';
-
+            viajeActivo = null; estadoFlujo = 'pendiente';
             document.getElementById('vistaViaje').classList.add('hidden');
             document.getElementById('vistaEspera').classList.remove('hidden');
             document.getElementById('panelConductor').classList.remove('viaje-entrante');
@@ -533,7 +527,6 @@
                     autocentrarMapa = true;
                     document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                     mapa.setView([choferCoords.lat, choferCoords.lng], 17);
-
                 } catch (e) { location.reload(); }
                 return;
             }
@@ -558,6 +551,17 @@
                 return;
             }
             if (estadoFlujo === 'en_viaje') {
+                // REGISTRAR COBRO Y GANANCIAS
+                let montoViaje = parseFloat(viajeActivo.precio || '0');
+                totalDia += montoViaje;
+                ultimoViajeMonto = montoViaje;
+                cantViajesCount += 1;
+
+                localStorage.setItem('chofer_total_dia', totalDia);
+                localStorage.setItem('chofer_ultimo_monto', ultimoViajeMonto);
+                localStorage.setItem('chofer_cant_viajes', cantViajesCount);
+                actualizarUIEstadisticas();
+
                 await supabaseClient.from('viajes').update({ estado: 'finalizado' }).eq('id', viajeActivo.id);
                 limpiarMemoriaConductor(); liberarWakeLock(); detenerRastreoGps();
                 setTimeout(() => location.reload(), 2000);
@@ -579,9 +583,7 @@
                 document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
                 document.getElementById('lblDistancia').textContent = viaje.distancia_km || "0";
 
-                if (viaje.pasajero_foto) {
-                    document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
-                }
+                if (viaje.pasajero_foto) document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
 
                 if (viaje.pasajero_telefono) {
                     let telLimpio = viaje.pasajero_telefono.replace(/\D/g, '');
@@ -625,7 +627,7 @@
 
         let ultimoCalculoRuta = 0;
         function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
-            letahora = Date.now();
+            let ahora = Date.now();
             if (ahora - ultimoCalculoRuta > 10000) { trazarRutaCalles(lat1, lon1, lat2, lon2); ultimoCalculoRuta = ahora; }
         }
 
@@ -637,6 +639,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             verificarRegistroChofer();
+            actualizarUIEstadisticas();
             initMapa(); escucharNuevosViajes(); solicitarWakeLock(); iniciarRastreoGpsContinuo(); 
             setTimeout(async () => { await verificarViajeActivoConductor(); }, 1000);
         });
