@@ -26,7 +26,6 @@
         .status-badge.activo { background: #059669; color: #ffffff; border-color: #10b981; }
         .status-badge.inactivo { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
 
-        /* Contenedor de burbujas deslizables (Scroll Horizontal estilo Uber) */
         .ganancias-scroll-container {
             display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px 2px;
             scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
@@ -171,7 +170,6 @@
         <div class="header-left-col">
             <div class="status-badge activo" id="txtEstadoChofer" onclick="conmutarEstadoConexion()">Móvil en Línea 🟢</div>
             
-            <!-- BURBUJAS DESLIZABLES ESTILO UBER (Acumulado y Último Viaje) -->
             <div class="ganancias-scroll-container">
                 <div class="burbuja-stat">
                     <span class="burbuja-label">Total del Día</span>
@@ -247,7 +245,6 @@
         let NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "";
         let AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " - " + (localStorage.getItem('cfg_auto_color') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
 
-        // Gestión de estadísticas locales (Ganancias)
         let totalDia = parseFloat(localStorage.getItem('chofer_total_dia') || '0');
         let ultimoViajeMonto = parseFloat(localStorage.getItem('chofer_ultimo_monto') || '0');
         let cantViajesCount = parseInt(localStorage.getItem('chofer_cant_viajes') || '0');
