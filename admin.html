@@ -3,67 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TuMovil - Panel de Control Total y Fotos</title>
+    <title>TuMovil - Panel de Control y Seguridad</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <style>
-        body { font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; margin: 0; }
-        .container { max-width: 650px; margin: 20px auto; background: #1e293b; padding: 24px; border-radius: 16px; border: 1px solid #334155; }
-        h2, h3 { color: #38bdf8; text-align: center; }
-        .grid-vehiculos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        body { font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; padding: 15px; margin: 0; }
+        .container { max-width: 650px; margin: 10px auto; background: #1e293b; padding: 20px; border-radius: 16px; border: 1px solid #334155; }
+        h2 { color: #38bdf8; text-align: center; margin-bottom: 15px; font-size: 1.4rem; }
+        
+        /* Menú Superior de Navegación */
+        .nav-menu { display: flex; gap: 8px; margin-bottom: 20px; background: #0f172a; padding: 6px; border-radius: 10px; border: 1px solid #334155; overflow-x: auto; }
+        .nav-btn { flex: 1; background: transparent; border: none; color: #94a3b8; padding: 10px; font-size: 0.85rem; font-weight: bold; cursor: pointer; border-radius: 6px; text-align: center; white-space: nowrap; }
+        .nav-btn.active { background: #38bdf8; color: #0f172a; }
+        
+        /* Secciones de contenido */
+        .seccion { display: none; }
+        .seccion.active { display: block; }
+
+        .grid-vehiculos { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         @media (max-width: 600px) { .grid-vehiculos { grid-template-columns: 1fr; } }
-        .card { background: #0f172a; padding: 16px; border-radius: 12px; border: 1px solid #475569; }
-        .card h3 { margin-top: 0; padding-bottom: 8px; border-bottom: 2px solid; font-size: 1.1rem; text-align: left; }
+        .card { background: #0f172a; padding: 14px; border-radius: 12px; border: 1px solid #475569; }
+        .card h3 { margin-top: 0; padding-bottom: 6px; border-bottom: 2px solid; font-size: 1rem; }
         .card-auto h3 { color: #60a5fa; border-color: #3b82f6; }
         .card-moto h3 { color: #facc15; border-color: #eab308; }
-        .form-group { margin-bottom: 12px; }
-        label { display: block; margin-bottom: 4px; font-size: 0.85rem; color: #94a3b8; }
-        input { width: 100%; padding: 10px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: white; box-sizing: border-box; outline: none; }
-        button { width: 100%; background: #10b981; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 20px; }
-        button:hover { background: #059669; }
-        .msg { padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 15px; display: none; font-size: 0.9rem; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; margin-bottom: 3px; font-size: 0.8rem; color: #94a3b8; }
+        input { width: 100%; padding: 8px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: white; box-sizing: border-box; font-size: 0.9rem; }
+        
+        .btn-guardar { width: 100%; background: #10b981; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        .btn-guardar:hover { background: #059669; }
+        
+        .msg { padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 15px; display: none; font-size: 0.85rem; }
         .success { background: #065f46; color: #34d399; display: block; }
         .error { background: #7f1d1d; color: #fca5a5; display: block; }
         
-        /* Sección de Viajes y Fotos */
-        .seccion-viajes { margin-top: 30px; background: #0f172a; padding: 16px; border-radius: 12px; border: 1px solid #475569; }
-        .viaje-item { background: #1e293b; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 0.9rem; border-left: 4px solid #10b981; display: flex; justify-content: space-between; align-items: center; }
-        .fotos-container { display: flex; gap: 10px; }
-        .foto-miniatura { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8; background: #334155; }
-        .foto-info { font-size: 0.75rem; color: #94a3b8; text-align: center; }
+        /* Tarjetas de Seguridad y Fotos Grandes */
+        .tarjeta-seguridad { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 5px solid #38bdf8; }
+        .perfiles-flex { display: flex; justify-content: space-around; align-items: center; margin-top: 10px; gap: 10px; }
+        .perfil-box { text-align: center; flex: 1; background: #1e293b; padding: 10px; border-radius: 8px; border: 1px solid #475569; }
+        .foto-grande { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8; background: #334155; margin-bottom: 5px; }
+        .perfil-titulo { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; font-weight: bold; }
+        .viaje-meta { font-size: 0.85rem; color: #e2e8f0; margin-bottom: 8px; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>🎛️ Panel Administrador - Tu Móvil</h2>
+        <h2>🎛️ Panel de Control TuMóvil</h2>
         <div id="statusMsg" class="msg"></div>
         
-        <div class="grid-vehiculos">
-            <!-- SECCIÓN AUTO -->
-            <div class="card card-auto">
-                <h3>🚗 Categoría: AUTO</h3>
-                <div class="form-group"><label>Chofer:</label><input type="text" id="autoChofer"></div>
-                <div class="form-group"><label>Modelo:</label><input type="text" id="autoModelo"></div>
-                <div class="form-group"><label>Patente:</label><input type="text" id="autoPatente"></div>
-                <div class="form-group"><label>Tarifa Base ($):</label><input type="number" id="autoBase"></div>
-                <div class="form-group"><label>Precio x Km ($):</label><input type="number" id="autoKm"></div>
-            </div>
-            <!-- SECCIÓN MOTO -->
-            <div class="card card-moto">
-                <h3>🏍️ Categoría: MOTO</h3>
-                <div class="form-group"><label>Chofer:</label><input type="text" id="motoChofer"></div>
-                <div class="form-group"><label>Modelo:</label><input type="text" id="motoModelo"></div>
-                <div class="form-group"><label>Patente:</label><input type="text" id="motoPatente"></div>
-                <div class="form-group"><label>Tarifa Base ($):</label><input type="number" id="motoBase"></div>
-                <div class="form-group"><label>Precio x Km ($):</label><input type="number" id="motoKm"></div>
-            </div>
+        <!-- Menú de Navegación Superior -->
+        <div class="nav-menu">
+            <button class="nav-btn active" onclick="cambiarPestana('flota', event)">🚗 Flota y Tarifas</button>
+            <button class="nav-btn" onclick="cambiarPestana('seguridad', event)">🛡️ Seguridad y Perfiles</button>
+            <button class="nav-btn" onclick="cambiarPestana('viajes', event)">📋 Historial Viajes</button>
         </div>
-        
-        <button onclick="guardarConfiguracionSupabase()">Guardar Flota y Tarifas en Supabase</button>
 
-        <!-- SECCIÓN PARA VER VIAJES Y FOTOS EN VIVO -->
-        <div class="seccion-viajes">
-            <h3>👥 Últimos Viajes y Fotos Verificadas</h3>
-            <div id="listaViajes">Cargando registros...</div>
+        <!-- PESTAÑA 1: FLOTA Y TARIFAS -->
+        <div id="seccion-flota" class="seccion active">
+            <div class="grid-vehiculos">
+                <div class="card card-auto">
+                    <h3>🚗 AUTO</h3>
+                    <div class="form-group"><label>Chofer:</label><input type="text" id="autoChofer"></div>
+                    <div class="form-group"><label>Modelo:</label><input type="text" id="autoModelo"></div>
+                    <div class="form-group"><label>Patente:</label><input type="text" id="autoPatente"></div>
+                    <div class="form-group"><label>Tarifa Base ($):</label><input type="number" id="autoBase"></div>
+                    <div class="form-group"><label>Precio x Km ($):</label><input type="number" id="autoKm"></div>
+                </div>
+                <div class="card card-moto">
+                    <h3>🏍️ MOTO</h3>
+                    <div class="form-group"><label>Chofer:</label><input type="text" id="motoChofer"></div>
+                    <div class="form-group"><label>Modelo:</label><input type="text" id="motoModelo"></div>
+                    <div class="form-group"><label>Patente:</label><input type="text" id="motoPatente"></div>
+                    <div class="form-group"><label>Tarifa Base ($):</label><input type="number" id="motoBase"></div>
+                    <div class="form-group"><label>Precio x Km ($):</label><input type="number" id="motoKm"></div>
+                </div>
+            </div>
+            <button class="btn-guardar" onclick="guardarConfiguracionSupabase()">Guardar Cambios en Supabase</button>
+        </div>
+
+        <!-- PESTAÑA 2: SEGURIDAD Y PERFILES (FOTOS GRANDES) -->
+        <div id="seccion-seguridad" class="seccion">
+            <h3 style="color: #38bdf8; font-size: 1.1rem; text-align: left;">🛡️ Verificación de Identidad y Seguridad</h3>
+            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: -5px;">Control de rostros registrados en los últimos servicios:</p>
+            <div id="listaSeguridad">Cargando perfiles de seguridad...</div>
+        </div>
+
+        <!-- PESTAÑA 3: HISTORIAL DE VIAJES -->
+        <div id="seccion-viajes" class="seccion">
+            <h3 style="color: #38bdf8; font-size: 1.1rem; text-align: left;">📋 Registro General de Viajes</h3>
+            <div id="listaHistorialViajes">Cargando viajes...</div>
         </div>
     </div>
 
@@ -74,18 +101,21 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             await cargarConfiguracion();
-            await cargarViajesYFotos();
+            await cargarDatosSeguridadYViajes();
         });
+
+        function cambiarPestana(idSeccion, evento) {
+            document.querySelectorAll('.seccion').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById('seccion-' + idSeccion).classList.add('active');
+            evento.currentTarget.classList.add('active');
+        }
 
         async function cargarConfiguracion() {
             try {
-                const { data, error } = await supabaseClient
-                    .from('configuracion_tarifas')
-                    .select('*')
-                    .eq('activa', true)
-                    .single();
-
-                if (data && !error) {
+                const { data } = await supabaseClient.from('configuracion_tarifas').select('*').eq('activa', true).single();
+                if (data) {
                     document.getElementById('autoChofer').value = data.auto_chofer || '';
                     document.getElementById('autoModelo').value = data.auto_modelo || '';
                     document.getElementById('autoPatente').value = data.auto_patente || '';
@@ -98,53 +128,71 @@
                     document.getElementById('motoBase').value = data.moto_base || 1500;
                     document.getElementById('motoKm').value = data.moto_km || 350;
                 }
-            } catch (e) {
-                console.error("Error al cargar configuración:", e);
-            }
+            } catch (e) { console.error(e); }
         }
 
-        async function cargarViajesYFotos() {
-            const contenedor = document.getElementById('listaViajes');
+        async function cargarDatosSeguridadYViajes() {
+            const contenedorSeguridad = document.getElementById('listaSeguridad');
+            const contenedorHistorial = document.getElementById('listaHistorialViajes');
+            
             try {
                 const { data, error } = await supabaseClient
                     .from('viajes')
                     .select('*')
                     .order('created_at', { ascending: false })
-                    .limit(5);
+                    .limit(10);
 
                 if (error) throw error;
 
                 if (!data || data.length === 0) {
-                    contenedor.innerHTML = '<p style="color: #94a3b8; text-align: center;">No hay viajes ni fotos registradas todavía.</p>';
+                    contenedorSeguridad.innerHTML = '<p style="color: #94a3b8; text-align: center;">No hay registros de seguridad aún.</p>';
+                    contenedorHistorial.innerHTML = '<p style="color: #94a3b8; text-align: center;">No hay viajes registrados aún.</p>';
                     return;
                 }
 
-                let html = '';
-                data.forEach(v => {
-                    const fotoPasajero = v.pasajero_foto_url ? v.pasajero_foto_url : 'https://via.placeholder.com/50?text=Sin+Foto';
-                    const fotoChofer = v.chofer_foto_url ? v.chofer_foto_url : 'https://via.placeholder.com/50?text=Sin+Foto';
+                let htmlSeguridad = '';
+                let htmlHistorial = '';
 
-                    html += `<div class="viaje-item">
-                        <div>
-                            <strong>Estado:</strong> ${v.estado || 'Pendiente'} <br>
-                            <strong>Precio:</strong> $${v.precio || 0} <br>
-                            <small style="color: #94a3b8;">${new Date(v.created_at).toLocaleString()}</small>
-                        </div>
-                        <div class="fotos-container">
-                            <div>
-                                <img src="${fotoPasajero}" class="foto-miniatura" alt="Pasajero">
-                                <div class="foto-info">Pasajero</div>
+                data.forEach(v => {
+                    const fotoPasajero = v.pasajero_foto_url ? v.pasajero_foto_url : 'https://via.placeholder.com/100?text=Sin+Foto';
+                    const fotoChofer = v.chofer_foto_url ? v.chofer_foto_url : 'https://via.placeholder.com/100?text=Sin+Foto';
+                    const fechaFormateada = new Date(v.created_at).toLocaleString();
+
+                    // Tarjeta de Seguridad con fotos grandes
+                    htmlSeguridad += `
+                        <div class="tarjeta-seguridad">
+                            <div class="viaje-meta">
+                                <span><strong>Estado:</strong> ${v.estado || 'Completado'}</span>
+                                <span style="color: #38bdf8;">$${v.precio || 0}</span>
                             </div>
-                            <div>
-                                <img src="${fotoChofer}" class="foto-miniatura" alt="Chofer">
-                                <div class="foto-info">Chofer</div>
+                            <div class="perfiles-flex">
+                                <div class="perfil-box">
+                                    <div class="perfil-titulo">Pasajero</div>
+                                    <img src="${fotoPasajero}" class="foto-grande" alt="Foto Pasajero">
+                                    <div style="font-size: 0.8rem; font-weight: bold; margin-top: 4px;">ID: ${v.id || 'N/A'}</div>
+                                </div>
+                                <div class="perfil-box">
+                                    <div class="perfil-titulo">Conductor</div>
+                                    <img src="${fotoChofer}" class="foto-grande" alt="Foto Conductor">
+                                    <div style="font-size: 0.8rem; font-weight: bold; margin-top: 4px;">Unidad Activa</div>
+                                </div>
                             </div>
-                        </div>
-                    </div>`;
+                            <div style="font-size: 0.75rem; color: #94a3b8; text-align: right; margin-top: 8px;">${fechaFormateada}</div>
+                        </div>`;
+
+                    // Historial simple
+                    htmlHistorial += `
+                        <div style="background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #10b981; font-size: 0.9rem;">
+                            <strong>Estado:</strong> ${v.estado || 'Finalizado'} | <strong>Monto:</strong> $${v.precio || 0} <br>
+                            <small style="color: #94a3b8;">${fechaFormateada}</small>
+                        </div>`;
                 });
-                contenedor.innerHTML = html;
+
+                contenedorSeguridad.innerHTML = htmlSeguridad;
+                contenedorHistorial.innerHTML = htmlHistorial;
             } catch (err) {
-                contenedor.innerHTML = '<p style="color: #fca5a5;">Error al cargar la actividad y fotos.</p>';
+                contenedorSeguridad.innerHTML = '<p style="color: #fca5a5;">Error al cargar seguridad.</p>';
+                contenedorHistorial.innerHTML = '<p style="color: #fca5a5;">Error al cargar historial.</p>';
             }
         }
 
@@ -166,20 +214,14 @@
             };
 
             try {
-                const { error } = await supabaseClient
-                    .from('configuracion_tarifas')
-                    .update(datosActualizados)
-                    .eq('activa', true);
-
+                const { error } = await supabaseClient.from('configuracion_tarifas').update(datosActualizados).eq('activa', true);
                 if (error) throw error;
-
-                msg.textContent = "¡Flota, tarifas y datos guardados en Supabase!";
+                msg.textContent = "¡Configuración guardada exitosamente!";
                 msg.className = "msg success";
             } catch (err) {
                 msg.textContent = "Error al guardar: " + err.message;
                 msg.className = "msg error";
             }
-
             setTimeout(() => msg.className = "msg", 4000);
         }
     </script>
