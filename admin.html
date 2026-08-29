@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TuMovil - Panel de Control y Seguridad</title>
+    <title>TuMovil - Panel de Control Definitivo</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <style>
         body { font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; padding: 15px; margin: 0; }
@@ -11,11 +11,11 @@
         h2 { color: #38bdf8; text-align: center; margin-bottom: 15px; font-size: 1.4rem; }
         
         /* Menú Superior de Navegación */
-        .nav-menu { display: flex; gap: 8px; margin-bottom: 20px; background: #0f172a; padding: 6px; border-radius: 10px; border: 1px solid #334155; overflow-x: auto; }
-        .nav-btn { flex: 1; background: transparent; border: none; color: #94a3b8; padding: 10px; font-size: 0.85rem; font-weight: bold; cursor: pointer; border-radius: 6px; text-align: center; white-space: nowrap; }
+        .nav-menu { display: flex; gap: 6px; margin-bottom: 20px; background: #0f172a; padding: 6px; border-radius: 10px; border: 1px solid #334155; overflow-x: auto; }
+        .nav-btn { flex: 1; background: transparent; border: none; color: #94a3b8; padding: 10px 8px; font-size: 0.8rem; font-weight: bold; cursor: pointer; border-radius: 6px; text-align: center; white-space: nowrap; }
         .nav-btn.active { background: #38bdf8; color: #0f172a; }
         
-        /* Secciones de contenido */
+        /* Secciones */
         .seccion { display: none; }
         .seccion.active { display: block; }
 
@@ -36,13 +36,19 @@
         .success { background: #065f46; color: #34d399; display: block; }
         .error { background: #7f1d1d; color: #fca5a5; display: block; }
         
-        /* Tarjetas de Seguridad y Fotos Grandes */
-        .tarjeta-seguridad { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 5px solid #38bdf8; }
-        .perfiles-flex { display: flex; justify-content: space-around; align-items: center; margin-top: 10px; gap: 10px; }
-        .perfil-box { text-align: center; flex: 1; background: #1e293b; padding: 10px; border-radius: 8px; border: 1px solid #475569; }
-        .foto-grande { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8; background: #334155; margin-bottom: 5px; }
-        .perfil-titulo { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; font-weight: bold; }
-        .viaje-meta { font-size: 0.85rem; color: #e2e8f0; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        /* Estilo de Foto Carnet para Perfiles */
+        .grid-perfiles { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        @media (max-width: 600px) { .grid-perfiles { grid-template-columns: 1fr; } }
+        .perfil-card { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 15px; text-align: center; }
+        .foto-carnet { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid #38bdf8; background: #334155; margin: 0 auto 10px auto; display: block; }
+        .perfil-nombre { font-size: 1rem; font-weight: bold; color: #fff; margin-bottom: 4px; }
+        .perfil-detalle { font-size: 0.8rem; color: #94a3b8; }
+
+        /* Historial de Viajes Detallado */
+        .viaje-card { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 14px; margin-bottom: 12px; border-left: 5px solid #10b981; }
+        .viaje-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.9rem; }
+        .viaje-body { font-size: 0.85rem; color: #cbd5e1; line-height: 1.5; }
+        .viaje-body span { color: #38bdf8; font-weight: 500; }
     </style>
 </head>
 <body>
@@ -53,8 +59,8 @@
         <!-- Menú de Navegación Superior -->
         <div class="nav-menu">
             <button class="nav-btn active" onclick="cambiarPestana('flota', event)">🚗 Flota y Tarifas</button>
-            <button class="nav-btn" onclick="cambiarPestana('seguridad', event)">🛡️ Seguridad y Perfiles</button>
-            <button class="nav-btn" onclick="cambiarPestana('viajes', event)">📋 Historial Viajes</button>
+            <button class="nav-btn" onclick="cambiarPestana('perfiles', event)">🛡️ Perfiles (Foto Carnet)</button>
+            <button class="nav-btn" onclick="cambiarPestana('viajes', event)">📋 Historial de Viajes</button>
         </div>
 
         <!-- PESTAÑA 1: FLOTA Y TARIFAS -->
@@ -80,17 +86,18 @@
             <button class="btn-guardar" onclick="guardarConfiguracionSupabase()">Guardar Cambios en Supabase</button>
         </div>
 
-        <!-- PESTAÑA 2: SEGURIDAD Y PERFILES (FOTOS GRANDES) -->
-        <div id="seccion-seguridad" class="seccion">
-            <h3 style="color: #38bdf8; font-size: 1.1rem; text-align: left;">🛡️ Verificación de Identidad y Seguridad</h3>
-            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: -5px;">Control de rostros registrados en los últimos servicios:</p>
-            <div id="listaSeguridad">Cargando perfiles de seguridad...</div>
+        <!-- PESTAÑA 2: PERFILES CON FOTO CARNET -->
+        <div id="seccion-perfiles" class="seccion">
+            <h3 style="color: #38bdf8; font-size: 1.1rem; margin-top: 0;">🛡️ Registro de Perfiles (Foto Carnet)</h3>
+            <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 15px;">Listado general de usuarios y conductores registrados con su identidad verificada:</p>
+            <div id="listaPerfiles" class="grid-perfiles">Cargando perfiles...</div>
         </div>
 
-        <!-- PESTAÑA 3: HISTORIAL DE VIAJES -->
+        <!-- PESTAÑA 3: HISTORIAL DE VIAJES DETALLADO -->
         <div id="seccion-viajes" class="seccion">
-            <h3 style="color: #38bdf8; font-size: 1.1rem; text-align: left;">📋 Registro General de Viajes</h3>
-            <div id="listaHistorialViajes">Cargando viajes...</div>
+            <h3 style="color: #38bdf8; font-size: 1.1rem; margin-top: 0;">📋 Historial Detallado de Viajes</h3>
+            <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 15px;">Seguimiento de rutas, horarios de salida/llegada y choferes asignados:</p>
+            <div id="listaHistorialViajes">Cargando historial...</div>
         </div>
     </div>
 
@@ -101,7 +108,7 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             await cargarConfiguracion();
-            await cargarDatosSeguridadYViajes();
+            await cargarPerfilesYViajes();
         });
 
         function cambiarPestana(idSeccion, evento) {
@@ -131,67 +138,66 @@
             } catch (e) { console.error(e); }
         }
 
-        async function cargarDatosSeguridadYViajes() {
-            const contenedorSeguridad = document.getElementById('listaSeguridad');
+        async function cargarPerfilesYViajes() {
+            const contenedorPerfiles = document.getElementById('listaPerfiles');
             const contenedorHistorial = document.getElementById('listaHistorialViajes');
             
             try {
-                const { data, error } = await supabaseClient
-                    .from('viajes')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(10);
-
-                if (error) throw error;
-
-                if (!data || data.length === 0) {
-                    contenedorSeguridad.innerHTML = '<p style="color: #94a3b8; text-align: center;">No hay registros de seguridad aún.</p>';
-                    contenedorHistorial.innerHTML = '<p style="color: #94a3b8; text-align: center;">No hay viajes registrados aún.</p>';
-                    return;
+                // 1. Cargar perfiles de la tabla perfiles_usuarios
+                const { data: perfiles } = await supabaseClient.from('perfiles_usuarios').select('*').order('created_at', { ascending: false });
+                
+                if (!perfiles || perfiles.length === 0) {
+                    contenedorPerfiles.innerHTML = '<p style="color: #94a3b8; grid-column: span 2; text-align: center;">No hay perfiles registrados aún.</p>';
+                } else {
+                    let htmlPerfiles = '';
+                    perfiles.forEach(p => {
+                        const foto = p.foto_url ? p.foto_url : 'https://via.placeholder.com/110?text=Sin+Foto';
+                        htmlPerfiles += `
+                            <div class="perfil-card">
+                                <img src="${foto}" class="foto-carnet" alt="Foto Carnet">
+                                <div class="perfil-nombre">${p.nombre}</div>
+                                <div class="perfil-detalle">📱 ${p.telefono}</div>
+                                <div class="perfil-detalle" style="margin-top: 4px; color: #38bdf8; text-transform: uppercase; font-weight: bold; font-size: 0.75rem;">${p.tipo}</div>
+                            </div>`;
+                    });
+                    contenedorPerfiles.innerHTML = htmlPerfiles;
                 }
 
-                let htmlSeguridad = '';
-                let htmlHistorial = '';
+                // 2. Cargar historial detallado de viajes
+                const { data: viajes } = await supabaseClient.from('viajes').select('*').order('created_at', { ascending: false }).limit(15);
+                
+                if (!viajes || viajes.length === 0) {
+                    contenedorHistorial.innerHTML = '<p style="color: #94a3b8; text-align: center;">No hay viajes registrados aún.</p>';
+                } else {
+                    let htmlViajes = '';
+                    viajes.forEach(v => {
+                        const fechaSalida = new Date(v.created_at).toLocaleString();
+                        const origen = v.origen || 'Casa / Salida habitual';
+                        const destino = v.destino || 'Cruce Castellar';
+                        const chofer = v.chofer_asignado || 'Conductor asignado';
+                        const estado = v.estado || 'Finalizado';
+                        const precio = v.precio || 0;
 
-                data.forEach(v => {
-                    const fotoPasajero = v.pasajero_foto_url ? v.pasajero_foto_url : 'https://via.placeholder.com/100?text=Sin+Foto';
-                    const fotoChofer = v.chofer_foto_url ? v.chofer_foto_url : 'https://via.placeholder.com/100?text=Sin+Foto';
-                    const fechaFormateada = new Date(v.created_at).toLocaleString();
-
-                    // Tarjeta de Seguridad con fotos grandes
-                    htmlSeguridad += `
-                        <div class="tarjeta-seguridad">
-                            <div class="viaje-meta">
-                                <span><strong>Estado:</strong> ${v.estado || 'Completado'}</span>
-                                <span style="color: #38bdf8;">$${v.precio || 0}</span>
-                            </div>
-                            <div class="perfiles-flex">
-                                <div class="perfil-box">
-                                    <div class="perfil-titulo">Pasajero</div>
-                                    <img src="${fotoPasajero}" class="foto-grande" alt="Foto Pasajero">
-                                    <div style="font-size: 0.8rem; font-weight: bold; margin-top: 4px;">ID: ${v.id || 'N/A'}</div>
+                        htmlViajes += `
+                            <div class="viaje-card">
+                                <div class="viaje-header">
+                                    <span><strong>Estado:</strong> <span style="color: #34d399;">${estado}</span></span>
+                                    <span style="font-size: 1rem; font-weight: bold; color: #38bdf8;">$${precio}</span>
                                 </div>
-                                <div class="perfil-box">
-                                    <div class="perfil-titulo">Conductor</div>
-                                    <img src="${fotoChofer}" class="foto-grande" alt="Foto Conductor">
-                                    <div style="font-size: 0.8rem; font-weight: bold; margin-top: 4px;">Unidad Activa</div>
+                                <div class="viaje-body">
+                                    📍 <strong>Desde:</strong> <span>${origen}</span><br>
+                                    🏁 <strong>Hasta:</strong> <span>${destino}</span><br>
+                                    🚗 <strong>Chofer:</strong> <span>${chofer}</span><br>
+                                    ⏱️ <strong>Salida y Registro:</strong> <span>${fechaSalida}</span>
                                 </div>
-                            </div>
-                            <div style="font-size: 0.75rem; color: #94a3b8; text-align: right; margin-top: 8px;">${fechaFormateada}</div>
-                        </div>`;
+                            </div>`;
+                    });
+                    contenedorHistorial.innerHTML = htmlViajes;
+                }
 
-                    // Historial simple
-                    htmlHistorial += `
-                        <div style="background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #10b981; font-size: 0.9rem;">
-                            <strong>Estado:</strong> ${v.estado || 'Finalizado'} | <strong>Monto:</strong> $${v.precio || 0} <br>
-                            <small style="color: #94a3b8;">${fechaFormateada}</small>
-                        </div>`;
-                });
-
-                contenedorSeguridad.innerHTML = htmlSeguridad;
-                contenedorHistorial.innerHTML = htmlHistorial;
             } catch (err) {
-                contenedorSeguridad.innerHTML = '<p style="color: #fca5a5;">Error al cargar seguridad.</p>';
+                console.error(err);
+                contenedorPerfiles.innerHTML = '<p style="color: #fca5a5;">Error al cargar perfiles.</p>';
                 contenedorHistorial.innerHTML = '<p style="color: #fca5a5;">Error al cargar historial.</p>';
             }
         }
