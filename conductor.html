@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TuMovil Las Catalinas - Conductor</title>
+    <title>Tu Móvil</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -385,6 +385,8 @@
 
                     if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
                         actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng);
+                    } else if (viajeActivo && estadoFlujo === 'en_viaje') {
+                        actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.destino_lat, viajeActivo.destino_lng);
                     }
                 }, (error) => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
             }
@@ -551,7 +553,6 @@
                 return;
             }
             if (estadoFlujo === 'en_viaje') {
-                // REGISTRAR COBRO Y GANANCIAS
                 let montoViaje = parseFloat(viajeActivo.precio || '0');
                 totalDia += montoViaje;
                 ultimoViajeMonto = montoViaje;
@@ -626,9 +627,29 @@
         }
 
         let ultimoCalculoRuta = 0;
+        let ultimaLatRuta = 0;
+        let ultimaLngRuta = 0;
+
+        function distanciaEnMetros(lat1, lon1, lat2, lon2) {
+            let dLat = (lat2 - lat1) * Math.PI / 180;
+            let dLon = (lon2 - lon1) * Math.PI / 180;
+            let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return 6371000 * c;
+        }
+
         function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
             let ahora = Date.now();
-            if (ahora - ultimoCalculoRuta > 10000) { trazarRutaCalles(lat1, lon1, lat2, lon2); ultimoCalculoRuta = ahora; }
+            let seDesvio = (ultimaLatRuta === 0) || (distanciaEnMetros(lat1, lon1, ultimaLatRuta, ultimaLngRuta) > 35);
+            
+            if ((ahora - ultimoCalculoRuta > 6000) || seDesvio) {
+                ultimaLatRuta = lat1;
+                ultimaLngRuta = lon1;
+                trazarRutaCalles(lat1, lon1, lat2, lon2);
+                ultimoCalculoRuta = ahora;
+            }
         }
 
         function mostrarMsg(texto, tipo) { const msg = document.getElementById('msgChofer'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
