@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tu Móvil Las Catalinas - Pasajero</title>
+    <title>Tu Móvil - Pasajero</title>
     <!-- Supabase & Leaflet -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -16,11 +16,9 @@
             background: #f4f4f6; height: 100vh; overflow: hidden; color: #1a1a1a;
         }
 
-        /* MAPA CERCANO Y DINÁMICO */
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
-        /* SPLASH SCREEN DE BIENVENIDA Y SELFIE */
         #splashScreen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: #0f172a; color: white; z-index: 9999;
@@ -60,7 +58,6 @@
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top-color: #2cd44a; border-radius: 50%; animation: spin 1s infinite linear; margin-top: 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* BOTONES FLOTANTES */
         .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .header-row { display: flex; justify-content: space-between; width: 100%; }
         .right-buttons { display: flex; flex-direction: column; gap: 10px; }
@@ -73,7 +70,6 @@
         .mapa-hint { position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(44, 212, 74, 0.95); color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-align: center; width: 85%; max-width: 320px; }
         .mapa-hint.visible { display: block; }
 
-        /* MENÚ INFERIOR DINÁMICO Y CURVADO */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
             background: #E8E2D5; 
@@ -91,7 +87,6 @@
 
         .panel-handle { width: 48px; height: 5px; background: #b5ac9b; border-radius: 3px; margin: 0 auto 12px; cursor: pointer; }
 
-        /* TARJETA MODERNA CON BORDE VERDE Y BRILLO */
         .driver-card-preview { 
             display: flex; align-items: center; gap: 14px; margin-bottom: 14px; 
             background: #F4EFE6; padding: 10px; border-radius: 18px; 
@@ -103,7 +98,6 @@
         .driver-info-box h3 { font-size: 1.05rem; font-weight: 700; color: #111; }
         .driver-info-box p { font-size: 0.8rem; color: #444; }
 
-        /* CAMPOS DE ENTRADA */
         .input-group { 
             background: #F4EFE6; 
             border-radius: 16px; 
@@ -131,7 +125,6 @@
         }
         .badge-nocturno { background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-top: 4px; border: 1px solid #fecaca; }
         
-        /* BOTÓN VERDE PRINCIPAL */
         .btn-green-action { 
             width: 100%; background: #2cd44a; color: white; border: none; padding: 14px; 
             border-radius: 50px; font-size: 1.05rem; font-weight: 700; cursor: pointer; 
@@ -140,30 +133,17 @@
         }
         .btn-green-action:hover { background: #25b83f; }
 
-        /* ICONOS AGRANDADOS UN 20% MÁS */
         .pasajero-ping-icon { 
-            background: #2cd44a; 
-            width: 18px !important; 
-            height: 18px !important; 
-            border: 2px solid white; 
-            border-radius: 50%; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
+            background: #2cd44a; width: 18px !important; height: 18px !important; 
+            border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
         }
         .destino-ping-icon { 
-            background: #ef4444; 
-            width: 18px !important; 
-            height: 18px !important; 
-            border: 2px solid white; 
-            border-radius: 50%; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
+            background: #ef4444; width: 18px !important; height: 18px !important; 
+            border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
         }
         .auto-conductor-ping {
-            font-size: 36px !important; 
-            width: 36px !important;
-            height: 36px !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-size: 36px !important; width: 36px !important; height: 36px !important;
+            display: flex; align-items: center; justify-content: center;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
         }
 
@@ -226,8 +206,8 @@
                     <span style="font-size: 1.4rem;">🚕</span>
                 </div>
                 <div class="driver-info-box">
-                    <h3>Tu Móvil Las Catalinas</h3>
-                    <p id="txtEstructuraTarifa">Base $3.000 + $400 x Kilómetro</p>
+                    <h3>Tu Móvil</h3>
+                    <p id="txtEstructuraTarifa">Cargando tarifas...</p>
                     <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +30% Recargo Nocturno Activo</div>
                 </div>
             </div>
@@ -280,9 +260,15 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const TARIFA_BASE = 3000;
-        const TARIFA_KM = 400;
-        const RECARGO_NOCTURNO = 1.30; 
+        // Tarifas dinámicas iniciales (se sobreescriben al consultar Supabase)
+        let TARIFAS_ACTIVAS = {
+            base: 3000,
+            km: 400,
+            nocturno: 1.30,
+            horaInicio: 20,
+            horaFin: 8
+        };
+
         const UBICACION_DEFAULT = [-34.54291, -58.71212];
 
         let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
@@ -302,34 +288,54 @@
             }
         }
 
-        // 🌙 HORARIO NOCTURNO DE 20:00 A 08:00 HS
+        async function cargarTarifasDesdeSupabase() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('configuracion_tarifas')
+                    .select('*')
+                    .eq('activa', true)
+                    .single();
+                    
+                if (data && !error) {
+                    TARIFAS_ACTIVAS.base = Number(data.tarifa_base);
+                    TARIFAS_ACTIVAS.km = Number(data.tarifa_km);
+                    TARIFAS_ACTIVAS.nocturno = Number(data.recargo_nocturno);
+                    TARIFAS_ACTIVAS.horaInicio = Number(data.hora_inicio_nocturno);
+                    TARIFAS_ACTIVAS.horaFin = Number(data.hora_fin_nocturno);
+                }
+            } catch (e) {
+                console.log("Usando tarifas por defecto ante error de red:", e);
+            }
+
+            document.getElementById('txtEstructuraTarifa').innerHTML = 
+                `Base $${TARIFAS_ACTIVAS.base.toLocaleString()} + $${TARIFAS_ACTIVAS.km.toLocaleString()} x Km`;
+
+            if (esHorarioNocturno()) {
+                document.getElementById('badgeNocturnoAviso').classList.remove('hidden');
+                document.getElementById('txtEstructuraTarifa').innerHTML += `<br><b>(Tarifa nocturna aplicada)</b>`;
+            }
+        }
+
         function esHorarioNocturno() {
             const horaActual = new Date().getHours();
-            return (horaActual >= 20 || horaActual < 8);
+            return (horaActual >= TARIFAS_ACTIVAS.horaInicio || horaActual < TARIFAS_ACTIVAS.horaFin);
         }
 
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(UBICACION_DEFAULT, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             mapa.on('click', (e) => { if (modoDestinoManual) marcarDestinoManual(e.latlng.lat, e.latlng.lng); });
-            
-            if(esHorarioNocturno()) {
-                document.getElementById('badgeNocturnoAviso').classList.remove('hidden');
-                document.getElementById('txtEstructuraTarifa').innerHTML = "Base $3.000 + $400 x Km <br><b>(Tarifa nocturna 30% aplicada)</b>";
-            }
         }
 
         function toggleExpandirPanel() {
             const panel = document.getElementById('bottomPanel');
-            if (panel.style.height === '52vh') {
-                panel.style.height = '';
-            } else {
-                panel.style.height = '52vh';
-            }
+            panel.style.height = (panel.style.height === '52vh') ? '' : '52vh';
         }
 
-        function procesarSplashDeBienvenida() {
+        async function procesarSplashDeBienvenida() {
             try {
+                await cargarTarifasDesdeSupabase();
+                
                 pasajeroNombre = localStorage.getItem('perfil_nombre') || "";
                 pasajeroTelefono = localStorage.getItem('perfil_telefono') || "";
                 const fotoGuardada = localStorage.getItem('perfil_foto') || "";
@@ -350,11 +356,9 @@
                     document.getElementById('splashForm').style.display = "flex";
                 } else {
                     document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
-                    setTimeout(async () => { 
-                        await verificarViajeActivoPasajero(); 
-                        cerrarSplash(); 
-                        if (!viajeId) obtenerGPS(); 
-                    }, 800);
+                    await verificarViajeActivoPasajero(); 
+                    cerrarSplash(); 
+                    if (!viajeId) obtenerGPS(); 
                 }
             } catch (err) {
                 document.getElementById('splashTitulo').textContent = "¡Bienvenido!";
@@ -470,11 +474,7 @@
                         const latLngCond = [de.conductor_lat, de.conductor_lng];
                         if (!markerConductor) {
                             markerConductor = L.marker(latLngCond, { 
-                                icon: L.divIcon({ 
-                                    className: 'auto-conductor-ping', 
-                                    html: '🚗', 
-                                    iconSize: [36, 36] 
-                                }) 
+                                icon: L.divIcon({ className: 'auto-conductor-ping', html: '🚗', iconSize: [36, 36] }) 
                             }).addTo(mapa);
                         } else {
                             markerConductor.setLatLng(latLngCond);
@@ -492,7 +492,6 @@
                             const group = new L.featureGroup([markerOrigen, markerConductor]);
                             mapa.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 17 });
                         }
-
                         mostrarPaso('pasoPrecio');
                     }
                     if (de.estado === 'aceptado') {
@@ -503,11 +502,6 @@
                     if (de.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
                         iniciarMonitoreoDinamicoRuta();
-                        
-                        if (markerConductor && markerDestino) {
-                            const groupRuta = new L.featureGroup([markerConductor, markerDestino]);
-                            mapa.fitBounds(groupRuta.getBounds(), { padding: [40, 40], maxZoom: 18 });
-                        }
                     }
                     if (de.estado === 'cancelado') { 
                         mostrarMsg('Viaje cancelado.', 'error'); 
@@ -574,9 +568,7 @@
             if (!inicio || !destinoCoords) return;
             
             try {
-                // Petición optimizada a OSRM para forzar calles transitables y evitar recortes extraños
                 const url = `https://router.project-osrm.org/route/v1/car/${inicio.lng},${inicio.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true&continue_straight=default`;
-                
                 const res = await fetch(url); 
                 const data = await res.json();
                 
@@ -584,14 +576,14 @@
                     if (rutaTrazada) mapa.removeLayer(rutaTrazada);
                     
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 5, opacity: 0.85 }).addTo(mapa);
-                    
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
-                    let subTotal = TARIFA_BASE + (distanciaKm * TARIFA_KM);
-                    if (esHorarioNocturno()) { subTotal = subTotal * RECARGO_NOCTURNO; }
+                    // CÁLCULO USANDO TARIFAS DINÁMICAS DE SUPABASE
+                    let subTotal = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
+                    if (esHorarioNocturno()) { subTotal = subTotal * TARIFAS_ACTIVAS.nocturno; }
 
                     precioCalculado = Math.round(subTotal);
-                    document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado + (esHorarioNocturno() ? " (Nocturno 30%)" : "");
+                    document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado + (esHorarioNocturno() ? " (Nocturno)" : "");
                     document.getElementById('txtKmLive').textContent = distanciaKm;
                     document.getElementById('precioEstimadoBox').style.display = 'block';
                     document.getElementById('bottomPanel').classList.add('con-ruta');
@@ -607,7 +599,6 @@
 
         function iniciarMonitoreoDinamicoRuta() {
             if (intervaloActualizacionRuta) clearInterval(intervaloActualizacionRuta);
-            
             intervaloActualizacionRuta = setInterval(async () => {
                 if (markerConductor && destinoCoords && viajeId) {
                     const posActualChofer = markerConductor.getLatLng();
@@ -647,8 +638,14 @@
             const destinoTexto = document.getElementById('destino').value.trim();
             if (!destinoTexto || !origenCoords || !destinoCoords) { mostrarMsg('Seleccioná un destino válido.', 'error'); return; }
 
-            let baseCalculo = TARIFA_BASE + (distanciaKm * TARIFA_KM);
-            if (esHorarioNocturno()) { baseCalculo = baseCalculo * RECARGO_NOCTURNO; }
+            // Validación de seguridad para el GPS
+            if (origenCoords.lat === UBICACION_DEFAULT[0] && origenCoords.lng === UBICACION_DEFAULT[1]) {
+                mostrarMsg('Por favor presiona el botón de GPS (🎯) para obtener tu ubicación exacta antes de pedir.', 'error');
+                return;
+            }
+
+            let baseCalculo = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
+            if (esHorarioNocturno()) { baseCalculo = baseCalculo * TARIFAS_ACTIVAS.nocturno; }
             precioCalculado = Math.round(baseCalculo);
 
             try {
