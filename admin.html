@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TuMovil - Panel de Control Familiar</title>
+    <title>TuMovil - Panel de Control Administrador</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <style>
         body { font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; margin: 0; }
         .container { max-width: 600px; margin: 20px auto; background: #1e293b; padding: 24px; border-radius: 16px; border: 1px solid #334155; }
         h2 { margin-top: 0; color: #38bdf8; text-align: center; }
         .grid-vehiculos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        @media (max-width: 600px) { .grid-vehiculos { grid-template-columns: 1fr; } }
         .card { background: #0f172a; padding: 16px; border-radius: 12px; border: 1px solid #475569; }
         .card h3 { margin-top: 0; padding-bottom: 8px; border-bottom: 2px solid; font-size: 1.1rem; }
         .card-auto h3 { color: #60a5fa; border-color: #3b82f6; }
@@ -16,72 +18,111 @@
         .form-group { margin-bottom: 12px; }
         label { display: block; margin-bottom: 4px; font-size: 0.85rem; color: #94a3b8; }
         input { width: 100%; padding: 10px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: white; box-sizing: border-box; outline: none; }
-        button { width: 100%; background: #10b981; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        button { width: 100%; background: #10b981; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 20px; }
         button:hover { background: #059669; }
         .msg { padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 15px; display: none; font-size: 0.9rem; }
         .success { background: #065f46; color: #34d399; display: block; }
+        .error { background: #7f1d1d; color: #fca5a5; display: block; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>🎛️ Panel de Control Familiar</h2>
         <div id="statusMsg" class="msg"></div>
+        
         <div class="grid-vehiculos">
             <!-- SECCIÓN AUTO -->
             <div class="card card-auto">
                 <h3>🚗 Categoría: AUTO</h3>
-                <div class="form-group"><label>Chofer:</label><input type="text" id="autoChofer" value="Carlos Cueva"></div>
-                <div class="form-group"><label>Vehículo / Modelo:</label><input type="text" id="autoModelo" value="Ford Fiesta Max"></div>
-                <div class="form-group"><label>Patente:</label><input type="text" id="autoPatente" value="JCP 478"></div>
-                <div class="form-group"><label>Tarifa Base ($):</label><input type="number" id="autoBase" value="3000"></div>
-                <div class="form-group"><label>Precio x Km ($):</label><input type="number" id="autoKm" value="600"></div>
+                <div class="form-group"><label>Chofer:</label><input type="text" id="autoChofer"></div>
+                <div class="form-group"><label>Vehículo / Modelo:</label><input type="text" id="autoModelo"></div>
+                <div class="form-group"><label>Patente:</label><input type="text" id="autoPatente"></div>
+                <div class="form-group"><label>Tarifa Base ($):</label><input type="number" id="autoBase"></div>
+                <div class="form-group"><label>Precio x Km ($):</label><input type="number" id="autoKm"></div>
             </div>
             <!-- SECCIÓN MOTO -->
             <div class="card card-moto">
                 <h3>🏍️ Categoría: MOTO</h3>
-                <div class="form-group"><label>Chofer:</label><input type="text" id="motoChofer" value="Hijo de Carlos"></div>
-                <div class="form-group"><label>Moto / Cilindrada:</label><input type="text" id="motoModelo" value="Honda Wave 110"></div>
-                <div class="form-group"><label>Patente:</label><input type="text" id="motoPatente" value="999-XYZ"></div>
-                <div class="form-group"><label>Tarifa Base ($):</label><input type="number" id="motoBase" value="1500"></div>
-                <div class="form-group"><label>Precio x Km ($):</label><input type="number" id="motoKm" value="350"></div>
+                <div class="form-group"><label>Chofer:</label><input type="text" id="motoChofer"></div>
+                <div class="form-group"><label>Moto / Cilindrada:</label><input type="text" id="motoModelo"></div>
+                <div class="form-group"><label>Patente:</label><input type="text" id="motoPatente"></div>
+                <div class="form-group"><label>Tarifa Base ($):</label><input type="number" id="motoBase"></div>
+                <div class="form-group"><label>Precio x Km ($):</label><input type="number" id="motoKm"></div>
             </div>
         </div>
-        <button onclick="guardarConfiguracion()">Guardar Flota y Tarifas</button>
+        
+        <button onclick="guardarConfiguracionSupabase()">Guardar Flota y Tarifas en Supabase</button>
     </div>
+
     <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            if(localStorage.getItem('cfg_auto_base')) {
-                document.getElementById('autoChofer').value = localStorage.getItem('cfg_auto_chofer');
-                document.getElementById('autoModelo').value = localStorage.getItem('cfg_auto_modelo');
-                document.getElementById('autoPatente').value = localStorage.getItem('cfg_auto_patente');
-                document.getElementById('autoBase').value = localStorage.getItem('cfg_auto_base');
-                document.getElementById('autoKm').value = localStorage.getItem('cfg_auto_km');
-            }
-            if(localStorage.getItem('cfg_moto_base')) {
-                document.getElementById('motoChofer').value = localStorage.getItem('cfg_moto_chofer');
-                document.getElementById('motoModelo').value = localStorage.getItem('cfg_moto_modelo');
-                document.getElementById('motoPatente').value = localStorage.getItem('cfg_moto_patente');
-                document.getElementById('motoBase').value = localStorage.getItem('cfg_moto_base');
-                document.getElementById('motoKm').value = localStorage.getItem('cfg_moto_km');
+        const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Cargar datos de Supabase al iniciar
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('configuracion_tarifas')
+                    .select('*')
+                    .eq('activa', true)
+                    .single();
+
+                if (data && !error) {
+                    // Auto
+                    document.getElementById('autoChofer').value = data.auto_chofer || '';
+                    document.getElementById('autoModelo').value = data.auto_modelo || '';
+                    document.getElementById('autoPatente').value = data.auto_patente || '';
+                    document.getElementById('autoBase').value = data.tarifa_base || 3000;
+                    document.getElementById('autoKm').value = data.tarifa_km || 600;
+                    
+                    // Moto
+                    document.getElementById('motoChofer').value = data.moto_chofer || '';
+                    document.getElementById('motoModelo').value = data.moto_modelo || '';
+                    document.getElementById('motoPatente').value = data.moto_patente || '';
+                    document.getElementById('motoBase').value = data.moto_base || 1500;
+                    document.getElementById('motoKm').value = data.moto_km || 350;
+                }
+            } catch (e) {
+                console.error("Error al cargar configuración:", e);
             }
         });
-        function guardarConfiguracion() {
-            localStorage.setItem('cfg_auto_chofer', document.getElementById('autoChofer').value.trim());
-            localStorage.setItem('cfg_auto_modelo', document.getElementById('autoModelo').value.trim());
-            localStorage.setItem('cfg_auto_patente', document.getElementById('autoPatente').value.trim());
-            localStorage.setItem('cfg_auto_base', document.getElementById('autoBase').value.trim());
-            localStorage.setItem('cfg_auto_km', document.getElementById('autoKm').value.trim());
-            
-            localStorage.setItem('cfg_moto_chofer', document.getElementById('motoChofer').value.trim());
-            localStorage.setItem('cfg_moto_modelo', document.getElementById('motoModelo').value.trim());
-            localStorage.setItem('cfg_moto_patente', document.getElementById('motoPatente').value.trim());
-            localStorage.setItem('cfg_moto_base', document.getElementById('motoBase').value.trim());
-            localStorage.setItem('cfg_moto_km', document.getElementById('motoKm').value.trim());
 
+        // Guardar configuración completa en Supabase
+        async function guardarConfiguracionSupabase() {
             const msg = document.getElementById('statusMsg');
-            msg.textContent = "¡Configuraciones de la flota guardadas!";
-            msg.className = "msg success";
-            setTimeout(() => msg.className = "msg", 3000);
+
+            const datosActualizados = {
+                auto_chofer: document.getElementById('autoChofer').value.trim(),
+                auto_modelo: document.getElementById('autoModelo').value.trim(),
+                auto_patente: document.getElementById('autoPatente').value.trim(),
+                tarifa_base: Number(document.getElementById('autoBase').value),
+                tarifa_km: Number(document.getElementById('autoKm').value),
+
+                moto_chofer: document.getElementById('motoChofer').value.trim(),
+                moto_modelo: document.getElementById('motoModelo').value.trim(),
+                moto_patente: document.getElementById('motoPatente').value.trim(),
+                moto_base: Number(document.getElementById('motoBase').value),
+                moto_km: Number(document.getElementById('motoKm').value),
+                actualizado_at: new Date()
+            };
+
+            try {
+                const { error } = await supabaseClient
+                    .from('configuracion_tarifas')
+                    .update(datosActualizados)
+                    .eq('activa', true);
+
+                if (error) throw error;
+
+                msg.textContent = "¡Flota y tarifas de Auto y Moto guardadas en Supabase!";
+                msg.className = "msg success";
+            } catch (err) {
+                msg.textContent = "Error al guardar: " + err.message;
+                msg.className = "msg error";
+            }
+
+            setTimeout(() => msg.className = "msg", 4000);
         }
     </script>
 </body>
