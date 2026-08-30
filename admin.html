@@ -170,12 +170,12 @@
 
     <script>
         const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
         let mapa = null;
-        let marcadoresChoferes = {}; // Almacena los marcadores en el mapa por ID o patente
+        let marcadoresChoferes = {};
 
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
@@ -185,7 +185,6 @@
             cargarUbicacionConductoresMapa();
         }
 
-        // Cargar ubicación en tiempo real de los conductores en el mapa
         async function cargarUbicacionConductoresMapa() {
             try {
                 const { data: choferes, error } = await supabaseClient.from('conductores').select('*');
@@ -194,16 +193,13 @@
                 if (!choferes) return;
 
                 choferes.forEach(c => {
-                    // Soportar distintos nombres de columnas para latitud y longitud
                     let lat = c.lat || c.latitud;
                     let lng = c.lng || c.longitud || c.lon;
-
                     let identificador = c.patente || c.id || c.nombre;
 
                     if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
                         let fotoChofer = c.selfie_url || c.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
                         
-                        // Crear ícono personalizado con la foto del chofer
                         let iconoChoferHTML = L.divIcon({
                             className: 'custom-marker-icon',
                             html: `<img src="${fotoChofer}" alt="Auto">`,
@@ -212,10 +208,8 @@
                         });
 
                         if (marcadoresChoferes[identificador]) {
-                            // Si ya existe el marcador, solo actualizamos su posición
                             marcadoresChoferes[identificador].setLatLng([lat, lng]);
                         } else {
-                            // Si no existe, lo creamos y lo añadimos al mapa
                             let marker = L.marker([lat, lng], { icon: iconoChoferHTML }).addTo(mapa);
                             marker.bindPopup(`<b>🚗 ${c.nombre}</b><br>Patente: ${c.patente || 'N/A'}<br>Tel: ${c.telefono || 'N/A'}`);
                             marcadoresChoferes[identificador] = marker;
@@ -308,7 +302,6 @@
             document.getElementById('modalConductores').classList.add('hidden');
         }
 
-        // PANTALLA COMPLETA / PERFIL INDIVIDUAL DEL CHOFER
         async function abrirPerfilChofer(chofer) {
             document.getElementById('modalPerfilChofer').classList.remove('hidden');
             
@@ -321,7 +314,7 @@
             let lat = chofer.lat || chofer.latitud;
             let lng = chofer.lng || chofer.longitud || chofer.lon;
             let botonUbicacion = (lat && lng) 
-                ? `<button class="btn-accion-grande btn-mapa-chofer" onclick="enfocarChoferEnMapa(${lat}, ${lng}, '${chofer.nombre}')">📍 Ver ubicación exacta en el mapa</button>`
+                ? `<button class="btn-accion-grande btn-mapa-chofer" onclick="enfocarChoferEnMapa(${lat}, ${lng})">📍 Ver ubicación exacta en el mapa</button>`
                 : `<p style="font-size: 0.8rem; color: #94a3b8; text-align: center; margin-bottom: 14px;">Este chofer aún no reporta coordenadas GPS.</p>`;
 
             let fotoChofer = chofer.selfie_url || chofer.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
@@ -364,7 +357,6 @@
                 </div>
             `;
 
-            // Consultar viajes por nombre del conductor
             try {
                 const { data: viajes, error } = await supabaseClient
                     .from('viajes')
@@ -422,12 +414,11 @@
             }
         }
 
-        // Función para enfocar el mapa en la ubicación del chofer seleccionado
-        function enfocarChoferEnMapa(lat, lng, nombre) {
+        function enfocarChoferEnMapa(lat, lng) {
             cerrarPerfilChofer();
             cerrarModalConductores();
             if (mapa) {
-                mapa.setView([lat, lng], 17); // Acerca el zoom a la ubicación exacta
+                mapa.setView([lat, lng], 17);
             }
         }
 
@@ -457,7 +448,6 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             initMapa();
-            // Actualizar viajes y ubicaciones en tiempo real cada 5 segundos
             setInterval(() => {
                 cargarViajesActivosMapa();
                 cargarUbicacionConductoresMapa();
