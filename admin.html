@@ -64,6 +64,7 @@
         .btn-accion-grande { width: 100%; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; cursor: pointer; border: none; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-bloquear-grande { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
         .btn-aprobar-grande { background: #059669; color: white; border: 1px solid #10b981; }
+        .btn-mapa-chofer { background: #3b82f6; color: white; border: 1px solid #60a5fa; }
 
         .form-group { margin-bottom: 14px; }
         .form-group label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 600; }
@@ -74,6 +75,24 @@
             box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); margin-top: 10px; transition: background 0.2s;
         }
         .btn-guardar:hover { background: #059669; }
+
+        /* Marcador personalizado de chofer en el mapa */
+        .custom-marker-icon {
+            background: #1e293b;
+            border: 2px solid #38bdf8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+        .custom-marker-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
 
         .hidden { display: none !important; }
     </style>
@@ -87,7 +106,7 @@
                 <span>🚗 Conductores Registrados</span>
                 <button class="close-modal" onclick="cerrarModalConductores()">✕</button>
             </h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Toca sobre cualquier chofer para ver su perfil, historial y ganancias.</p>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Toca sobre cualquier chofer para ver su perfil, historial, ganancias y ubicarlo en el mapa.</p>
             <div id="listaConductoresContainer">
                 <p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando conductores...</p>
             </div>
@@ -151,16 +170,61 @@
 
     <script>
         const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
         let mapa = null;
+        let marcadoresChoferes = {}; // Almacena los marcadores en el mapa por ID o patente
 
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
+            
             cargarViajesActivosMapa();
+            cargarUbicacionConductoresMapa();
+        }
+
+        // Cargar ubicación en tiempo real de los conductores en el mapa
+        async function cargarUbicacionConductoresMapa() {
+            try {
+                const { data: choferes, error } = await supabaseClient.from('conductores').select('*');
+                if (error) throw error;
+
+                if (!choferes) return;
+
+                choferes.forEach(c => {
+                    // Soportar distintos nombres de columnas para latitud y longitud
+                    let lat = c.lat || c.latitud;
+                    let lng = c.lng || c.longitud || c.lon;
+
+                    let identificador = c.patente || c.id || c.nombre;
+
+                    if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                        let fotoChofer = c.selfie_url || c.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
+                        
+                        // Crear ícono personalizado con la foto del chofer
+                        let iconoChoferHTML = L.divIcon({
+                            className: 'custom-marker-icon',
+                            html: `<img src="${fotoChofer}" alt="Auto">`,
+                            iconSize: [40, 40],
+                            iconAnchor: [20, 20]
+                        });
+
+                        if (marcadoresChoferes[identificador]) {
+                            // Si ya existe el marcador, solo actualizamos su posición
+                            marcadoresChoferes[identificador].setLatLng([lat, lng]);
+                        } else {
+                            // Si no existe, lo creamos y lo añadimos al mapa
+                            let marker = L.marker([lat, lng], { icon: iconoChoferHTML }).addTo(mapa);
+                            marker.bindPopup(`<b>🚗 ${c.nombre}</b><br>Patente: ${c.patente || 'N/A'}<br>Tel: ${c.telefono || 'N/A'}`);
+                            marcadoresChoferes[identificador] = marker;
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Error al cargar ubicaciones de conductores:", e);
+            }
         }
 
         async function cargarViajesActivosMapa() {
@@ -216,10 +280,10 @@
                 let html = '';
                 choferes.forEach(c => {
                     let badgeEstado = c.aprobado ? `<span style="color: #10b981; font-size: 0.75rem;">● Aprobado</span>` : `<span style="color: #f59e0b; font-size: 0.75rem;">● Pendiente</span>`;
-                    
-                    // Aseguramos capturar la foto sin importar si el campo se llama selfie_url o foto
                     let fotoChofer = c.selfie_url || c.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
                     let vehiculoTexto = c.marca_modelo || c.modelo || 'Vehículo estándar';
+                    
+                    let tieneGPS = (c.lat || c.latitud) && (c.lng || c.longitud || c.lon) ? `<span style="color: #38bdf8; font-size: 0.7rem;">📍 GPS Activo</span>` : `<span style="color: #64748b; font-size: 0.7rem;">📍 Sin GPS</span>`;
 
                     html += `
                         <div class="driver-card" onclick='abrirPerfilChofer(${JSON.stringify(c)})'>
@@ -227,8 +291,8 @@
                                 <img src="${fotoChofer}" class="driver-avatar" alt="Foto">
                                 <div class="driver-details">
                                     <h4>${c.nombre} ${badgeEstado}</h4>
-                                    <p>🚗 ${vehiculoTexto} (${c.tipo_vehiculo || 'Auto'})</p>
-                                    <p>🆔 Patente: <b>${c.patente || 'Sin patente'}</b> | Tel: ${c.telefono || 'Sin tel'}</p>
+                                    <p>🚗 ${vehiculoTexto} | ${tieneGPS}</p>
+                                    <p>🆔 Patente: <b>${c.patente || 'Sin patente'}</b></p>
                                 </div>
                             </div>
                         </div>
@@ -249,9 +313,16 @@
             document.getElementById('modalPerfilChofer').classList.remove('hidden');
             
             let badgeEstado = chofer.aprobado ? `<span style="color: #10b981;">● Cuenta Aprobada</span>` : `<span style="color: #f59e0b;">● Cuenta Pendiente</span>`;
+            
             let botonAccion = chofer.aprobado 
                 ? `<button class="btn-accion-grande btn-bloquear-grande" onclick="cambiarEstadoChofer('${chofer.patente}', false)">🔒 Bloquear Conductor</button>`
                 : `<button class="btn-accion-grande btn-aprobar-grande" onclick="cambiarEstadoChofer('${chofer.patente}', true)">✅ Aprobar Conductor</button>`;
+
+            let lat = chofer.lat || chofer.latitud;
+            let lng = chofer.lng || chofer.longitud || chofer.lon;
+            let botonUbicacion = (lat && lng) 
+                ? `<button class="btn-accion-grande btn-mapa-chofer" onclick="enfocarChoferEnMapa(${lat}, ${lng}, '${chofer.nombre}')">📍 Ver ubicación exacta en el mapa</button>`
+                : `<p style="font-size: 0.8rem; color: #94a3b8; text-align: center; margin-bottom: 14px;">Este chofer aún no reporta coordenadas GPS.</p>`;
 
             let fotoChofer = chofer.selfie_url || chofer.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
             let vehiculoTexto = chofer.marca_modelo || chofer.modelo || 'No especificado';
@@ -272,10 +343,11 @@
                     <p style="margin-top: 4px;">🆔 <b>Patente:</b> ${chofer.patente || 'Sin patente'}</p>
                 </div>
 
+                ${botonUbicacion}
                 ${botonAccion}
 
                 <h4 style="font-size: 0.95rem; color: #38bdf8; margin-bottom: 8px;">📊 Resumen y Ganancias</h4>
-                <div class="stats-box" id="cajaEstadisticasChofer">
+                <div class="stats-box">
                     <div class="stat-card">
                         <span>Total Viajes</span>
                         <h4 id="lblTotalViajesChofer">-</h4>
@@ -287,12 +359,12 @@
                 </div>
 
                 <h4 style="font-size: 0.95rem; color: #38bdf8; margin-bottom: 8px; margin-top: 14px;">📜 Historial de Servicios</h4>
-                <div id="listaHistorialPaginaContainer" style="max-height: 200px; overflow-y: auto;">
+                <div id="listaHistorialPaginaContainer" style="max-height: 180px; overflow-y: auto;">
                     <p style="text-align: center; color: #94a3b8; padding: 15px;">Buscando historial...</p>
                 </div>
             `;
 
-            // Consultar viajes por nombre del conductor (como funcionaba en el código original)
+            // Consultar viajes por nombre del conductor
             try {
                 const { data: viajes, error } = await supabaseClient
                     .from('viajes')
@@ -350,6 +422,15 @@
             }
         }
 
+        // Función para enfocar el mapa en la ubicación del chofer seleccionado
+        function enfocarChoferEnMapa(lat, lng, nombre) {
+            cerrarPerfilChofer();
+            cerrarModalConductores();
+            if (mapa) {
+                mapa.setView([lat, lng], 17); // Acerca el zoom a la ubicación exacta
+            }
+        }
+
         function cerrarPerfilChofer() {
             document.getElementById('modalPerfilChofer').classList.add('hidden');
         }
@@ -376,7 +457,11 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             initMapa();
-            setInterval(cargarViajesActivosMapa, 5000);
+            // Actualizar viajes y ubicaciones en tiempo real cada 5 segundos
+            setInterval(() => {
+                cargarViajesActivosMapa();
+                cargarUbicacionConductoresMapa();
+            }, 5000);
         });
     </script>
 </body>
