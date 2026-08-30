@@ -2,207 +2,263 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tu Móvil - Panel de Administrador</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TuMovil - Panel de Administrador</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #11121a; height: 100vh; overflow: hidden; color: #ffffff;
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background: #0f172a; color: #f1f5f9; padding: 16px; }
+        h1 { font-size: 1.4rem; color: #38bdf8; margin-bottom: 16px; text-align: center; }
+
+        /* Estilos de Tarjetas de Usuario */
+        .admin-card-usuario {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
         }
+        .admin-card-usuario:active { background: #334155; }
 
-        #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
-        #mapaLeaflet { width: 100%; height: 100%; }
-
-        .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
-        .admin-badge { background: #1e293b; color: #38bdf8; padding: 10px 16px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #334155; pointer-events: auto; display: flex; align-items: center; gap: 8px; }
-
-        .admin-actions { display: flex; gap: 8px; pointer-events: auto; }
-        .admin-btn { background: #3b82f6; color: white; border: none; padding: 10px 14px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid #60a5fa; display: flex; align-items: center; gap: 4px; }
-        .admin-btn.secondary { background: #1e293b; border-color: #334155; color: #f1f5f9; }
-
-        /* PANEL INFERIOR */
-        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); padding: 16px 20px 24px; height: 35vh; overflow-y: auto; transition: height 0.3s ease; color: #f1f5f9; -webkit-overflow-scrolling: touch; }
-        .panel-handle { width: 40px; height: 5px; background: #475569; border-radius: 3px; margin: 0 auto 12px; }
-
-        .section-title { font-size: 1rem; font-weight: 800; color: #38bdf8; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* LISTA DE CONDUCTORES */
-        .driver-card { background: #0f172a; border: 1px solid #334155; border-radius: 16px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        .driver-info-box { display: flex; align-items: center; gap: 12px; overflow: hidden; }
-        .driver-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8; flex-shrink: 0; background: #1e293b; }
-        .driver-details h4 { font-size: 0.95rem; font-weight: 700; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .driver-details p { font-size: 0.75rem; color: #94a3b8; }
-
-        .btn-aprobar { background: #059669; color: white; border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; }
-        .btn-rechazar { background: #7f1d1d; color: #fca5a5; border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; }
-
-        /* MODAL DE GESTIÓN */
-        #modalConductores {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.9);
-            z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
+        .admin-avatar-box {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #0f172a;
+            border: 2px solid #38bdf8;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .modal-card {
-            background: #1e293b; border: 1px solid #334155; border-radius: 20px; width: 100%; max-width: 500px;
-            padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); color: #f1f5f9; max-height: 85vh; overflow-y: auto;
+        .admin-avatar-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
-        .modal-card h3 { font-size: 1.1rem; margin-bottom: 14px; color: #38bdf8; display: flex; justify-content: space-between; align-items: center; }
-        .close-modal { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
+        .admin-info-box { flex-grow: 1; }
+        .admin-nombre { font-size: 1rem; font-weight: 700; color: #fff; }
+        .admin-detalles { font-size: 0.8rem; color: #94a3b8; margin-top: 2px; }
 
+        /* Modal de Ficha Única de Usuario */
+        #modalFichaUnica {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 10000;
+            display: flex; align-items: center; justify-content: center;
+            padding: 16px;
+        }
         .hidden { display: none !important; }
+        .ficha-contenido {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 24px;
+            width: 100%; max-width: 450px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 20px;
+            color: #f1f5f9;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+        }
+        .ficha-header-perfil {
+            text-align: center;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 16px;
+            margin-bottom: 16px;
+        }
+        .ficha-avatar-grande {
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #38bdf8;
+            margin: 0 auto 10px;
+            display: block;
+            background: #0f172a;
+        }
+        .stats-financieras-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .stat-caja {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 14px;
+            padding: 10px;
+            text-align: center;
+        }
+        .stat-caja-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
+        .stat-caja-valor { font-size: 1.1rem; font-weight: 800; color: #10b981; margin-top: 4px; }
+
+        .historial-viajes-lista {
+            max-height: 180px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .item-historial-viaje {
+            background: #0f172a;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #3b82f6;
+        }
+
+        /* Módulo de Tarifas */
+        .config-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+        .config-field { margin-bottom: 12px; }
+        .config-field label {
+            display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: 600;
+        }
+        .config-field input {
+            width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px; color: #fff; font-size: 0.95rem;
+        }
     </style>
 </head>
 <body>
 
-    <!-- MODAL LISTADO DE CONDUCTORES -->
-    <div id="modalConductores" class="hidden">
-        <div class="modal-card">
-            <h3>
-                <span>🚗 Conductores Registrados</span>
-                <button class="close-modal" onclick="cerrarModalConductores()">✕</button>
-            </h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Aprobá o bloqueá las cuentas de los choferes de confianza.</p>
-            <div id="listaConductoresContainer">
-                <p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando conductores...</p>
+    <h1>Panel de Administración - TuMovil</h1>
+
+    <!-- SECCIÓN: LISTADO DE CONDUCTORES / USUARIOS -->
+    <div style="font-size: 0.9rem; font-weight: 700; color: #94a3b8; margin-bottom: 8px;">CONDUCTORES REGISTRADOS</div>
+    <div id="contenedorConductores">
+        <!-- Ejemplo de tarjeta interactiva (Se puede generar dinámicamente con JS) -->
+        <div class="admin-card-usuario" onclick="abrirFichaUnica({nombre: 'Carlos Cueva', modelo: 'Auto Fiat', patente: 'Jcp 478', foto: ''})">
+            <div class="admin-avatar-box">
+                <img src="https://via.placeholder.com/150/0f172a/38bdf8?text=Carlos" alt="Foto">
+            </div>
+            <div class="admin-info-box">
+                <div class="admin-nombre">Carlos Cueva</div>
+                <div class="admin-detalles">🚗 Auto | Patente: Jcp 478</div>
             </div>
         </div>
     </div>
 
-    <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
+    <!-- MÓDULO DE CONFIGURACIÓN DE TARIFAS -->
+    <div class="config-card">
+        <h3 style="color: #38bdf8; font-size: 1.1rem; margin-bottom: 4px;">⚙️ Gestión de Tarifas</h3>
+        <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Modificá los valores que usarán los pasajeros al calcular viajes.</p>
+        
+        <div class="config-field">
+            <label>Tarifa Base / Bajada de Bandera ($)</label>
+            <input type="number" id="inpTarifaBase" placeholder="Ej: 500">
+        </div>
+        
+        <div class="config-field">
+            <label>Valor por Kilómetro ($)</label>
+            <input type="number" id="inpTarifaKm" placeholder="Ej: 300">
+        </div>
 
-    <div class="header-float">
-        <div class="admin-badge">🛡️ Panel Administrador</div>
-        <div class="admin-actions">
-            <button class="admin-btn" onclick="abrirModalConductores()">👥 Choferes</button>
+        <button style="width: 100%; background: #0284c7; color: #fff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer;" onclick="guardarNuevasTarifas(event)">Guardar Nuevas Tarifas 💾</button>
+    </div>
+
+    <!-- MODAL DE FICHA ÚNICA (Oculto por defecto) -->
+    <div id="modalFichaUnica" class="hidden">
+        <div class="ficha-contenido">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="color: #38bdf8; font-size: 1.1rem;">📄 Ficha Integral de Usuario</h3>
+                <button onclick="cerrarFichaUnica()" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer;">✕</button>
+            </div>
+
+            <div class="ficha-header-perfil">
+                <img id="fichaFoto" class="ficha-avatar-grande" src="" alt="Foto Perfil">
+                <h2 id="fichaNombre" style="font-size: 1.2rem; font-weight: 700;">-</h2>
+                <p id="fichaVehiculoPatente" style="font-size: 0.85rem; color: #94a3b8; margin-top: 4px;">-</p>
+            </div>
+
+            <!-- Resumen de Dinero (Día y Semana) -->
+            <div class="stats-financieras-grid">
+                <div class="stat-caja">
+                    <div class="stat-caja-label">Total Día</div>
+                    <div class="stat-caja-valor" id="fichaTotalDia">$0</div>
+                </div>
+                <div class="stat-caja">
+                    <div class="stat-caja-label">Total Semana</div>
+                    <div class="stat-caja-valor" id="fichaTotalSemana">$0</div>
+                </div>
+            </div>
+
+            <!-- Historial de Viajes -->
+            <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">Historial de Servicios</div>
+            <div class="historial-viajes-lista" id="fichaHistorialLista">
+                <div style="text-align: center; color: #64748b; padding: 15px;">Cargando historial...</div>
+            </div>
         </div>
     </div>
 
-    <div class="bottom-panel" id="panelAdmin">
-        <div class="panel-handle"></div>
-        <div class="section-title">
-            <span>Estado del Sistema</span>
-            <span id="lblTotalViajesActivos" style="font-size: 0.8rem; color: #10b981;">Monitoreando red...</span>
-        </div>
-        <div id="contenedorViajesEnCurso">
-            <p style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 10px 0;">No hay servicios en curso en este momento.</p>
-        </div>
-    </div>
-
+    <!-- SCRIPT DE FUNCIONAMIENTO -->
     <script>
-        const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // --- GESTIÓN DE TARIFAS ---
+        function guardarNuevasTarifas(e) {
+            e.preventDefault();
+            const tarifaBase = document.getElementById('inpTarifaBase').value;
+            const tarifaKm = document.getElementById('inpTarifaKm').value;
 
-        const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
-        let mapa = null;
-
-        function initMapa() {
-            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
-            cargarViajesActivosMapa();
-        }
-
-        async function cargarViajesActivosMapa() {
-            try {
-                const { data: viajes, error } = await supabaseClient.from('viajes').select('*').in('estado', ['pendiente', 'aceptado', 'en_viaje']);
-                if (error) throw error;
-
-                const contenedor = document.getElementById('contenedorViajesEnCurso');
-                if (!viajes || viajes.length === 0) {
-                    contenedor.innerHTML = `<p style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 10px 0;">No hay servicios en curso en este momento.</p>`;
-                    document.getElementById('lblTotalViajesActivos').textContent = "Red sin servicios activos";
-                    return;
-                }
-
-                document.getElementById('lblTotalViajesActivos').textContent = `${viajes.length} servicio(s) en curso`;
-                let html = '';
-                viajes.forEach(v => {
-                    html += `
-                        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <h4 style="font-size: 0.9rem; color: #fff;">👤 ${v.pasajero_nombre || 'Pasajero'} <span style="color: #10b981; font-weight: 800;">$${v.precio}</span></h4>
-                                <p style="font-size: 0.75rem; color: #94a3b8;">Estado: <b>${v.estado.toUpperCase()}</b> | Chofer: ${v.conductor_nombre || 'Buscando...'}</p>
-                            </div>
-                            <button onclick="cancelarViajeAdmin('${v.id}')" style="background: #7f1d1d; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">Cancelar ❌</button>
-                        </div>
-                    `;
-                });
-                contenedor.innerHTML = html;
-            } catch (e) {}
-        }
-
-        async function abrirModalConductores() {
-            document.getElementById('modalConductores').classList.remove('hidden');
-            const contenedor = document.getElementById('listaConductoresContainer');
-            contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando lista de choferes...</p>`;
-
-            try {
-                const { data: choferes, error } = await supabaseClient.from('conductores').select('*').order('created_at', { ascending: false });
-                if (error) throw error;
-
-                if (!choferes || choferes.length === 0) {
-                    contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">No hay conductores registrados todavía.</p>`;
-                    return;
-                }
-
-                let html = '';
-                choferes.forEach(c => {
-                    let badgeEstado = c.aprobado ? `<span style="color: #10b981; font-size: 0.7rem;">● Aprobado</span>` : `<span style="color: #f59e0b; font-size: 0.7rem;">● Pendiente</span>`;
-                    let botonAccion = c.aprobado 
-                        ? `<button class="btn-rechazar" onclick="cambiarEstadoChofer('${c.patente}', false)">Bloquear</button>`
-                        : `<button class="btn-aprobar" onclick="cambiarEstadoChofer('${c.patente}', true)">Aprobar ✅</button>`;
-
-                    html += `
-                        <div class="driver-card">
-                            <div class="driver-info-box">
-                                <img src="${c.selfie_url || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" class="driver-avatar" alt="Foto">
-                                <div class="driver-details">
-                                    <h4>${c.nombre} ${badgeEstado}</h4>
-                                    <p>🚗 ${c.marca_modelo || 'Vehículo'} (${c.tipo_vehiculo || 'Auto'})</p>
-                                    <p>🆔 Patente: <b>${c.patente}</b> | Tel: ${c.telefono}</p>
-                                </div>
-                            </div>
-                            <div>${botonAccion}</div>
-                        </div>
-                    `;
-                });
-                contenedor.innerHTML = html;
-            } catch (e) {
-                contenedor.innerHTML = `<p style="text-align: center; color: #ef4444; padding: 20px;">Error al cargar: ${e.message}</p>`;
+            if (!tarifaBase || !tarifaKm) {
+                alert("Por favor completá ambos campos de tarifas.");
+                return;
             }
-        }
 
-        function cerrarModalConductores() {
-            document.getElementById('modalConductores').classList.add('hidden');
-        }
+            localStorage.setItem('tuMovil_tarifa_base', tarifaBase);
+            localStorage.setItem('tuMovil_tarifa_km', tarifaKm);
 
-        async function cambiarEstadoChofer(patente, estadoAprobar) {
-            try {
-                const { error } = await supabaseClient.from('conductores').update({ aprobado: estadoAprobar }).eq('patente', patente);
-                if (error) throw error;
-                alert(estadoAprobar ? "¡Conductor aprobado con éxito!" : "Conductor bloqueado.");
-                abrirModalConductores();
-            } catch (e) {
-                alert("Error al actualizar estado: " + e.message);
-            }
-        }
-
-        async function cancelarViajeAdmin(idViaje) {
-            if (!confirm("¿Estás seguro de cancelar este servicio?")) return;
-            try {
-                await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', idViaje);
-                cargarViajesActivosMapa();
-            } catch (e) {}
+            alert("¡Tarifas actualizadas correctamente en el sistema!");
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            initMapa();
-            setInterval(cargarViajesActivosMapa, 5000);
+            if(document.getElementById('inpTarifaBase')) {
+                document.getElementById('inpTarifaBase').value = localStorage.getItem('tuMovil_tarifa_base') || '';
+                document.getElementById('inpTarifaKm').value = localStorage.getItem('tuMovil_tarifa_km') || '';
+            }
         });
+
+        // --- FICHA ÚNICA DE USUARIO ---
+        function abrirFichaUnica(usuario) {
+            document.getElementById('fichaNombre').innerText = usuario.nombre || 'Sin Nombre';
+            document.getElementById('fichaVehiculoPatente').innerText = usuario.patente ? `🚗 ${usuario.modelo || 'Vehículo'} | Patente: ${usuario.patente}` : 'Pasajero TuMovil';
+            
+            const fotoElem = document.getElementById('fichaFoto');
+            fotoElem.src = usuario.foto && usuario.foto.trim() !== '' ? usuario.foto : 'https://via.placeholder.com/150/0f172a/38bdf8?text=Sin+Foto';
+
+            // Datos financieros simulados o conectados a base de datos
+            document.getElementById('fichaTotalDia').innerText = "$18.500"; 
+            document.getElementById('fichaTotalSemana').innerText = "$94.200";
+
+            // Historial de ejemplo
+            const listaHistorial = document.getElementById('fichaHistorialLista');
+            listaHistorial.innerHTML = `
+                <div class="item-historial-viaje">
+                    <span>San Miguel ➔ Bella Vista</span>
+                    <strong style="color: #10b981;">+$4.500</strong>
+                </div>
+                <div class="item-historial-viaje">
+                    <span>Muñóz ➔ Centro</span>
+                    <strong style="color: #10b981;">+$3.200</strong>
+                </div>
+            `;
+
+            document.getElementById('modalFichaUnica').classList.remove('hidden');
+        }
+
+        function cerrarFichaUnica() {
+            document.getElementById('modalFichaUnica').classList.add('hidden');
+        }
     </script>
 </body>
 </html>
