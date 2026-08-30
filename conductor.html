@@ -175,10 +175,6 @@
                         <input type="text" id="inpModelo" placeholder="Ej: Ford Fiesta / Honda Wave" required>
                     </div>
                     <div class="config-field">
-                        <label>Color del Vehículo</label>
-                        <input type="text" id="inpColor" placeholder="Ej: Negro" required>
-                    </div>
-                    <div class="config-field">
                         <label>Patente / Dominio</label>
                         <input type="text" id="inpPatente" placeholder="Ej: Jcp 478" required>
                     </div>
@@ -277,7 +273,7 @@
         let NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "";
         let FOTO_CHOFER = localStorage.getItem('cfg_auto_foto') || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
         let TIPO_VEHICULO = localStorage.getItem('cfg_auto_tipo') || "auto";
-        let AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " - " + (localStorage.getItem('cfg_auto_color') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
+        let AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
 
         let totalDia = parseFloat(localStorage.getItem('chofer_total_dia') || '0');
         let ultimoViajeMonto = parseFloat(localStorage.getItem('chofer_ultimo_monto') || '0');
@@ -299,7 +295,6 @@
         let intervaloCampana = null;
         let base64FotoTemp = "";
 
-        // Verificación de Registro y Aprobación por parte del Administrador
         function verificarRegistroChofer() {
             const patenteGuardada = localStorage.getItem('cfg_auto_patente');
             const aprobadoAdmin = localStorage.getItem('cfg_auto_aprobado') === 'true';
@@ -320,7 +315,6 @@
                 document.getElementById('inpTelefono').value = localStorage.getItem('cfg_auto_telefono') || '';
                 document.getElementById('inpTipoVehiculo').value = localStorage.getItem('cfg_auto_tipo') || 'auto';
                 document.getElementById('inpModelo').value = localStorage.getItem('cfg_auto_modelo') || '';
-                document.getElementById('inpColor').value = localStorage.getItem('cfg_auto_color') || '';
                 document.getElementById('inpPatente').value = localStorage.getItem('cfg_auto_patente') || '';
                 if(localStorage.getItem('cfg_auto_foto')) {
                     document.getElementById('imgPreview').src = localStorage.getItem('cfg_auto_foto');
@@ -387,7 +381,6 @@
             const telefono = document.getElementById('inpTelefono').value.trim();
             const tipoVehiculo = document.getElementById('inpTipoVehiculo').value;
             const modelo = document.getElementById('inpModelo').value.trim();
-            const color = document.getElementById('inpColor').value.trim();
             const patente = document.getElementById('inpPatente').value.trim();
             const fotoFinal = base64FotoTemp || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
 
@@ -398,7 +391,6 @@
                         telefono: telefono,
                         tipo_vehiculo: tipoVehiculo,
                         modelo: modelo,
-                        color: color,
                         patente: patente,
                         foto: fotoFinal,
                         aprobado: false,
@@ -421,7 +413,6 @@
             localStorage.setItem('cfg_auto_telefono', telefono);
             localStorage.setItem('cfg_auto_tipo', tipoVehiculo);
             localStorage.setItem('cfg_auto_modelo', modelo);
-            localStorage.setItem('cfg_auto_color', color);
             localStorage.setItem('cfg_auto_patente', patente);
             localStorage.setItem('cfg_auto_foto', fotoFinal);
             localStorage.setItem('cfg_auto_aprobado', 'false');
@@ -651,7 +642,7 @@
         async function procesarLojicaViaje() {
             NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "";
             FOTO_CHOFER = localStorage.getItem('cfg_auto_foto') || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
-            AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " - " + (localStorage.getItem('cfg_auto_color') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
+            AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
 
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
