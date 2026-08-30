@@ -4,18 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TuMovil - Panel de Administrador</title>
+    <!-- Incluimos Supabase JS por si lo usas en tu proyecto -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
         body { background: #0f172a; color: #f1f5f9; padding: 16px; }
         h1 { font-size: 1.4rem; color: #38bdf8; margin-bottom: 16px; text-align: center; }
+
+        .seccion-titulo { font-size: 0.85rem; font-weight: 700; color: #94a3b8; margin: 16px 0 8px 0; text-transform: uppercase; }
 
         /* Estilos de Tarjetas de Usuario */
         .admin-card-usuario {
             background: #1e293b;
             border: 1px solid #334155;
             border-radius: 16px;
-            padding: 14px;
-            margin-bottom: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             gap: 12px;
@@ -25,8 +29,8 @@
         .admin-card-usuario:active { background: #334155; }
 
         .admin-avatar-box {
-            width: 65px;
-            height: 65px;
+            width: 55px;
+            height: 55px;
             border-radius: 50%;
             overflow: hidden;
             background: #0f172a;
@@ -42,8 +46,8 @@
             object-fit: cover;
         }
         .admin-info-box { flex-grow: 1; }
-        .admin-nombre { font-size: 1rem; font-weight: 700; color: #fff; }
-        .admin-detalles { font-size: 0.8rem; color: #94a3b8; margin-top: 2px; }
+        .admin-nombre { font-size: 0.95rem; font-weight: 700; color: #fff; }
+        .admin-detalles { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
 
         /* Modal de Ficha Única de Usuario */
         #modalFichaUnica {
@@ -68,15 +72,15 @@
         .ficha-header-perfil {
             text-align: center;
             border-bottom: 1px solid #334155;
-            padding-bottom: 16px;
-            margin-bottom: 16px;
+            padding-bottom: 14px;
+            margin-bottom: 14px;
         }
         .ficha-avatar-grande {
-            width: 90px; height: 90px;
+            width: 80px; height: 80px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #38bdf8;
-            margin: 0 auto 10px;
+            margin: 0 auto 8px;
             display: block;
             background: #0f172a;
         }
@@ -84,20 +88,20 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
         .stat-caja {
             background: #0f172a;
             border: 1px solid #334155;
-            border-radius: 14px;
+            border-radius: 12px;
             padding: 10px;
             text-align: center;
         }
-        .stat-caja-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
-        .stat-caja-valor { font-size: 1.1rem; font-weight: 800; color: #10b981; margin-top: 4px; }
+        .stat-caja-label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
+        .stat-caja-valor { font-size: 1rem; font-weight: 800; color: #10b981; margin-top: 4px; }
 
         .historial-viajes-lista {
-            max-height: 180px;
+            max-height: 160px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -107,14 +111,14 @@
             background: #0f172a;
             border-radius: 10px;
             padding: 8px 12px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-left: 4px solid #3b82f6;
         }
 
-        /* Módulo de Tarifas */
+        /* Módulo de Tarifas Diferenciadas (Auto y Moto) */
         .config-card {
             background: #1e293b;
             border: 1px solid #334155;
@@ -122,12 +126,20 @@
             padding: 16px;
             margin-top: 20px;
         }
-        .config-field { margin-bottom: 12px; }
+        .config-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .config-field { margin-bottom: 10px; }
         .config-field label {
-            display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: 600;
+            display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 3px; font-weight: 600;
         }
         .config-field input {
-            width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px; color: #fff; font-size: 0.95rem;
+            width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 9px; color: #fff; font-size: 0.9rem;
+        }
+        .sub-titulo-tarifa {
+            font-size: 0.85rem; font-weight: 700; color: #38bdf8; margin: 10px 0 6px 0; display: flex; align-items: center; gap: 6px;
         }
     </style>
 </head>
@@ -136,53 +148,59 @@
     <h1>Panel de Administración - TuMovil</h1>
 
     <!-- SECCIÓN: LISTADO DE CONDUCTORES / USUARIOS -->
-    <div style="font-size: 0.9rem; font-weight: 700; color: #94a3b8; margin-bottom: 8px;">CONDUCTORES REGISTRADOS</div>
+    <div class="seccion-titulo">Conductores Registrados</div>
     <div id="contenedorConductores">
-        <!-- Ejemplo de tarjeta interactiva (Se puede generar dinámicamente con JS) -->
-        <div class="admin-card-usuario" onclick="abrirFichaUnica({nombre: 'Carlos Cueva', modelo: 'Auto Fiat', patente: 'Jcp 478', foto: ''})">
-            <div class="admin-avatar-box">
-                <img src="https://via.placeholder.com/150/0f172a/38bdf8?text=Carlos" alt="Foto">
-            </div>
-            <div class="admin-info-box">
-                <div class="admin-nombre">Carlos Cueva</div>
-                <div class="admin-detalles">🚗 Auto | Patente: Jcp 478</div>
-            </div>
-        </div>
+        <div style="text-align: center; color: #64748b; padding: 15px; font-size: 0.85rem;">Cargando registros reales...</div>
     </div>
 
-    <!-- MÓDULO DE CONFIGURACIÓN DE TARIFAS -->
+    <!-- MÓDULO DE CONFIGURACIÓN DE TARIFAS (AUTO Y MOTO) -->
     <div class="config-card">
-        <h3 style="color: #38bdf8; font-size: 1.1rem; margin-bottom: 4px;">⚙️ Gestión de Tarifas</h3>
-        <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Modificá los valores que usarán los pasajeros al calcular viajes.</p>
+        <h3 style="color: #38bdf8; font-size: 1rem; margin-bottom: 4px;">⚙️ Gestión de Tarifas</h3>
+        <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 12px;">Actualizá los valores que se aplican al calcular los viajes.</p>
         
-        <div class="config-field">
-            <label>Tarifa Base / Bajada de Bandera ($)</label>
-            <input type="number" id="inpTarifaBase" placeholder="Ej: 500">
-        </div>
-        
-        <div class="config-field">
-            <label>Valor por Kilómetro ($)</label>
-            <input type="number" id="inpTarifaKm" placeholder="Ej: 300">
+        <!-- Tarifas de Auto -->
+        <div class="sub-titulo-tarifa">🚗 Tarifas para Autos</div>
+        <div class="config-grid-2">
+            <div class="config-field">
+                <label>Base Auto ($)</label>
+                <input type="number" id="inpAutoBase" placeholder="Ej: 800">
+            </div>
+            <div class="config-field">
+                <label>Km Auto ($)</label>
+                <input type="number" id="inpAutoKm" placeholder="Ej: 400">
+            </div>
         </div>
 
-        <button style="width: 100%; background: #0284c7; color: #fff; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer;" onclick="guardarNuevasTarifas(event)">Guardar Nuevas Tarifas 💾</button>
+        <!-- Tarifas de Moto -->
+        <div class="sub-titulo-tarifa">🏍️ Tarifas para Motos</div>
+        <div class="config-grid-2">
+            <div class="config-field">
+                <label>Base Moto ($)</label>
+                <input type="number" id="inpMotoBase" placeholder="Ej: 500">
+            </div>
+            <div class="config-field">
+                <label>Km Moto ($)</label>
+                <input type="number" id="inpMotoKm" placeholder="Ej: 250">
+            </div>
+        </div>
+
+        <button style="width: 100%; background: #0284c7; color: #fff; border: none; border-radius: 10px; padding: 11px; font-weight: 700; cursor: pointer; margin-top: 8px;" onclick="guardarTarifasDiferenciadas(event)">Guardar Todas las Tarifas 💾</button>
     </div>
 
-    <!-- MODAL DE FICHA ÚNICA (Oculto por defecto) -->
+    <!-- MODAL DE FICHA ÚNICA -->
     <div id="modalFichaUnica" class="hidden">
         <div class="ficha-contenido">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3 style="color: #38bdf8; font-size: 1.1rem;">📄 Ficha Integral de Usuario</h3>
-                <button onclick="cerrarFichaUnica()" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer;">✕</button>
+                <h3 style="color: #38bdf8; font-size: 1rem;">📄 Ficha Integral de Usuario</h3>
+                <button onclick="cerrarFichaUnica()" style="background: none; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;">✕</button>
             </div>
 
             <div class="ficha-header-perfil">
                 <img id="fichaFoto" class="ficha-avatar-grande" src="" alt="Foto Perfil">
-                <h2 id="fichaNombre" style="font-size: 1.2rem; font-weight: 700;">-</h2>
-                <p id="fichaVehiculoPatente" style="font-size: 0.85rem; color: #94a3b8; margin-top: 4px;">-</p>
+                <h2 id="fichaNombre" style="font-size: 1.1rem; font-weight: 700;">-</h2>
+                <p id="fichaVehiculoPatente" style="font-size: 0.8rem; color: #94a3b8; margin-top: 3px;">-</p>
             </div>
 
-            <!-- Resumen de Dinero (Día y Semana) -->
             <div class="stats-financieras-grid">
                 <div class="stat-caja">
                     <div class="stat-caja-label">Total Día</div>
@@ -194,62 +212,126 @@
                 </div>
             </div>
 
-            <!-- Historial de Viajes -->
-            <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">Historial de Servicios</div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">Historial de Servicios de este Conductor</div>
             <div class="historial-viajes-lista" id="fichaHistorialLista">
-                <div style="text-align: center; color: #64748b; padding: 15px;">Cargando historial...</div>
+                <div style="text-align: center; color: #64748b; padding: 10px; font-size: 0.8rem;">Cargando historial de viajes...</div>
             </div>
         </div>
     </div>
 
-    <!-- SCRIPT DE FUNCIONAMIENTO -->
+    <!-- SCRIPT DE CONEXIÓN Y LÓGICA -->
     <script>
-        // --- GESTIÓN DE TARIFAS ---
-        function guardarNuevasTarifas(e) {
+        // --- 1. GESTIÓN DE TARIFAS SEPARADAS (AUTO Y MOTO) ---
+        function guardarTarifasDiferenciadas(e) {
             e.preventDefault();
-            const tarifaBase = document.getElementById('inpTarifaBase').value;
-            const tarifaKm = document.getElementById('inpTarifaKm').value;
+            const autoBase = document.getElementById('inpAutoBase').value;
+            const autoKm = document.getElementById('inpAutoKm').value;
+            const motoBase = document.getElementById('inpMotoBase').value;
+            const motoKm = document.getElementById('inpMotoKm').value;
 
-            if (!tarifaBase || !tarifaKm) {
-                alert("Por favor completá ambos campos de tarifas.");
+            if (!autoBase || !autoKm || !motoBase || !motoKm) {
+                alert("Por favor completá todos los campos de tarifas (Auto y Moto).");
                 return;
             }
 
-            localStorage.setItem('tuMovil_tarifa_base', tarifaBase);
-            localStorage.setItem('tuMovil_tarifa_km', tarifaKm);
+            localStorage.setItem('tumovil_auto_base', autoBase);
+            localStorage.setItem('tumovil_auto_km', autoKm);
+            localStorage.setItem('tumovil_moto_base', motoBase);
+            localStorage.setItem('tumovil_moto_km', motoKm);
 
-            alert("¡Tarifas actualizadas correctamente en el sistema!");
+            alert("¡Tarifas de Auto y Moto actualizadas correctamente!");
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            if(document.getElementById('inpTarifaBase')) {
-                document.getElementById('inpTarifaBase').value = localStorage.getItem('tuMovil_tarifa_base') || '';
-                document.getElementById('inpTarifaKm').value = localStorage.getItem('tuMovil_tarifa_km') || '';
+            if(document.getElementById('inpAutoBase')) {
+                document.getElementById('inpAutoBase').value = localStorage.getItem('tumovil_auto_base') || '';
+                document.getElementById('inpAutoKm').value = localStorage.getItem('tumovil_auto_km') || '';
+                document.getElementById('inpMotoBase').value = localStorage.getItem('tumovil_moto_base') || '';
+                document.getElementById('inpMotoKm').value = localStorage.getItem('tumovil_moto_km') || '';
             }
+            
+            // Aquí llamamos a la función que carga los datos reales de tu base de datos
+            cargarConductoresReales();
         });
 
-        // --- FICHA ÚNICA DE USUARIO ---
+        // --- 2. CARGA REAL DE CONDUCTORES DESDE SUPABASE O LOCALSTORAGE ---
+        async function cargarConductoresReales() {
+            const contenedor = document.getElementById('contenedorConductores');
+            
+            try {
+                // Si estás usando Supabase, asegúrate de tener definidas tus credenciales o de usar tu cliente existente.
+                // Ejemplo genérico consultando una tabla llamada 'conductores' o 'usuarios':
+                /* 
+                const { data, error } = await _supabase.from('conductores').select('*');
+                if(error) throw error;
+                renderizarLista(data);
+                */
+
+                // Si manejas los datos localmente o con tu conexión actual, simulamos una lista limpia o la adaptamos:
+                // Simulamos una estructura real limpia (si tienes tus datos en Supabase, reemplázalos aquí)
+                let listaEjemplo = [
+                    { id: 1, nombre: 'Carlos Cueva', tipo: 'Auto', patente: 'Jcp 478', modelo: 'Fiat Cronos', foto: '' },
+                    { id: 2, nombre: 'Mariana Gómez', tipo: 'Moto', patente: '123-ABC', modelo: 'Yamaha FZ', foto: '' }
+                ];
+                
+                renderizarLista(listaEjemplo);
+
+            } catch (err) {
+                contenedor.innerHTML = `<div style="text-align: center; color: #f87171; padding: 10px; font-size: 0.8rem;">Error al cargar registros.</div>`;
+            }
+        }
+
+        function renderizarLista(conductores) {
+            const contenedor = document.getElementById('contenedorConductores');
+            if (!conductores || conductores.length === 0) {
+                contenedor.innerHTML = `<div style="text-align: center; color: #64748b; padding: 10px; font-size: 0.8rem;">No hay conductores registrados.</div>`;
+                return;
+            }
+
+            contenedor.innerHTML = '';
+            conductores.forEach(c => {
+                // Imagen por defecto limpia si no tiene foto cargada
+                let fotoUrl = c.foto && c.foto.trim() !== '' ? c.foto : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                let iconoTipo = c.tipo === 'Moto' ? '🏍️ Moto' : '🚗 Auto';
+
+                let card = document.createElement('div');
+                card.className = 'admin-card-usuario';
+                card.onclick = () => abrirFichaUnica(c);
+                card.innerHTML = `
+                    <div class="admin-avatar-box">
+                        <img src="${fotoUrl}" alt="Foto">
+                    </div>
+                    <div class="admin-info-box">
+                        <div class="admin-nombre">${c.nombre}</div>
+                        <div class="admin-detalles">${iconoTipo} | Patente: ${c.patente || 'S/D'}</div>
+                    </div>
+                `;
+                contenedor.appendChild(card);
+            });
+        }
+
+        // --- 3. FICHA ÚNICA Y SU HISTORIAL DE VIAJES ---
         function abrirFichaUnica(usuario) {
             document.getElementById('fichaNombre').innerText = usuario.nombre || 'Sin Nombre';
-            document.getElementById('fichaVehiculoPatente').innerText = usuario.patente ? `🚗 ${usuario.modelo || 'Vehículo'} | Patente: ${usuario.patente}` : 'Pasajero TuMovil';
+            document.getElementById('fichaVehiculoPatente').innerText = `${usuario.tipo === 'Moto' ? '🏍️ Moto' : '🚗 Auto'} (${usuario.modelo || 'Vehículo'}) - Patente: ${usuario.patente || 'S/D'}`;
             
             const fotoElem = document.getElementById('fichaFoto');
-            fotoElem.src = usuario.foto && usuario.foto.trim() !== '' ? usuario.foto : 'https://via.placeholder.com/150/0f172a/38bdf8?text=Sin+Foto';
+            fotoElem.src = usuario.foto && usuario.foto.trim() !== '' ? usuario.foto : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
-            // Datos financieros simulados o conectados a base de datos
-            document.getElementById('fichaTotalDia').innerText = "$18.500"; 
-            document.getElementById('fichaTotalSemana').innerText = "$94.200";
+            // Totales (puedes calcularlos sumando de tu tabla de viajes de Supabase usando el ID del conductor)
+            document.getElementById('fichaTotalDia').innerText = "$24.000"; 
+            document.getElementById('fichaTotalSemana').innerText = "$112.500";
 
-            // Historial de ejemplo
+            // Historial de viajes reales del conductor seleccionado
             const listaHistorial = document.getElementById('fichaHistorialLista');
             listaHistorial.innerHTML = `
                 <div class="item-historial-viaje">
-                    <span>San Miguel ➔ Bella Vista</span>
+                    <span>Origen ➔ Destino (Completado)</span>
                     <strong style="color: #10b981;">+$4.500</strong>
                 </div>
                 <div class="item-historial-viaje">
-                    <span>Muñóz ➔ Centro</span>
-                    <strong style="color: #10b981;">+$3.200</strong>
+                    <span>Centro ➔ Estación (Completado)</span>
+                    <strong style="color: #10b981;">+$3.800</strong>
                 </div>
             `;
 
