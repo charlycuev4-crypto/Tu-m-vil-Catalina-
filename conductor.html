@@ -261,6 +261,21 @@
         let ultimoViajeMonto = parseFloat(localStorage.getItem('chofer_ultimo_monto') || '0');
         let cantViajesCount = parseInt(localStorage.getItem('chofer_cant_viajes') || '0');
 
+        // FUNCIÓN DE RESETEO DIARIO AUTOMÁTICO (Cada 24 horas / cambio de día)
+        function verificarReseteoDiario() {
+            const hoy = new Date().toLocaleDateString(); // Obtiene la fecha actual (ej: "30/8/2026")
+            const ultimaFecha = localStorage.getItem('chofer_fecha_actual');
+
+            if (ultimaFecha !== hoy) {
+                totalDia = 0;
+                cantViajesCount = 0;
+                
+                localStorage.setItem('chofer_total_dia', '0');
+                localStorage.setItem('chofer_cant_viajes', '0');
+                localStorage.setItem('chofer_fecha_actual', hoy);
+            }
+        }
+
         function actualizarUIEstadisticas() {
             document.getElementById('lblTotalDia').textContent = '$' + totalDia.toLocaleString('es-AR');
             document.getElementById('lblUltimoViaje').textContent = '$' + ultimoViajeMonto.toLocaleString('es-AR');
@@ -293,7 +308,6 @@
             }
         }
 
-        // FUNCIÓN DE COMPRESIÓN DE IMAGEN AUTOMÁTICA (Evita que la foto se rompa por tamaño)
         function procesarYComprimirFoto(event) {
             const archivo = event.target.files[0];
             if (!archivo) return;
@@ -304,7 +318,7 @@
                 img.src = e.target.result;
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 350; // Ancho óptimo y liviano
+                    const MAX_WIDTH = 350; 
                     const MAX_HEIGHT = 350;
                     let width = img.width;
                     let height = img.height;
@@ -326,7 +340,6 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    // Comprimir en JPEG al 70% de calidad para que pese pocos KB
                     base64FotoTemp = canvas.toDataURL('image/jpeg', 0.7);
                     document.getElementById('imgPreview').src = base64FotoTemp;
                 }
@@ -573,7 +586,6 @@
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
-                    // Actualizamos con los datos locales reales del chofer y su foto comprimida
                     const { error } = await supabaseClient.from('viajes').update({ 
                         conductor_nombre: NOMBRE_CHOFER, 
                         conductor_auto: AUTO_CHOFER,
@@ -728,6 +740,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             verificarRegistroChofer();
+            verificarReseteoDiario(); // <--- Valida y limpia contadores diarios automáticamente al iniciar
             actualizarUIEstadisticas();
             initMapa(); escucharNuevosViajes(); solicitarWakeLock(); iniciarRastreoGpsContinuo(); 
             setTimeout(async () => { await verificarViajeActivoConductor(); }, 1000);
