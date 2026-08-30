@@ -391,17 +391,8 @@
             const patente = document.getElementById('inpPatente').value.trim();
             const fotoFinal = base64FotoTemp || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
 
-            localStorage.setItem('cfg_auto_chofer', nombre);
-            localStorage.setItem('cfg_auto_telefono', telefono);
-            localStorage.setItem('cfg_auto_tipo', tipoVehiculo);
-            localStorage.setItem('cfg_auto_modelo', modelo);
-            localStorage.setItem('cfg_auto_color', color);
-            localStorage.setItem('cfg_auto_patente', patente);
-            localStorage.setItem('cfg_auto_foto', fotoFinal);
-            localStorage.setItem('cfg_auto_aprobado', 'false');
-
             try {
-                await supabaseClient.from('conductores').upsert([
+                const { data, error } = await supabaseClient.from('conductores').upsert([
                     {
                         nombre: nombre,
                         telefono: telefono,
@@ -414,7 +405,26 @@
                         activo: false
                     }
                 ], { onConflict: 'patente' });
-            } catch (err) {}
+
+                if (error) {
+                    console.error("Error de Supabase:", error);
+                    alert("Error al registrarse en la base de datos: " + error.message);
+                    return; 
+                }
+            } catch (err) {
+                console.error("Excepción:", err);
+                alert("Error inesperado: " + err.message);
+                return;
+            }
+
+            localStorage.setItem('cfg_auto_chofer', nombre);
+            localStorage.setItem('cfg_auto_telefono', telefono);
+            localStorage.setItem('cfg_auto_tipo', tipoVehiculo);
+            localStorage.setItem('cfg_auto_modelo', modelo);
+            localStorage.setItem('cfg_auto_color', color);
+            localStorage.setItem('cfg_auto_patente', patente);
+            localStorage.setItem('cfg_auto_foto', fotoFinal);
+            localStorage.setItem('cfg_auto_aprobado', 'false');
 
             document.getElementById('seccionFormularioRegistro').classList.add('hidden');
             document.getElementById('seccionEsperaAprobacion').classList.remove('hidden');
