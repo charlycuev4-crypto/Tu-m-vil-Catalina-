@@ -240,19 +240,19 @@
             }
         }
 
-        // --- MÓDULO TARIFAS (AUTO Y MOTO) ---
+        // --- MÓDULO TARIFAS (USANDO NOMBRES REALES DE SUPABASE) ---
         async function abrirModalTarifas() {
             document.getElementById('modalTarifas').classList.remove('hidden');
             try {
                 const { data, error } = await supabaseClient.from('configuracion_tarifas').select('*').limit(1).single();
                 if (data) {
-                    document.getElementById('inputAutoBase').value = data.auto_base || data.tarifa_base_auto || '';
-                    document.getElementById('inputAutoKm').value = data.auto_km || data.tarifa_km_auto || '';
-                    document.getElementById('inputMotoBase').value = data.moto_base || data.tarifa_base_moto || '';
-                    document.getElementById('inputMotoKm').value = data.moto_km || data.tarifa_km_moto || '';
+                    document.getElementById('inputAutoBase').value = data.tarifa_base || '';
+                    document.getElementById('inputAutoKm').value = data.tarifa_km || '';
+                    document.getElementById('inputMotoBase').value = data.moto_base || '';
+                    document.getElementById('inputMotoKm').value = data.moto_km || '';
                 }
             } catch (e) {
-                // Se ajusta según las columnas específicas de Supabase
+                console.error("Error cargando tarifas", e);
             }
         }
 
@@ -261,21 +261,21 @@
         }
 
         async function guardarTarifas() {
-            const autoBase = parseFloat(document.getElementById('inputAutoBase').value);
-            const autoKm = parseFloat(document.getElementById('inputAutoKm').value);
+            const tarifaBase = parseFloat(document.getElementById('inputAutoBase').value);
+            const tarifaKm = parseFloat(document.getElementById('inputAutoKm').value);
             const motoBase = parseFloat(document.getElementById('inputMotoBase').value);
             const motoKm = parseFloat(document.getElementById('inputMotoKm').value);
 
             try {
                 const { error } = await supabaseClient.from('configuracion_tarifas').update({
-                    auto_base: autoBase,
-                    auto_km: autoKm,
+                    tarifa_base: tarifaBase,
+                    tarifa_km: tarifaKm,
                     moto_base: motoBase,
                     moto_km: motoKm
                 }).eq('id', 1);
 
                 if (error) throw error;
-                alert("¡Tarifas de autos y motos actualizadas correctamente!");
+                alert("¡Tarifas actualizadas correctamente!");
                 cerrarModalTarifas();
             } catch (e) {
                 alert("Error al guardar tarifas: " + e.message);
