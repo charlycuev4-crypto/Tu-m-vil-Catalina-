@@ -53,11 +53,13 @@
         .modal-card h3 { font-size: 1.1rem; margin-bottom: 14px; color: #38bdf8; display: flex; justify-content: space-between; align-items: center; }
         .close-modal { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
 
-        /* FORMULARIOS DE TARIFA */
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; }
-        .form-group input { width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: #fff; font-size: 0.9rem; }
-        .btn-guardar { width: 100%; background: #059669; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 10px; }
+        /* SECCIONES Y FORMULARIOS DE TARIFA */
+        .tarifa-seccion { background: #0f172a; border: 1px solid #334155; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+        .tarifa-seccion h4 { font-size: 0.9rem; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .form-group { margin-bottom: 8px; }
+        .form-group label { display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 2px; }
+        .form-group input { width: 100%; padding: 8px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 0.85rem; }
+        .btn-guardar { width: 100%; background: #059669; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 6px; }
 
         .hidden { display: none !important; }
     </style>
@@ -78,25 +80,42 @@
         </div>
     </div>
 
-    <!-- MODAL GESTIÓN DE TARIFA -->
+    <!-- MODAL GESTIÓN DE TARIFA (AUTOS Y MOTOS) -->
     <div id="modalTarifas" class="modal-overlay hidden">
         <div class="modal-card">
             <h3>
                 <span>⚙️ Gestión de Tarifas</span>
                 <button class="close-modal" onclick="cerrarModalTarifas()">✕</button>
             </h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Actualiza los valores base y por kilómetro para los viajes.</p>
-            <div id="formTarifasContainer">
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Establece los valores diferenciados para autos y motos.</p>
+            
+            <!-- SECCIÓN AUTOS -->
+            <div class="tarifa-seccion">
+                <h4>🚗 Tarifas para Autos</h4>
                 <div class="form-group">
-                    <label>Bajada de Bandera / Tarifa Base ($)</label>
-                    <input type="number" id="inputTarifaBase" placeholder="Ej: 500">
+                    <label>Bajada de Bandera Auto ($)</label>
+                    <input type="number" id="inputAutoBase" placeholder="Ej: 800">
                 </div>
                 <div class="form-group">
-                    <label>Valor por Kilómetro ($)</label>
-                    <input type="number" id="inputTarifaKm" placeholder="Ej: 300">
+                    <label>Valor por Kilómetro Auto ($)</label>
+                    <input type="number" id="inputAutoKm" placeholder="Ej: 400">
                 </div>
-                <button class="btn-guardar" onclick="guardarTarifas()">Guardar Nuevas Tarifas</button>
             </div>
+
+            <!-- SECCIÓN MOTOS -->
+            <div class="tarifa-seccion">
+                <h4>🏍️ Tarifas para Motos</h4>
+                <div class="form-group">
+                    <label>Bajada de Bandera Moto ($)</label>
+                    <input type="number" id="inputMotoBase" placeholder="Ej: 500">
+                </div>
+                <div class="form-group">
+                    <label>Valor por Kilómetro Moto ($)</label>
+                    <input type="number" id="inputMotoKm" placeholder="Ej: 250">
+                </div>
+            </div>
+
+            <button class="btn-guardar" onclick="guardarTarifas()">Guardar Todas las Tarifas</button>
         </div>
     </div>
 
@@ -221,18 +240,19 @@
             }
         }
 
-        // --- MÓDULO TARIFAS ---
+        // --- MÓDULO TARIFAS (AUTO Y MOTO) ---
         async function abrirModalTarifas() {
             document.getElementById('modalTarifas').classList.remove('hidden');
             try {
-                // Buscamos la configuración actual (asumiendo tabla 'configuracion_tarifas' o similar con id=1)
                 const { data, error } = await supabaseClient.from('configuracion_tarifas').select('*').limit(1).single();
                 if (data) {
-                    document.getElementById('inputTarifaBase').value = data.tarifa_base || data.base || '';
-                    document.getElementById('inputTarifaKm').value = data.tarifa_km || data.km || '';
+                    document.getElementById('inputAutoBase').value = data.auto_base || data.tarifa_base_auto || '';
+                    document.getElementById('inputAutoKm').value = data.auto_km || data.tarifa_km_auto || '';
+                    document.getElementById('inputMotoBase').value = data.moto_base || data.tarifa_base_moto || '';
+                    document.getElementById('inputMotoKm').value = data.moto_km || data.tarifa_km_moto || '';
                 }
             } catch (e) {
-                // Si la tabla se llama diferente, ajustamos luego según corresponda
+                // Se ajusta según las columnas específicas de Supabase
             }
         }
 
@@ -241,26 +261,24 @@
         }
 
         async function guardarTarifas() {
-            const base = parseFloat(document.getElementById('inputTarifaBase').value);
-            const km = parseFloat(document.getElementById('inputTarifaKm').value);
-
-            if (isNaN(base) || isNaN(km)) {
-                alert("Por favor ingresa valores numéricos válidos.");
-                return;
-            }
+            const autoBase = parseFloat(document.getElementById('inputAutoBase').value);
+            const autoKm = parseFloat(document.getElementById('inputAutoKm').value);
+            const motoBase = parseFloat(document.getElementById('inputMotoBase').value);
+            const motoKm = parseFloat(document.getElementById('inputMotoKm').value);
 
             try {
-                // Intentamos actualizar la tabla de configuración
                 const { error } = await supabaseClient.from('configuracion_tarifas').update({
-                    tarifa_base: base,
-                    tarifa_km: km
-                }).eq('id', 1); // O el criterio que use tu base
+                    auto_base: autoBase,
+                    auto_km: autoKm,
+                    moto_base: motoBase,
+                    moto_km: motoKm
+                }).eq('id', 1);
 
                 if (error) throw error;
-                alert("¡Tarifas actualizadas correctamente!");
+                alert("¡Tarifas de autos y motos actualizadas correctamente!");
                 cerrarModalTarifas();
             } catch (e) {
-                alert("Error al guardar tarifas (Verifica el nombre de tu tabla en Supabase): " + e.message);
+                alert("Error al guardar tarifas: " + e.message);
             }
         }
 
