@@ -216,16 +216,21 @@
                 let html = '';
                 choferes.forEach(c => {
                     let badgeEstado = c.aprobado ? `<span style="color: #10b981; font-size: 0.75rem;">● Aprobado</span>` : `<span style="color: #f59e0b; font-size: 0.75rem;">● Pendiente</span>`;
+                    
+                    // Extracción correcta basada en tu tabla de Supabase (modelo, color_auto, tipo_vehiculo)
+                    let modeloAuto = c.modelo || c.marca_modelo || 'Vehículo estándar';
+                    let colorAuto = c.color_auto ? `(${c.color_auto})` : '';
+                    let vehiculoTexto = `${modeloAuto} ${colorAuto}`.trim();
+                    let fotoChofer = c.selfie_url || c.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
 
-                    // Al hacer clic en la tarjeta, abre la pantalla completa del chofer
                     html += `
                         <div class="driver-card" onclick='abrirPerfilChofer(${JSON.stringify(c)})'>
                             <div class="driver-info-box">
-                                <img src="${c.selfie_url || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" class="driver-avatar" alt="Foto">
+                                <img src="${fotoChofer}" class="driver-avatar" alt="Foto">
                                 <div class="driver-details">
                                     <h4>${c.nombre} ${badgeEstado}</h4>
-                                    <p>🚗 ${c.marca_modelo || 'Vehículo'} (${c.tipo_vehiculo || 'Auto'})</p>
-                                    <p>🆔 Patente: <b>${c.patente}</b> | Tel: ${c.telefono}</p>
+                                    <p>🚗 ${vehiculoTexto}</p>
+                                    <p>🆔 Patente: <b>${c.patente || 'Sin patente'}</b> | Tel: ${c.telefono || 'Sin tel'}</p>
                                 </div>
                             </div>
                         </div>
@@ -250,10 +255,17 @@
                 ? `<button class="btn-accion-grande btn-bloquear-grande" onclick="cambiarEstadoChofer('${chofer.patente}', false)">🔒 Bloquear Conductor</button>`
                 : `<button class="btn-accion-grande btn-aprobar-grande" onclick="cambiarEstadoChofer('${chofer.patente}', true)">✅ Aprobar Conductor</button>`;
 
+            let modeloAuto = chofer.modelo || chofer.marca_modelo || 'No especificado';
+            let colorAuto = chofer.color_auto ? ` - Color: ${chofer.color_auto}` : '';
+            let tipoVehiculo = chofer.tipo_vehiculo || 'Auto';
+            let vehiculoTexto = `${modeloAuto}${colorAuto}`;
+            let patenteTexto = chofer.patente || 'Sin patente';
+            let fotoChofer = chofer.selfie_url || chofer.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
+
             const contenedorPerfil = document.getElementById('contenidoPerfilChofer');
             contenedorPerfil.innerHTML = `
                 <div class="driver-profile-header">
-                    <img src="${chofer.selfie_url || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" class="driver-profile-img" alt="Foto">
+                    <img src="${fotoChofer}" class="driver-profile-img" alt="Foto">
                     <div>
                         <h4 style="font-size: 1.1rem; color: #fff;">${chofer.nombre}</h4>
                         <p style="font-size: 0.8rem; margin: 2px 0;">${badgeEstado}</p>
@@ -262,8 +274,8 @@
                 </div>
 
                 <div style="font-size: 0.85rem; color: #cbd5e1; background: #0f172a; padding: 10px 14px; border-radius: 12px; margin-bottom: 14px; border: 1px solid #334155;">
-                    <p>🚗 <b>Vehículo:</b> ${chofer.marca_modelo || 'No especificado'} (${chofer.tipo_vehiculo || 'Auto'})</p>
-                    <p style="margin-top: 4px;">🆔 <b>Patente:</b> ${chofer.patente}</p>
+                    <p>🚗 <b>Vehículo:</b> ${vehiculoTexto} (${tipoVehiculo})</p>
+                    <p style="margin-top: 4px;">🆔 <b>Patente:</b> ${patenteTexto}</p>
                 </div>
 
                 ${botonAccion}
@@ -286,12 +298,12 @@
                 </div>
             `;
 
-            // Consultar viajes y calcular ganancias
+            // Consultar viajes del chofer en Supabase
             try {
                 const { data: viajes, error } = await supabaseClient
                     .from('viajes')
                     .select('*')
-                    .eq('conductor_nombre', chofer.nombre)
+                    .or(`conductor_nombre.eq.${chofer.nombre},conductor_id.eq.${chofer.id}`)
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
@@ -310,12 +322,15 @@
                 let htmlViajes = '';
 
                 viajes.forEach(v => {
+                    let estadoStr = (v.estado || '').toLowerCase();
                     let colorEstado = '#38bdf8';
-                    if (v.estado === 'completado') {
+                    
+                    if (estadoStr === 'finalizado' || estadoStr === 'completado') {
                         colorEstado = '#10b981';
                         gananciasTotales += Number(v.precio || 0);
+                    } else if (estadoStr === 'cancelado') {
+                        colorEstado = '#ef4444';
                     }
-                    if (v.estado === 'cancelado') colorEstado = '#ef4444';
 
                     let fechaFormateada = v.created_at ? new Date(v.created_at).toLocaleString() : 'Fecha no disponible';
 
@@ -325,7 +340,7 @@
                                 <span style="font-size: 0.8rem; font-weight: 700; color: #fff;">👤 ${v.pasajero_nombre || 'Pasajero'}</span>
                                 <span style="font-size: 0.85rem; font-weight: 800; color: #10b981;">$${v.precio || 0}</span>
                             </div>
-                            <p style="font-size: 0.7rem; color: #94a3b8;">Estado: <b style="color: ${colorEstado};">${v.estado.toUpperCase()}</b> | 📅 ${fechaFormateada}</p>
+                            <p style="font-size: 0.7rem; color: #94a3b8;">Estado: <b style="color: ${colorEstado};">${(v.estado || '').toUpperCase()}</b> | 📅 ${fechaFormateada}</p>
                         </div>
                     `;
                 });
