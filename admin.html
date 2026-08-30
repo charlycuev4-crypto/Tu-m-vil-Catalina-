@@ -41,8 +41,8 @@
         .btn-aprobar { background: #059669; color: white; border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; }
         .btn-rechazar { background: #7f1d1d; color: #fca5a5; border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; }
 
-        /* MODAL DE GESTIÓN */
-        #modalConductores {
+        /* MODALES */
+        .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.9);
             z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
         }
@@ -53,13 +53,19 @@
         .modal-card h3 { font-size: 1.1rem; margin-bottom: 14px; color: #38bdf8; display: flex; justify-content: space-between; align-items: center; }
         .close-modal { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
 
+        /* FORMULARIOS DE TARIFA */
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; }
+        .form-group input { width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: #fff; font-size: 0.9rem; }
+        .btn-guardar { width: 100%; background: #059669; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 10px; }
+
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <!-- MODAL LISTADO DE CONDUCTORES -->
-    <div id="modalConductores" class="hidden">
+    <div id="modalConductores" class="modal-overlay hidden">
         <div class="modal-card">
             <h3>
                 <span>🚗 Conductores Registrados</span>
@@ -72,11 +78,34 @@
         </div>
     </div>
 
+    <!-- MODAL GESTIÓN DE TARIFA -->
+    <div id="modalTarifas" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3>
+                <span>⚙️ Gestión de Tarifas</span>
+                <button class="close-modal" onclick="cerrarModalTarifas()">✕</button>
+            </h3>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Actualiza los valores base y por kilómetro para los viajes.</p>
+            <div id="formTarifasContainer">
+                <div class="form-group">
+                    <label>Bajada de Bandera / Tarifa Base ($)</label>
+                    <input type="number" id="inputTarifaBase" placeholder="Ej: 500">
+                </div>
+                <div class="form-group">
+                    <label>Valor por Kilómetro ($)</label>
+                    <input type="number" id="inputTarifaKm" placeholder="Ej: 300">
+                </div>
+                <button class="btn-guardar" onclick="guardarTarifas()">Guardar Nuevas Tarifas</button>
+            </div>
+        </div>
+    </div>
+
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
     <div class="header-float">
         <div class="admin-badge">🛡️ Panel Administrador</div>
         <div class="admin-actions">
+            <button class="admin-btn secondary" onclick="abrirModalTarifas()">⚙️ Tarifas</button>
             <button class="admin-btn" onclick="abrirModalConductores()">👥 Choferes</button>
         </div>
     </div>
@@ -135,6 +164,7 @@
             } catch (e) {}
         }
 
+        // --- MÓDULO CONDUCTORES ---
         async function abrirModalConductores() {
             document.getElementById('modalConductores').classList.remove('hidden');
             const contenedor = document.getElementById('listaConductoresContainer');
@@ -188,6 +218,49 @@
                 abrirModalConductores();
             } catch (e) {
                 alert("Error al actualizar estado: " + e.message);
+            }
+        }
+
+        // --- MÓDULO TARIFAS ---
+        async function abrirModalTarifas() {
+            document.getElementById('modalTarifas').classList.remove('hidden');
+            try {
+                // Buscamos la configuración actual (asumiendo tabla 'configuracion_tarifas' o similar con id=1)
+                const { data, error } = await supabaseClient.from('configuracion_tarifas').select('*').limit(1).single();
+                if (data) {
+                    document.getElementById('inputTarifaBase').value = data.tarifa_base || data.base || '';
+                    document.getElementById('inputTarifaKm').value = data.tarifa_km || data.km || '';
+                }
+            } catch (e) {
+                // Si la tabla se llama diferente, ajustamos luego según corresponda
+            }
+        }
+
+        function cerrarModalTarifas() {
+            document.getElementById('modalTarifas').classList.add('hidden');
+        }
+
+        async function guardarTarifas() {
+            const base = parseFloat(document.getElementById('inputTarifaBase').value);
+            const km = parseFloat(document.getElementById('inputTarifaKm').value);
+
+            if (isNaN(base) || isNaN(km)) {
+                alert("Por favor ingresa valores numéricos válidos.");
+                return;
+            }
+
+            try {
+                // Intentamos actualizar la tabla de configuración
+                const { error } = await supabaseClient.from('configuracion_tarifas').update({
+                    tarifa_base: base,
+                    tarifa_km: km
+                }).eq('id', 1); // O el criterio que use tu base
+
+                if (error) throw error;
+                alert("¡Tarifas actualizadas correctamente!");
+                cerrarModalTarifas();
+            } catch (e) {
+                alert("Error al guardar tarifas (Verifica el nombre de tu tabla en Supabase): " + e.message);
             }
         }
 
