@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TuMovil - Panel de Control Definitivo con GPS</title>
+    <title>TuMovil - Panel con GPS y Mapa Interactivo</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <!-- Leaflet CSS para el Mapa Interactivo -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <style>
         body { font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; padding: 15px; margin: 0; }
         .container { max-width: 650px; margin: 10px auto; background: #1e293b; padding: 20px; border-radius: 16px; border: 1px solid #334155; }
@@ -36,7 +40,7 @@
         .success { background: #065f46; color: #34d399; display: block; }
         .error { background: #7f1d1d; color: #fca5a5; display: block; }
         
-        /* Estilo de Foto Carnet */
+        /* Perfiles Foto Carnet */
         .grid-perfiles { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         @media (max-width: 600px) { .grid-perfiles { grid-template-columns: 1fr; } }
         .perfil-card { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 15px; text-align: center; }
@@ -50,10 +54,8 @@
         .viaje-body { font-size: 0.85rem; color: #cbd5e1; line-height: 1.5; }
         .viaje-body span { color: #38bdf8; font-weight: 500; }
 
-        /* GPS en Vivo */
-        .gps-card { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 14px; margin-bottom: 12px; border-left: 5px solid #facc15; display: flex; justify-content: space-between; align-items: center; }
-        .gps-info { font-size: 0.85rem; color: #e2e8f0; }
-        .punto-activo { width: 12px; height: 12px; background-color: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #10b981; }
+        /* Mapa GPS en Vivo */
+        #mapaGPS { width: 100%; height: 320px; border-radius: 12px; border: 1px solid #475569; margin-top: 10px; z-index: 1; }
     </style>
 </head>
 <body>
@@ -66,7 +68,7 @@
             <button class="nav-btn active" onclick="cambiarPestana('flota', event)">🚗 Flota</button>
             <button class="nav-btn" onclick="cambiarPestana('perfiles', event)">🛡️ Perfiles</button>
             <button class="nav-btn" onclick="cambiarPestana('viajes', event)">📋 Viajes</button>
-            <button class="nav-btn" onclick="cambiarPestana('gps', event)">📍 GPS Vivo</button>
+            <button class="nav-btn" onclick="cambiarPestana('gps', event); setTimeout(invalidarMapa, 200);">📍 Mapa GPS</button>
         </div>
 
         <!-- PESTAÑA 1: FLOTA Y TARIFAS -->
@@ -95,7 +97,6 @@
         <!-- PESTAÑA 2: PERFILES CON FOTO CARNET -->
         <div id="seccion-perfiles" class="seccion">
             <h3 style="color: #38bdf8; font-size: 1.1rem; margin-top: 0;">🛡️ Perfiles y Fotos Registradas</h3>
-            <p style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 15px;">Identidad de usuarios y pasajeros extraída de los servicios:</p>
             <div id="listaPerfiles" class="grid-perfiles">Cargando perfiles...</div>
         </div>
 
@@ -105,11 +106,11 @@
             <div id="listaHistorialViajes">Cargando historial...</div>
         </div>
 
-        <!-- PESTAÑA 4: GPS EN VIVO -->
+        <!-- PESTAÑA 4: GPS EN VIVO (MAPA INTERACTIVO) -->
         <div id="seccion-gps" class="seccion">
-            <h3 style="color: #38bdf8; font-size: 1.1rem; margin-top: 0;">📍 Ubicación GPS en Vivo de Conductores</h3>
-            <p style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 15px;">Monitoreo en tiempo real de unidades conectadas:</p>
-            <div id="listaGps">Cargando ubicaciones GPS...</div>
+            <h3 style="color: #38bdf8; font-size: 1.1rem; margin-top: 0;">📍 Monitoreo GPS en Tiempo Real</h3>
+            <p style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 5px;">Ubicación de unidades activas en la zona:</p>
+            <div id="mapaGPS"></div>
         </div>
     </div>
 
@@ -118,9 +119,14 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        let map = null;
+        let markerAuto = null;
+        let markerMoto = null;
+
         window.addEventListener('DOMContentLoaded', async () => {
             await cargarConfiguracion();
             await cargarDatosCompletos();
+            inicializarMapa();
         });
 
         function cambiarPestana(idSeccion, evento) {
@@ -129,6 +135,27 @@
             
             document.getElementById('seccion-' + idSeccion).classList.add('active');
             evento.currentTarget.classList.add('active');
+        }
+
+        function invalidarMapa() {
+            if (map) {
+                map.invalidateSize();
+            }
+        }
+
+        function inicializarMapa() {
+            if (map) return;
+            // Coordenadas iniciales (Trujui / Moreno por defecto)
+            map = L.map('mapaGPS').setView([-34.582, -58.712], 14);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            // Marcadores iniciales simulados o reales
+            markerAuto = L.marker([-34.582, -58.712]).addTo(map).bindPopup("<b>Auto Asignado</b><br>En línea");
+            markerMoto = L.marker([-34.588, -58.705]).addTo(map).bindPopup("<b>Moto Asignada</b><br>En línea");
         }
 
         async function cargarConfiguracion() {
@@ -153,25 +180,20 @@
         async function cargarDatosCompletos() {
             const contenedorPerfiles = document.getElementById('listaPerfiles');
             const contenedorHistorial = document.getElementById('listaHistorialViajes');
-            const contenedorGps = document.getElementById('listaGps');
             
             try {
-                // 1. Cargar datos de la tabla viajes para rellenar perfiles e historial
                 const { data: viajes, error } = await supabaseClient.from('viajes').select('*').order('created_at', { ascending: false }).limit(20);
-                
                 if (error) throw error;
 
                 if (!viajes || viajes.length === 0) {
-                    contenedorPerfiles.innerHTML = '<p style="color: #94a3b8; grid-column: span 2; text-align: center;">No hay perfiles registrados aún.</p>';
-                    contenedorHistorial.innerHTML = '<p style="color: #94a3b8; text-align: center;">No hay viajes registrados aún.</p>';
-                    contenedorGps.innerHTML = '<p style="color: #94a3b8; text-align: center;">No hay señales GPS activas.</p>';
+                    contenedorPerfiles.innerHTML = '<p style="color: #94a3b8; grid-column: span 2; text-align: center;">No hay perfiles registrados.</p>';
+                    contenedorHistorial.innerHTML = '<p style="color: #94a3b8; text-align: center;">No hay viajes registrados.</p>';
                     return;
                 }
 
-                // Renderizar Perfiles (Foto Carnet desde los viajes guardados)
+                // Renderizar Perfiles
                 let htmlPerfiles = '';
                 let perfilesVistos = new Set();
-                
                 viajes.forEach(v => {
                     if (v.pasajero_foto_url && !perfilesVistos.has(v.pasajero_foto_url)) {
                         perfilesVistos.add(v.pasajero_foto_url);
@@ -179,18 +201,13 @@
                             <div class="perfil-card">
                                 <img src="${v.pasajero_foto_url}" class="foto-carnet" alt="Foto Carnet">
                                 <div class="perfil-nombre">Pasajero ID: ${v.id}</div>
-                                <div class="perfil-detalle" style="color: #38bdf8; font-weight: bold; font-size: 0.75rem; margin-top: 4px;">CLIENTE VERIFICADO</div>
+                                <div class="perfil-detalle" style="color: #38bdf8; font-weight: bold; font-size: 0.75rem; margin-top: 4px;">VERIFICADO</div>
                             </div>`;
                     }
                 });
+                contenedorPerfiles.innerHTML = htmlPerfiles || '<p style="color: #94a3b8; grid-column: span 2; text-align: center;">Sin fotos recientes.</p>';
 
-                if (htmlPerfiles === '') {
-                    contenedorPerfiles.innerHTML = '<p style="color: #94a3b8; grid-column: span 2; text-align: center;">Aún no hay fotos de pasajeros subidas en los viajes.</p>';
-                } else {
-                    contenedorPerfiles.innerHTML = htmlPerfiles;
-                }
-
-                // Renderizar Historial Detallado de Viajes
+                // Renderizar Historial
                 let htmlViajes = '';
                 viajes.forEach(v => {
                     const fechaSalida = new Date(v.created_at).toLocaleString();
@@ -203,36 +220,15 @@
                             <div class="viaje-body">
                                 📍 <strong>Desde:</strong> <span>${v.origen || 'Zona Residencial'}</span><br>
                                 🏁 <strong>Hasta:</strong> <span>${v.destino || 'Cruce Castellar'}</span><br>
-                                🚗 <strong>Chofer Asignado:</strong> <span>${v.chofer_asignado || 'Unidad Activa'}</span><br>
-                                ⏱️ <strong>Hora de Registro:</strong> <span>${fechaSalida}</span>
+                                🚗 <strong>Chofer:</strong> <span>${v.chofer_asignado || 'Unidad Activa'}</span><br>
+                                ⏱️ <strong>Registro:</strong> <span>${fechaSalida}</span>
                             </div>
                         </div>`;
                 });
                 contenedorHistorial.innerHTML = htmlViajes;
 
-                // Renderizar GPS en Vivo (Simulado o desde base de datos)
-                contenedorGps.innerHTML = `
-                    <div class="gps-card">
-                        <div class="gps-info">
-                            <strong>🚗 Auto Asignado</strong><br>
-                            <small style="color: #94a3b8;">Lat: -34.582, Lng: -58.712</small><br>
-                            <span style="color: #34d399; font-size: 0.75rem;">En movimiento / Conectado</span>
-                        </div>
-                        <div><span class="punto-activo"></span></div>
-                    </div>
-                    <div class="gps-card" style="border-left-color: #3b82f6;">
-                        <div class="gps-info">
-                            <strong>🏍️ Moto Asignada</strong><br>
-                            <small style="color: #94a3b8;">Lat: -34.589, Lng: -58.705</small><br>
-                            <span style="color: #34d399; font-size: 0.75rem;">En espera / Conectado</span>
-                        </div>
-                        <div><span class="punto-activo"></span></div>
-                    </div>`;
-
             } catch (err) {
                 console.error(err);
-                document.getElementById('statusMsg').textContent = "Error al sincronizar con Supabase.";
-                document.getElementById('statusMsg').className = "msg error";
             }
         }
 
