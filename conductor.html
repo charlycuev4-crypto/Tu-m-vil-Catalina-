@@ -137,17 +137,17 @@
 </head>
 <body onclick="forzarHabilitacionAudio()">
 
-    <!-- MODAL DE CONFIGURACIÓN INICIAL CON FOTO / SELFIE -->
+    <!-- MODAL DE CONFIGURACIÓN INICIAL CON COMPRESIÓN DE FOTO -->
     <div id="modalConfigChofer" class="hidden">
         <div class="config-card">
             <h2>🚗 Registro de Conductor</h2>
-            <p>Ingresá tus datos y tu foto para que los pasajeros puedan reconocerte.</p>
+            <p>Ingresá tus datos y tu selfie para que los pasajeros te reconozcan.</p>
             <form id="formConfigChofer" onsubmit="guardarConfigChofer(event)">
                 <div style="text-align: center; margin-bottom: 12px;">
                     <img id="imgPreview" class="preview-selfie" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Foto Perfil">
                     <label style="font-size: 0.75rem; color: #38bdf8; cursor: pointer; text-decoration: underline;">
                         Subir Foto / Selfie 📷
-                        <input type="file" id="inpFotoFile" accept="image/*" style="display: none;" onchange="previsualizarFoto(event)">
+                        <input type="file" id="inpFotoFile" accept="image/*" style="display: none;" onchange="procesarYComprimirFoto(event)">
                     </label>
                 </div>
                 <div class="config-field">
@@ -280,16 +280,56 @@
         function verificarRegistroChofer() {
             if (!localStorage.getItem('cfg_auto_chofer') || !localStorage.getItem('cfg_auto_patente')) {
                 document.getElementById('modalConfigChofer').classList.remove('hidden');
+            } else {
+                document.getElementById('inpNombre').value = localStorage.getItem('cfg_auto_chofer') || '';
+                document.getElementById('inpTelefono').value = localStorage.getItem('cfg_auto_telefono') || '';
+                document.getElementById('inpModelo').value = localStorage.getItem('cfg_auto_modelo') || '';
+                document.getElementById('inpColor').value = localStorage.getItem('cfg_auto_color') || '';
+                document.getElementById('inpPatente').value = localStorage.getItem('cfg_auto_patente') || '';
+                if(localStorage.getItem('cfg_auto_foto')) {
+                    document.getElementById('imgPreview').src = localStorage.getItem('cfg_auto_foto');
+                    base64FotoTemp = localStorage.getItem('cfg_auto_foto');
+                }
             }
         }
 
-        function previsualizarFoto(event) {
+        // FUNCIÓN DE COMPRESIÓN DE IMAGEN AUTOMÁTICA (Evita que la foto se rompa por tamaño)
+        function procesarYComprimirFoto(event) {
             const archivo = event.target.files[0];
             if (!archivo) return;
+
             const lector = new FileReader();
             lector.onload = function(e) {
-                base64FotoTemp = e.target.result;
-                document.getElementById('imgPreview').src = base64FotoTemp;
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 350; // Ancho óptimo y liviano
+                    const MAX_HEIGHT = 350;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Comprimir en JPEG al 70% de calidad para que pese pocos KB
+                    base64FotoTemp = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById('imgPreview').src = base64FotoTemp;
+                }
             }
             lector.readAsDataURL(archivo);
         }
@@ -533,6 +573,7 @@
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
+                    // Actualizamos con los datos locales reales del chofer y su foto comprimida
                     const { error } = await supabaseClient.from('viajes').update({ 
                         conductor_nombre: NOMBRE_CHOFER, 
                         conductor_auto: AUTO_CHOFER,
