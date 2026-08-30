@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tu Móvil</title>
+    <title>Tu Móvil - Conductor</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -19,7 +19,6 @@
         #mapaLeaflet { width: 100%; height: 100%; }
 
         .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
-        
         .header-left-col { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; max-width: 55%; }
         
         .status-badge { background: #1e293b; color: #38bdf8; padding: 8px 14px; border-radius: 30px; font-weight: 700; font-size: 0.8rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #334155; cursor: pointer; user-select: none; text-align: center; white-space: nowrap; }
@@ -126,6 +125,11 @@
         }
         .config-field input:focus { border-color: #38bdf8; }
 
+        .preview-selfie {
+            width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8;
+            margin: 0 auto 10px; display: block; background: #0f172a;
+        }
+
         .hidden { display: none !important; }
         .msg { padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.8rem; text-align: center; display: none; font-weight: 600; }
         .msg.show { display: block; }
@@ -133,12 +137,19 @@
 </head>
 <body onclick="forzarHabilitacionAudio()">
 
-    <!-- MODAL DE CONFIGURACIÓN INICIAL -->
+    <!-- MODAL DE CONFIGURACIÓN INICIAL CON FOTO / SELFIE -->
     <div id="modalConfigChofer" class="hidden">
         <div class="config-card">
             <h2>🚗 Registro de Conductor</h2>
-            <p>Ingresá tus datos para empezar a recibir viajes en Tu Móvil.</p>
+            <p>Ingresá tus datos y tu foto para que los pasajeros puedan reconocerte.</p>
             <form id="formConfigChofer" onsubmit="guardarConfigChofer(event)">
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <img id="imgPreview" class="preview-selfie" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Foto Perfil">
+                    <label style="font-size: 0.75rem; color: #38bdf8; cursor: pointer; text-decoration: underline;">
+                        Subir Foto / Selfie 📷
+                        <input type="file" id="inpFotoFile" accept="image/*" style="display: none;" onchange="previsualizarFoto(event)">
+                    </label>
+                </div>
                 <div class="config-field">
                     <label>Nombre y Apellido</label>
                     <input type="text" id="inpNombre" placeholder="Ej: Juan Pérez" required>
@@ -159,7 +170,7 @@
                     <label>Patente / Dominio</label>
                     <input type="text" id="inpPatente" placeholder="Ej: AB123CD" required>
                 </div>
-                <button type="submit" class="btn-action btn-aceptar" style="margin-top: 10px;">Guardar y Empezar ✅</button>
+                <button type="submit" class="btn-action btn-aceptar" style="margin-top: 10px;" id="btnGuardarRegistro">Guardar y Empezar ✅</button>
             </form>
         </div>
     </div>
@@ -243,6 +254,7 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "";
+        let FOTO_CHOFER = localStorage.getItem('cfg_auto_foto') || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
         let AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " - " + (localStorage.getItem('cfg_auto_color') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
 
         let totalDia = parseFloat(localStorage.getItem('chofer_total_dia') || '0');
@@ -263,11 +275,23 @@
         
         let audioCtx = null;
         let intervaloCampana = null;
+        let base64FotoTemp = "";
 
         function verificarRegistroChofer() {
             if (!localStorage.getItem('cfg_auto_chofer') || !localStorage.getItem('cfg_auto_patente')) {
                 document.getElementById('modalConfigChofer').classList.remove('hidden');
             }
+        }
+
+        function previsualizarFoto(event) {
+            const archivo = event.target.files[0];
+            if (!archivo) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                base64FotoTemp = e.target.result;
+                document.getElementById('imgPreview').src = base64FotoTemp;
+            }
+            lector.readAsDataURL(archivo);
         }
 
         function guardarConfigChofer(e) {
@@ -277,12 +301,14 @@
             const modelo = document.getElementById('inpModelo').value.trim();
             const color = document.getElementById('inpColor').value.trim();
             const patente = document.getElementById('inpPatente').value.trim();
+            const fotoFinal = base64FotoTemp || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
 
             localStorage.setItem('cfg_auto_chofer', nombre);
             localStorage.setItem('cfg_auto_telefono', telefono);
             localStorage.setItem('cfg_auto_modelo', modelo);
             localStorage.setItem('cfg_auto_color', color);
             localStorage.setItem('cfg_auto_patente', patente);
+            localStorage.setItem('cfg_auto_foto', fotoFinal);
 
             document.getElementById('modalConfigChofer').classList.add('hidden');
             location.reload();
@@ -507,7 +533,11 @@
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
-                    const { error } = await supabaseClient.from('viajes').update({ conductor_nombre: NOMBRE_CHOFER, conductor_auto: AUTO_CHOFER }).eq('id', viajeActivo.id);
+                    const { error } = await supabaseClient.from('viajes').update({ 
+                        conductor_nombre: NOMBRE_CHOFER, 
+                        conductor_auto: AUTO_CHOFER,
+                        conductor_foto: FOTO_CHOFER 
+                    }).eq('id', viajeActivo.id);
                     if (error) throw error;
                     
                     estadoFlujo = 'aceptado';
