@@ -152,7 +152,7 @@
                 </div>
                 <div class="config-field">
                     <label>Nombre y Apellido</label>
-                    <input type="text" id="inpNombre" placeholder="Ej: Juan Pérez" required>
+                    <input type="text" id="inpNombre" placeholder="Ej: Carlos Cueva" required>
                 </div>
                 <div class="config-field">
                     <label>Número de WhatsApp</label>
@@ -160,15 +160,15 @@
                 </div>
                 <div class="config-field">
                     <label>Marca y Modelo del Auto</label>
-                    <input type="text" id="inpModelo" placeholder="Ej: Fiat Cronos" required>
+                    <input type="text" id="inpModelo" placeholder="Ej: Ford Fiesta" required>
                 </div>
                 <div class="config-field">
                     <label>Color del Auto</label>
-                    <input type="text" id="inpColor" placeholder="Ej: Blanco" required>
+                    <input type="text" id="inpColor" placeholder="Ej: Negro" required>
                 </div>
                 <div class="config-field">
                     <label>Patente / Dominio</label>
-                    <input type="text" id="inpPatente" placeholder="Ej: AB123CD" required>
+                    <input type="text" id="inpPatente" placeholder="Ej: Jcp 478" required>
                 </div>
                 <button type="submit" class="btn-action btn-aceptar" style="margin-top: 10px;" id="btnGuardarRegistro">Guardar y Empezar ✅</button>
             </form>
@@ -293,7 +293,6 @@
             }
         }
 
-        // FUNCIÓN DE COMPRESIÓN DE IMAGEN AUTOMÁTICA (Evita que la foto se rompa por tamaño)
         function procesarYComprimirFoto(event) {
             const archivo = event.target.files[0];
             if (!archivo) return;
@@ -304,21 +303,15 @@
                 img.src = e.target.result;
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 350; // Ancho óptimo y liviano
+                    const MAX_WIDTH = 350; 
                     const MAX_HEIGHT = 350;
                     let width = img.width;
                     let height = img.height;
 
                     if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
                     } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
-                        }
+                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
                     }
 
                     canvas.width = width;
@@ -326,7 +319,6 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    // Comprimir en JPEG al 70% de calidad para que pese pocos KB
                     base64FotoTemp = canvas.toDataURL('image/jpeg', 0.7);
                     document.getElementById('imgPreview').src = base64FotoTemp;
                 }
@@ -570,15 +562,22 @@
         }
 
         async function procesarLojicaViaje() {
+            // Recargamos las variables locales en tiempo real por si el chofer guardó sus datos recién
+            NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "Carlos Cueva";
+            FOTO_CHOFER = localStorage.getItem('cfg_auto_foto') || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
+            AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "Ford Fiesta") + " - " + (localStorage.getItem('cfg_auto_color') || "Negro") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "Jcp 478") + ")";
+
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
-                    // Actualizamos con los datos locales reales del chofer y su foto comprimida
+                    // AQUÍ ESTÁ LA CORRECCIÓN CLAVE: Inyectamos el nombre real, auto y foto para el panel de administración
                     const { error } = await supabaseClient.from('viajes').update({ 
                         conductor_nombre: NOMBRE_CHOFER, 
                         conductor_auto: AUTO_CHOFER,
-                        conductor_foto: FOTO_CHOFER 
+                        conductor_foto: FOTO_CHOFER,
+                        estado: 'aceptado'
                     }).eq('id', viajeActivo.id);
+                    
                     if (error) throw error;
                     
                     estadoFlujo = 'aceptado';
@@ -597,7 +596,7 @@
                     autocentrarMapa = true;
                     document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                     mapa.setView([choferCoords.lat, choferCoords.lng], 17);
-                } catch (e) { location.reload(); }
+                } catch (e) { alert("Error al aceptar viaje: " + e.message); }
                 return;
             }
 
