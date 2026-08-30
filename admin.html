@@ -39,10 +39,12 @@
         .driver-details h4 { font-size: 0.95rem; font-weight: 700; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .driver-details p { font-size: 0.75rem; color: #94a3b8; }
 
-        .btn-aprobar { background: #059669; color: white; border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; }
-        .btn-rechazar { background: #7f1d1d; color: #fca5a5; border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; }
+        .driver-actions-row { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex-shrink: 0; }
+        .btn-aprobar { background: #059669; color: white; border: none; padding: 5px 10px; border-radius: 10px; font-weight: 700; font-size: 0.7rem; cursor: pointer; }
+        .btn-rechazar { background: #7f1d1d; color: #fca5a5; border: none; padding: 5px 10px; border-radius: 10px; font-weight: 700; font-size: 0.7rem; cursor: pointer; }
+        .btn-historial-driver { background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 10px; font-weight: 700; font-size: 0.7rem; cursor: pointer; }
 
-        /* MODALES (CHOFERES Y TARIFAS) */
+        /* MODALES */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.9);
             z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
@@ -61,7 +63,6 @@
             width: 100%; background: #0f172a; border: 1px solid #334155; color: #f1f5f9; 
             padding: 12px; border-radius: 12px; outline: none; font-size: 1rem; 
         }
-        .form-group input:focus { border-color: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.3); }
         
         .btn-guardar { 
             width: 100%; background: #10b981; color: white; border: none; padding: 14px; 
@@ -82,50 +83,44 @@
                 <span>🚗 Conductores Registrados</span>
                 <button class="close-modal" onclick="cerrarModalConductores()">✕</button>
             </h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Aprobá o bloqueá las cuentas de los choferes de confianza.</p>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Aprobá cuentas o consultá el historial de cada chofer.</p>
             <div id="listaConductoresContainer">
                 <p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando conductores...</p>
             </div>
         </div>
     </div>
 
-    <!-- NUEVO MODAL: GESTIÓN DE TARIFAS -->
+    <!-- NUEVO MODAL: HISTORIAL DE VIAJES DEL CONDUCTOR -->
+    <div id="modalHistorialConductor" class="modal-overlay hidden" style="z-index: 10000;">
+        <div class="modal-card">
+            <h3>
+                <span id="tituloHistorialChofer">📊 Historial de Viajes</span>
+                <button class="close-modal" onclick="cerrarModalHistorialConductor()">✕</button>
+            </h3>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;" id="subtituloHistorialChofer">Servicios realizados por el chofer.</p>
+            <div id="listaHistorialContainer">
+                <p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando historial...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: GESTIÓN DE TARIFAS (MANUAL DESDE SUPABASE) -->
     <div id="modalTarifas" class="modal-overlay hidden">
         <div class="modal-card">
             <h3>
                 <span>💰 Configuración de Tarifas</span>
                 <button class="close-modal" onclick="cerrarModalTarifas()">✕</button>
             </h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 18px;">Ajustá los precios generales. Los cambios aplican de inmediato en la app del pasajero.</p>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 18px;">Información de referencia (Administrado desde Supabase).</p>
             
             <div class="form-group">
-                <label>Tarifa Base (Bajada de bandera en $)</label>
-                <input type="number" id="inpTarifaBase" placeholder="Ej: 3000">
+                <label>Nota Informativa</label>
+                <p style="font-size: 0.85rem; color: #e2e8f0; background: #0f172a; padding: 12px; border-radius: 10px; border: 1px solid #334155;">
+                    Las tarifas se gestionan directamente desde tu base de datos de Supabase en la tabla <b>configuracion_tarifas</b> para mayor seguridad.
+                </p>
             </div>
             
-            <div class="form-group">
-                <label>Tarifa por Kilómetro (en $)</label>
-                <input type="number" id="inpTarifaKm" placeholder="Ej: 400">
-            </div>
-
-            <div class="form-group">
-                <label>Multiplicador Recargo Nocturno (Ej: 1.30 = +30%)</label>
-                <input type="number" step="0.01" id="inpRecargoNocturno" placeholder="Ej: 1.30">
-            </div>
-
-            <div style="display: flex; gap: 12px;">
-                <div class="form-group" style="flex: 1;">
-                    <label>Hora Inicio (0-23)</label>
-                    <input type="number" id="inpHoraInicio" placeholder="Ej: 20" min="0" max="23">
-                </div>
-                <div class="form-group" style="flex: 1;">
-                    <label>Hora Fin (0-23)</label>
-                    <input type="number" id="inpHoraFin" placeholder="Ej: 8" min="0" max="23">
-                </div>
-            </div>
-            
-            <button class="btn-guardar" id="btnGuardarTarifas" onclick="guardarTarifasBase()">Guardar Tarifas</button>
-            <p id="msgTarifas" style="text-align: center; margin-top: 12px; font-size: 0.85rem; font-weight: bold;"></p>
+            <button class="btn-guardar" onclick="cerrarModalTarifas()">Entendido</button>
         </div>
     </div>
 
@@ -134,7 +129,6 @@
     <div class="header-float">
         <div class="admin-badge">🛡️ Panel Administrador</div>
         <div class="admin-actions">
-            <!-- Nuevo Botón de Tarifas -->
             <button class="admin-btn success" onclick="abrirModalTarifas()">💰 Tarifas</button>
             <button class="admin-btn" onclick="abrirModalConductores()">👥 Choferes</button>
         </div>
@@ -158,7 +152,6 @@
 
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
         let mapa = null;
-        let idConfiguracionActual = null; // Guardará el ID de las tarifas en DB
 
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
@@ -195,90 +188,12 @@
             } catch (e) {}
         }
 
-        /* ----- LÓGICA DE TARIFAS ----- */
-        async function abrirModalTarifas() {
+        function abrirModalTarifas() {
             document.getElementById('modalTarifas').classList.remove('hidden');
-            const msg = document.getElementById('msgTarifas');
-            msg.textContent = "Cargando configuración actual...";
-            msg.style.color = "#94a3b8";
-
-            try {
-                const { data, error } = await supabaseClient
-                    .from('configuracion_tarifas')
-                    .select('*')
-                    .eq('activa', true)
-                    .single();
-
-                if (data) {
-                    idConfiguracionActual = data.id;
-                    document.getElementById('inpTarifaBase').value = data.tarifa_base;
-                    document.getElementById('inpTarifaKm').value = data.tarifa_km;
-                    document.getElementById('inpRecargoNocturno').value = data.recargo_nocturno;
-                    document.getElementById('inpHoraInicio').value = data.hora_inicio_nocturno;
-                    document.getElementById('inpHoraFin').value = data.hora_fin_nocturno;
-                    msg.textContent = "";
-                } else {
-                    msg.textContent = "No hay tarifas guardadas. Ingresa unas nuevas.";
-                }
-            } catch (e) {
-                msg.textContent = "Error al conectar con la base de datos.";
-                msg.style.color = "#ef4444";
-            }
         }
-
         function cerrarModalTarifas() {
             document.getElementById('modalTarifas').classList.add('hidden');
         }
-
-        async function guardarTarifasBase() {
-            const btn = document.getElementById('btnGuardarTarifas');
-            const msg = document.getElementById('msgTarifas');
-            
-            btn.textContent = "Guardando...";
-            btn.disabled = true;
-
-            const payload = {
-                tarifa_base: parseFloat(document.getElementById('inpTarifaBase').value),
-                tarifa_km: parseFloat(document.getElementById('inpTarifaKm').value),
-                recargo_nocturno: parseFloat(document.getElementById('inpRecargoNocturno').value),
-                hora_inicio_nocturno: parseInt(document.getElementById('inpHoraInicio').value),
-                hora_fin_nocturno: parseInt(document.getElementById('inpHoraFin').value),
-                activa: true
-            };
-
-            try {
-                if (idConfiguracionActual) {
-                    // Actualizar existentes
-                    const { error } = await supabaseClient
-                        .from('configuracion_tarifas')
-                        .update(payload)
-                        .eq('id', idConfiguracionActual);
-                    if (error) throw error;
-                } else {
-                    // Insertar por primera vez
-                    const { data, error } = await supabaseClient
-                        .from('configuracion_tarifas')
-                        .insert([payload])
-                        .select().single();
-                    if (error) throw error;
-                    idConfiguracionActual = data.id;
-                }
-
-                msg.textContent = "¡Tarifas guardadas exitosamente!";
-                msg.style.color = "#10b981";
-                
-                // Cerrar modal tras 1.5 segundos
-                setTimeout(() => cerrarModalTarifas(), 1500);
-
-            } catch (e) {
-                msg.textContent = "Error al guardar: " + e.message;
-                msg.style.color = "#ef4444";
-            } finally {
-                btn.textContent = "Guardar Tarifas";
-                btn.disabled = false;
-            }
-        }
-        /* -------------------------------- */
 
         async function abrirModalConductores() {
             document.getElementById('modalConductores').classList.remove('hidden');
@@ -311,7 +226,10 @@
                                     <p>🆔 Patente: <b>${c.patente}</b> | Tel: ${c.telefono}</p>
                                 </div>
                             </div>
-                            <div>${botonAccion}</div>
+                            <div class="driver-actions-row">
+                                ${botonAccion}
+                                <button class="btn-historial-driver" onclick="verHistorialChofer('${c.patente}', '${c.nombre}')">📊 Historial</button>
+                            </div>
                         </div>
                     `;
                 });
@@ -335,6 +253,62 @@
                 alert("Error al actualizar estado: " + e.message);
             }
         }
+
+        // ----- FUNCIONES DE HISTORIAL DE CONDUCTOR -----
+        async function verHistorialChofer(patente, nombreChofer) {
+            document.getElementById('modalHistorialConductor').classList.remove('hidden');
+            document.getElementById('tituloHistorialChofer').textContent = `📊 Historial: ${nombreChofer}`;
+            document.getElementById('subtituloHistorialChofer').textContent = `Patente: ${patente}`;
+            
+            const contenedor = document.getElementById('listaHistorialContainer');
+            contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">Buscando viajes del chofer...</p>`;
+
+            try {
+                // Buscamos los viajes donde el conductor coincida (por nombre o patente según cómo guardes el dato en la tabla viajes)
+                // Intentamos buscar por el nombre del conductor o la patente si se almacena. Por seguridad consultamos por nombre o ID del chofer.
+                const { data: viajes, error } = await supabaseClient
+                    .from('viajes')
+                    .select('*')
+                    .or(`conductor_nombre.eq.${nombreChofer},conductor_patente.eq.${patente}`)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!viajes || viajes.length === 0) {
+                    contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">Este chofer aún no registra viajes realizados.</p>`;
+                    return;
+                }
+
+                let html = '';
+                viajes.forEach(v => {
+                    let colorEstado = '#38bdf8';
+                    if (v.estado === 'completado') colorEstado = '#10b981';
+                    if (v.estado === 'cancelado') colorEstado = '#ef4444';
+
+                    let fechaFormateada = v.created_at ? new Date(v.created_at).toLocaleString() : 'Fecha no disponible';
+
+                    html += `
+                        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 12px; margin-bottom: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span style="font-size: 0.85rem; font-weight: 700; color: #fff;">👤 Pasajero: ${v.pasajero_nombre || 'General'}</span>
+                                <span style="font-size: 0.85rem; font-weight: 800; color: #10b981;">$${v.precio || 0}</span>
+                            </div>
+                            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 2px;">Estado: <b style="color: ${colorEstado};">${v.estado.toUpperCase()}</b></p>
+                            <p style="font-size: 0.7rem; color: #64748b;">📅 ${fechaFormateada}</p>
+                        </div>
+                    `;
+                });
+                contenedor.innerHTML = html;
+
+            } catch (e) {
+                contenedor.innerHTML = `<p style="text-align: center; color: #ef4444; padding: 20px;">Error al cargar el historial: ${e.message}</p>`;
+            }
+        }
+
+        function cerrarModalHistorialConductor() {
+            document.getElementById('modalHistorialConductor').classList.add('hidden');
+        }
+        // ----------------------------------------------
 
         async function cancelarViajeAdmin(idViaje) {
             if (!confirm("¿Estás seguro de cancelar este servicio?")) return;
