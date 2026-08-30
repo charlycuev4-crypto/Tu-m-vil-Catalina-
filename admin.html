@@ -24,6 +24,7 @@
         .admin-actions { display: flex; gap: 8px; pointer-events: auto; }
         .admin-btn { background: #3b82f6; color: white; border: none; padding: 10px 14px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid #60a5fa; display: flex; align-items: center; gap: 4px; }
         .admin-btn.secondary { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+        .admin-btn.success { background: #10b981; border-color: #059669; }
 
         /* PANEL INFERIOR */
         .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); padding: 16px 20px 24px; height: 35vh; overflow-y: auto; transition: height 0.3s ease; color: #f1f5f9; -webkit-overflow-scrolling: touch; }
@@ -41,7 +42,7 @@
         .btn-aprobar { background: #059669; color: white; border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; }
         .btn-rechazar { background: #7f1d1d; color: #fca5a5; border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; }
 
-        /* MODALES */
+        /* MODALES (CHOFERES Y TARIFAS) */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.9);
             z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
@@ -53,13 +54,21 @@
         .modal-card h3 { font-size: 1.1rem; margin-bottom: 14px; color: #38bdf8; display: flex; justify-content: space-between; align-items: center; }
         .close-modal { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
 
-        /* SECCIONES Y FORMULARIOS DE TARIFA */
-        .tarifa-seccion { background: #0f172a; border: 1px solid #334155; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
-        .tarifa-seccion h4 { font-size: 0.9rem; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-        .form-group { margin-bottom: 8px; }
-        .form-group label { display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 2px; }
-        .form-group input { width: 100%; padding: 8px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 0.85rem; }
-        .btn-guardar { width: 100%; background: #059669; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 6px; }
+        /* ESTILOS FORMULARIO DE TARIFAS */
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 600; }
+        .form-group input { 
+            width: 100%; background: #0f172a; border: 1px solid #334155; color: #f1f5f9; 
+            padding: 12px; border-radius: 12px; outline: none; font-size: 1rem; 
+        }
+        .form-group input:focus { border-color: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.3); }
+        
+        .btn-guardar { 
+            width: 100%; background: #10b981; color: white; border: none; padding: 14px; 
+            border-radius: 14px; font-weight: 700; font-size: 1rem; cursor: pointer; 
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); margin-top: 10px; transition: background 0.2s;
+        }
+        .btn-guardar:hover { background: #059669; }
 
         .hidden { display: none !important; }
     </style>
@@ -80,42 +89,43 @@
         </div>
     </div>
 
-    <!-- MODAL GESTIÓN DE TARIFA (AUTOS Y MOTOS) -->
+    <!-- NUEVO MODAL: GESTIÓN DE TARIFAS -->
     <div id="modalTarifas" class="modal-overlay hidden">
         <div class="modal-card">
             <h3>
-                <span>⚙️ Gestión de Tarifas</span>
+                <span>💰 Configuración de Tarifas</span>
                 <button class="close-modal" onclick="cerrarModalTarifas()">✕</button>
             </h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Establece los valores diferenciados para autos y motos.</p>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 18px;">Ajustá los precios generales. Los cambios aplican de inmediato en la app del pasajero.</p>
             
-            <!-- SECCIÓN AUTOS -->
-            <div class="tarifa-seccion">
-                <h4>🚗 Tarifas para Autos</h4>
-                <div class="form-group">
-                    <label>Bajada de Bandera Auto ($)</label>
-                    <input type="number" id="inputAutoBase" placeholder="Ej: 800">
-                </div>
-                <div class="form-group">
-                    <label>Valor por Kilómetro Auto ($)</label>
-                    <input type="number" id="inputAutoKm" placeholder="Ej: 400">
-                </div>
+            <div class="form-group">
+                <label>Tarifa Base (Bajada de bandera en $)</label>
+                <input type="number" id="inpTarifaBase" placeholder="Ej: 3000">
+            </div>
+            
+            <div class="form-group">
+                <label>Tarifa por Kilómetro (en $)</label>
+                <input type="number" id="inpTarifaKm" placeholder="Ej: 400">
             </div>
 
-            <!-- SECCIÓN MOTOS -->
-            <div class="tarifa-seccion">
-                <h4>🏍️ Tarifas para Motos</h4>
-                <div class="form-group">
-                    <label>Bajada de Bandera Moto ($)</label>
-                    <input type="number" id="inputMotoBase" placeholder="Ej: 500">
-                </div>
-                <div class="form-group">
-                    <label>Valor por Kilómetro Moto ($)</label>
-                    <input type="number" id="inputMotoKm" placeholder="Ej: 250">
-                </div>
+            <div class="form-group">
+                <label>Multiplicador Recargo Nocturno (Ej: 1.30 = +30%)</label>
+                <input type="number" step="0.01" id="inpRecargoNocturno" placeholder="Ej: 1.30">
             </div>
 
-            <button class="btn-guardar" onclick="guardarTarifas()">Guardar Todas las Tarifas</button>
+            <div style="display: flex; gap: 12px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Hora Inicio (0-23)</label>
+                    <input type="number" id="inpHoraInicio" placeholder="Ej: 20" min="0" max="23">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Hora Fin (0-23)</label>
+                    <input type="number" id="inpHoraFin" placeholder="Ej: 8" min="0" max="23">
+                </div>
+            </div>
+            
+            <button class="btn-guardar" id="btnGuardarTarifas" onclick="guardarTarifasBase()">Guardar Tarifas</button>
+            <p id="msgTarifas" style="text-align: center; margin-top: 12px; font-size: 0.85rem; font-weight: bold;"></p>
         </div>
     </div>
 
@@ -124,7 +134,8 @@
     <div class="header-float">
         <div class="admin-badge">🛡️ Panel Administrador</div>
         <div class="admin-actions">
-            <button class="admin-btn secondary" onclick="abrirModalTarifas()">⚙️ Tarifas</button>
+            <!-- Nuevo Botón de Tarifas -->
+            <button class="admin-btn success" onclick="abrirModalTarifas()">💰 Tarifas</button>
             <button class="admin-btn" onclick="abrirModalConductores()">👥 Choferes</button>
         </div>
     </div>
@@ -147,6 +158,7 @@
 
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
         let mapa = null;
+        let idConfiguracionActual = null; // Guardará el ID de las tarifas en DB
 
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
@@ -183,7 +195,91 @@
             } catch (e) {}
         }
 
-        // --- MÓDULO CONDUCTORES ---
+        /* ----- LÓGICA DE TARIFAS ----- */
+        async function abrirModalTarifas() {
+            document.getElementById('modalTarifas').classList.remove('hidden');
+            const msg = document.getElementById('msgTarifas');
+            msg.textContent = "Cargando configuración actual...";
+            msg.style.color = "#94a3b8";
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('configuracion_tarifas')
+                    .select('*')
+                    .eq('activa', true)
+                    .single();
+
+                if (data) {
+                    idConfiguracionActual = data.id;
+                    document.getElementById('inpTarifaBase').value = data.tarifa_base;
+                    document.getElementById('inpTarifaKm').value = data.tarifa_km;
+                    document.getElementById('inpRecargoNocturno').value = data.recargo_nocturno;
+                    document.getElementById('inpHoraInicio').value = data.hora_inicio_nocturno;
+                    document.getElementById('inpHoraFin').value = data.hora_fin_nocturno;
+                    msg.textContent = "";
+                } else {
+                    msg.textContent = "No hay tarifas guardadas. Ingresa unas nuevas.";
+                }
+            } catch (e) {
+                msg.textContent = "Error al conectar con la base de datos.";
+                msg.style.color = "#ef4444";
+            }
+        }
+
+        function cerrarModalTarifas() {
+            document.getElementById('modalTarifas').classList.add('hidden');
+        }
+
+        async function guardarTarifasBase() {
+            const btn = document.getElementById('btnGuardarTarifas');
+            const msg = document.getElementById('msgTarifas');
+            
+            btn.textContent = "Guardando...";
+            btn.disabled = true;
+
+            const payload = {
+                tarifa_base: parseFloat(document.getElementById('inpTarifaBase').value),
+                tarifa_km: parseFloat(document.getElementById('inpTarifaKm').value),
+                recargo_nocturno: parseFloat(document.getElementById('inpRecargoNocturno').value),
+                hora_inicio_nocturno: parseInt(document.getElementById('inpHoraInicio').value),
+                hora_fin_nocturno: parseInt(document.getElementById('inpHoraFin').value),
+                activa: true
+            };
+
+            try {
+                if (idConfiguracionActual) {
+                    // Actualizar existentes
+                    const { error } = await supabaseClient
+                        .from('configuracion_tarifas')
+                        .update(payload)
+                        .eq('id', idConfiguracionActual);
+                    if (error) throw error;
+                } else {
+                    // Insertar por primera vez
+                    const { data, error } = await supabaseClient
+                        .from('configuracion_tarifas')
+                        .insert([payload])
+                        .select().single();
+                    if (error) throw error;
+                    idConfiguracionActual = data.id;
+                }
+
+                msg.textContent = "¡Tarifas guardadas exitosamente!";
+                msg.style.color = "#10b981";
+                
+                // Cerrar modal tras 1.5 segundos
+                setTimeout(() => cerrarModalTarifas(), 1500);
+
+            } catch (e) {
+                msg.textContent = "Error al guardar: " + e.message;
+                msg.style.color = "#ef4444";
+            } finally {
+                btn.textContent = "Guardar Tarifas";
+                btn.disabled = false;
+            }
+        }
+        /* -------------------------------- */
+
         async function abrirModalConductores() {
             document.getElementById('modalConductores').classList.remove('hidden');
             const contenedor = document.getElementById('listaConductoresContainer');
@@ -237,48 +333,6 @@
                 abrirModalConductores();
             } catch (e) {
                 alert("Error al actualizar estado: " + e.message);
-            }
-        }
-
-        // --- MÓDULO TARIFAS (USANDO NOMBRES REALES DE SUPABASE) ---
-        async function abrirModalTarifas() {
-            document.getElementById('modalTarifas').classList.remove('hidden');
-            try {
-                const { data, error } = await supabaseClient.from('configuracion_tarifas').select('*').limit(1).single();
-                if (data) {
-                    document.getElementById('inputAutoBase').value = data.tarifa_base || '';
-                    document.getElementById('inputAutoKm').value = data.tarifa_km || '';
-                    document.getElementById('inputMotoBase').value = data.moto_base || '';
-                    document.getElementById('inputMotoKm').value = data.moto_km || '';
-                }
-            } catch (e) {
-                console.error("Error cargando tarifas", e);
-            }
-        }
-
-        function cerrarModalTarifas() {
-            document.getElementById('modalTarifas').classList.add('hidden');
-        }
-
-        async function guardarTarifas() {
-            const tarifaBase = parseFloat(document.getElementById('inputAutoBase').value);
-            const tarifaKm = parseFloat(document.getElementById('inputAutoKm').value);
-            const motoBase = parseFloat(document.getElementById('inputMotoBase').value);
-            const motoKm = parseFloat(document.getElementById('inputMotoKm').value);
-
-            try {
-                const { error } = await supabaseClient.from('configuracion_tarifas').update({
-                    tarifa_base: tarifaBase,
-                    tarifa_km: tarifaKm,
-                    moto_base: motoBase,
-                    moto_km: motoKm
-                }).eq('id', 1);
-
-                if (error) throw error;
-                alert("¡Tarifas actualizadas correctamente!");
-                cerrarModalTarifas();
-            } catch (e) {
-                alert("Error al guardar tarifas: " + e.message);
             }
         }
 
