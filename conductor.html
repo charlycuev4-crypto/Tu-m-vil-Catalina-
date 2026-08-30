@@ -119,11 +119,11 @@
         .config-card p { font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px; text-align: center; }
         .config-field { margin-bottom: 12px; }
         .config-field label { display: block; font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; }
-        .config-field input {
+        .config-field input, .config-field select {
             width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px 14px;
             color: white; font-size: 0.95rem; outline: none;
         }
-        .config-field input:focus { border-color: #38bdf8; }
+        .config-field input:focus, .config-field select:focus { border-color: #38bdf8; }
 
         .preview-selfie {
             width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8;
@@ -137,41 +137,62 @@
 </head>
 <body onclick="forzarHabilitacionAudio()">
 
-    <!-- MODAL DE CONFIGURACIÓN INICIAL CON COMPRESIÓN DE FOTO -->
+    <!-- MODAL DE CONFIGURACIÓN INICIAL / REGISTRO CON SELECCIÓN DE VEHÍCULO Y APROBACIÓN PENDIENTE -->
     <div id="modalConfigChofer" class="hidden">
         <div class="config-card">
-            <h2>🚗 Registro de Conductor</h2>
-            <p>Ingresá tus datos y tu selfie para que los pasajeros te reconozcan.</p>
-            <form id="formConfigChofer" onsubmit="guardarConfigChofer(event)">
-                <div style="text-align: center; margin-bottom: 12px;">
-                    <img id="imgPreview" class="preview-selfie" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Foto Perfil">
-                    <label style="font-size: 0.75rem; color: #38bdf8; cursor: pointer; text-decoration: underline;">
-                        Subir Foto / Selfie 📷
-                        <input type="file" id="inpFotoFile" accept="image/*" style="display: none;" onchange="procesarYComprimirFoto(event)">
-                    </label>
-                </div>
-                <div class="config-field">
-                    <label>Nombre y Apellido</label>
-                    <input type="text" id="inpNombre" placeholder="Ej: Carlos Cueva" required>
-                </div>
-                <div class="config-field">
-                    <label>Número de WhatsApp</label>
-                    <input type="tel" id="inpTelefono" placeholder="Ej: 1123456789" required>
-                </div>
-                <div class="config-field">
-                    <label>Marca y Modelo del Auto</label>
-                    <input type="text" id="inpModelo" placeholder="Ej: Ford Fiesta" required>
-                </div>
-                <div class="config-field">
-                    <label>Color del Auto</label>
-                    <input type="text" id="inpColor" placeholder="Ej: Negro" required>
-                </div>
-                <div class="config-field">
-                    <label>Patente / Dominio</label>
-                    <input type="text" id="inpPatente" placeholder="Ej: Jcp 478" required>
-                </div>
-                <button type="submit" class="btn-action btn-aceptar" style="margin-top: 10px;" id="btnGuardarRegistro">Guardar y Empezar ✅</button>
-            </form>
+            <h2 id="tituloModalRegistro">🚗 Registro de Conductor</h2>
+            <p id="subtituloModalRegistro">Ingresá tus datos para que el administrador active tu cuenta.</p>
+            
+            <div id="seccionFormularioRegistro">
+                <form id="formConfigChofer" onsubmit="guardarConfigChofer(event)">
+                    <div style="text-align: center; margin-bottom: 12px;">
+                        <img id="imgPreview" class="preview-selfie" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Foto Perfil">
+                        <label style="font-size: 0.75rem; color: #38bdf8; cursor: pointer; text-decoration: underline;">
+                            Subir Foto / Selfie 📷
+                            <input type="file" id="inpFotoFile" accept="image/*" style="display: none;" onchange="procesarYComprimirFoto(event)">
+                        </label>
+                    </div>
+                    
+                    <!-- Selector de Categoría (Auto o Moto) -->
+                    <div class="config-field">
+                        <label>Tipo de Vehículo</label>
+                        <select id="inpTipoVehiculo" required>
+                            <option value="auto">🚗 Auto</option>
+                            <option value="moto">🏍️ Moto</option>
+                        </select>
+                    </div>
+
+                    <div class="config-field">
+                        <label>Nombre y Apellido</label>
+                        <input type="text" id="inpNombre" placeholder="Ej: Carlos Cueva" required>
+                    </div>
+                    <div class="config-field">
+                        <label>Número de WhatsApp</label>
+                        <input type="tel" id="inpTelefono" placeholder="Ej: 1123456789" required>
+                    </div>
+                    <div class="config-field">
+                        <label>Marca y Modelo del Vehículo</label>
+                        <input type="text" id="inpModelo" placeholder="Ej: Ford Fiesta / Honda Wave" required>
+                    </div>
+                    <div class="config-field">
+                        <label>Color del Vehículo</label>
+                        <input type="text" id="inpColor" placeholder="Ej: Negro" required>
+                    </div>
+                    <div class="config-field">
+                        <label>Patente / Dominio</label>
+                        <input type="text" id="inpPatente" placeholder="Ej: Jcp 478" required>
+                    </div>
+                    <button type="submit" class="btn-action btn-aceptar" style="margin-top: 10px;" id="btnGuardarRegistro">Registrarme y Solicitar Activación 📝</button>
+                </form>
+            </div>
+
+            <!-- Pantalla de Espera de Aprobación -->
+            <div id="seccionEsperaAprobacion" class="hidden" style="text-align: center; padding: 10px 0;">
+                <div style="font-size: 3rem; margin-bottom: 10px;">⏳</div>
+                <h3 style="color: #f59e0b; margin-bottom: 8px;">Cuenta Pendiente de Aprobación</h3>
+                <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px;">Tu solicitud fue enviada al administrador. En cuanto apruebe tu cuenta, podrás comenzar a recibir viajes automáticamente.</p>
+                <button onclick="verificarEstadoAprobacion()" class="btn-action" style="background: #3b82f6;">Verificar Estado de Cuenta 🔄</button>
+            </div>
         </div>
     </div>
 
@@ -255,6 +276,7 @@
 
         let NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "";
         let FOTO_CHOFER = localStorage.getItem('cfg_auto_foto') || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
+        let TIPO_VEHICULO = localStorage.getItem('cfg_auto_tipo') || "auto";
         let AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " - " + (localStorage.getItem('cfg_auto_color') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
 
         let totalDia = parseFloat(localStorage.getItem('chofer_total_dia') || '0');
@@ -277,12 +299,26 @@
         let intervaloCampana = null;
         let base64FotoTemp = "";
 
+        // Verificación de Registro y Aprobación por parte del Administrador
         function verificarRegistroChofer() {
-            if (!localStorage.getItem('cfg_auto_chofer') || !localStorage.getItem('cfg_auto_patente')) {
+            const patenteGuardada = localStorage.getItem('cfg_auto_patente');
+            const aprobadoAdmin = localStorage.getItem('cfg_auto_aprobado') === 'true';
+
+            if (!patenteGuardada) {
                 document.getElementById('modalConfigChofer').classList.remove('hidden');
+                document.getElementById('seccionFormularioRegistro').classList.remove('hidden');
+                document.getElementById('seccionEsperaAprobacion').classList.add('hidden');
+            } else if (!aprobadoAdmin) {
+                document.getElementById('modalConfigChofer').classList.remove('hidden');
+                document.getElementById('seccionFormularioRegistro').classList.add('hidden');
+                document.getElementById('seccionEsperaAprobacion').classList.remove('hidden');
+                document.getElementById('tituloModalRegistro').textContent = "⏳ Esperando Activación";
+                document.getElementById('subtituloModalRegistro').textContent = "Tu cuenta está registrada y pendiente de revisión.";
             } else {
+                document.getElementById('modalConfigChofer').classList.add('hidden');
                 document.getElementById('inpNombre').value = localStorage.getItem('cfg_auto_chofer') || '';
                 document.getElementById('inpTelefono').value = localStorage.getItem('cfg_auto_telefono') || '';
+                document.getElementById('inpTipoVehiculo').value = localStorage.getItem('cfg_auto_tipo') || 'auto';
                 document.getElementById('inpModelo').value = localStorage.getItem('cfg_auto_modelo') || '';
                 document.getElementById('inpColor').value = localStorage.getItem('cfg_auto_color') || '';
                 document.getElementById('inpPatente').value = localStorage.getItem('cfg_auto_patente') || '';
@@ -290,6 +326,25 @@
                     document.getElementById('imgPreview').src = localStorage.getItem('cfg_auto_foto');
                     base64FotoTemp = localStorage.getItem('cfg_auto_foto');
                 }
+            }
+        }
+
+        async function verificarEstadoAprobacion() {
+            const patenteActual = localStorage.getItem('cfg_auto_patente');
+            if (!patenteActual) return;
+
+            try {
+                const { data, error } = await supabaseClient.from('conductores').select('*').eq('patente', patenteActual).single();
+                
+                if (data && data.aprobado === true) {
+                    localStorage.setItem('cfg_auto_aprobado', 'true');
+                    alert('¡Tu cuenta ha sido aprobada por el administrador! Ya podés operar.');
+                    location.reload();
+                } else {
+                    alert('Tu cuenta sigue pendiente de aprobación por el administrador.');
+                }
+            } catch (e) {
+                alert('Verificando estado... Si el administrador ya hizo clic en aprobar, reiniciá la app.');
             }
         }
 
@@ -326,10 +381,11 @@
             lector.readAsDataURL(archivo);
         }
 
-        function guardarConfigChofer(e) {
+        async function guardarConfigChofer(e) {
             e.preventDefault();
             const nombre = document.getElementById('inpNombre').value.trim();
             const telefono = document.getElementById('inpTelefono').value.trim();
+            const tipoVehiculo = document.getElementById('inpTipoVehiculo').value;
             const modelo = document.getElementById('inpModelo').value.trim();
             const color = document.getElementById('inpColor').value.trim();
             const patente = document.getElementById('inpPatente').value.trim();
@@ -337,13 +393,33 @@
 
             localStorage.setItem('cfg_auto_chofer', nombre);
             localStorage.setItem('cfg_auto_telefono', telefono);
+            localStorage.setItem('cfg_auto_tipo', tipoVehiculo);
             localStorage.setItem('cfg_auto_modelo', modelo);
             localStorage.setItem('cfg_auto_color', color);
             localStorage.setItem('cfg_auto_patente', patente);
             localStorage.setItem('cfg_auto_foto', fotoFinal);
+            localStorage.setItem('cfg_auto_aprobado', 'false');
 
-            document.getElementById('modalConfigChofer').classList.add('hidden');
-            location.reload();
+            try {
+                await supabaseClient.from('conductores').upsert([
+                    {
+                        nombre: nombre,
+                        telefono: telefono,
+                        tipo_vehiculo: tipoVehiculo,
+                        modelo: modelo,
+                        color: color,
+                        patente: patente,
+                        foto: fotoFinal,
+                        aprobado: false,
+                        activo: false
+                    }
+                ], { onConflict: 'patente' });
+            } catch (err) {}
+
+            document.getElementById('seccionFormularioRegistro').classList.add('hidden');
+            document.getElementById('seccionEsperaAprobacion').classList.remove('hidden');
+            document.getElementById('tituloModalRegistro').textContent = "⏳ Solicitud Enviada";
+            document.getElementById('subtituloModalRegistro').textContent = "El administrador revisará tus datos para activar tu cuenta.";
         }
 
         function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
@@ -407,7 +483,8 @@
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             
-            const iconoAuto = L.divIcon({ className: 'chofer-auto-icon', html: '🚗', iconSize: [38, 38], iconAnchor: [19, 19] });
+            let emojiVehiculo = (TIPO_VEHICULO === 'moto') ? '🏍️' : '🚗';
+            const iconoAuto = L.divIcon({ className: 'chofer-auto-icon', html: emojiVehiculo, iconSize: [38, 38], iconAnchor: [19, 19] });
             markerChofer = L.marker([choferCoords.lat, choferCoords.lng], { icon: iconoAuto }).addTo(mapa);
 
             mapa.on('dragstart', () => {
@@ -562,15 +639,13 @@
         }
 
         async function procesarLojicaViaje() {
-            // Recargamos las variables locales en tiempo real por si el chofer guardó sus datos recién
-            NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "Carlos Cueva";
+            NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "";
             FOTO_CHOFER = localStorage.getItem('cfg_auto_foto') || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
-            AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "Ford Fiesta") + " - " + (localStorage.getItem('cfg_auto_color') || "Negro") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "Jcp 478") + ")";
+            AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " - " + (localStorage.getItem('cfg_auto_color') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
 
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
                 try {
-                    // AQUÍ ESTÁ LA CORRECCIÓN CLAVE: Inyectamos el nombre real, auto y foto para el panel de administración
                     const { error } = await supabaseClient.from('viajes').update({ 
                         conductor_nombre: NOMBRE_CHOFER, 
                         conductor_auto: AUTO_CHOFER,
