@@ -2,214 +2,207 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TuMovil - Panel de Administración</title>
-    <!-- SDK de Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Leaflet CSS para el Mapa -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tu Móvil - Panel de Administrador</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body, html { width: 100%; height: 100%; background: #0f172a; color: #f1f5f9; overflow: hidden; }
-
-        /* Contenedor del Mapa */
-        #mapa { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
-
-        /* Barra superior flotante */
-        .top-bar {
-            position: absolute; top: 12px; left: 12px; right: 12px;
-            z-index: 1000;
-            display: flex; justify-content: space-between; align-items: center;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #11121a; height: 100vh; overflow: hidden; color: #ffffff;
         }
-        .btn-flotante {
-            background: #1e293b; color: #38bdf8; border: 1px solid #334155;
-            padding: 10px 16px; border-radius: 14px; font-weight: 700; font-size: 0.85rem;
-            cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            display: flex; align-items: center; gap: 6px; text-decoration: none;
-        }
-        .btn-flotante:active { background: #334155; }
 
-        /* Panel de Administración / Altas */
-        #panelAdmin {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            background: #1e293b; border-top: 2px solid #38bdf8;
-            border-radius: 24px 24px 0 0; padding: 20px;
-            z-index: 2000; max-height: 75vh; overflow-y: auto;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.6);
+        #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
+        #mapaLeaflet { width: 100%; height: 100%; }
+
+        .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
+        .admin-badge { background: #1e293b; color: #38bdf8; padding: 10px 16px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #334155; pointer-events: auto; display: flex; align-items: center; gap: 8px; }
+
+        .admin-actions { display: flex; gap: 8px; pointer-events: auto; }
+        .admin-btn { background: #3b82f6; color: white; border: none; padding: 10px 14px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid #60a5fa; display: flex; align-items: center; gap: 4px; }
+        .admin-btn.secondary { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+
+        /* PANEL INFERIOR */
+        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); padding: 16px 20px 24px; height: 35vh; overflow-y: auto; transition: height 0.3s ease; color: #f1f5f9; -webkit-overflow-scrolling: touch; }
+        .panel-handle { width: 40px; height: 5px; background: #475569; border-radius: 3px; margin: 0 auto 12px; }
+
+        .section-title { font-size: 1rem; font-weight: 800; color: #38bdf8; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* LISTA DE CONDUCTORES */
+        .driver-card { background: #0f172a; border: 1px solid #334155; border-radius: 16px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .driver-info-box { display: flex; align-items: center; gap: 12px; overflow: hidden; }
+        .driver-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8; flex-shrink: 0; background: #1e293b; }
+        .driver-details h4 { font-size: 0.95rem; font-weight: 700; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .driver-details p { font-size: 0.75rem; color: #94a3b8; }
+
+        .btn-aprobar { background: #059669; color: white; border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; }
+        .btn-rechazar { background: #7f1d1d; color: #fca5a5; border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; }
+
+        /* MODAL DE GESTIÓN */
+        #modalConductores {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.9);
+            z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
         }
+        .modal-card {
+            background: #1e293b; border: 1px solid #334155; border-radius: 20px; width: 100%; max-width: 500px;
+            padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); color: #f1f5f9; max-height: 85vh; overflow-y: auto;
+        }
+        .modal-card h3 { font-size: 1.1rem; margin-bottom: 14px; color: #38bdf8; display: flex; justify-content: space-between; align-items: center; }
+        .close-modal { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
+
         .hidden { display: none !important; }
-
-        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-        .panel-titulo { font-size: 1.1rem; font-weight: 700; color: #38bdf8; }
-
-        /* Tarjeta de gestión del conductor */
-        .card-conductor-admin {
-            background: #0f172a; border: 1px solid #334155; border-radius: 14px;
-            padding: 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
-        }
-        .info-con { display: flex; align-items: center; gap: 12px; }
-        .avatar-con { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8; background: #1e293b; }
-        .nombre-con { font-size: 0.95rem; font-weight: 700; color: #fff; }
-        .detalles-con { font-size: 0.75rem; color: #94a3b8; margin-top: 3px; }
-
-        /* Botones de Dar de Alta / Dar de Baja */
-        .btn-accion {
-            padding: 8px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer; border: none;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-        .btn-dar-alta { background: #065f46; color: #34d399; border: 1px solid #059669; }
-        .btn-dar-baja { background: #7f1d1d; color: #f87171; border: 1px solid #b91c1c; }
     </style>
 </head>
 <body>
 
-    <!-- Mapa interactivo de fondo -->
-    <div id="mapa"></div>
-
-    <!-- Barra superior -->
-    <div class="top-bar">
-        <button class="btn-flotante" onclick="abrirPanelAdmin()">🛡️ Panel Administrador</button>
-        <button class="btn-flotante" onclick="mapa.setView([-34.545, -58.712], 14)">📍 Centrar</button>
-    </div>
-
-    <!-- Panel de Administración (Gestión de Altas) -->
-    <div id="panelAdmin">
-        <div class="panel-header">
-            <div>
-                <div class="panel-titulo">📋 Gestión de Conductores (Altas)</div>
-                <div style="font-size: 0.75rem; color: #94a3b8;">Otorgale el OK a los conductores para que puedan operar.</div>
+    <!-- MODAL LISTADO DE CONDUCTORES -->
+    <div id="modalConductores" class="hidden">
+        <div class="modal-card">
+            <h3>
+                <span>🚗 Conductores Registrados</span>
+                <button class="close-modal" onclick="cerrarModalConductores()">✕</button>
+            </h3>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Aprobá o bloqueá las cuentas de los choferes de confianza.</p>
+            <div id="listaConductoresContainer">
+                <p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando conductores...</p>
             </div>
-            <button onclick="cerrarPanelAdmin()" style="background: none; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;">✕</button>
-        </div>
-
-        <div id="listaConductoresAdmin">
-            <div style="text-align: center; color: #64748b; padding: 20px; font-size: 0.85rem;">Cargando conductores desde Supabase...</div>
         </div>
     </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
+
+    <div class="header-float">
+        <div class="admin-badge">🛡️ Panel Administrador</div>
+        <div class="admin-actions">
+            <button class="admin-btn" onclick="abrirModalConductores()">👥 Choferes</button>
+        </div>
+    </div>
+
+    <div class="bottom-panel" id="panelAdmin">
+        <div class="panel-handle"></div>
+        <div class="section-title">
+            <span>Estado del Sistema</span>
+            <span id="lblTotalViajesActivos" style="font-size: 0.8rem; color: #10b981;">Monitoreando red...</span>
+        </div>
+        <div id="contenedorViajesEnCurso">
+            <p style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 10px 0;">No hay servicios en curso en este momento.</p>
+        </div>
+    </div>
+
     <script>
-        // --- CREDENCIALES DE SUPABASE ---
-        const SUPABASE_URL = 'TU_SUPABASE_URL';
-        const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Inicializar Mapa centrado en la zona
-        let mapa = L.map('mapa', { zoomControl: false }).setView([-34.545, -58.712], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(mapa);
+        const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
+        let mapa = null;
 
-        let marcadoresCapas = [];
+        function initMapa() {
+            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
+            cargarViajesActivosMapa();
+        }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            cargarDatosAdmin();
-            // Refrescar cada 15 segundos
-            setInterval(cargarDatosAdmin, 15000);
-        });
-
-        async function cargarDatosAdmin() {
-            const contenedor = document.getElementById('listaConductoresAdmin');
-            
+        async function cargarViajesActivosMapa() {
             try {
-                const { data: choferes, error } = await _supabase
-                    .from('conductores')
-                    .select('*');
-
+                const { data: viajes, error } = await supabaseClient.from('viajes').select('*').in('estado', ['pendiente', 'aceptado', 'en_viaje']);
                 if (error) throw error;
 
-                // 1. DIBUJAR MARCADORES EN EL MAPA (Solo choferes aprobados)
-                marcadoresCapas.forEach(m => mapa.removeLayer(m));
-                marcadoresCapas = [];
+                const contenedor = document.getElementById('contenedorViajesEnCurso');
+                if (!viajes || viajes.length === 0) {
+                    contenedor.innerHTML = `<p style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 10px 0;">No hay servicios en curso en este momento.</p>`;
+                    document.getElementById('lblTotalViajesActivos').textContent = "Red sin servicios activos";
+                    return;
+                }
 
-                if (choferes) {
-                    choferes.forEach(c => {
-                        let estaAprobado = c.activo === true || c.aprobado === true;
+                document.getElementById('lblTotalViajesActivos').textContent = `${viajes.length} servicio(s) en curso`;
+                let html = '';
+                viajes.forEach(v => {
+                    html += `
+                        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4 style="font-size: 0.9rem; color: #fff;">👤 ${v.pasajero_nombre || 'Pasajero'} <span style="color: #10b981; font-weight: 800;">$${v.precio}</span></h4>
+                                <p style="font-size: 0.75rem; color: #94a3b8;">Estado: <b>${v.estado.toUpperCase()}</b> | Chofer: ${v.conductor_nombre || 'Buscando...'}</p>
+                            </div>
+                            <button onclick="cancelarViajeAdmin('${v.id}')" style="background: #7f1d1d; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">Cancelar ❌</button>
+                        </div>
+                    `;
+                });
+                contenedor.innerHTML = html;
+            } catch (e) {}
+        }
 
-                        if (estaAprobado && c.lat && c.lng) {
-                            let iconoPersonalizado = L.divIcon({
-                                className: 'custom-div-icon',
-                                html: `<div style="background: #10b981; width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 3px 8px rgba(0,0,0,0.4);">🚗</div>`,
-                                iconSize: [28, 28],
-                                iconAnchor: [14, 14]
-                            });
+        async function abrirModalConductores() {
+            document.getElementById('modalConductores').classList.remove('hidden');
+            const contenedor = document.getElementById('listaConductoresContainer');
+            contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando lista de choferes...</p>`;
 
-                            let marcador = L.marker([c.lat, c.lng], { icon: iconoPersonalizado })
-                                .addTo(mapa)
-                                .bindPopup(`<b>${c.nombre || 'Chofer'}</b><br>Estado: Activo`);
-                            
-                            marcadoresCapas.push(marcador);
-                        }
-                    });
+            try {
+                const { data: choferes, error } = await supabaseClient.from('conductores').select('*').order('created_at', { ascending: false });
+                if (error) throw error;
 
-                    // 2. MOSTRAR LISTADO EN EL PANEL DE ADMINISTRADOR
-                    if (choferes.length === 0) {
-                        contenedor.innerHTML = `<div style="text-align: center; color: #64748b; padding: 20px; font-size: 0.85rem;">No hay choferes registrados en la base de datos.</div>`;
-                        return;
-                    }
+                if (!choferes || choferes.length === 0) {
+                    contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">No hay conductores registrados todavía.</p>`;
+                    return;
+                }
 
-                    contenedor.innerHTML = '';
-                    choferes.forEach(c => {
-                        let foto = c.foto || c.selfie_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-                        let nombre = c.nombre || 'Sin nombre';
-                        let vehiculo = `${c.tipo_vehiculo || 'Vehículo'} (${c.modelo || c.marca_modelo || 'N/D'})`;
-                        let patente = c.patente || 'S/D';
-                        let estaAprobado = c.activo === true || c.aprobado === true;
+                let html = '';
+                choferes.forEach(c => {
+                    let badgeEstado = c.aprobado ? `<span style="color: #10b981; font-size: 0.7rem;">● Aprobado</span>` : `<span style="color: #f59e0b; font-size: 0.7rem;">● Pendiente</span>`;
+                    let botonAccion = c.aprobado 
+                        ? `<button class="btn-rechazar" onclick="cambiarEstadoChofer('${c.patente}', false)">Bloquear</button>`
+                        : `<button class="btn-aprobar" onclick="cambiarEstadoChofer('${c.patente}', true)">Aprobar ✅</button>`;
 
-                        let div = document.createElement('div');
-                        div.className = 'card-conductor-admin';
-                        div.innerHTML = `
-                            <div class="info-con">
-                                <img src="${foto}" class="avatar-con" alt="Foto">
-                                <div>
-                                    <div class="nombre-con">${nombre}</div>
-                                    <div class="detalles-con">🚗 ${vehiculo} | Patente: <b>${patente}</b></div>
-                                    <div class="detalles-con" style="color: ${estaAprobado ? '#34d399' : '#f87171'}; font-weight: bold;">
-                                        ${estaAprobado ? '✔ Aprobado (Activo)' : '⏳ Pendiente de OK'}
-                                    </div>
+                    html += `
+                        <div class="driver-card">
+                            <div class="driver-info-box">
+                                <img src="${c.selfie_url || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" class="driver-avatar" alt="Foto">
+                                <div class="driver-details">
+                                    <h4>${c.nombre} ${badgeEstado}</h4>
+                                    <p>🚗 ${c.marca_modelo || 'Vehículo'} (${c.tipo_vehiculo || 'Auto'})</p>
+                                    <p>🆔 Patente: <b>${c.patente}</b> | Tel: ${c.telefono}</p>
                                 </div>
                             </div>
-                            <button class="btn-accion ${estaAprobado ? 'btn-dar-baja' : 'btn-dar-alta'}" onclick="cambiarEstadoConductor('${c.id}', ${!estaAprobado})">
-                                ${estaAprobado ? 'Dar de Baja' : 'Dar el OK (Alta)'}
-                            </button>
-                        `;
-                        contenedor.appendChild(div);
-                    });
-                }
-            } catch (err) {
-                console.error(err);
-                contenedor.innerHTML = `<div style="text-align: center; color: #f87171; padding: 20px; font-size: 0.85rem;">Error al conectar con Supabase.</div>`;
+                            <div>${botonAccion}</div>
+                        </div>
+                    `;
+                });
+                contenedor.innerHTML = html;
+            } catch (e) {
+                contenedor.innerHTML = `<p style="text-align: center; color: #ef4444; padding: 20px;">Error al cargar: ${e.message}</p>`;
             }
         }
 
-        function abrirPanelAdmin() {
-            document.getElementById('panelAdmin').classList.remove('hidden');
+        function cerrarModalConductores() {
+            document.getElementById('modalConductores').classList.add('hidden');
         }
 
-        function cerrarPanelAdmin() {
-            document.getElementById('panelAdmin').classList.add('hidden');
-        }
-
-        // FUNCIÓN DEL BOTÓN: Da o quita el alta actualizando Supabase
-        async function cambiarEstadoConductor(idConductor, nuevoEstado) {
+        async function cambiarEstadoChofer(patente, estadoAprobar) {
             try {
-                const { error } = await _supabase
-                    .from('conductores')
-                    .update({ 
-                        activo: nuevoEstado, 
-                        aprobado: nuevoEstado 
-                    })
-                    .eq('id', idConductor);
-
+                const { error } = await supabaseClient.from('conductores').update({ aprobado: estadoAprobar }).eq('patente', patente);
                 if (error) throw error;
-
-                alert(nuevoEstado ? "✅ ¡OK otorgado! El conductor ya fue dado de alta." : "⛔ El conductor ha sido dado de baja.");
-                cargarDatosAdmin(); // Refrescar panel y mapa al instante
-
-            } catch (err) {
-                console.error(err);
-                alert("❌ No se pudo actualizar el estado en Supabase.");
+                alert(estadoAprobar ? "¡Conductor aprobado con éxito!" : "Conductor bloqueado.");
+                abrirModalConductores();
+            } catch (e) {
+                alert("Error al actualizar estado: " + e.message);
             }
         }
+
+        async function cancelarViajeAdmin(idViaje) {
+            if (!confirm("¿Estás seguro de cancelar este servicio?")) return;
+            try {
+                await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', idViaje);
+                cargarViajesActivosMapa();
+            } catch (e) {}
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initMapa();
+            setInterval(cargarViajesActivosMapa, 5000);
+        });
     </script>
 </body>
 </html>
