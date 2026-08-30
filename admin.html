@@ -32,29 +32,38 @@
 
         .section-title { font-size: 1rem; font-weight: 800; color: #38bdf8; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         
-        /* LISTA DE CONDUCTORES */
-        .driver-card { background: #0f172a; border: 1px solid #334155; border-radius: 16px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        .driver-info-box { display: flex; align-items: center; gap: 12px; overflow: hidden; }
-        .driver-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8; flex-shrink: 0; background: #1e293b; }
-        .driver-details h4 { font-size: 0.95rem; font-weight: 700; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .driver-details p { font-size: 0.75rem; color: #94a3b8; }
-
-        .driver-actions-row { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex-shrink: 0; }
-        .btn-aprobar { background: #059669; color: white; border: none; padding: 5px 10px; border-radius: 10px; font-weight: 700; font-size: 0.7rem; cursor: pointer; }
-        .btn-rechazar { background: #7f1d1d; color: #fca5a5; border: none; padding: 5px 10px; border-radius: 10px; font-weight: 700; font-size: 0.7rem; cursor: pointer; }
-        .btn-historial-driver { background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 10px; font-weight: 700; font-size: 0.7rem; cursor: pointer; }
+        /* LISTA DE CONDUCTORES CÓMODA */
+        .driver-card { background: #0f172a; border: 1px solid #334155; border-radius: 16px; padding: 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; transition: border-color 0.2s; }
+        .driver-card:hover { border-color: #38bdf8; }
+        .driver-info-box { display: flex; align-items: center; gap: 14px; overflow: hidden; width: 100%; }
+        .driver-avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8; flex-shrink: 0; background: #1e293b; }
+        .driver-details h4 { font-size: 1rem; font-weight: 700; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .driver-details p { font-size: 0.8rem; color: #94a3b8; margin-top: 2px; }
 
         /* MODALES */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.9);
-            z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.95);
+            z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px;
         }
         .modal-card {
             background: #1e293b; border: 1px solid #334155; border-radius: 20px; width: 100%; max-width: 500px;
-            padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); color: #f1f5f9; max-height: 85vh; overflow-y: auto;
+            padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); color: #f1f5f9; max-height: 90vh; overflow-y: auto;
         }
         .modal-card h3 { font-size: 1.1rem; margin-bottom: 14px; color: #38bdf8; display: flex; justify-content: space-between; align-items: center; }
-        .close-modal { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
+        .close-modal { background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer; padding: 5px; }
+
+        /* PANTALLA DETALLE CHOFER */
+        .driver-profile-header { display: flex; align-items: center; gap: 16px; background: #0f172a; padding: 16px; border-radius: 16px; border: 1px solid #334155; margin-bottom: 16px; }
+        .driver-profile-img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8; }
+        
+        .stats-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .stat-card { background: #0f172a; border: 1px solid #334155; padding: 12px; border-radius: 14px; text-align: center; }
+        .stat-card span { display: block; font-size: 0.75rem; color: #94a3b8; }
+        .stat-card h4 { font-size: 1.2rem; color: #10b981; font-weight: 800; margin-top: 4px; }
+
+        .btn-accion-grande { width: 100%; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; cursor: pointer; border: none; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-bloquear-grande { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+        .btn-aprobar-grande { background: #059669; color: white; border: 1px solid #10b981; }
 
         .form-group { margin-bottom: 14px; }
         .form-group label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 600; }
@@ -78,23 +87,23 @@
                 <span>🚗 Conductores Registrados</span>
                 <button class="close-modal" onclick="cerrarModalConductores()">✕</button>
             </h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Aprobá cuentas o consultá el historial de cada chofer.</p>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Toca sobre cualquier chofer para ver su perfil, historial y ganancias.</p>
             <div id="listaConductoresContainer">
                 <p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando conductores...</p>
             </div>
         </div>
     </div>
 
-    <!-- MODAL: HISTORIAL DE VIAJES DEL CONDUCTOR -->
-    <div id="modalHistorialConductor" class="modal-overlay hidden" style="z-index: 10000;">
+    <!-- PANTALLA COMPLETA: PERFIL Y DETALLE DE UN CHOFER -->
+    <div id="modalPerfilChofer" class="modal-overlay hidden" style="z-index: 10000;">
         <div class="modal-card">
             <h3>
-                <span id="tituloHistorialChofer">📊 Historial de Viajes</span>
-                <button class="close-modal" onclick="cerrarModalHistorialConductor()">✕</button>
+                <span>👤 Perfil del Conductor</span>
+                <button class="close-modal" onclick="cerrarPerfilChofer()">✕</button>
             </h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;" id="subtituloHistorialChofer">Servicios realizados por el chofer.</p>
-            <div id="listaHistorialContainer">
-                <p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando historial...</p>
+            
+            <div id="contenidoPerfilChofer">
+                <!-- Se llena dinámicamente -->
             </div>
         </div>
     </div>
@@ -206,13 +215,11 @@
 
                 let html = '';
                 choferes.forEach(c => {
-                    let badgeEstado = c.aprobado ? `<span style="color: #10b981; font-size: 0.7rem;">● Aprobado</span>` : `<span style="color: #f59e0b; font-size: 0.7rem;">● Pendiente</span>`;
-                    let botonAccion = c.aprobado 
-                        ? `<button class="btn-rechazar" onclick="cambiarEstadoChofer('${c.patente}', false)">Bloquear</button>`
-                        : `<button class="btn-aprobar" onclick="cambiarEstadoChofer('${c.patente}', true)">Aprobar ✅</button>`;
+                    let badgeEstado = c.aprobado ? `<span style="color: #10b981; font-size: 0.75rem;">● Aprobado</span>` : `<span style="color: #f59e0b; font-size: 0.75rem;">● Pendiente</span>`;
 
+                    // Al hacer clic en la tarjeta, abre la pantalla completa del chofer
                     html += `
-                        <div class="driver-card">
+                        <div class="driver-card" onclick='abrirPerfilChofer(${JSON.stringify(c)})'>
                             <div class="driver-info-box">
                                 <img src="${c.selfie_url || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" class="driver-avatar" alt="Foto">
                                 <div class="driver-details">
@@ -220,10 +227,6 @@
                                     <p>🚗 ${c.marca_modelo || 'Vehículo'} (${c.tipo_vehiculo || 'Auto'})</p>
                                     <p>🆔 Patente: <b>${c.patente}</b> | Tel: ${c.telefono}</p>
                                 </div>
-                            </div>
-                            <div class="driver-actions-row">
-                                ${botonAccion}
-                                <button class="btn-historial-driver" onclick="verHistorialChofer('${c.patente}', '${c.nombre}')">📊 Historial</button>
                             </div>
                         </div>
                     `;
@@ -238,68 +241,118 @@
             document.getElementById('modalConductores').classList.add('hidden');
         }
 
+        // PANTALLA COMPLETA / PERFIL INDIVIDUAL DEL CHOFER
+        async function abrirPerfilChofer(chofer) {
+            document.getElementById('modalPerfilChofer').classList.remove('hidden');
+            
+            let badgeEstado = chofer.aprobado ? `<span style="color: #10b981;">● Cuenta Aprobada</span>` : `<span style="color: #f59e0b;">● Cuenta Pendiente</span>`;
+            let botonAccion = chofer.aprobado 
+                ? `<button class="btn-accion-grande btn-bloquear-grande" onclick="cambiarEstadoChofer('${chofer.patente}', false)">🔒 Bloquear Conductor</button>`
+                : `<button class="btn-accion-grande btn-aprobar-grande" onclick="cambiarEstadoChofer('${chofer.patente}', true)">✅ Aprobar Conductor</button>`;
+
+            const contenedorPerfil = document.getElementById('contenidoPerfilChofer');
+            contenedorPerfil.innerHTML = `
+                <div class="driver-profile-header">
+                    <img src="${chofer.selfie_url || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" class="driver-profile-img" alt="Foto">
+                    <div>
+                        <h4 style="font-size: 1.1rem; color: #fff;">${chofer.nombre}</h4>
+                        <p style="font-size: 0.8rem; margin: 2px 0;">${badgeEstado}</p>
+                        <p style="font-size: 0.8rem; color: #94a3b8;">📞 ${chofer.telefono || 'Sin teléfono'}</p>
+                    </div>
+                </div>
+
+                <div style="font-size: 0.85rem; color: #cbd5e1; background: #0f172a; padding: 10px 14px; border-radius: 12px; margin-bottom: 14px; border: 1px solid #334155;">
+                    <p>🚗 <b>Vehículo:</b> ${chofer.marca_modelo || 'No especificado'} (${chofer.tipo_vehiculo || 'Auto'})</p>
+                    <p style="margin-top: 4px;">🆔 <b>Patente:</b> ${chofer.patente}</p>
+                </div>
+
+                ${botonAccion}
+
+                <h4 style="font-size: 0.95rem; color: #38bdf8; margin-bottom: 8px;">📊 Resumen y Ganancias</h4>
+                <div class="stats-box" id="cajaEstadisticasChofer">
+                    <div class="stat-card">
+                        <span>Total Viajes</span>
+                        <h4 id="lblTotalViajesChofer">-</h4>
+                    </div>
+                    <div class="stat-card">
+                        <span>Ganancias Totales</span>
+                        <h4 id="lblGananciasChofer">$-</h4>
+                    </div>
+                </div>
+
+                <h4 style="font-size: 0.95rem; color: #38bdf8; margin-bottom: 8px; margin-top: 14px;">📜 Historial de Servicios</h4>
+                <div id="listaHistorialPaginaContainer" style="max-height: 200px; overflow-y: auto;">
+                    <p style="text-align: center; color: #94a3b8; padding: 15px;">Buscando historial...</p>
+                </div>
+            `;
+
+            // Consultar viajes y calcular ganancias
+            try {
+                const { data: viajes, error } = await supabaseClient
+                    .from('viajes')
+                    .select('*')
+                    .eq('conductor_nombre', chofer.nombre)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const historialContainer = document.getElementById('listaHistorialPaginaContainer');
+                
+                if (!viajes || viajes.length === 0) {
+                    historialContainer.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 15px;">Este chofer aún no registra viajes realizados.</p>`;
+                    document.getElementById('lblTotalViajesChofer').textContent = "0";
+                    document.getElementById('lblGananciasChofer').textContent = "$0";
+                    return;
+                }
+
+                let totalViajes = viajes.length;
+                let gananciasTotales = 0;
+                let htmlViajes = '';
+
+                viajes.forEach(v => {
+                    let colorEstado = '#38bdf8';
+                    if (v.estado === 'completado') {
+                        colorEstado = '#10b981';
+                        gananciasTotales += Number(v.precio || 0);
+                    }
+                    if (v.estado === 'cancelado') colorEstado = '#ef4444';
+
+                    let fechaFormateada = v.created_at ? new Date(v.created_at).toLocaleString() : 'Fecha no disponible';
+
+                    htmlViajes += `
+                        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 10px; margin-bottom: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                                <span style="font-size: 0.8rem; font-weight: 700; color: #fff;">👤 ${v.pasajero_nombre || 'Pasajero'}</span>
+                                <span style="font-size: 0.85rem; font-weight: 800; color: #10b981;">$${v.precio || 0}</span>
+                            </div>
+                            <p style="font-size: 0.7rem; color: #94a3b8;">Estado: <b style="color: ${colorEstado};">${v.estado.toUpperCase()}</b> | 📅 ${fechaFormateada}</p>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('lblTotalViajesChofer').textContent = totalViajes;
+                document.getElementById('lblGananciasChofer').textContent = `$${gananciasTotales.toLocaleString()}`;
+                historialContainer.innerHTML = htmlViajes;
+
+            } catch (e) {
+                document.getElementById('listaHistorialPaginaContainer').innerHTML = `<p style="text-align: center; color: #ef4444; padding: 15px;">Error al cargar historial.</p>`;
+            }
+        }
+
+        function cerrarPerfilChofer() {
+            document.getElementById('modalPerfilChofer').classList.add('hidden');
+        }
+
         async function cambiarEstadoChofer(patente, estadoAprobar) {
             try {
                 const { error } = await supabaseClient.from('conductores').update({ aprobado: estadoAprobar }).eq('patente', patente);
                 if (error) throw error;
                 alert(estadoAprobar ? "¡Conductor aprobado con éxito!" : "Conductor bloqueado.");
+                cerrarPerfilChofer();
                 abrirModalConductores();
             } catch (e) {
                 alert("Error al actualizar estado: " + e.message);
             }
-        }
-
-        async function verHistorialChofer(patente, nombreChofer) {
-            document.getElementById('modalHistorialConductor').classList.remove('hidden');
-            document.getElementById('tituloHistorialChofer').textContent = `📊 Historial: ${nombreChofer}`;
-            document.getElementById('subtituloHistorialChofer').textContent = `Patente: ${patente}`;
-            
-            const contenedor = document.getElementById('listaHistorialContainer');
-            contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">Buscando viajes del chofer...</p>`;
-
-            try {
-                // Consulta segura usando únicamente el nombre del chofer en la tabla de viajes
-                const { data: viajes, error } = await supabaseClient
-                    .from('viajes')
-                    .select('*')
-                    .eq('conductor_nombre', nombreChofer)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                if (!viajes || viajes.length === 0) {
-                    contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">Este chofer aún no registra viajes realizados.</p>`;
-                    return;
-                }
-
-                let html = '';
-                viajes.forEach(v => {
-                    let colorEstado = '#38bdf8';
-                    if (v.estado === 'completado') colorEstado = '#10b981';
-                    if (v.estado === 'cancelado') colorEstado = '#ef4444';
-
-                    let fechaFormateada = v.created_at ? new Date(v.created_at).toLocaleString() : 'Fecha no disponible';
-
-                    html += `
-                        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 12px; margin-bottom: 8px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                <span style="font-size: 0.85rem; font-weight: 700; color: #fff;">👤 Pasajero: ${v.pasajero_nombre || 'General'}</span>
-                                <span style="font-size: 0.85rem; font-weight: 800; color: #10b981;">$${v.precio || 0}</span>
-                            </div>
-                            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 2px;">Estado: <b style="color: ${colorEstado};">${v.estado.toUpperCase()}</b></p>
-                            <p style="font-size: 0.7rem; color: #64748b;">📅 ${fechaFormateada}</p>
-                        </div>
-                    `;
-                });
-                contenedor.innerHTML = html;
-
-            } catch (e) {
-                contenedor.innerHTML = `<p style="text-align: center; color: #ef4444; padding: 20px;">Error al cargar el historial: ${e.message}</p>`;
-            }
-        }
-
-        function cerrarModalHistorialConductor() {
-            document.getElementById('modalHistorialConductor').classList.add('hidden');
         }
 
         async function cancelarViajeAdmin(idViaje) {
