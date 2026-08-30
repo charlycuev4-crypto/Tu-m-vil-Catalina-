@@ -12,199 +12,226 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f4f4f6; height: 100vh; overflow: hidden; color: #1a1a1a;
+            background: #11121a; height: 100vh; overflow: hidden; color: #ffffff;
         }
 
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
-        #splashScreen {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #0f172a; color: white; z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 20px; text-align: center; transition: opacity 0.5s ease;
+        /* PANTALLA DE CARGA */
+        #pantallaCarga {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0f172a;
+            z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.4s ease;
         }
-        .splash-logo-box {
-            width: 100px; height: 80px; background: #1e293b; border-radius: 16px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            margin-bottom: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); border: 1px solid #334155;
+        .spinner {
+            width: 45px; height: 45px; border: 4px solid #334155; border-top: 4px solid #38bdf8;
+            border-radius: 50%; animation: spin 0.8s linear infinite; margin-top: 20px;
         }
-        .splash-logo-box img { width: 60px; height: 45px; border-radius: 6px; margin-bottom: 2px; object-fit: cover; }
-        .splash-logo-box span { font-size: 0.7rem; font-weight: 700; color: #2cd44a; letter-spacing: 1px; }
-        
-        .splash-form { width: 100%; max-width: 300px; display: none; flex-direction: column; gap: 10px; margin-top: 5px; }
-        .splash-form input {
-            background: #1e293b; border: 1px solid #334155; color: white; padding: 12px;
-            border-radius: 14px; outline: none; font-size: 0.95rem; text-align: center;
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* PANEL SUPERIOR */
+        .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
+        .passenger-badge { background: #1e293b; color: #38bdf8; padding: 10px 16px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #334155; pointer-events: auto; display: flex; align-items: center; gap: 8px; }
+
+        /* PANEL INFERIOR DE SOLICITUD */
+        .bottom-panel {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 2000; background: #1e293b;
+            border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+            padding: 16px 20px 28px; color: #f1f5f9; transition: transform 0.3s ease;
         }
+        .panel-handle { width: 40px; height: 5px; background: #475569; border-radius: 3px; margin: 0 auto 14px; }
 
-        .selfie-guia-container {
-            width: 110px; height: 110px; border-radius: 50%; background: #1e293b;
-            border: 3px dashed #2cd44a; margin: 0 auto 5px; display: flex; align-items: center; 
-            justify-content: center; overflow: hidden; position: relative; cursor: pointer;
-            box-shadow: 0 0 15px rgba(44,212,74,0.3);
-        }
-        .selfie-guia-container img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .silueta-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.35); pointer-events: none; transition: opacity 0.3s;
-        }
-        .silueta-overlay svg { width: 50px; height: 50px; fill: rgba(255,255,255,0.7); margin-bottom: 2px; }
-        .silueta-overlay span { font-size: 0.65rem; color: #fff; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+        .section-title { font-size: 1rem; font-weight: 800; color: #38bdf8; margin-bottom: 12px; }
 
-        .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top-color: #2cd44a; border-radius: 50%; animation: spin 1s infinite linear; margin-top: 20px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-        .header-row { display: flex; justify-content: space-between; width: 100%; }
-        .right-buttons { display: flex; flex-direction: column; gap: 10px; }
-
-        .back-btn, .gps-btn, .manual-btn { width: 44px; height: 44px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border: none; box-shadow: 0 3px 10px rgba(0,0,0,0.2); pointer-events: auto; }
-        .gps-btn.buscando { background: #e2e8f0; animation: pulse 1s infinite; }
-        .manual-btn.activo { background: #2cd44a; color: white; animation: pulse 1s infinite; }
-        @keyframes pulse { 50% { transform: scale(1.1); } }
-
-        .mapa-hint { position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(44, 212, 74, 0.95); color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-align: center; width: 85%; max-width: 320px; }
-        .mapa-hint.visible { display: block; }
-
-        .bottom-panel { 
-            position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
-            background: #E8E2D5; 
-            border-radius: 36px 36px 0 0; 
-            box-shadow: 0 -10px 35px rgba(0,0,0,0.25); 
-            padding: 16px 20px 24px; 
-            height: 32vh; 
-            overflow-y: auto; 
-            transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1); 
-            -webkit-overflow-scrolling: touch; 
-            border-top: 2.5px solid #2cd44a; 
-        }
-        .bottom-panel:focus-within, .bottom-panel:active { height: 56vh; }
-        .bottom-panel.con-ruta { height: 38vh; }
-
-        .panel-handle { width: 48px; height: 5px; background: #b5ac9b; border-radius: 3px; margin: 0 auto 12px; cursor: pointer; }
-
-        /* MENÚ DE SELECCIÓN TIPO DE VEHÍCULO (AUTO / MOTO) */
-        .vehicle-selector {
-            display: flex; gap: 10px; margin-bottom: 12px;
-        }
+        /* SELECTOR DE TIPO DE VEHÍCULO (AUTO / MOTO) */
+        .vehicle-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
         .vehicle-option {
-            flex: 1; background: #F4EFE6; border: 1.5px solid #d4cbb8; border-radius: 14px;
-            padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s ease;
-            display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; font-size: 0.9rem; color: #444;
+            background: #0f172a; border: 2px solid #334155; border-radius: 14px; padding: 12px;
+            text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px;
         }
-        .vehicle-option.selected {
-            background: #dcfce7; border-color: #2cd44a; color: #166534; box-shadow: 0 0 10px rgba(44,212,74,0.25);
-        }
+        .vehicle-option.selected { border-color: #38bdf8; background: rgba(56, 189, 248, 0.1); }
+        .vehicle-option span { font-size: 0.85rem; font-weight: 700; color: #f1f5f9; }
+        .vehicle-option small { font-size: 0.7rem; color: #94a3b8; }
 
-        .driver-card-preview { 
-            display: flex; align-items: center; gap: 14px; margin-bottom: 12px; 
-            background: #F4EFE6; padding: 10px; border-radius: 18px; 
-            border: 1.5px solid #2cd44a; 
-            box-shadow: 0 0 15px rgba(44, 212, 74, 0.25), 0 4px 12px rgba(0,0,0,0.05);
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: 600; }
+        .form-input {
+            width: 100%; background: #0f172a; border: 1px solid #334155; color: white; padding: 12px;
+            border-radius: 12px; font-size: 0.95rem; outline: none;
         }
-        .driver-img-box { width: 80px; height: 60px; border-radius: 12px; background: #e8e2d5; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; border: 1px solid #2cd44a; }
-        .driver-img-box img { width: 100%; height: 100%; object-fit: cover; }
-        .driver-info-box h3 { font-size: 1.05rem; font-weight: 700; color: #111; }
-        .driver-info-box p { font-size: 0.8rem; color: #444; }
+        .form-input:focus { border-color: #38bdf8; }
 
-        .input-group { 
-            background: #F4EFE6; 
-            border-radius: 16px; 
-            padding: 2px 14px; 
-            margin-bottom: 12px; 
-            border: 1.5px solid #2cd44a; 
-            box-shadow: 0 0 12px rgba(44, 212, 74, 0.2);
+        .btn-pedir {
+            width: 100%; background: #10b981; color: white; border: none; padding: 14px;
+            border-radius: 14px; font-weight: 800; font-size: 1rem; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: background 0.2s;
         }
-        .input-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
-        .input-row:not(:last-child) { border-bottom: 1px solid #d4cbb8; } 
-        .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-        .dot-green { background: #2cd44a; box-shadow: 0 0 6px rgba(44,212,74,0.6); }
-        .dot-red { background: #ef4444; }
-        .input-row input { flex: 1; border: none; font-size: 0.95rem; color: #1a1a1a; background: transparent; outline: none; }
+        .btn-pedir:hover { background: #059669; }
 
-        .sugerencias { background: #F4EFE6; border-radius: 14px; max-height: 130px; overflow-y: auto; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 12px; border: 1.5px solid #2cd44a; }
-        .sugerencias.activo { display: block; }
-        .sugerencia-item { padding: 10px 12px; border-bottom: 1px solid #e2dac9; cursor: pointer; font-size: 0.85rem; color: #222; }
-
-        .price-box-live { 
-            background: #dcfce7; color: #166534; padding: 10px; border-radius: 14px; 
-            text-align: center; font-weight: 700; margin-bottom: 12px; display: none; 
-            font-size: 1rem; border: 1.5px solid #2cd44a; 
-            box-shadow: 0 0 12px rgba(44, 212, 74, 0.25);
+        /* Marcadores en mapa */
+        .custom-marker-icon {
+            background: #1e293b; border: 2px solid #38bdf8; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); overflow: hidden;
         }
-        .badge-nocturno { background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-top: 4px; border: 1px solid #fecaca; }
-        
-        .btn-green-action { 
-            width: 100%; background: #2cd44a; color: white; border: none; padding: 14px; 
-            border-radius: 50px; font-size: 1.05rem; font-weight: 700; cursor: pointer; 
-            box-shadow: 0 4px 15px rgba(44,212,74,0.4); text-align: center; margin-top: 4px; 
-            transition: background 0.2s; border: 1px solid #22b03b;
-        }
-        .btn-green-action:hover { background: #25b83f; }
-
-        .pasajero-ping-icon { 
-            background: #2cd44a; width: 18px !important; height: 18px !important; 
-            border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
-        }
-        .destino-ping-icon { 
-            background: #ef4444; width: 18px !important; height: 18px !important; 
-            border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
-        }
-        .auto-conductor-ping {
-            font-size: 36px !important; width: 36px !important; height: 36px !important;
-            display: flex; align-items: center; justify-content: center;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-        }
+        .custom-marker-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 
         .hidden { display: none !important; }
-        .msg { padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.8rem; text-align: center; display: none; font-weight: 600; }
-        .msg.show { display: block; }
-        .msg-error { background: #fee2e2; color: #991b1b; }
-        .msg-success { background: #f0fdf4; color: #166534; }
     </style>
 </head>
 <body>
 
-    <div id="splashScreen">
-        <div class="splash-logo-box">
-            <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Tu Móvil">
-            <span>TU MÓVIL</span>
-        </div>
-        <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 4px; font-size: 1.3rem;">Cargando...</h2>
-        <p id="splashSub" style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">Identificación obligatoria para tu viaje</p>
-        <div class="spinner" id="splashLoader"></div>
-        
-        <div class="splash-form" id="splashForm">
-            <div class="selfie-guia-container" onclick="document.getElementById('inputFotoReal').click()">
-                <img id="imgPreview" src="" alt="Selfie" style="display:none;">
-                <div class="silueta-overlay" id="siluetaOverlay">
-                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
-                    <span>Toca para tu Selfie</span>
-                </div>
-            </div>
-            
-            <input type="file" id="inputFotoReal" accept="image/*" capture="user" style="display:none" onchange="procesarFotoSelfie(this)">
-            <input type="text" id="regNombre" placeholder="Ingresá tu nombre y apellido">
-            <input type="tel" id="regTelefono" placeholder="Tu número de teléfono">
-            <button class="btn-green-action" onclick="guardarRegistroPerfil()">Comenzar a Viajar</button>
+    <!-- PANTALLA DE CARGA SEGURA -->
+    <div id="pantallaCarga">
+        <div style="background: #1e293b; padding: 16px; border-radius: 20px; border: 1px solid #334155; text-align: center; max-width: 280px;">
+            <h3 style="color: #38bdf8; font-size: 1.1rem; margin-bottom: 6px;">TU MÓVIL</h3>
+            <p style="font-size: 0.8rem; color: #94a3b8;" id="textoCarga">Conectando con el sistema...</p>
+            <div class="spinner"></div>
+            <button onclick="forzarEntrada()" style="margin-top: 15px; background: #334155; border: none; color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 0.75rem; cursor: pointer;">Saltar si tarda</button>
         </div>
     </div>
-
-    <div class="mapa-hint" id="hintManual">📍 Modo Manual: Tocá el mapa para marcar tu DESTINO</div>
 
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
     <div class="header-float">
-        <div class="header-row">
-            <button class="back-btn" onclick="volverAtras()">‹</button>
-            <div class="right-buttons">
-                <button class="gps-btn" id="gpsBtn" onclick="obtenerGPS()">🎯</button>
-                <button class="manual-btn" id="manualBtn" onclick="activarModoManualDestino()">📌</button>
-            </div>
-        </div>
+        <div class="passenger-badge">📍 Tu Móvil - Pasajero</div>
     </div>
 
-    <div class="bottom-panel" id="bottom
+    <!-- PANEL INFERIOR DE SOLICITUD CON SELECTOR AUTO / MOTO -->
+    <div class="bottom-panel" id="panelSolicitud">
+        <div class="panel-handle"></div>
+        <div class="section-title">¿A dónde vamos hoy?</div>
+
+        <!-- SELECTOR DE VEHÍCULO -->
+        <div class="vehicle-selector">
+            <div class="vehicle-option selected" id="optAuto" onclick="seleccionarVehiculo('auto')">
+                <span style="font-size: 1.2rem;">🚗</span>
+                <span>Auto</span>
+                <small>Estándar / Confort</small>
+            </div>
+            <div class="vehicle-option" id="optMoto" onclick="seleccionarVehiculo('moto')">
+                <span style="font-size: 1.2rem;">🏍️</span>
+                <span>Moto</span>
+                <small>Rápido / Económico</small>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Destino o Dirección</label>
+            <input type="text" id="txtDestino" class="form-input" placeholder="Ej: Estación San Miguel, Av. Mitre...">
+        </div>
+
+        <button class="btn-pedir" onclick="solicitarViaje()">Pedir Viaje Ahora 🚀</button>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
+        let mapa = null;
+        let tipoVehiculoSeleccionado = 'auto'; // Por defecto auto
+        let marcadoresChoferes = {};
+
+        function seleccionarVehiculo(tipo) {
+            tipoVehiculoSeleccionado = tipo;
+            document.getElementById('optAuto').classList.remove('selected');
+            document.getElementById('optMoto').classList.remove('selected');
+            
+            if (tipo === 'auto') {
+                document.getElementById('optAuto').classList.add('selected');
+            } else {
+                document.getElementById('optMoto').classList.add('selected');
+            }
+        }
+
+        function forzarEntrada() {
+            const carga = document.getElementById('pantallaCarga');
+            carga.style.opacity = '0';
+            setTimeout(() => carga.classList.add('hidden'), 400);
+        }
+
+        function initMapa() {
+            try {
+                mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
+                
+                cargarConductoresEnMapa();
+            } catch (e) {
+                console.error("Error al inicializar mapa:", e);
+            } finally {
+                // Quitar pantalla de carga tras inicializar
+                setTimeout(forzarEntrada, 600);
+            }
+        }
+
+        async function cargarConductoresEnMapa() {
+            try {
+                const { data: choferes, error } = await supabaseClient.from('conductores').select('*');
+                if (error) throw error;
+
+                if (!choferes) return;
+
+                choferes.forEach(c => {
+                    let lat = c.lat || c.latitud;
+                    let lng = c.lng || c.longitud || c.lon;
+                    let identificador = c.patente || c.id || c.nombre;
+
+                    if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                        let fotoChofer = c.selfie_url || c.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
+                        
+                        let iconoChoferHTML = L.divIcon({
+                            className: 'custom-marker-icon',
+                            html: `<img src="${fotoChofer}" alt="Móvil">`,
+                            iconSize: [38, 38],
+                            iconAnchor: [19, 19]
+                        });
+
+                        if (marcadoresChoferes[identificador]) {
+                            marcadoresChoferes[identificador].setLatLng([lat, lng]);
+                        } else {
+                            let marker = L.marker([lat, lng], { icon: iconoChoferHTML }).addTo(mapa);
+                            marker.bindPopup(`<b>🚗 ${c.nombre}</b><br>Vehículo: ${c.tipo_vehiculo || 'Auto'}`);
+                            marcadoresChoferes[identificador] = marker;
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Error al cargar choferes:", e);
+            }
+        }
+
+        async function solicitarViaje() {
+            const destino = document.getElementById('txtDestino').value.trim();
+            if (!destino) {
+                alert("Por favor, ingresa una dirección de destino.");
+                return;
+            }
+
+            try {
+                const datosViaje = {
+                    pasajero_nombre: 'Pasajero App',
+                    destino: destino,
+                    tipo_vehiculo: tipoVehiculoSeleccionado,
+                    estado: 'pendiente',
+                    precio: tipoVehiculoSeleccionado === 'moto' ? 1200 : 2000 // Precio orientativo según tipo
+                };
+
+                const { error } = await supabaseClient.from('viajes').insert([datosViaje]);
+                if (error) throw error;
+
+                alert(`¡Viaje en ${tipoVehiculoSeleccionado.toUpperCase()} solicitado con éxito! Buscando conductor cercano...`);
+                document.getElementById('txtDestino').value = '';
+            } catch (e) {
+                alert("Error al solicitar el viaje: " + e.message);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initMapa();
+            setInterval(cargarConductoresEnMapa, 5000);
+        });
+    </script>
+</body>
+</html>
