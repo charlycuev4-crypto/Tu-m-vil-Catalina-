@@ -25,13 +25,13 @@
         .admin-btn { background: #3b82f6; color: white; border: none; padding: 10px 14px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid #60a5fa; display: flex; align-items: center; gap: 4px; }
         .admin-btn.secondary { background: #1e293b; border-color: #334155; color: #f1f5f9; }
 
-        /* PANEL INFERIOR / PESTAÑAS DE CONTROL */
+        /* PANEL INFERIOR */
         .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); padding: 16px 20px 24px; height: 35vh; overflow-y: auto; transition: height 0.3s ease; color: #f1f5f9; -webkit-overflow-scrolling: touch; }
         .panel-handle { width: 40px; height: 5px; background: #475569; border-radius: 3px; margin: 0 auto 12px; }
 
         .section-title { font-size: 1rem; font-weight: 800; color: #38bdf8; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         
-        /* LISTA DE CONDUCTORES PENDIENTES / APROBADOS */
+        /* LISTA DE CONDUCTORES */
         .driver-card { background: #0f172a; border: 1px solid #334155; border-radius: 16px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .driver-info-box { display: flex; align-items: center; gap: 12px; overflow: hidden; }
         .driver-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8; flex-shrink: 0; background: #1e293b; }
@@ -41,7 +41,7 @@
         .btn-aprobar { background: #059669; color: white; border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; }
         .btn-rechazar { background: #7f1d1d; color: #fca5a5; border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; }
 
-        /* MODAL DE GESTIÓN DE CONDUCTORES */
+        /* MODAL DE GESTIÓN */
         #modalConductores {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.9);
             z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
@@ -54,20 +54,18 @@
         .close-modal { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
 
         .hidden { display: none !important; }
-        .msg { padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.8rem; text-align: center; display: none; font-weight: 600; }
-        .msg.show { display: block; }
     </style>
 </head>
 <body>
 
-    <!-- MODAL LISTADO DE CONDUCTORES REGISTRADOS -->
+    <!-- MODAL LISTADO DE CONDUCTORES -->
     <div id="modalConductores" class="hidden">
         <div class="modal-card">
             <h3>
                 <span>🚗 Conductores Registrados</span>
                 <button class="close-modal" onclick="cerrarModalConductores()">✕</button>
             </h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Aprobá o rechazá las cuentas nuevas para que puedan operar en la red.</p>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Aprobá o bloqueá las cuentas de los choferes de confianza.</p>
             <div id="listaConductoresContainer">
                 <p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando conductores...</p>
             </div>
@@ -101,7 +99,6 @@
 
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
         let mapa = null;
-        let marcadoresViajes = {};
 
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
@@ -162,10 +159,10 @@
                     html += `
                         <div class="driver-card">
                             <div class="driver-info-box">
-                                <img src="${c.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" class="driver-avatar" alt="Foto">
+                                <img src="${c.selfie_url || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" class="driver-avatar" alt="Foto">
                                 <div class="driver-details">
                                     <h4>${c.nombre} ${badgeEstado}</h4>
-                                    <p>🚗 ${c.modelo} (${c.color})</p>
+                                    <p>🚗 ${c.marca_modelo || 'Vehículo'} (${c.tipo_vehiculo || 'Auto'})</p>
                                     <p>🆔 Patente: <b>${c.patente}</b> | Tel: ${c.telefono}</p>
                                 </div>
                             </div>
@@ -175,7 +172,7 @@
                 });
                 contenedor.innerHTML = html;
             } catch (e) {
-                contenedor.innerHTML = `<p style="text-align: center; color: #ef4444; padding: 20px;">Error al cargar conductores. Verificá tu tabla en Supabase.</p>`;
+                contenedor.innerHTML = `<p style="text-align: center; color: #ef4444; padding: 20px;">Error al cargar: ${e.message}</p>`;
             }
         }
 
@@ -188,7 +185,7 @@
                 const { error } = await supabaseClient.from('conductores').update({ aprobado: estadoAprobar }).eq('patente', patente);
                 if (error) throw error;
                 alert(estadoAprobar ? "¡Conductor aprobado con éxito!" : "Conductor bloqueado.");
-                abrirModalConductores(); // Recargar lista
+                abrirModalConductores();
             } catch (e) {
                 alert("Error al actualizar estado: " + e.message);
             }
@@ -202,18 +199,8 @@
             } catch (e) {}
         }
 
-        // Suscripción en tiempo real a cambios de viajes y conductores
-        function escucharCambiosAdmin() {
-            supabaseClient.channel('admin-realtime')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'viajes' }, () => {
-                    cargarViajesActivosMapa();
-                })
-                .subscribe();
-        }
-
         window.addEventListener('DOMContentLoaded', () => {
             initMapa();
-            escucharCambiosAdmin();
             setInterval(cargarViajesActivosMapa, 5000);
         });
     </script>
