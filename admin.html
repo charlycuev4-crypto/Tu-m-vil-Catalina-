@@ -56,13 +56,8 @@
         .modal-card h3 { font-size: 1.1rem; margin-bottom: 14px; color: #38bdf8; display: flex; justify-content: space-between; align-items: center; }
         .close-modal { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
 
-        /* ESTILOS FORMULARIO DE TARIFAS */
         .form-group { margin-bottom: 14px; }
         .form-group label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 600; }
-        .form-group input { 
-            width: 100%; background: #0f172a; border: 1px solid #334155; color: #f1f5f9; 
-            padding: 12px; border-radius: 12px; outline: none; font-size: 1rem; 
-        }
         
         .btn-guardar { 
             width: 100%; background: #10b981; color: white; border: none; padding: 14px; 
@@ -90,7 +85,7 @@
         </div>
     </div>
 
-    <!-- NUEVO MODAL: HISTORIAL DE VIAJES DEL CONDUCTOR -->
+    <!-- MODAL: HISTORIAL DE VIAJES DEL CONDUCTOR -->
     <div id="modalHistorialConductor" class="modal-overlay hidden" style="z-index: 10000;">
         <div class="modal-card">
             <h3>
@@ -104,7 +99,7 @@
         </div>
     </div>
 
-    <!-- MODAL: GESTIÓN DE TARIFAS (MANUAL DESDE SUPABASE) -->
+    <!-- MODAL: GESTIÓN DE TARIFAS -->
     <div id="modalTarifas" class="modal-overlay hidden">
         <div class="modal-card">
             <h3>
@@ -116,7 +111,7 @@
             <div class="form-group">
                 <label>Nota Informativa</label>
                 <p style="font-size: 0.85rem; color: #e2e8f0; background: #0f172a; padding: 12px; border-radius: 10px; border: 1px solid #334155;">
-                    Las tarifas se gestionan directamente desde tu base de datos de Supabase en la tabla <b>configuracion_tarifas</b> para mayor seguridad.
+                    Las tarifas se gestionan directamente desde tu base de datos de Supabase en la tabla <b>configuracion_tarifas</b>.
                 </p>
             </div>
             
@@ -254,7 +249,6 @@
             }
         }
 
-        // ----- FUNCIONES DE HISTORIAL DE CONDUCTOR -----
         async function verHistorialChofer(patente, nombreChofer) {
             document.getElementById('modalHistorialConductor').classList.remove('hidden');
             document.getElementById('tituloHistorialChofer').textContent = `📊 Historial: ${nombreChofer}`;
@@ -264,12 +258,11 @@
             contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">Buscando viajes del chofer...</p>`;
 
             try {
-                // Buscamos los viajes donde el conductor coincida (por nombre o patente según cómo guardes el dato en la tabla viajes)
-                // Intentamos buscar por el nombre del conductor o la patente si se almacena. Por seguridad consultamos por nombre o ID del chofer.
+                // Consulta segura usando únicamente el nombre del chofer en la tabla de viajes
                 const { data: viajes, error } = await supabaseClient
                     .from('viajes')
                     .select('*')
-                    .or(`conductor_nombre.eq.${nombreChofer},conductor_patente.eq.${patente}`)
+                    .eq('conductor_nombre', nombreChofer)
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
@@ -308,7 +301,6 @@
         function cerrarModalHistorialConductor() {
             document.getElementById('modalHistorialConductor').classList.add('hidden');
         }
-        // ----------------------------------------------
 
         async function cancelarViajeAdmin(idViaje) {
             if (!confirm("¿Estás seguro de cancelar este servicio?")) return;
