@@ -6,373 +6,209 @@
     <title>TuMovil - Panel de Administración</title>
     <!-- SDK de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Leaflet CSS para el Mapa -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background: #0f172a; color: #f1f5f9; padding: 16px; }
-        h1 { font-size: 1.4rem; color: #38bdf8; margin-bottom: 16px; text-align: center; }
+        body, html { width: 100%; height: 100%; background: #0f172a; color: #f1f5f9; overflow: hidden; }
 
-        .seccion-titulo { font-size: 0.85rem; font-weight: 700; color: #94a3b8; margin: 16px 0 8px 0; text-transform: uppercase; }
+        /* Contenedor del Mapa */
+        #mapa { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* Tarjetas de Conductores Reales */
-        .admin-card-usuario {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 16px;
-            padding: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            transition: background 0.2s;
+        /* Barra superior flotante */
+        .top-bar {
+            position: absolute; top: 12px; left: 12px; right: 12px;
+            z-index: 1000;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .admin-card-usuario:active { background: #334155; }
-
-        .admin-avatar-box {
-            width: 55px;
-            height: 55px;
-            border-radius: 50%;
-            overflow: hidden;
-            background: #0f172a;
-            border: 2px solid #38bdf8;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .btn-flotante {
+            background: #1e293b; color: #38bdf8; border: 1px solid #334155;
+            padding: 10px 16px; border-radius: 14px; font-weight: 700; font-size: 0.85rem;
+            cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            display: flex; align-items: center; gap: 6px; text-decoration: none;
         }
-        .admin-avatar-box img { width: 100%; height: 100%; object-fit: cover; }
-        .admin-info-box { flex-grow: 1; }
-        .admin-nombre { font-size: 0.95rem; font-weight: 700; color: #fff; }
-        .admin-detalles { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
+        .btn-flotante:active { background: #334155; }
 
-        /* Modal de Ficha Integral */
-        #modalFichaUnica {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 23, 42, 0.95);
-            z-index: 10000;
-            display: flex; align-items: center; justify-content: center;
-            padding: 16px;
+        /* Panel de Administración / Altas */
+        #panelAdmin {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: #1e293b; border-top: 2px solid #38bdf8;
+            border-radius: 24px 24px 0 0; padding: 20px;
+            z-index: 2000; max-height: 75vh; overflow-y: auto;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.6);
         }
         .hidden { display: none !important; }
-        .ficha-contenido {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 24px;
-            width: 100%; max-width: 450px;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 20px;
-            color: #f1f5f9;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
-        }
-        .ficha-header-perfil {
-            text-align: center;
-            border-bottom: 1px solid #334155;
-            padding-bottom: 14px;
-            margin-bottom: 14px;
-        }
-        .ficha-avatar-grande {
-            width: 80px; height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #38bdf8;
-            margin: 0 auto 8px;
-            display: block;
-            background: #0f172a;
-        }
-        .stats-financieras-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 14px;
-        }
-        .stat-caja {
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 12px;
-            padding: 10px;
-            text-align: center;
-        }
-        .stat-caja-label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
-        .stat-caja-valor { font-size: 1rem; font-weight: 800; color: #10b981; margin-top: 4px; }
 
-        .ubicacion-caja {
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 14px;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .panel-titulo { font-size: 1.1rem; font-weight: 700; color: #38bdf8; }
 
-        .historial-viajes-lista {
-            max-height: 140px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 14px;
+        /* Tarjeta de gestión del conductor */
+        .card-conductor-admin {
+            background: #0f172a; border: 1px solid #334155; border-radius: 14px;
+            padding: 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
         }
-        .item-historial-viaje {
-            background: #0f172a;
-            border-radius: 10px;
-            padding: 8px 12px;
-            font-size: 0.75rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 4px solid #3b82f6;
-        }
+        .info-con { display: flex; align-items: center; gap: 12px; }
+        .avatar-con { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8; background: #1e293b; }
+        .nombre-con { font-size: 0.95rem; font-weight: 700; color: #fff; }
+        .detalles-con { font-size: 0.75rem; color: #94a3b8; margin-top: 3px; }
 
-        /* Módulo de Tarifas Inteligentes */
-        .config-card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 16px;
-            padding: 16px;
-            margin-top: 20px;
+        /* Botones de Dar de Alta / Dar de Baja */
+        .btn-accion {
+            padding: 8px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer; border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
-        .config-grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .config-field { margin-bottom: 10px; }
-        .config-field label {
-            display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 3px; font-weight: 600;
-        }
-        .config-field input {
-            width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 9px; color: #fff; font-size: 0.9rem;
-        }
-        .sub-titulo-tarifa {
-            font-size: 0.85rem; font-weight: 700; color: #38bdf8; margin: 10px 0 6px 0; display: flex; align-items: center; gap: 6px;
-        }
+        .btn-dar-alta { background: #065f46; color: #34d399; border: 1px solid #059669; }
+        .btn-dar-baja { background: #7f1d1d; color: #f87171; border: 1px solid #b91c1c; }
     </style>
 </head>
 <body>
 
-    <h1>Panel de Administración - TuMovil</h1>
+    <!-- Mapa interactivo de fondo -->
+    <div id="mapa"></div>
 
-    <div class="seccion-titulo">Conductores Registrados y Estado Actual</div>
-    <div id="contenedorConductores">
-        <div style="text-align: center; color: #64748b; padding: 15px; font-size: 0.85rem;">Cargando conductores desde Supabase...</div>
+    <!-- Barra superior -->
+    <div class="top-bar">
+        <button class="btn-flotante" onclick="abrirPanelAdmin()">🛡️ Panel Administrador</button>
+        <button class="btn-flotante" onclick="mapa.setView([-34.545, -58.712], 14)">📍 Centrar</button>
     </div>
 
-    <!-- Módulo de Tarifas Inteligentes -->
-    <div class="config-card">
-        <h3 style="color: #38bdf8; font-size: 1rem; margin-bottom: 4px;">⚙️ Gestión Inteligente de Tarifas</h3>
-        <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 12px;">Actualizá las tarifas diferenciadas para calcular costos al instante.</p>
-        
-        <div class="sub-titulo-tarifa">🚗 Tarifas para Autos</div>
-        <div class="config-grid-2">
-            <div class="config-field">
-                <label>Base Auto ($)</label>
-                <input type="number" id="inpAutoBase" placeholder="Ej: 1000">
+    <!-- Panel de Administración (Gestión de Altas) -->
+    <div id="panelAdmin">
+        <div class="panel-header">
+            <div>
+                <div class="panel-titulo">📋 Gestión de Conductores (Altas)</div>
+                <div style="font-size: 0.75rem; color: #94a3b8;">Otorgale el OK a los conductores para que puedan operar.</div>
             </div>
-            <div class="config-field">
-                <label>Km Auto ($)</label>
-                <input type="number" id="inpAutoKm" placeholder="Ej: 500">
-            </div>
+            <button onclick="cerrarPanelAdmin()" style="background: none; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;">✕</button>
         </div>
 
-        <div class="sub-titulo-tarifa">🏍️ Tarifas para Motos</div>
-        <div class="config-grid-2">
-            <div class="config-field">
-                <label>Base Moto ($)</label>
-                <input type="number" id="inpMotoBase" placeholder="Ej: 700">
-            </div>
-            <div class="config-field">
-                <label>Km Moto ($)</label>
-                <input type="number" id="inpMotoKm" placeholder="Ej: 300">
-            </div>
-        </div>
-
-        <button style="width: 100%; background: #0284c7; color: #fff; border: none; border-radius: 10px; padding: 11px; font-weight: 700; cursor: pointer; margin-top: 8px;" onclick="guardarTarifasInteligentes(event)">Guardar Todas las Tarifas 💾</button>
-    </div>
-
-    <!-- Modal de Ficha Integral del Conductor -->
-    <div id="modalFichaUnica" class="hidden">
-        <div class="ficha-contenido">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3 style="color: #38bdf8; font-size: 1rem;">📄 Ficha Integral y Monitoreo</h3>
-                <button onclick="cerrarFicha()" style="background: none; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;">✕</button>
-            </div>
-
-            <div class="ficha-header-perfil">
-                <img id="fichaFoto" class="ficha-avatar-grande" src="" alt="Foto Conductor">
-                <h2 id="fichaNombre" style="font-size: 1.1rem; font-weight: 700;">Juan Pérez</h2>
-                <p id="fichaVehiculoPatente" style="font-size: 0.8rem; color: #94a3b8; margin-top: 3px;">Auto (Fiat Siena) - Patente: ABC-123</p>
-            </div>
-
-            <!-- Ubicación en tiempo real -->
-            <div class="ubicacion-caja">
-                <div>
-                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Ubicación GPS Actual</div>
-                    <div id="fichaUbicacionTexto" style="font-weight: 700; color: #38bdf8; margin-top: 2px;">Cargando coordenadas...</div>
-                </div>
-                <a id="btnVerMapa" href="#" target="_blank" style="background: #0284c7; color: #fff; text-decoration: none; padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700;">Ver Mapa 📍</a>
-            </div>
-
-            <div class="stats-financieras-grid">
-                <div class="stat-caja">
-                    <div class="stat-caja-label">Total Día</div>
-                    <div class="stat-caja-valor" id="fichaTotalDia">$0</div>
-                </div>
-                <div class="stat-caja">
-                    <div class="stat-caja-label">Total Semana</div>
-                    <div class="stat-caja-valor" id="fichaTotalSemana">$0</div>
-                </div>
-            </div>
-
-            <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">Historial de Servicios</div>
-            <div class="historial-viajes-lista" id="fichaHistorialLista">
-                <div style="text-align: center; color: #64748b; padding: 10px; font-size: 0.8rem;">Cargando historial...</div>
-            </div>
-
-            <button style="width: 100%; background: #334155; color: #fff; border: none; border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer;" onclick="cerrarFicha()">Cerrar Ficha</button>
+        <div id="listaConductoresAdmin">
+            <div style="text-align: center; color: #64748b; padding: 20px; font-size: 0.85rem;">Cargando conductores desde Supabase...</div>
         </div>
     </div>
 
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // --- CONEXIÓN A SUPABASE ---
+        // --- CREDENCIALES DE SUPABASE ---
         const SUPABASE_URL = 'TU_SUPABASE_URL';
         const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('inpAutoBase').value = localStorage.getItem('tumovil_auto_base') || '';
-            document.getElementById('inpAutoKm').value = localStorage.getItem('tumovil_auto_km') || '';
-            document.getElementById('inpMotoBase').value = localStorage.getItem('tumovil_moto_base') || '';
-            document.getElementById('inpMotoKm').value = localStorage.getItem('tumovil_moto_km') || '';
+        // Inicializar Mapa centrado en la zona
+        let mapa = L.map('mapa', { zoomControl: false }).setView([-34.545, -58.712], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(mapa);
 
-            cargarConductores();
+        let marcadoresCapas = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            cargarDatosAdmin();
+            // Refrescar cada 15 segundos
+            setInterval(cargarDatosAdmin, 15000);
         });
 
-        function guardarTarifasInteligentes(e) {
-            e.preventDefault();
-            localStorage.setItem('tumovil_auto_base', document.getElementById('inpAutoBase').value);
-            localStorage.setItem('tumovil_auto_km', document.getElementById('inpAutoKm').value);
-            localStorage.setItem('tumovil_moto_base', document.getElementById('inpMotoBase').value);
-            localStorage.setItem('tumovil_moto_km', document.getElementById('inpMotoKm').value);
-            alert("¡Tarifas actualizadas correctamente en el sistema!");
-        }
-
-        async function cargarConductores() {
-            const contenedor = document.getElementById('contenedorConductores');
+        async function cargarDatosAdmin() {
+            const contenedor = document.getElementById('listaConductoresAdmin');
+            
             try {
-                const { data: conductores, error } = await _supabase
+                const { data: choferes, error } = await _supabase
                     .from('conductores')
                     .select('*');
 
                 if (error) throw error;
 
-                if (!conductores || conductores.length === 0) {
-                    contenedor.innerHTML = `<div style="text-align: center; color: #64748b; padding: 10px; font-size: 0.85rem;">No hay conductores registrados.</div>`;
-                    return;
+                // 1. DIBUJAR MARCADORES EN EL MAPA (Solo choferes aprobados)
+                marcadoresCapas.forEach(m => mapa.removeLayer(m));
+                marcadoresCapas = [];
+
+                if (choferes) {
+                    choferes.forEach(c => {
+                        let estaAprobado = c.activo === true || c.aprobado === true;
+
+                        if (estaAprobado && c.lat && c.lng) {
+                            let iconoPersonalizado = L.divIcon({
+                                className: 'custom-div-icon',
+                                html: `<div style="background: #10b981; width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 3px 8px rgba(0,0,0,0.4);">🚗</div>`,
+                                iconSize: [28, 28],
+                                iconAnchor: [14, 14]
+                            });
+
+                            let marcador = L.marker([c.lat, c.lng], { icon: iconoPersonalizado })
+                                .addTo(mapa)
+                                .bindPopup(`<b>${c.nombre || 'Chofer'}</b><br>Estado: Activo`);
+                            
+                            marcadoresCapas.push(marcador);
+                        }
+                    });
+
+                    // 2. MOSTRAR LISTADO EN EL PANEL DE ADMINISTRADOR
+                    if (choferes.length === 0) {
+                        contenedor.innerHTML = `<div style="text-align: center; color: #64748b; padding: 20px; font-size: 0.85rem;">No hay choferes registrados en la base de datos.</div>`;
+                        return;
+                    }
+
+                    contenedor.innerHTML = '';
+                    choferes.forEach(c => {
+                        let foto = c.foto || c.selfie_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                        let nombre = c.nombre || 'Sin nombre';
+                        let vehiculo = `${c.tipo_vehiculo || 'Vehículo'} (${c.modelo || c.marca_modelo || 'N/D'})`;
+                        let patente = c.patente || 'S/D';
+                        let estaAprobado = c.activo === true || c.aprobado === true;
+
+                        let div = document.createElement('div');
+                        div.className = 'card-conductor-admin';
+                        div.innerHTML = `
+                            <div class="info-con">
+                                <img src="${foto}" class="avatar-con" alt="Foto">
+                                <div>
+                                    <div class="nombre-con">${nombre}</div>
+                                    <div class="detalles-con">🚗 ${vehiculo} | Patente: <b>${patente}</b></div>
+                                    <div class="detalles-con" style="color: ${estaAprobado ? '#34d399' : '#f87171'}; font-weight: bold;">
+                                        ${estaAprobado ? '✔ Aprobado (Activo)' : '⏳ Pendiente de OK'}
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn-accion ${estaAprobado ? 'btn-dar-baja' : 'btn-dar-alta'}" onclick="cambiarEstadoConductor('${c.id}', ${!estaAprobado})">
+                                ${estaAprobado ? 'Dar de Baja' : 'Dar el OK (Alta)'}
+                            </button>
+                        `;
+                        contenedor.appendChild(div);
+                    });
                 }
-
-                contenedor.innerHTML = '';
-                conductores.forEach(c => {
-                    let fotoUrl = c.foto || c.selfie_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-                    let nombre = c.nombre || 'Juan Pérez';
-                    let tipoVehiculo = c.tipo_vehiculo || 'Auto';
-                    let modelo = c.modelo || c.marca_modelo || 'Fiat Siena';
-                    let patente = c.patente || 'ABC-123';
-                    let estadoConexion = c.en_linea ? '🟢 Conectado' : '🔴 Desconectado';
-
-                    let card = document.createElement('div');
-                    card.className = 'admin-card-usuario';
-                    card.onclick = () => abrirFichaConductor(c);
-                    card.innerHTML = `
-                        <div class="admin-avatar-box">
-                            <img src="${fotoUrl}" alt="Avatar">
-                        </div>
-                        <div class="admin-info-box">
-                            <div class="admin-nombre">${nombre}</div>
-                            <div class="admin-detalles">🚗 ${tipoVehiculo} (${modelo}) | Patente: ${patente}</div>
-                            <div style="font-size: 0.7rem; font-weight: 700; margin-top: 3px;">${estadoConexion}</div>
-                        </div>
-                    `;
-                    contenedor.appendChild(card);
-                });
-
             } catch (err) {
                 console.error(err);
-                contenedor.innerHTML = `<div style="text-align: center; color: #f87171; padding: 10px; font-size: 0.85rem;">Error al conectar con Supabase.</div>`;
+                contenedor.innerHTML = `<div style="text-align: center; color: #f87171; padding: 20px; font-size: 0.85rem;">Error al conectar con Supabase.</div>`;
             }
         }
 
-        async function abrirFichaConductor(c) {
-            document.getElementById('fichaNombre').innerText = c.nombre || 'Juan Pérez';
-            document.getElementById('fichaVehiculoPatente').innerText = `${c.tipo_vehiculo || 'Auto'} (${c.modelo || c.marca_modelo || 'Fiat Siena'}) - Patente: ${c.patente || 'ABC-123'}`;
-            
-            let fotoUrl = c.foto || c.selfie_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-            document.getElementById('fichaFoto').src = fotoUrl;
+        function abrirPanelAdmin() {
+            document.getElementById('panelAdmin').classList.remove('hidden');
+        }
 
-            // Manejo de Ubicación GPS (lat y lng de tu tabla conductores)
-            let lat = c.lat;
-            let lng = c.lng;
-            if (lat && lng) {
-                document.getElementById('fichaUbicacionTexto').innerText = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-                document.getElementById('btnVerMapa').href = `https://www.google.com/maps?q=${lat},${lng}`;
-                document.getElementById('btnVerMapa').style.display = 'inline-block';
-            } else {
-                document.getElementById('fichaUbicacionTexto').innerText = 'Sin señal GPS reciente';
-                document.getElementById('btnVerMapa').style.display = 'none';
-            }
+        function cerrarPanelAdmin() {
+            document.getElementById('panelAdmin').classList.add('hidden');
+        }
 
-            document.getElementById('fichaTotalDia').innerText = "Cargando...";
-            document.getElementById('fichaTotalSemana').innerText = "Cargando...";
-
-            const listaHistorial = document.getElementById('fichaHistorialLista');
-            listaHistorial.innerHTML = `<div style="text-align: center; color: #64748b; padding: 10px; font-size: 0.8rem;">Buscando viajes...</div>`;
-
-            document.getElementById('modalFichaUnica').classList.remove('hidden');
-
+        // FUNCIÓN DEL BOTÓN: Da o quita el alta actualizando Supabase
+        async function cambiarEstadoConductor(idConductor, nuevoEstado) {
             try {
-                const { data: viajes, error } = await _supabase
-                    .from('viajes')
-                    .select('*')
-                    .eq('conductor_id', c.id);
+                const { error } = await _supabase
+                    .from('conductores')
+                    .update({ 
+                        activo: nuevoEstado, 
+                        aprobado: nuevoEstado 
+                    })
+                    .eq('id', idConductor);
 
                 if (error) throw error;
 
-                if (!viajes || viajes.length === 0) {
-                    listaHistorial.innerHTML = `<div style="text-align: center; color: #64748b; padding: 10px; font-size: 0.8rem;">Sin servicios registrados.</div>`;
-                    document.getElementById('fichaTotalDia').innerText = "$0";
-                    document.getElementById('fichaTotalSemana').innerText = "$0";
-                    return;
-                }
-
-                listaHistorial.innerHTML = '';
-                let sumaTotal = 0;
-
-                viajes.forEach(v => {
-                    let monto = Number(v.monto || v.precio || 0);
-                    sumaTotal += monto;
-
-                    let item = document.createElement('div');
-                    item.className = 'item-historial-viaje';
-                    item.innerHTML = `
-                        <span>${v.origen || 'Origen'} ➔ ${v.destino || 'Destino'}</span>
-                        <strong style="color: #10b981;">+$${monto}</strong>
-                    `;
-                    listaHistorial.appendChild(item);
-                });
-
-                document.getElementById('fichaTotalDia').innerText = `$${sumaTotal}`;
-                document.getElementById('fichaTotalSemana').innerText = `$${sumaTotal}`;
+                alert(nuevoEstado ? "✅ ¡OK otorgado! El conductor ya fue dado de alta." : "⛔ El conductor ha sido dado de baja.");
+                cargarDatosAdmin(); // Refrescar panel y mapa al instante
 
             } catch (err) {
-                listaHistorial.innerHTML = `<div style="text-align: center; color: #f87171; padding: 10px; font-size: 0.8rem;">No se pudo cargar el historial.</div>`;
+                console.error(err);
+                alert("❌ No se pudo actualizar el estado en Supabase.");
             }
-        }
-
-        function cerrarFicha() {
-            document.getElementById('modalFichaUnica').classList.add('hidden');
         }
     </script>
 </body>
