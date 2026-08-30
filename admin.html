@@ -217,11 +217,9 @@
                 choferes.forEach(c => {
                     let badgeEstado = c.aprobado ? `<span style="color: #10b981; font-size: 0.75rem;">● Aprobado</span>` : `<span style="color: #f59e0b; font-size: 0.75rem;">● Pendiente</span>`;
                     
-                    // Extracción correcta basada en tu tabla de Supabase (modelo, color_auto, tipo_vehiculo)
-                    let modeloAuto = c.modelo || c.marca_modelo || 'Vehículo estándar';
-                    let colorAuto = c.color_auto ? `(${c.color_auto})` : '';
-                    let vehiculoTexto = `${modeloAuto} ${colorAuto}`.trim();
+                    // Aseguramos capturar la foto sin importar si el campo se llama selfie_url o foto
                     let fotoChofer = c.selfie_url || c.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
+                    let vehiculoTexto = c.marca_modelo || c.modelo || 'Vehículo estándar';
 
                     html += `
                         <div class="driver-card" onclick='abrirPerfilChofer(${JSON.stringify(c)})'>
@@ -229,7 +227,7 @@
                                 <img src="${fotoChofer}" class="driver-avatar" alt="Foto">
                                 <div class="driver-details">
                                     <h4>${c.nombre} ${badgeEstado}</h4>
-                                    <p>🚗 ${vehiculoTexto}</p>
+                                    <p>🚗 ${vehiculoTexto} (${c.tipo_vehiculo || 'Auto'})</p>
                                     <p>🆔 Patente: <b>${c.patente || 'Sin patente'}</b> | Tel: ${c.telefono || 'Sin tel'}</p>
                                 </div>
                             </div>
@@ -255,12 +253,8 @@
                 ? `<button class="btn-accion-grande btn-bloquear-grande" onclick="cambiarEstadoChofer('${chofer.patente}', false)">🔒 Bloquear Conductor</button>`
                 : `<button class="btn-accion-grande btn-aprobar-grande" onclick="cambiarEstadoChofer('${chofer.patente}', true)">✅ Aprobar Conductor</button>`;
 
-            let modeloAuto = chofer.modelo || chofer.marca_modelo || 'No especificado';
-            let colorAuto = chofer.color_auto ? ` - Color: ${chofer.color_auto}` : '';
-            let tipoVehiculo = chofer.tipo_vehiculo || 'Auto';
-            let vehiculoTexto = `${modeloAuto}${colorAuto}`;
-            let patenteTexto = chofer.patente || 'Sin patente';
             let fotoChofer = chofer.selfie_url || chofer.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
+            let vehiculoTexto = chofer.marca_modelo || chofer.modelo || 'No especificado';
 
             const contenedorPerfil = document.getElementById('contenidoPerfilChofer');
             contenedorPerfil.innerHTML = `
@@ -274,8 +268,8 @@
                 </div>
 
                 <div style="font-size: 0.85rem; color: #cbd5e1; background: #0f172a; padding: 10px 14px; border-radius: 12px; margin-bottom: 14px; border: 1px solid #334155;">
-                    <p>🚗 <b>Vehículo:</b> ${vehiculoTexto} (${tipoVehiculo})</p>
-                    <p style="margin-top: 4px;">🆔 <b>Patente:</b> ${patenteTexto}</p>
+                    <p>🚗 <b>Vehículo:</b> ${vehiculoTexto} (${chofer.tipo_vehiculo || 'Auto'})</p>
+                    <p style="margin-top: 4px;">🆔 <b>Patente:</b> ${chofer.patente || 'Sin patente'}</p>
                 </div>
 
                 ${botonAccion}
@@ -298,12 +292,12 @@
                 </div>
             `;
 
-            // Consultar viajes del chofer en Supabase
+            // Consultar viajes por nombre del conductor (como funcionaba en el código original)
             try {
                 const { data: viajes, error } = await supabaseClient
                     .from('viajes')
                     .select('*')
-                    .or(`conductor_nombre.eq.${chofer.nombre},conductor_id.eq.${chofer.id}`)
+                    .eq('conductor_nombre', chofer.nombre)
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
@@ -350,7 +344,9 @@
                 historialContainer.innerHTML = htmlViajes;
 
             } catch (e) {
-                document.getElementById('listaHistorialPaginaContainer').innerHTML = `<p style="text-align: center; color: #ef4444; padding: 15px;">Error al cargar historial.</p>`;
+                document.getElementById('listaHistorialPaginaContainer').innerHTML = `<p style="text-align: center; color: #ef4444; padding: 15px;">Sin viajes registrados o error de conexión.</p>`;
+                document.getElementById('lblTotalViajesChofer').textContent = "0";
+                document.getElementById('lblGananciasChofer').textContent = "$0";
             }
         }
 
