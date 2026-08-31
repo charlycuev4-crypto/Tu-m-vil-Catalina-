@@ -19,47 +19,35 @@
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
-        /* SPLASH SCREEN PANTALLA COMPLETA CON TARJETA INFERIOR */
+        /* SPLASH SCREEN A PANTALLA COMPLETA CON TU IMAGEN */
         #splashScreen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); z-index: 9999;
-            display: flex; align-items: flex-end; justify-content: center;
-            padding: 16px; transition: opacity 0.5s ease;
+            background: #0f172a; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.5s ease;
         }
-        .splash-card-content {
-            width: 100%; max-width: 400px; background: #ffffff; 
-            border-radius: 36px 36px 28px 28px; padding: 26px 22px 30px; 
-            box-shadow: 0 -15px 40px rgba(0,0,0,0.35); display: flex; flex-direction: column; 
-            gap: 16px; border-top: 3.5px solid #2cd44a; animation: subirSplash 0.45s cubic-bezier(0.1, 1, 0.1, 1);
+        .splash-full-img {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; z-index: 1;
         }
-        @keyframes subirSplash {
-            from { transform: translateY(110%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        .splash-overlay-content {
+            position: relative; z-index: 2; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: flex-end;
+            align-items: center; padding: 30px 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 50%, transparent 100%);
         }
 
-        .splash-header-row { display: flex; align-items: center; gap: 14px; }
-        .splash-img-box {
-            width: 65px; height: 65px; border-radius: 18px; background: #dcfce7;
-            display: flex; align-items: center; justify-content: center; overflow: hidden;
-            flex-shrink: 0; border: 1.5px solid #2cd44a;
-        }
-        .splash-img-box img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .splash-text-box h3 { font-size: 1.3rem; font-weight: 700; color: #111; }
-        .splash-text-box p { font-size: 0.85rem; color: #555; margin-top: 2px; }
-
-        .splash-form { width: 100%; display: none; flex-direction: column; gap: 12px; margin-top: 4px; }
+        .splash-form { width: 100%; max-width: 400px; display: none; flex-direction: column; gap: 12px; }
         .splash-form input {
-            background: #f8fafc; border: 1.5px solid #e2e8f0; color: #1e293b; padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.9); border: 1.5px solid #2cd44a; color: #1e293b; padding: 12px 14px;
             border-radius: 14px; outline: none; font-size: 0.95rem; width: 100%;
         }
-        .splash-form input:focus { border-color: #2cd44a; background: #fff; }
 
         .selfie-guia-container {
             width: 75px; height: 75px; border-radius: 50%; background: #f1f5f9;
             border: 2.5px dashed #2cd44a; margin: 0 auto; display: flex; align-items: center; 
             justify-content: center; overflow: hidden; position: relative; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(44,212,74,0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         .selfie-guia-container img { width: 100%; height: 100%; object-fit: cover; }
         
@@ -71,10 +59,10 @@
         .silueta-overlay svg { width: 32px; height: 32px; fill: #64748b; margin-bottom: 2px; }
         .silueta-overlay span { font-size: 0.55rem; color: #334155; font-weight: 700; }
 
-        .spinner-container { text-align: center; padding: 10px 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-        .spinner { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #2cd44a; border-radius: 50%; animation: spin 0.9s infinite linear; }
+        .spinner-container { text-align: center; padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.3); border-top-color: #2cd44a; border-radius: 50%; animation: spin 0.9s infinite linear; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .spinner-container p { font-size: 0.85rem; color: #666; font-weight: 500; }
+        .spinner-container p { font-size: 0.9rem; color: #fff; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
 
         .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .header-row { display: flex; justify-content: space-between; width: 100%; }
@@ -167,22 +155,15 @@
 </head>
 <body>
 
-    <!-- SPLASH SCREEN ESTILO TARJETA INFERIOR -->
+    <!-- SPLASH SCREEN PANTALLA COMPLETA CON TU IMAGEN -->
     <div id="splashScreen">
-        <div class="splash-card-content">
-            <div class="splash-header-row">
-                <div class="splash-img-box">
-                    <img src="https://files.catbox.moe/1ad3f7.jpg" alt="Logo Tu Móvil">
-                </div>
-                <div class="splash-text-box">
-                    <h3 id="splashTitulo">Tu Móvil</h3>
-                    <p id="splashSub">Iniciando plataforma segura</p>
-                </div>
-            </div>
-
+        <!-- Tu imagen ocupando toda la pantalla -->
+        <img src="https://files.catbox.moe/1ad3f7.jpg" alt="Tu Móvil Splash" class="splash-full-img">
+        
+        <div class="splash-overlay-content">
             <div class="spinner-container" id="splashLoader">
                 <div class="spinner"></div>
-                <p>Cargando mapa y tarifas...</p>
+                <p>Iniciando Tu Móvil...</p>
             </div>
             
             <div class="splash-form" id="splashForm">
@@ -377,22 +358,18 @@
                     }
                 }
 
-                // Splash screen configurado exactamente a 5 segundos (5000 milisegundos)
+                // Espera exactamente 5 segundos mostrando la imagen a pantalla completa
                 await new Promise(resolve => setTimeout(resolve, 5000));
 
                 if (!pasajeroNombre || !pasajeroTelefono || !pasajeroBase64Foto) {
-                    document.getElementById('splashTitulo').textContent = "Tu Móvil";
-                    document.getElementById('splashSub').textContent = "Completa tus datos para viajar";
                     document.getElementById('splashLoader').style.display = "none";
                     document.getElementById('splashForm').style.display = "flex";
                 } else {
-                    document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
                     await verificarViajeActivoPasajero(); 
                     cerrarSplash(); 
                     if (!viajeId) obtenerGPS(); 
                 }
             } catch (err) {
-                document.getElementById('splashTitulo').textContent = "Tu Móvil";
                 document.getElementById('splashLoader').style.display = "none";
                 document.getElementById('splashForm').style.display = "flex";
             }
