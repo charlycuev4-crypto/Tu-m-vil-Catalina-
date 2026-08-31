@@ -97,13 +97,12 @@
         .btn-iniciar { background: #8b5cf6; }
         .btn-finalizar { background: #e11d48; }
 
-        /* Ícono del auto con transición suave para la rotación del GPS */
         .chofer-auto-icon {
             background: #1e293b; width: 38px !important; height: 38px !important;
             border: 3px solid #38bdf8; border-radius: 50%; display: flex;
             align-items: center; justify-content: center; font-size: 1.1rem;
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
-            transition: transform 0.3s ease;
+            transition: transform 0.4s ease;
         }
 
         .pasajero-origen-icon { background: #10b981; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
@@ -139,7 +138,6 @@
 </head>
 <body onclick="forzarHabilitacionAudio()">
 
-    <!-- MODAL DE CONFIGURACIÓN INICIAL CON COMPRESIÓN DE FOTO -->
     <div id="modalConfigChofer" class="hidden">
         <div class="config-card">
             <h2>🚗 Registro de Conductor</h2>
@@ -287,6 +285,7 @@
         let wakeLock = null; 
         let idRastreadorGps = null; 
         let autocentrarMapa = true;  
+        let ultimaPosValida = null;
         
         let audioCtx = null;
         let intervaloCampana = null;
@@ -431,21 +430,40 @@
             });
         }
 
+        function distanciaEnMetros(lat1, lon1, lat2, lon2) {
+            let dLat = (lat2 - lat1) * Math.PI / 180;
+            let dLon = (lon2 - lon1) * Math.PI / 180;
+            let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return 6371000 * c;
+        }
+
         function iniciarRastreoGpsContinuo() {
             if (idRastreadorGps) return;
             if (navigator.geolocation) {
                 idRastreadorGps = navigator.geolocation.watchPosition(async (pos) => {
-                    const nuevaLat = pos.coords.latitude;
-                    const nuevaLng = pos.coords.longitude;
-                    const rumbo = pos.coords.heading; // Rumbo / Ángulo de orientación provisto por el GPS
-                    
+                    let nuevaLat = pos.coords.latitude;
+                    let nuevaLng = pos.coords.longitude;
+                    let rumbo = pos.coords.heading; 
+                    let velocidad = pos.coords.speed; 
+
+                    // FILTRO ANTI-SALTOS: Ignora variaciones menores si el auto está detenido o rebotando en el mismo lugar
+                    if (ultimaPosValida) {
+                        let distanciaMetros = distanciaEnMetros(ultimaPosValida.lat, ultimaPosValida.lng, nuevaLat, nuevaLng);
+                        if (distanciaMetros < 1.5 && (!velocidad || velocidad < 0.5)) {
+                            return; 
+                        }
+                    }
+                    ultimaPosValida = { lat: nuevaLat, lng: nuevaLng };
                     choferCoords = { lat: nuevaLat, lng: nuevaLng };
                     
                     if (markerChofer) {
                         markerChofer.setLatLng([nuevaLat, nuevaLng]);
 
-                        // ROTACIÓN INTELIGENTE DEL ÍCONO DEL AUTO SEGÚN EL GPS
-                        if (rumbo !== null && !isNaN(rumbo)) {
+                        // ORIENTACIÓN SUAVE HACIA ARRIBA SEGÚN EL RUMBO DEL GPS
+                        if (rumbo !== null && !isNaN(rumbo) && rumbo !== undefined) {
                             const elementoIcono = markerChofer.getElement();
                             if (elementoIcono) {
                                 const iconoInterno = elementoIcono.querySelector('div') || elementoIcono;
@@ -455,7 +473,7 @@
                     }
 
                     if (autocentrarMapa) {
-                        let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
+                        let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 16;
                         mapa.setView([nuevaLat, nuevaLng], zoomActual);
                         document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                     }
@@ -482,7 +500,7 @@
         function alternarSeguimientoManual() {
             autocentrarMapa = true;
             document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
-            mapa.setView([choferCoords.lat, choferCoords.lng], (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15);
+            mapa.setView([choferCoords.lat, choferCoords.lng], (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 16);
         }
 
         function abrirNavegacionGoogleMaps() {
@@ -716,16 +734,6 @@
         let ultimoCalculoRuta = 0;
         let ultimaLatRuta = 0;
         let ultimaLngRuta = 0;
-
-        function distanciaEnMetros(lat1, lon1, lat2, lon2) {
-            let dLat = (lat2 - lat1) * Math.PI / 180;
-            let dLon = (lon2 - lon1) * Math.PI / 180;
-            let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                    Math.sin(dLon/2) * Math.sin(dLon/2);
-            let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return 6371000 * c;
-        }
 
         function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
             let ahora = Date.now();
