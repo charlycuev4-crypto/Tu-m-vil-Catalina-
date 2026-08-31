@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tu Móvil - Conductor</title>
+    <title>Tu Móvil - Conductor 3D</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- MapLibre GL JS (Librería 3D gratuita y de código abierto) -->
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -16,7 +18,7 @@
         }
 
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
-        #mapaLeaflet { width: 100%; height: 100%; }
+        #mapaMapLibre { width: 100%; height: 100%; }
 
         .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
         .header-left-col { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; max-width: 55%; }
@@ -97,15 +99,14 @@
         .btn-iniciar { background: #8b5cf6; }
         .btn-finalizar { background: #e11d48; }
 
+        /* Estilo HTML para el marcador del auto rotativo en MapLibre */
         .chofer-auto-icon {
-            background: #1e293b; width: 38px !important; height: 38px !important;
+            background: #1e293b; width: 38px; height: 38px;
             border: 3px solid #38bdf8; border-radius: 50%; display: flex;
             align-items: center; justify-content: center; font-size: 1.1rem;
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
+            transform-origin: center center;
         }
-
-        .pasajero-origen-icon { background: #10b981; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
-        .pasajero-destino-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
 
         #modalConfigChofer {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.95);
@@ -137,7 +138,7 @@
 </head>
 <body onclick="forzarHabilitacionAudio()">
 
-    <!-- MODAL DE CONFIGURACIÓN INICIAL CON COMPRESIÓN DE FOTO -->
+    <!-- MODAL DE CONFIGURACIÓN INICIAL -->
     <div id="modalConfigChofer" class="hidden">
         <div class="config-card">
             <h2>🚗 Registro de Conductor</h2>
@@ -175,7 +176,8 @@
         </div>
     </div>
 
-    <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
+    <!-- Contenedor del Mapa 3D MapLibre -->
+    <div id="mapaContainer"><div id="mapaMapLibre"></div></div>
 
     <div class="header-float">
         <div class="header-left-col">
@@ -261,15 +263,13 @@
         let ultimoViajeMonto = parseFloat(localStorage.getItem('chofer_ultimo_monto') || '0');
         let cantViajesCount = parseInt(localStorage.getItem('chofer_cant_viajes') || '0');
 
-        // FUNCIÓN DE RESETEO DIARIO AUTOMÁTICO (Cada 24 horas / cambio de día)
         function verificarReseteoDiario() {
-            const hoy = new Date().toLocaleDateString(); // Obtiene la fecha actual (ej: "30/8/2026")
+            const hoy = new Date().toLocaleDateString();
             const ultimaFecha = localStorage.getItem('chofer_fecha_actual');
 
             if (ultimaFecha !== hoy) {
                 totalDia = 0;
                 cantViajesCount = 0;
-                
                 localStorage.setItem('chofer_total_dia', '0');
                 localStorage.setItem('chofer_cant_viajes', '0');
                 localStorage.setItem('chofer_fecha_actual', hoy);
@@ -324,15 +324,9 @@
                     let height = img.height;
 
                     if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
                     } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
-                        }
+                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
                     }
 
                     canvas.width = width;
@@ -418,18 +412,31 @@
             setTimeout(() => { btn.textContent = "🔊 Probar Timbre"; btn.style.background = "#ea580c"; }, 2000);
         }
 
-        const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
-        let mapa = null, markerChofer = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
+        const ESTACION_SAN_MIGUEL = [-58.71212, -34.54291]; // MapLibre usa [lng, lat]
+        let mapa = null, markerChofer = null, elElementoAuto = null;
         let choferCoords = { lat: -34.545, lng: -58.715 }; 
         let viajeActivo = null;
         let estadoFlujo = 'pendiente'; 
 
         function initMapa() {
-            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
-            
-            const iconoAuto = L.divIcon({ className: 'chofer-auto-icon', html: '🚗', iconSize: [38, 38], iconAnchor: [19, 19] });
-            markerChofer = L.marker([choferCoords.lat, choferCoords.lng], { icon: iconoAuto }).addTo(mapa);
+            // Mapa 3D OpenStreetMap gratuito a través de un proveedor vectorial de tiles libres (Demotiles de MapLibre)
+            mapa = new maplibregl.Map({
+                container: 'mapaMapLibre',
+                style: 'https://demotiles.maplibre.org/style.json',
+                center: [-58.715, -34.545],
+                zoom: 14,
+                pitch: 45 // Inclinación en 3D predeterminada
+            });
+
+            // Crear elemento HTML para el auto con rotación
+            const el = document.createElement('div');
+            el.className = 'chofer-auto-icon';
+            el.innerHTML = '🚗';
+            elElementoAuto = el;
+
+            markerChofer = new maplibregl.Marker({ element: el })
+                .setLngLat([-58.715, -34.545])
+                .addTo(mapa);
 
             mapa.on('dragstart', () => {
                 autocentrarMapa = false;
@@ -443,13 +450,21 @@
                 idRastreadorGps = navigator.geolocation.watchPosition(async (pos) => {
                     const nuevaLat = pos.coords.latitude;
                     const nuevaLng = pos.coords.longitude;
+                    const rumbo = pos.coords.heading; 
+                    
                     choferCoords = { lat: nuevaLat, lng: nuevaLng };
                     
-                    if (markerChofer) markerChofer.setLatLng([nuevaLat, nuevaLng]);
+                    if (markerChofer) {
+                        markerChofer.setLngLat([nuevaLng, nuevaLat]); // MapLibre usa [lng, lat]
 
-                    if (autocentrarMapa) {
+                        if (rumbo !== null && !isNaN(rumbo) && elElementoAuto) {
+                            elElementoAuto.style.transform = `rotate(${rumbo}deg)`;
+                        }
+                    }
+
+                    if (autocentrarMapa && mapa) {
                         let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
-                        mapa.setView([nuevaLat, nuevaLng], zoomActual);
+                        mapa.easeTo({ center: [nuevaLng, nuevaLat], zoom: zoomActual, duration: 1000 });
                         document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                     }
 
@@ -475,7 +490,10 @@
         function alternarSeguimientoManual() {
             autocentrarMapa = true;
             document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
-            mapa.setView([choferCoords.lat, choferCoords.lng], (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15);
+            if(mapa) {
+                let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
+                mapa.easeTo({ center: [choferCoords.lng, choferCoords.lat], zoom: zoomActual, duration: 800 });
+            }
         }
 
         function abrirNavegacionGoogleMaps() {
@@ -555,11 +573,8 @@
             const badgeCat = document.getElementById('lblCategoriaViaje');
             if (viaje.categoria) { badgeCat.textContent = viaje.categoria.toUpperCase(); badgeCat.style.display = 'inline-block'; }
 
-            if (markerOrigen) mapa.removeLayer(markerOrigen);
-            if (markerDestino) mapa.removeLayer(markerDestino);
-
-            markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
-            markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
+            agregarPuntoMapa('origen', viaje.origen_lng, viaje.origen_lat, '#10b981');
+            agregarPuntoMapa('destino', viaje.destino_lng, viaje.destino_lat, '#ef4444');
 
             autocentrarMapa = true; 
             trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
@@ -569,9 +584,9 @@
             detenerSirenaAlerta();
             limpiarMemoriaConductor();
 
-            if (markerOrigen) { mapa.removeLayer(markerOrigen); markerOrigen = null; }
-            if (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
-            if (rutaTrazada) { mapa.removeLayer(rutaTrazada); rutaTrazada = null; }
+            removerPuntoMapa('origen');
+            removerPuntoMapa('destino');
+            removerRutaMapa();
 
             viajeActivo = null; estadoFlujo = 'pendiente';
             document.getElementById('vistaViaje').classList.add('hidden');
@@ -608,7 +623,7 @@
 
                     autocentrarMapa = true;
                     document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
-                    mapa.setView([choferCoords.lat, choferCoords.lng], 17);
+                    mapa.easeTo({ center: [choferCoords.lng, choferCoords.lat], zoom: 17, duration: 1000 });
                 } catch (e) { location.reload(); }
                 return;
             }
@@ -673,8 +688,8 @@
                     btnWp.classList.remove('hidden');
                 }
 
-                markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
-                markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
+                agregarPuntoMapa('origen', viaje.origen_lng, viaje.origen_lat, '#10b981');
+                agregarPuntoMapa('destino', viaje.destino_lng, viaje.destino_lat, '#ef4444');
 
                 document.getElementById('contenedorBotonesPendiente').classList.add('hidden');
                 const btnEnCurso = document.getElementById('btnAccionEnCurso');
@@ -695,13 +710,54 @@
 
         function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id'); localStorage.removeItem('conductor_estado_flujo'); }
 
+        let marcadoresPersonalizados = {};
+        function agregarPuntoMapa(id, lng, lat, colorHex) {
+            removerPuntoMapa(id);
+            const el = document.createElement('div');
+            el.style.width = '14px'; el.style.height = '14px';
+            el.style.backgroundColor = colorHex; el.style.border = '2px solid white';
+            el.style.borderRadius = '50%'; el.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
+            
+            marcadoresPersonalizados[id] = new maplibregl.Marker({ element: el })
+                .setLngLat([lng, lat])
+                .addTo(mapa);
+        }
+
+        function removerPuntoMapa(id) {
+            if (marcadoresPersonalizados[id]) {
+                marcadoresPersonalizados[id].remove();
+                delete marcadoresPersonalizados[id];
+            }
+        }
+
+        function removerRutaMapa() {
+            if (mapa.getSource('ruta-viaje')) {
+                mapa.removeLayer('capa-ruta');
+                mapa.removeSource('ruta-viaje');
+            }
+        }
+
         async function trazarRutaCalles(lat1, lon1, lat2, lon2) {
             try {
                 const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`);
                 const data = await res.json();
                 if (data.code === 'Ok' && data.routes.length > 0) {
-                    if (rutaTrazada) mapa.removeLayer(rutaTrazada);
-                    rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#3b82f6', weight: 6, opacity: 0.9 }).addTo(mapa);
+                    const geojsonRuta = {
+                        type: 'Feature',
+                        properties: {},
+                        geometry: data.routes[0].geometry
+                    };
+
+                    removerRutaMapa();
+
+                    mapa.addSource('ruta-viaje', { type: 'geojson', data: geojsonRuta });
+                    mapa.addLayer({
+                        id: 'capa-ruta',
+                        type: 'line',
+                        source: 'ruta-viaje',
+                        layout: { 'line-join': 'round', 'line-cap': 'round' },
+                        paint: { 'line-color': '#3b82f6', 'line-width': 6, 'line-opacity': 0.9 }
+                    });
                 }
             } catch (e) {}
         }
@@ -740,7 +796,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             verificarRegistroChofer();
-            verificarReseteoDiario(); // <--- Valida y limpia contadores diarios automáticamente al iniciar
+            verificarReseteoDiario();
             actualizarUIEstadisticas();
             initMapa(); escucharNuevosViajes(); solicitarWakeLock(); iniciarRastreoGpsContinuo(); 
             setTimeout(async () => { await verificarViajeActivoConductor(); }, 1000);
