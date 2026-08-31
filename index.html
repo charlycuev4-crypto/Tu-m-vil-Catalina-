@@ -177,7 +177,6 @@
         </div>
         <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 4px; font-size: 1.3rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Cargando...</h2>
         <p id="splashSub" style="color: #cbd5e1; font-size: 0.85rem; margin-bottom: 25px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Identificación obligatoria para tu viaje</p>
-        <!-- Spinner eliminado por completo -->
         
         <div class="splash-form" id="splashForm">
             <div class="selfie-guia-container" onclick="document.getElementById('inputFotoReal').click()">
@@ -390,7 +389,7 @@
                     }
                 }
 
-                // Si ya tiene perfil registrado, mantenemos el splash nítido exactamente 5 segundos (5000ms)
+                // Ajustado a exactamente 3 segundos (3000ms) para que no se sienta pesado ni trabado
                 if (pasajeroNombre && pasajeroTelefono && pasajeroBase64Foto) {
                     document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
                     await verificarViajeActivoPasajero();
@@ -398,9 +397,8 @@
                     setTimeout(() => {
                         cerrarSplash(); 
                         if (!viajeId) obtenerGPS();
-                    }, 5000);
+                    }, 3000);
                 } else {
-                    // Si no tiene perfil registrado, mostramos el formulario de registro normalmente
                     document.getElementById('splashTitulo').textContent = "¡Foto y Datos!";
                     document.getElementById('splashForm').style.display = "flex";
                 }
