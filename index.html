@@ -105,7 +105,6 @@
 
         .panel-handle { width: 48px; height: 5px; background: #b5ac9b; border-radius: 3px; margin: 0 auto 12px; cursor: pointer; }
 
-        /* SELECTOR DE VEHÍCULO (AUTO / MOTO) */
         .vehicle-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
         .vehicle-option {
             background: #F4EFE6; border: 1.5px solid #d4cbb8; border-radius: 14px; padding: 8px;
@@ -228,7 +227,6 @@
 
         <!-- PASO 1: PEDIDO -->
         <div id="pasoDatos">
-            <!-- SELECTOR DE VEHÍCULO (AUTO / MOTO) -->
             <div class="vehicle-selector">
                 <div class="vehicle-option selected" id="optAuto" onclick="seleccionarVehiculo('auto')">
                     <span style="font-size: 1.1rem;">🚗</span>
@@ -311,7 +309,7 @@
 
         let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
         let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
-        let tipoVehiculoSeleccionado = 'auto'; // Por defecto auto
+        let tipoVehiculoSeleccionado = 'auto';
         let mapa = null, markerOrigen = null, markerDestino = null, markerConductor = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
         let intervaloActualizacionRuta = null;
@@ -404,15 +402,21 @@
                     }
                 }
 
-                if (!pasajeroNombre || !pasajeroTelefono || !pasajeroBase64Foto) {
+                // Si ya tiene perfil registrado, aseguramos que el splash se mantenga exactamente 8 segundos antes de cerrarse
+                if (pasajeroNombre && pasajeroTelefono && pasajeroBase64Foto) {
+                    document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
+                    await verificarViajeActivoPasajero();
+                    
+                    // Temporizador de 8 segundos (8000 milisegundos)
+                    setTimeout(() => {
+                        cerrarSplash(); 
+                        if (!viajeId) obtenerGPS();
+                    }, 8000);
+                } else {
+                    // Si no tiene perfil, mostramos el formulario y ocultamos el loader de espera general
                     document.getElementById('splashTitulo').textContent = "¡Foto y Datos!";
                     document.getElementById('splashLoader').style.display = "none";
                     document.getElementById('splashForm').style.display = "flex";
-                } else {
-                    document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
-                    await verificarViajeActivoPasajero(); 
-                    cerrarSplash(); 
-                    if (!viajeId) obtenerGPS(); 
                 }
             } catch (err) {
                 document.getElementById('splashTitulo').textContent = "¡Bienvenido!";
