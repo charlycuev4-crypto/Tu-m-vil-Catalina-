@@ -19,7 +19,7 @@
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
-        /* SPLASH SCREEN ACTUALIZADO CON TU IMAGEN DE CATBOX */
+        /* SPLASH SCREEN LIMPIO: SIN FILTRO OSCURO Y CON IMAGEN NÍTIDA */
         #splashScreen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: #0f172a url('https://files.catbox.moe/z55y2x.jpg') no-repeat center center;
@@ -27,15 +27,6 @@
             color: white; z-index: 9999;
             display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
             padding: 40px 20px; text-align: center; transition: opacity 0.5s ease;
-        }
-        
-        /* Capa oscura translúcida para que los textos y formularios resalten sobre la imagen */
-        #splashScreen::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.75);
-            z-index: 1;
         }
 
         #splashScreen > * {
@@ -72,9 +63,6 @@
         }
         .silueta-overlay svg { width: 50px; height: 50px; fill: rgba(255,255,255,0.7); margin-bottom: 2px; }
         .silueta-overlay span { font-size: 0.65rem; color: #fff; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
-
-        .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top-color: #2cd44a; border-radius: 50%; animation: spin 1s infinite linear; margin-top: 20px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
 
         .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .header-row { display: flex; justify-content: space-between; width: 100%; }
@@ -188,8 +176,8 @@
             <span>TU MÓVIL</span>
         </div>
         <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 4px; font-size: 1.3rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Cargando...</h2>
-        <p id="splashSub" style="color: #cbd5e1; font-size: 0.85rem; margin-bottom: 12px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Identificación obligatoria para tu viaje</p>
-        <div class="spinner" id="splashLoader"></div>
+        <p id="splashSub" style="color: #cbd5e1; font-size: 0.85rem; margin-bottom: 25px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Identificación obligatoria para tu viaje</p>
+        <!-- Spinner eliminado por completo -->
         
         <div class="splash-form" id="splashForm">
             <div class="selfie-guia-container" onclick="document.getElementById('inputFotoReal').click()">
@@ -402,25 +390,22 @@
                     }
                 }
 
-                // Si ya tiene perfil registrado, aseguramos que el splash se mantenga exactamente 8 segundos antes de cerrarse
+                // Si ya tiene perfil registrado, mantenemos el splash nítido exactamente 5 segundos (5000ms)
                 if (pasajeroNombre && pasajeroTelefono && pasajeroBase64Foto) {
                     document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
                     await verificarViajeActivoPasajero();
                     
-                    // Temporizador de 8 segundos (8000 milisegundos)
                     setTimeout(() => {
                         cerrarSplash(); 
                         if (!viajeId) obtenerGPS();
-                    }, 8000);
+                    }, 5000);
                 } else {
-                    // Si no tiene perfil, mostramos el formulario y ocultamos el loader de espera general
+                    // Si no tiene perfil registrado, mostramos el formulario de registro normalmente
                     document.getElementById('splashTitulo').textContent = "¡Foto y Datos!";
-                    document.getElementById('splashLoader').style.display = "none";
                     document.getElementById('splashForm').style.display = "flex";
                 }
             } catch (err) {
                 document.getElementById('splashTitulo').textContent = "¡Bienvenido!";
-                document.getElementById('splashLoader').style.display = "none";
                 document.getElementById('splashForm').style.display = "flex";
             }
         }
