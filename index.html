@@ -76,93 +76,95 @@
         .mapa-hint { position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(44, 212, 74, 0.95); color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-align: center; width: 85%; max-width: 320px; }
         .mapa-hint.visible { display: block; }
 
+        /* PANEL INFERIOR MÁS COMPACTO Y DINÁMICO CON SCROLL FLUIDO */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
             background: #E8E2D5; 
-            border-radius: 36px 36px 0 0; 
-            box-shadow: 0 -10px 35px rgba(0,0,0,0.25); 
-            padding: 16px 20px 24px; 
-            height: 31vh; 
+            border-radius: 28px 28px 0 0; 
+            box-shadow: 0 -8px 25px rgba(0,0,0,0.2); 
+            padding: 10px 16px 18px; 
+            height: 23vh; 
+            max-height: 75vh;
             overflow-y: auto; 
-            transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1); 
+            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
             -webkit-overflow-scrolling: touch; 
-            border-top: 2.5px solid #2cd44a; 
+            border-top: 2px solid #2cd44a; 
         }
-        .bottom-panel:focus-within, .bottom-panel:active { height: 58vh; }
-        .bottom-panel.con-ruta { height: 38vh; }
+        .bottom-panel:focus-within, .bottom-panel:active { height: 52vh; }
+        .bottom-panel.con-ruta { height: 32vh; }
 
-        .panel-handle { width: 48px; height: 5px; background: #b5ac9b; border-radius: 3px; margin: 0 auto 12px; cursor: pointer; }
+        .panel-handle { width: 38px; height: 4px; background: #b5ac9b; border-radius: 2px; margin: 0 auto 8px; cursor: pointer; }
 
-        .vehicle-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .vehicle-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
         .vehicle-option {
-            background: #F4EFE6; border: 1.5px solid #d4cbb8; border-radius: 14px; padding: 8px;
+            background: #F4EFE6; border: 1.2px solid #d4cbb8; border-radius: 12px; padding: 6px;
             text-align: center; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
         }
-        .vehicle-option.selected { border-color: #2cd44a; background: #dcfce7; box-shadow: 0 0 10px rgba(44,212,74,0.3); }
-        .vehicle-option span { font-size: 0.85rem; font-weight: 700; color: #1a1a1a; }
+        .vehicle-option.selected { border-color: #2cd44a; background: #dcfce7; box-shadow: 0 0 8px rgba(44,212,74,0.3); }
+        .vehicle-option span { font-size: 0.8rem; font-weight: 700; color: #1a1a1a; }
 
         .driver-card-preview { 
-            display: flex; align-items: center; gap: 14px; margin-bottom: 12px; 
-            background: #F4EFE6; padding: 10px; border-radius: 18px; 
-            border: 1.5px solid #2cd44a; 
-            box-shadow: 0 0 15px rgba(44, 212, 74, 0.25), 0 4px 12px rgba(0,0,0,0.05);
+            display: flex; align-items: center; gap: 10px; margin-bottom: 8px; 
+            background: #F4EFE6; padding: 8px 10px; border-radius: 14px; 
+            border: 1.2px solid #2cd44a; 
+            box-shadow: 0 0 10px rgba(44, 212, 74, 0.2), 0 2px 8px rgba(0,0,0,0.03);
         }
-        .driver-img-box { width: 80px; height: 60px; border-radius: 12px; background: #e8e2d5; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; border: 1px solid #2cd44a; }
+        .driver-img-box { width: 65px; height: 50px; border-radius: 10px; background: #e8e2d5; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; border: 1px solid #2cd44a; }
         .driver-img-box img { width: 100%; height: 100%; object-fit: cover; }
-        .driver-info-box h3 { font-size: 1.05rem; font-weight: 700; color: #111; }
-        .driver-info-box p { font-size: 0.8rem; color: #444; }
+        .driver-info-box h3 { font-size: 0.95rem; font-weight: 700; color: #111; }
+        .driver-info-box p { font-size: 0.75rem; color: #444; }
 
         .input-group { 
             background: #F4EFE6; 
-            border-radius: 16px; 
-            padding: 2px 14px; 
-            margin-bottom: 12px; 
-            border: 1.5px solid #2cd44a; 
-            box-shadow: 0 0 12px rgba(44, 212, 74, 0.2);
+            border-radius: 14px; 
+            padding: 2px 12px; 
+            margin-bottom: 8px; 
+            border: 1.2px solid #2cd44a; 
+            box-shadow: 0 0 10px rgba(44, 212, 74, 0.15);
         }
-        .input-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
+        .input-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; }
         .input-row:not(:last-child) { border-bottom: 1px solid #d4cbb8; } 
-        .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-        .dot-green { background: #2cd44a; box-shadow: 0 0 6px rgba(44,212,74,0.6); }
+        .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .dot-green { background: #2cd44a; box-shadow: 0 0 5px rgba(44,212,74,0.6); }
         .dot-red { background: #ef4444; }
-        .input-row input { flex: 1; border: none; font-size: 0.95rem; color: #1a1a1a; background: transparent; outline: none; }
+        .input-row input { flex: 1; border: none; font-size: 0.9rem; color: #1a1a1a; background: transparent; outline: none; }
 
-        .sugerencias { background: #F4EFE6; border-radius: 14px; max-height: 130px; overflow-y: auto; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 12px; border: 1.5px solid #2cd44a; }
+        .sugerencias { background: #F4EFE6; border-radius: 12px; max-height: 110px; overflow-y: auto; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 8px; border: 1.2px solid #2cd44a; }
         .sugerencias.activo { display: block; }
-        .sugerencia-item { padding: 10px 12px; border-bottom: 1px solid #e2dac9; cursor: pointer; font-size: 0.85rem; color: #222; }
+        .sugerencia-item { padding: 8px 10px; border-bottom: 1px solid #e2dac9; cursor: pointer; font-size: 0.8rem; color: #222; }
 
         .price-box-live { 
-            background: #dcfce7; color: #166534; padding: 10px; border-radius: 14px; 
-            text-align: center; font-weight: 700; margin-bottom: 12px; display: none; 
-            font-size: 1rem; border: 1.5px solid #2cd44a; 
-            box-shadow: 0 0 12px rgba(44, 212, 74, 0.25);
+            background: #dcfce7; color: #166534; padding: 8px; border-radius: 12px; 
+            text-align: center; font-weight: 700; margin-bottom: 8px; display: none; 
+            font-size: 0.95rem; border: 1.2px solid #2cd44a; 
+            box-shadow: 0 0 10px rgba(44, 212, 74, 0.2);
         }
-        .badge-nocturno { background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-top: 4px; border: 1px solid #fecaca; }
+        .badge-nocturno { background: #fef2f2; color: #dc2626; padding: 3px 6px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; display: inline-block; margin-top: 3px; border: 1px solid #fecaca; }
         
         .btn-green-action { 
-            width: 100%; background: #2cd44a; color: white; border: none; padding: 14px; 
-            border-radius: 50px; font-size: 1.05rem; font-weight: 700; cursor: pointer; 
-            box-shadow: 0 4px 15px rgba(44,212,74,0.4); text-align: center; margin-top: 4px; 
+            width: 100%; background: #2cd44a; color: white; border: none; padding: 12px; 
+            border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; 
+            box-shadow: 0 3px 12px rgba(44,212,74,0.35); text-align: center; margin-top: 2px; 
             transition: background 0.2s; border: 1px solid #22b03b;
         }
         .btn-green-action:hover { background: #25b83f; }
 
         .pasajero-ping-icon { 
-            background: #2cd44a; width: 18px !important; height: 18px !important; 
-            border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
+            background: #2cd44a; width: 16px !important; height: 16px !important; 
+            border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); 
         }
         .destino-ping-icon { 
-            background: #ef4444; width: 18px !important; height: 18px !important; 
-            border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
+            background: #ef4444; width: 16px !important; height: 16px !important; 
+            border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); 
         }
         .auto-conductor-ping {
-            font-size: 36px !important; width: 36px !important; height: 36px !important;
+            font-size: 32px !important; width: 32px !important; height: 32px !important;
             display: flex; align-items: center; justify-content: center;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
         }
 
         .hidden { display: none !important; }
-        .msg { padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.8rem; text-align: center; display: none; font-weight: 600; }
+        .msg { padding: 8px; border-radius: 8px; margin-bottom: 8px; font-size: 0.75rem; text-align: center; display: none; font-weight: 600; }
         .msg.show { display: block; }
         .msg-error { background: #fee2e2; color: #991b1b; }
         .msg-success { background: #f0fdf4; color: #166534; }
@@ -216,18 +218,18 @@
         <div id="pasoDatos">
             <div class="vehicle-selector">
                 <div class="vehicle-option selected" id="optAuto" onclick="seleccionarVehiculo('auto')">
-                    <span style="font-size: 1.1rem;">🚗</span>
+                    <span style="font-size: 1rem;">🚗</span>
                     <span>Auto</span>
                 </div>
                 <div class="vehicle-option" id="optMoto" onclick="seleccionarVehiculo('moto')">
-                    <span style="font-size: 1.1rem;">🏍️</span>
+                    <span style="font-size: 1rem;">🏍️</span>
                     <span>Moto</span>
                 </div>
             </div>
 
             <div class="driver-card-preview">
                 <div class="driver-img-box">
-                    <span style="font-size: 1.4rem;" id="iconoVehiculoPreview">🚕</span>
+                    <span style="font-size: 1.2rem;" id="iconoVehiculoPreview">🚕</span>
                 </div>
                 <div class="driver-info-box">
                     <h3>Tu Móvil</h3>
@@ -254,9 +256,9 @@
 
         <!-- PASO 2: ESPERA -->
         <div id="pasoEsperando" class="hidden">
-            <div style="text-align: center; padding: 10px 0;">
-                <h4 style="margin-bottom: 4px; color: #1a1a1a;">Buscando conductor cercano...</h4>
-                <p style="color: #444; font-size: 0.85rem; margin-bottom: 12px;">Tu solicitud está en el centro de despacho.</p>
+            <div style="text-align: center; padding: 6px 0;">
+                <h4 style="margin-bottom: 4px; color: #1a1a1a; font-size: 0.95rem;">Buscando conductor cercano...</h4>
+                <p style="color: #444; font-size: 0.78rem; margin-bottom: 10px;">Tu solicitud está en el centro de despacho.</p>
                 <button class="btn-green-action" style="background: #ef4444; border-color: #dc2626;" onclick="cancelarViaje()">Cancelar</button>
             </div>
         </div>
@@ -273,7 +275,7 @@
                     <p id="autoCond">Vehículo en camino</p>
                 </div>
             </div>
-            <div style="text-align: center; padding: 10px 0; color: #166534; font-weight: 700; font-size: 0.95rem;" id="estadoViajePasajero">
+            <div style="text-align: center; padding: 8px 0; color: #166534; font-weight: 700; font-size: 0.88rem;" id="estadoViajePasajero">
                 El móvil aceptó el viaje y va en camino 🚗
             </div>
         </div>
@@ -390,7 +392,7 @@
 
         function toggleExpandirPanel() {
             const panel = document.getElementById('bottomPanel');
-            panel.style.height = (panel.style.height === '58vh') ? '' : '58vh';
+            panel.style.height = (panel.style.height === '52vh') ? '' : '52vh';
         }
 
         async function procesarSplashDeBienvenida() {
@@ -415,6 +417,7 @@
                     document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
                     await verificarViajeActivoPasajero();
                     
+                    // SPLASH CONFIGURADO EXACTAMENTE A 3 SEGUNDOS
                     setTimeout(() => {
                         cerrarSplash(); 
                         if (!viajeId) obtenerGPS();
@@ -537,7 +540,7 @@
                         const latLngCond = [de.conductor_lat, de.conductor_lng];
                         if (!markerConductor) {
                             markerConductor = L.marker(latLngCond, { 
-                                icon: L.divIcon({ className: 'auto-conductor-ping', html: de.tipo_vehiculo === 'moto' ? '🏍️' : '🚗', iconSize: [36, 36] }) 
+                                icon: L.divIcon({ className: 'auto-conductor-ping', html: de.tipo_vehiculo === 'moto' ? '🏍️' : '🚗', iconSize: [32, 32] }) 
                             }).addTo(mapa);
                         } else {
                             markerConductor.setLatLng(latLngCond);
@@ -553,7 +556,7 @@
                         
                         if (markerConductor && markerOrigen) {
                             const group = new L.featureGroup([markerOrigen, markerConductor]);
-                            mapa.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 17 });
+                            mapa.fitBounds(group.getBounds(), { padding: [40, 40], maxZoom: 17 });
                         }
                         mostrarPaso('pasoPrecio');
                     }
@@ -601,7 +604,6 @@
             if (markerOrigen) mapa.removeLayer(markerOrigen);
             markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
             
-            // Detecta automáticamente el barrio con alta precisión
             barrioOrigenDetectado = await obtenerBarrioInteligente(lat, lng);
             document.getElementById('origenDisplay').value = `Barrio: ${barrioOrigenDetectado}`;
             
@@ -642,7 +644,7 @@
                 if (data.code === 'Ok' && data.routes.length > 0) {
                     if (rutaTrazada) mapa.removeLayer(rutaTrazada);
                     
-                    rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 5, opacity: 0.85 }).addTo(mapa);
+                    rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.85 }).addTo(mapa);
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
                     let subTotal = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
@@ -660,7 +662,7 @@
                     document.getElementById('bottomPanel').classList.add('con-ruta');
                     
                     if (!puntoOrigenPersonalizado) {
-                        mapa.fitBounds(rutaTrazada.getBounds(), { padding: [40, 40], maxZoom: 16.5 });
+                        mapa.fitBounds(rutaTrazada.getBounds(), { padding: [35, 35], maxZoom: 16.5 });
                     }
                 }
             } catch (e) {
@@ -689,7 +691,7 @@
                     document.getElementById('sugerencias').innerHTML = datos.map(lugar => `
                         <div class="sugerencia-item" onclick="seleccionarDestino('${lugar.display_name.replace(/'/g, "")}', ${lugar.lat}, ${lugar.lon})">
                             <strong>🎯 ${lugar.display_name.split(',')[0]}</strong>
-                            <div style="font-size:0.75rem; color:#666;">${lugar.display_name.split(',').slice(1,3).join(',')}</div>
+                            <div style="font-size:0.7rem; color:#666;">${lugar.display_name.split(',').slice(1,3).join(',')}</div>
                         </div>`).join('');
                     if (datos.length > 0) document.getElementById('sugerencias').classList.add('activo');
                 } catch (e) {}
@@ -730,7 +732,7 @@
                         tipo_vehiculo: tipoVehiculoSeleccionado,
                         origen_lat: origenCoords.lat,
                         origen_lng: origenCoords.lng,
-                        origen_barrio: barrioOrigenDetectado, // <--- Aquí se guarda perfectamente el barrio detectado (ej. Santa María)
+                        origen_barrio: barrioOrigenDetectado,
                         destino_lat: destinoCoords.lat,
                         destino_lng: destinoCoords.lng,
                         precio: precioCalculado,
