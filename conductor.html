@@ -97,13 +97,11 @@
         .btn-iniciar { background: #8b5cf6; }
         .btn-finalizar { background: #e11d48; }
 
-        /* Ícono del auto con transición suave para la rotación del GPS */
         .chofer-auto-icon {
             background: #1e293b; width: 38px !important; height: 38px !important;
             border: 3px solid #38bdf8; border-radius: 50%; display: flex;
             align-items: center; justify-content: center; font-size: 1.1rem;
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
-            transition: transform 0.3s ease;
         }
 
         .pasajero-origen-icon { background: #10b981; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
@@ -263,13 +261,15 @@
         let ultimoViajeMonto = parseFloat(localStorage.getItem('chofer_ultimo_monto') || '0');
         let cantViajesCount = parseInt(localStorage.getItem('chofer_cant_viajes') || '0');
 
+        // FUNCIÓN DE RESETEO DIARIO AUTOMÁTICO (Cada 24 horas / cambio de día)
         function verificarReseteoDiario() {
-            const hoy = new Date().toLocaleDateString();
+            const hoy = new Date().toLocaleDateString(); // Obtiene la fecha actual (ej: "30/8/2026")
             const ultimaFecha = localStorage.getItem('chofer_fecha_actual');
 
             if (ultimaFecha !== hoy) {
                 totalDia = 0;
                 cantViajesCount = 0;
+                
                 localStorage.setItem('chofer_total_dia', '0');
                 localStorage.setItem('chofer_cant_viajes', '0');
                 localStorage.setItem('chofer_fecha_actual', hoy);
@@ -324,9 +324,15 @@
                     let height = img.height;
 
                     if (width > height) {
-                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
                     } else {
-                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
                     }
 
                     canvas.width = width;
@@ -437,22 +443,9 @@
                 idRastreadorGps = navigator.geolocation.watchPosition(async (pos) => {
                     const nuevaLat = pos.coords.latitude;
                     const nuevaLng = pos.coords.longitude;
-                    const rumbo = pos.coords.heading; // Rumbo / Ángulo de orientación provisto por el GPS
-                    
                     choferCoords = { lat: nuevaLat, lng: nuevaLng };
                     
-                    if (markerChofer) {
-                        markerChofer.setLatLng([nuevaLat, nuevaLng]);
-
-                        // ROTACIÓN INTELIGENTE DEL ÍCONO DEL AUTO SEGÚN EL GPS
-                        if (rumbo !== null && !isNaN(rumbo)) {
-                            const elementoIcono = markerChofer.getElement();
-                            if (elementoIcono) {
-                                const iconoInterno = elementoIcono.querySelector('div') || elementoIcono;
-                                iconoInterno.style.transform = `rotate(${rumbo}deg)`;
-                            }
-                        }
-                    }
+                    if (markerChofer) markerChofer.setLatLng([nuevaLat, nuevaLng]);
 
                     if (autocentrarMapa) {
                         let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
@@ -747,7 +740,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             verificarRegistroChofer();
-            verificarReseteoDiario();
+            verificarReseteoDiario(); // <--- Valida y limpia contadores diarios automáticamente al iniciar
             actualizarUIEstadisticas();
             initMapa(); escucharNuevosViajes(); solicitarWakeLock(); iniciarRastreoGpsContinuo(); 
             setTimeout(async () => { await verificarViajeActivoConductor(); }, 1000);
