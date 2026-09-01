@@ -299,6 +299,7 @@
         let tipoVehiculoSeleccionado = 'auto';
         let mapa = null, markerOrigen = null, markerDestino = null, markerConductor = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
+        let barrioOrigenDetectado = "Zona general";
         let intervaloActualizacionRuta = null;
 
         function seleccionarVehiculo(tipo) {
@@ -325,6 +326,27 @@
                 enunciado.pitch = 1.0;
                 window.speechSynthesis.speak(enunciado);
             }
+        }
+
+        async function obtenerBarrioInteligente(lat, lng) {
+            try {
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (data && data.address) {
+                    const barrio = data.address.neighbourhood || 
+                                   data.address.suburb || 
+                                   data.address.city_district || 
+                                   data.address.residential || 
+                                   data.address.town || 
+                                   "Zona general";
+                    return barrio;
+                }
+            } catch (e) {
+                console.error("Error obteniendo el barrio:", e);
+            }
+            return "Zona general";
         }
 
         async function cargarTarifasDesdeSupabase() {
@@ -389,7 +411,6 @@
                     }
                 }
 
-                // Ajustado a exactamente 3 segundos (3000ms) para que no se sienta pesado ni trabado
                 if (pasajeroNombre && pasajeroTelefono && pasajeroBase64Foto) {
                     document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
                     await verificarViajeActivoPasajero();
@@ -474,7 +495,7 @@
 
                 markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
                 markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
-                document.getElementById('origenDisplay').value = "Ubicación inicial";
+                document.getElementById('origenDisplay').value = viaje.origen_barrio ? `Barrio: ${viaje.origen_barrio}` : "Ubicación inicial";
                 document.getElementById('destino').value = "Destino seleccionado";
 
                 await recalcularRutaYPrecio();
@@ -575,11 +596,15 @@
             recalcularRutaYPrecio();
         }
 
-        function marcarOrigen(lat, lng, label) {
+        async function marcarOrigen(lat, lng, label) {
             origenCoords = { lat, lng }; 
             if (markerOrigen) mapa.removeLayer(markerOrigen);
             markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
-            document.getElementById('origenDisplay').value = label || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+            
+            // Detecta automáticamente el barrio con alta precisión
+            barrioOrigenDetectado = await obtenerBarrioInteligente(lat, lng);
+            document.getElementById('origenDisplay').value = `Barrio: ${barrioOrigenDetectado}`;
+            
             recalcularRutaYPrecio();
         }
 
@@ -705,6 +730,7 @@
                         tipo_vehiculo: tipoVehiculoSeleccionado,
                         origen_lat: origenCoords.lat,
                         origen_lng: origenCoords.lng,
+                        origen_barrio: barrioOrigenDetectado, // <--- Aquí se guarda perfectamente el barrio detectado (ej. Santa María)
                         destino_lat: destinoCoords.lat,
                         destino_lng: destinoCoords.lng,
                         precio: precioCalculado,
