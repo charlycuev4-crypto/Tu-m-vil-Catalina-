@@ -109,7 +109,7 @@
                 <span>👥 Pasajeros Registrados</span>
                 <button class="close-modal" onclick="cerrarModalPasajeros()">✕</button>
             </h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Carpeta de usuarios y su historial de viajes.</p>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Carpeta de usuarios y su historial de viajes sincronizados.</p>
             <div id="listaPasajerosContainer">
                 <p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando pasajeros...</p>
             </div>
@@ -399,7 +399,7 @@
         }
         function cerrarPerfilChofer() { document.getElementById('modalPerfilChofer').classList.add('hidden'); }
 
-        // --- GESTIÓN DE PASAJEROS SEGURA (CON DIAGNÓSTICO EN CONSOLA) ---
+        // --- GESTIÓN DE PASAJEROS SINCRONIZADA CON PERFILES Y VIAJES ---
         async function abrirModalPasajeros() {
             document.getElementById('modalPasajeros').classList.remove('hidden');
             const contenedor = document.getElementById('listaPasajerosContainer');
@@ -408,50 +408,42 @@
             let listaTotal = [];
 
             try {
-                // Consulta 1: Tabla pasajeros
-                const resPasajeros = await supabaseClient.from('pasajeros').select('*');
-                if (resPasajeros.error) {
-                    console.warn("Aviso en tabla pasajeros:", resPasajeros.error.message);
-                } else if (resPasajeros.data) {
-                    listaTotal = listaTotal.concat(resPasajeros.data);
+                // Consultar perfiles registrados desde la nueva tabla 'perfiles_usuarios'
+                const resPerfiles = await supabaseClient.from('perfiles_usuarios').select('*');
+                if (resPerfiles.data) {
+                    listaTotal = listaTotal.concat(resPerfiles.data);
                 }
             } catch (err1) {
-                console.error("Excepción al consultar 'pasajeros':", err1);
+                console.error("Error al consultar perfiles:", err1);
             }
 
             try {
-                // Consulta 2: Tabla perfiles_usuarios
-                const resPerfiles = await supabaseClient.from('perfiles_usuarios').select('*');
-                if (resPerfiles.error) {
-                    console.warn("Aviso en tabla perfiles_usuarios:", resPerfiles.error.message);
-                } else if (resPerfiles.data) {
-                    listaTotal = listaTotal.concat(resPerfiles.data);
+                // Como respaldo, consultar también la tabla tradicional 'pasajeros' si existiera
+                const resPasajeros = await supabaseClient.from('pasajeros').select('*');
+                if (resPasajeros.data) {
+                    listaTotal = listaTotal.concat(resPasajeros.data);
                 }
-            } catch (err2) {
-                console.error("Excepción al consultar 'perfiles_usuarios':", err2);
-            }
+            } catch (err2) {}
 
-            console.log("Total de registros combinados obtenidos:", listaTotal);
-
-            // Filtrar duplicados si los hubiera
-            let pasajeros = listaTotal.filter((p, index, self) => 
-                index === self.findIndex((t) => (t.nombre === p.nombre || t.telefono === p.telefono))
+            // Filtrar y unificar pasajeros únicos por número de teléfono o nombre
+            let pasajerosUnicos = listaTotal.filter((p, index, self) => 
+                index === self.findIndex((t) => (t.telefono && t.telefono === p.telefono) || (t.nombre && t.nombre === p.nombre))
             );
 
-            if (!pasajeros || pasajeros.length === 0) {
+            if (!pasajerosUnicos || pasajerosUnicos.length === 0) {
                 contenedor.innerHTML = `
                     <div style="text-align: center; padding: 15px;">
-                        <p style="color: #f59e0b; font-size: 0.85rem; margin-bottom: 8px;">No se encontraron registros o las tablas están vacías/protegidas.</p>
-                        <p style="color: #94a3b8; font-size: 0.75rem;">(Revisa la consola del navegador para ver detalles de Supabase)</p>
+                        <p style="color: #f59e0b; font-size: 0.85rem; margin-bottom: 8px;">No hay pasajeros registrados en la base de datos todavía.</p>
+                        <p style="color: #94a3b8; font-size: 0.75rem;">Apenas un pasajero guarde sus datos en la app, aparecerá aquí.</p>
                     </div>`;
                 return;
             }
 
             let html = '';
-            pasajeros.forEach(p => {
-                let fotoPasajero = p.foto_url || p.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
+            pasajerosUnicos.forEach(p => {
+                let fotoPasajero = p.foto || p.foto_url || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
                 let telefonoPasajero = p.telefono || 'Sin teléfono';
-                let nombrePasajero = p.nombre || 'Pasajero sin nombre';
+                let nombrePasajero = p.nombre || 'Pasajero';
 
                 html += `
                     <div class="driver-card" onclick='abrirPerfilPasajero(${JSON.stringify(p)})'>
@@ -472,7 +464,7 @@
         async function abrirPerfilPasajero(pasajero) {
             document.getElementById('modalPerfilPasajero').classList.remove('hidden');
             
-            let fotoPasajero = pasajero.foto_url || pasajero.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
+            let fotoPasajero = pasajero.foto || pasajero.foto_url || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
             let nombrePasajero = pasajero.nombre || 'Pasajero';
             let telefonoPasajero = pasajero.telefono || 'Sin teléfono';
 
@@ -505,12 +497,15 @@
             `;
 
             try {
-                const { data: viajes, error } = await supabaseClient
-                    .from('viajes')
-                    .select('*')
-                    .eq('pasajero_nombre', nombrePasajero)
-                    .order('created_at', { ascending: false });
+                // Consultar los viajes asociados ya sea por nombre o por número de teléfono
+                let queryViajes = supabaseClient.from('viajes').select('*');
+                if (telefonoPasajero && telefonoPasajero !== 'Sin teléfono') {
+                    queryViajes = queryViajes.or(`pasajero_telefono.eq.${telefonoPasajero},pasajero_nombre.eq.${nombrePasajero}`);
+                } else {
+                    queryViajes = queryViajes.eq('pasajero_nombre', nombrePasajero);
+                }
 
+                const { data: viajes, error } = await queryViajes.order('created_at', { ascending: false });
                 if (error) throw error;
 
                 const historialContainer = document.getElementById('listaHistorialPasajeroContainer');
