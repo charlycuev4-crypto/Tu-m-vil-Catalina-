@@ -399,7 +399,7 @@
         }
         function cerrarPerfilChofer() { document.getElementById('modalPerfilChofer').classList.add('hidden'); }
 
-        // --- GESTIÓN DE PASAJEROS SINCRONIZADA CON PERFILES Y VIAJES ---
+        // --- GESTIÓN DE PASAJEROS SINCRONIZADA CON PERFILES, PASAJEROS Y VIAJES ---
         async function abrirModalPasajeros() {
             document.getElementById('modalPasajeros').classList.remove('hidden');
             const contenedor = document.getElementById('listaPasajerosContainer');
@@ -408,33 +408,34 @@
             let listaTotal = [];
 
             try {
-                // Consultar perfiles registrados desde la nueva tabla 'perfiles_usuarios'
                 const resPerfiles = await supabaseClient.from('perfiles_usuarios').select('*');
-                if (resPerfiles.data) {
+                if (resPerfiles.data && resPerfiles.data.length > 0) {
                     listaTotal = listaTotal.concat(resPerfiles.data);
                 }
             } catch (err1) {
-                console.error("Error al consultar perfiles:", err1);
+                console.log("Aviso perfiles_usuarios:", err1.message);
             }
 
             try {
-                // Como respaldo, consultar también la tabla tradicional 'pasajeros' si existiera
                 const resPasajeros = await supabaseClient.from('pasajeros').select('*');
-                if (resPasajeros.data) {
+                if (resPasajeros.data && resPasajeros.data.length > 0) {
                     listaTotal = listaTotal.concat(resPasajeros.data);
                 }
-            } catch (err2) {}
+            } catch (err2) {
+                console.log("Aviso pasajeros:", err2.message);
+            }
 
-            // Filtrar y unificar pasajeros únicos por número de teléfono o nombre
             let pasajerosUnicos = listaTotal.filter((p, index, self) => 
-                index === self.findIndex((t) => (t.telefono && t.telefono === p.telefono) || (t.nombre && t.nombre === p.nombre))
+                index === self.findIndex((t) => 
+                    (t.telefono && t.telefono === p.telefono) || (t.nombre && t.nombre === p.nombre)
+                )
             );
 
             if (!pasajerosUnicos || pasajerosUnicos.length === 0) {
                 contenedor.innerHTML = `
                     <div style="text-align: center; padding: 15px;">
-                        <p style="color: #f59e0b; font-size: 0.85rem; margin-bottom: 8px;">No hay pasajeros registrados en la base de datos todavía.</p>
-                        <p style="color: #94a3b8; font-size: 0.75rem;">Apenas un pasajero guarde sus datos en la app, aparecerá aquí.</p>
+                        <p style="color: #f59e0b; font-size: 0.85rem; margin-bottom: 8px;">No se encontraron registros de pasajeros.</p>
+                        <p style="color: #94a3b8; font-size: 0.75rem;">Verifica que la app esté guardando en 'perfiles_usuarios' o 'pasajeros'.</p>
                     </div>`;
                 return;
             }
@@ -497,7 +498,6 @@
             `;
 
             try {
-                // Consultar los viajes asociados ya sea por nombre o por número de teléfono
                 let queryViajes = supabaseClient.from('viajes').select('*');
                 if (telefonoPasajero && telefonoPasajero !== 'Sin teléfono') {
                     queryViajes = queryViajes.or(`pasajero_telefono.eq.${telefonoPasajero},pasajero_nombre.eq.${nombrePasajero}`);
