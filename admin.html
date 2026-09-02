@@ -21,11 +21,11 @@
         .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
         .admin-badge { background: #1e293b; color: #38bdf8; padding: 10px 16px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #334155; pointer-events: auto; display: flex; align-items: center; gap: 8px; }
 
-        .admin-actions { display: flex; gap: 6px; pointer-events: auto; flex-wrap: wrap; justify-content: flex-end; }
-        .admin-btn { background: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 20px; font-weight: 700; font-size: 0.75rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid #60a5fa; display: flex; align-items: center; gap: 4px; }
+        .admin-actions { display: flex; gap: 8px; pointer-events: auto; flex-wrap: wrap; justify-content: flex-end; }
+        .admin-btn { background: #3b82f6; color: white; border: none; padding: 10px 14px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid #60a5fa; display: flex; align-items: center; gap: 4px; }
         .admin-btn.secondary { background: #1e293b; border-color: #334155; color: #f1f5f9; }
         .admin-btn.success { background: #10b981; border-color: #059669; }
-        .admin-btn.purple { background: #8b5cf6; border-color: #a78bfa; }
+        .admin-btn.purple { background: #8b5cf6; border-color: #a78bfa; color: white; }
 
         /* PANEL INFERIOR */
         .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); padding: 16px 20px 24px; height: 35vh; overflow-y: auto; transition: height 0.3s ease; color: #f1f5f9; -webkit-overflow-scrolling: touch; }
@@ -33,7 +33,7 @@
 
         .section-title { font-size: 1rem; font-weight: 800; color: #38bdf8; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         
-        /* TARJETAS LISTADOS */
+        /* LISTA DE TARJETAS */
         .driver-card { background: #0f172a; border: 1px solid #334155; border-radius: 16px; padding: 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; transition: border-color 0.2s; }
         .driver-card:hover { border-color: #38bdf8; }
         .driver-info-box { display: flex; align-items: center; gap: 14px; overflow: hidden; width: 100%; }
@@ -53,7 +53,7 @@
         .modal-card h3 { font-size: 1.1rem; margin-bottom: 14px; color: #38bdf8; display: flex; justify-content: space-between; align-items: center; }
         .close-modal { background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer; padding: 5px; }
 
-        /* PANTALLAS DETALLE */
+        /* PERFILES Y DETALLES */
         .driver-profile-header { display: flex; align-items: center; gap: 16px; background: #0f172a; padding: 16px; border-radius: 16px; border: 1px solid #334155; margin-bottom: 16px; }
         .driver-profile-img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8; }
         
@@ -88,35 +88,32 @@
 </head>
 <body>
 
-    <!-- MODAL LISTADO DE CONDUCTORES -->
     <div id="modalConductores" class="modal-overlay hidden">
         <div class="modal-card">
             <h3>
                 <span>🚗 Conductores Registrados</span>
                 <button class="close-modal" onclick="cerrarModalConductores()">✕</button>
             </h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Toca sobre cualquier chofer para ver su perfil, historial y ubicarlo en el mapa.</p>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Toca sobre cualquier chofer para ver su perfil, historial, ganancias y ubicarlo en el mapa.</p>
             <div id="listaConductoresContainer">
                 <p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando conductores...</p>
             </div>
         </div>
     </div>
 
-    <!-- MODAL LISTADO DE PASAJEROS -->
     <div id="modalPasajeros" class="modal-overlay hidden">
         <div class="modal-card">
             <h3>
                 <span>👥 Pasajeros Registrados</span>
                 <button class="close-modal" onclick="cerrarModalPasajeros()">✕</button>
             </h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Carpeta de usuarios y su historial de reservas/viajes.</p>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Carpeta de usuarios y su historial de viajes.</p>
             <div id="listaPasajerosContainer">
                 <p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando pasajeros...</p>
             </div>
         </div>
     </div>
 
-    <!-- PANTALLA COMPLETA: PERFIL Y DETALLE DE UN CHOFER -->
     <div id="modalPerfilChofer" class="modal-overlay hidden" style="z-index: 10000;">
         <div class="modal-card">
             <h3>
@@ -127,7 +124,6 @@
         </div>
     </div>
 
-    <!-- PANTALLA COMPLETA: CARPETA Y PERFIL DE UN PASAJERO -->
     <div id="modalPerfilPasajero" class="modal-overlay hidden" style="z-index: 10000;">
         <div class="modal-card">
             <h3>
@@ -138,7 +134,6 @@
         </div>
     </div>
 
-    <!-- MODAL: GESTIÓN DE TARIFAS -->
     <div id="modalTarifas" class="modal-overlay hidden">
         <div class="modal-card">
             <h3>
@@ -149,7 +144,7 @@
             <div class="form-group">
                 <label>Nota Informativa</label>
                 <p style="font-size: 0.85rem; color: #e2e8f0; background: #0f172a; padding: 12px; border-radius: 10px; border: 1px solid #334155;">
-                    Las tarifas se gestionan directamente desde tu base de datos en la tabla <b>configuracion_tarifas</b>.
+                    Las tarifas se gestionan directamente desde tu base de datos de Supabase en la tabla <b>configuracion_tarifas</b>.
                 </p>
             </div>
             <button class="btn-guardar" onclick="cerrarModalTarifas()">Entendido</button>
@@ -159,7 +154,7 @@
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
     <div class="header-float">
-        <div class="admin-badge">🛡️ Panel Admin</div>
+        <div class="admin-badge">🛡️ Panel Administrador</div>
         <div class="admin-actions">
             <button class="admin-btn success" onclick="abrirModalTarifas()">💰 Tarifas</button>
             <button class="admin-btn purple" onclick="abrirModalPasajeros()">👥 Pasajeros</button>
@@ -232,8 +227,7 @@
 
         async function cargarViajesActivosMapa() {
             try {
-                // Consulta compatible con reservas_activas o viajes
-                const { data: viajes, error } = await supabaseClient.from('reservas_activas').select('*');
+                const { data: viajes, error } = await supabaseClient.from('viajes').select('*').in('estado', ['pendiente', 'aceptado', 'en_viaje']);
                 if (error) throw error;
 
                 const contenedor = document.getElementById('contenedorViajesEnCurso');
@@ -246,17 +240,13 @@
                 document.getElementById('lblTotalViajesActivos').textContent = `${viajes.length} servicio(s) en curso`;
                 let html = '';
                 viajes.forEach(v => {
-                    let nombrePasajero = v.nombre_pasajero || v.pasajero_nombre || 'Pasajero';
-                    let precioViaje = v.precio || 0;
-                    let estadoViaje = (v.estado || 'activo').toUpperCase();
-
                     html += `
                         <div style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <h4 style="font-size: 0.9rem; color: #fff;">👤 ${nombrePasajero} <span style="color: #10b981; font-weight: 800;">$${precioViaje}</span></h4>
-                                <p style="font-size: 0.75rem; color: #94a3b8;">Estado: <b>${estadoViaje}</b></p>
+                                <h4 style="font-size: 0.9rem; color: #fff;">👤 ${v.pasajero_nombre || 'Pasajero'} <span style="color: #10b981; font-weight: 800;">$${v.precio}</span></h4>
+                                <p style="font-size: 0.75rem; color: #94a3b8;">Estado: <b>${v.estado.toUpperCase()}</b> | Chofer: ${v.conductor_nombre || 'Buscando...'}</p>
                             </div>
-                            <button onclick="cancelarReservaAdmin('${v.id}')" style="background: #7f1d1d; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">Cancelar ❌</button>
+                            <button onclick="cancelarViajeAdmin('${v.id}')" style="background: #7f1d1d; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">Cancelar ❌</button>
                         </div>
                     `;
                 });
@@ -264,18 +254,16 @@
             } catch (e) {}
         }
 
-        // --- GESTIÓN DE TARIFAS ---
         function abrirModalTarifas() { document.getElementById('modalTarifas').classList.remove('hidden'); }
         function cerrarModalTarifas() { document.getElementById('modalTarifas').classList.add('hidden'); }
 
-        // --- GESTIÓN DE CONDUCTORES ---
         async function abrirModalConductores() {
             document.getElementById('modalConductores').classList.remove('hidden');
             const contenedor = document.getElementById('listaConductoresContainer');
             contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando lista de choferes...</p>`;
 
             try {
-                const { data: choferes, error } = await supabaseClient.from('conductores').select('*');
+                const { data: choferes, error } = await supabaseClient.from('conductores').select('*').order('created_at', { ascending: false });
                 if (error) throw error;
 
                 if (!choferes || choferes.length === 0) {
@@ -326,7 +314,8 @@
             let fotoChofer = chofer.selfie_url || chofer.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
             let vehiculoTexto = chofer.marca_modelo || chofer.modelo || 'No especificado';
 
-            document.getElementById('contenidoPerfilChofer').innerHTML = `
+            const contenedorPerfil = document.getElementById('contenidoPerfilChofer');
+            contenedorPerfil.innerHTML = `
                 <div class="driver-profile-header">
                     <img src="${fotoChofer}" class="driver-profile-img" alt="Foto">
                     <div>
@@ -336,41 +325,92 @@
                     </div>
                 </div>
                 <div style="font-size: 0.85rem; color: #cbd5e1; background: #0f172a; padding: 10px 14px; border-radius: 12px; margin-bottom: 14px; border: 1px solid #334155;">
-                    <p>🚗 <b>Vehículo:</b> ${vehiculoTexto}</p>
+                    <p>🚗 <b>Vehículo:</b> ${vehiculoTexto} (${chofer.tipo_vehiculo || 'Auto'})</p>
                     <p style="margin-top: 4px;">🆔 <b>Patente:</b> ${chofer.patente || 'Sin patente'}</p>
                 </div>
                 ${botonUbicacion}
                 ${botonAccion}
+                <h4 style="font-size: 0.95rem; color: #38bdf8; margin-bottom: 8px;">📊 Resumen y Ganancias</h4>
+                <div class="stats-box">
+                    <div class="stat-card">
+                        <span>Total Viajes</span>
+                        <h4 id="lblTotalViajesChofer">-</h4>
+                    </div>
+                    <div class="stat-card">
+                        <span>Ganancias Totales</span>
+                        <h4 id="lblGananciasChofer">$-</h4>
+                    </div>
+                </div>
+                <h4 style="font-size: 0.95rem; color: #38bdf8; margin-bottom: 8px; margin-top: 14px;">📜 Historial de Servicios</h4>
+                <div id="listaHistorialPaginaContainer" style="max-height: 180px; overflow-y: auto;">
+                    <p style="text-align: center; color: #94a3b8; padding: 15px;">Buscando historial...</p>
+                </div>
             `;
+
+            try {
+                const { data: viajes, error } = await supabaseClient.from('viajes').select('*').eq('conductor_nombre', chofer.nombre).order('created_at', { ascending: false });
+                if (error) throw error;
+
+                const historialContainer = document.getElementById('listaHistorialPaginaContainer');
+                if (!viajes || viajes.length === 0) {
+                    historialContainer.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 15px;">Este chofer aún no registra viajes realizados.</p>`;
+                    document.getElementById('lblTotalViajesChofer').textContent = "0";
+                    document.getElementById('lblGananciasChofer').textContent = "$0";
+                    return;
+                }
+
+                let totalViajes = viajes.length;
+                let gananciasTotales = 0;
+                let htmlViajes = '';
+
+                viajes.forEach(v => {
+                    let estadoStr = (v.estado || '').toLowerCase();
+                    let colorEstado = '#38bdf8';
+                    if (estadoStr === 'finalizado' || estadoStr === 'completado') {
+                        colorEstado = '#10b981';
+                        gananciasTotales += Number(v.precio || 0);
+                    } else if (estadoStr === 'cancelado') {
+                        colorEstado = '#ef4444';
+                    }
+                    let fechaFormateada = v.created_at ? new Date(v.created_at).toLocaleString() : 'Fecha no disponible';
+
+                    htmlViajes += `
+                        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 10px; margin-bottom: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                                <span style="font-size: 0.8rem; font-weight: 700; color: #fff;">👤 ${v.pasajero_nombre || 'Pasajero'}</span>
+                                <span style="font-size: 0.85rem; font-weight: 800; color: #10b981;">$${v.precio || 0}</span>
+                            </div>
+                            <p style="font-size: 0.7rem; color: #94a3b8;">Estado: <b style="color: ${colorEstado};">${(v.estado || '').toUpperCase()}</b> | 📅 ${fechaFormateada}</p>
+                        </div>
+                    `;
+                });
+                document.getElementById('lblTotalViajesChofer').textContent = totalViajes;
+                document.getElementById('lblGananciasChofer').textContent = `$${gananciasTotales.toLocaleString()}`;
+                historialContainer.innerHTML = htmlViajes;
+            } catch (e) {
+                document.getElementById('lblTotalViajesChofer').textContent = "0";
+                document.getElementById('lblGananciasChofer').textContent = "$0";
+            }
         }
         function cerrarPerfilChofer() { document.getElementById('modalPerfilChofer').classList.add('hidden'); }
 
-        async function cambiarEstadoChofer(patente, estadoAprobar) {
-            try {
-                const { error } = await supabaseClient.from('conductores').update({ aprobado: estadoAprobar }).eq('patente', patente);
-                if (error) throw error;
-                alert(estadoAprobar ? "¡Conductor aprobado con éxito!" : "Conductor bloqueado.");
-                cerrarPerfilChofer();
-                abrirModalConductores();
-            } catch (e) {
-                alert("Error al actualizar estado: " + e.message);
-            }
-        }
-
-        // --- GESTIÓN DE PASAJEROS (NUEVA SECCIÓN) ---
+        // --- GESTIÓN DE PASAJEROS (UNIFICADA Y CORREGIDA) ---
         async function abrirModalPasajeros() {
             document.getElementById('modalPasajeros').classList.remove('hidden');
             const contenedor = document.getElementById('listaPasajerosContainer');
             contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando lista de pasajeros...</p>`;
 
             try {
-                // Buscamos en la tabla 'pasajeros' o 'perfiles_usuarios' (priorizando pasajeros)
-                let { data: pasajeros, error } = await supabaseClient.from('pasajeros').select('*');
-                if (error || !pasajeros || pasajeros.length === 0) {
-                    // Si la tabla pasajeros está vacía, intentamos con perfiles_usuarios filtrando tipo pasajero
-                    const resPerfiles = await supabaseClient.from('perfiles_usuarios').select('*');
-                    pasajeros = resPerfiles.data || [];
-                }
+                // Consultamos ambas tablas para traer los usuarios reales registrados
+                const resPasajeros = await supabaseClient.from('pasajeros').select('*');
+                const resPerfiles = await supabaseClient.from('perfiles_usuarios').select('*');
+
+                let listaTotal = [...(resPasajeros.data || []), ...(resPerfiles.data || [])];
+                
+                // Filtramos únicos por nombre o teléfono
+                let pasajeros = listaTotal.filter((p, index, self) => 
+                    index === self.findIndex((t) => (t.nombre === p.nombre || t.telefono === p.telefono))
+                );
 
                 if (!pasajeros || pasajeros.length === 0) {
                     contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">No hay pasajeros registrados todavía.</p>`;
@@ -400,7 +440,6 @@
                 contenedor.innerHTML = `<p style="text-align: center; color: #ef4444; padding: 20px;">Error al cargar pasajeros: ${e.message}</p>`;
             }
         }
-
         function cerrarModalPasajeros() { document.getElementById('modalPasajeros').classList.add('hidden'); }
 
         async function abrirPerfilPasajero(pasajero) {
@@ -417,11 +456,10 @@
                     <div>
                         <h4 style="font-size: 1.1rem; color: #fff;">📁 ${nombrePasajero}</h4>
                         <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">📞 ${telefonoPasajero}</p>
-                        <p style="font-size: 0.75rem; color: #38bdf8; margin-top: 2px;">Carpeta de Usuario</p>
                     </div>
                 </div>
 
-                <h4 style="font-size: 0.95rem; color: #38bdf8; margin-bottom: 8px;">📊 Estadísticas de Viajes</h4>
+                <h4 style="font-size: 0.95rem; color: #38bdf8; margin-bottom: 8px;">📊 Resumen de Viajes</h4>
                 <div class="stats-box">
                     <div class="stat-card">
                         <span>Total Viajes</span>
@@ -433,53 +471,55 @@
                     </div>
                 </div>
 
-                <h4 style="font-size: 0.95rem; color: #38bdf8; margin-bottom: 8px; margin-top: 14px;">📜 Historial de Reservas</h4>
+                <h4 style="font-size: 0.95rem; color: #38bdf8; margin-bottom: 8px; margin-top: 14px;">📜 Historial de Viajes</h4>
                 <div id="listaHistorialPasajeroContainer" style="max-height: 180px; overflow-y: auto;">
                     <p style="text-align: center; color: #94a3b8; padding: 15px;">Buscando historial...</p>
                 </div>
             `;
 
-            // Consultar historial en 'reservas_activas' o viajes vinculados a este pasajero
             try {
-                const { data: reservas, error } = await supabaseClient
-                    .from('reservas_activas')
+                // Buscamos viajes vinculados a este pasajero
+                const { data: viajes, error } = await supabaseClient
+                    .from('viajes')
                     .select('*')
-                    .eq('nombre_pasajero', nombrePasajero);
+                    .eq('pasajero_nombre', nombrePasajero)
+                    .order('created_at', { ascending: false });
 
                 if (error) throw error;
 
                 const historialContainer = document.getElementById('listaHistorialPasajeroContainer');
 
-                if (!reservas || reservas.length === 0) {
-                    historialContainer.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 15px;">Este pasajero no registra reservas previas.</p>`;
+                if (!viajes || viajes.length === 0) {
+                    historialContainer.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 15px;">Este pasajero aún no registra viajes realizados.</p>`;
                     document.getElementById('lblTotalViajesPasajero').textContent = "0";
                     document.getElementById('lblGastoPasajero').textContent = "$0";
                     return;
                 }
 
-                let totalReservas = reservas.length;
+                let totalViajes = viajes.length;
                 let gastoTotal = 0;
-                let htmlReservas = '';
+                let htmlViajes = '';
 
-                reservas.forEach(r => {
-                    let precio = Number(r.precio || 0);
+                viajes.forEach(v => {
+                    let precio = Number(v.precio || 0);
                     gastoTotal += precio;
-                    let estado = (r.estado || 'activo').toUpperCase();
+                    let estado = (v.estado || '').toUpperCase();
+                    let fechaFormateada = v.created_at ? new Date(v.created_at).toLocaleString() : 'Fecha no disponible';
 
-                    htmlReservas += `
+                    htmlViajes += `
                         <div style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 10px; margin-bottom: 6px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                                <span style="font-size: 0.8rem; font-weight: 700; color: #fff;">Asiento #${r.asiento_num || 'N/A'}</span>
+                                <span style="font-size: 0.8rem; font-weight: 700; color: #fff;">🚗 Chofer: ${v.conductor_nombre || 'Asignado'}</span>
                                 <span style="font-size: 0.85rem; font-weight: 800; color: #10b981;">$${precio}</span>
                             </div>
-                            <p style="font-size: 0.7rem; color: #94a3b8;">Estado: <b style="color: #38bdf8;">${estado}</b></p>
+                            <p style="font-size: 0.7rem; color: #94a3b8;">Estado: <b style="color: #38bdf8;">${estado}</b> | 📅 ${fechaFormateada}</p>
                         </div>
                     `;
                 });
 
-                document.getElementById('lblTotalViajesPasajero').textContent = totalReservas;
+                document.getElementById('lblTotalViajesPasajero').textContent = totalViajes;
                 document.getElementById('lblGastoPasajero').textContent = `$${gastoTotal.toLocaleString()}`;
-                historialContainer.innerHTML = htmlReservas;
+                historialContainer.innerHTML = htmlViajes;
 
             } catch (e) {
                 document.getElementById('listaHistorialPasajeroContainer').innerHTML = `<p style="text-align: center; color: #ef4444; padding: 15px;">Sin historial registrado.</p>`;
@@ -487,13 +527,24 @@
                 document.getElementById('lblGastoPasajero').textContent = "$0";
             }
         }
-
         function cerrarPerfilPasajero() { document.getElementById('modalPerfilPasajero').classList.add('hidden'); }
 
-        async function cancelarReservaAdmin(idReserva) {
-            if (!confirm("¿Estás seguro de cancelar esta reserva/servicio?")) return;
+        async function cambiarEstadoChofer(patente, estadoAprobar) {
             try {
-                await supabaseClient.from('reservas_activas').delete().eq('id', idReserva);
+                const { error } = await supabaseClient.from('conductores').update({ aprobado: estadoAprobar }).eq('patente', patente);
+                if (error) throw error;
+                alert(estadoAprobar ? "¡Conductor aprobado con éxito!" : "Conductor bloqueado.");
+                cerrarPerfilChofer();
+                abrirModalConductores();
+            } catch (e) {
+                alert("Error al actualizar estado: " + e.message);
+            }
+        }
+
+        async function cancelarViajeAdmin(idViaje) {
+            if (!confirm("¿Estás seguro de cancelar este servicio?")) return;
+            try {
+                await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', idViaje);
                 cargarViajesActivosMapa();
             } catch (e) {}
         }
