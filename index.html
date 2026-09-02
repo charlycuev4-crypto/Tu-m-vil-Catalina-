@@ -457,19 +457,38 @@
             }
         }
 
-        function guardarRegistroPerfil() {
+        async function guardarRegistroPerfil() {
             const nom = document.getElementById('regNombre').value.trim();
             const tel = document.getElementById('regTelefono').value.trim();
             if (!pasajeroBase64Foto) { alert("Por favor toca el círculo para tomarte la selfie de seguridad."); return; }
             if (!nom || !tel) { alert("Por favor completa tu nombre y teléfono."); return; }
             
             try {
+                // 1. Guardar localmente como respaldo
                 localStorage.setItem('perfil_nombre', nom); 
                 localStorage.setItem('perfil_telefono', tel);
                 localStorage.setItem('perfil_foto', pasajeroBase64Foto);
-            } catch(e) {}
+
+                // 2. Registrar o actualizar el perfil en la base de datos de Supabase para el Panel de Administrador
+                const { error } = await supabaseClient
+                    .from('perfiles_usuarios')
+                    .upsert({
+                        telefono: tel,
+                        nombre: nom,
+                        foto: pasajeroBase64Foto,
+                        tipo: 'pasajero',
+                        updated_at: new Date()
+                    }, { onConflict: 'telefono' });
+
+                if (error) {
+                    console.error("Error al sincronizar perfil con Supabase:", error);
+                }
+            } catch(e) {
+                console.error("Excepción al guardar perfil:", e);
+            }
             
-            pasajeroNombre = nom; pasajeroTelefono = tel;
+            pasajeroNombre = nom; 
+            pasajeroTelefono = tel;
             cerrarSplash(); 
             obtenerGPS();
         }
