@@ -7,14 +7,14 @@
   "theme_color": "#38bdf8",
   "icons": [
     {
-      "src": "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg",
+      "src": "./1000052207.png",
       "sizes": "192x192",
-      "type": "image/jpeg"
+      "type": "image/png"
     },
     {
-      "src": "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg",
+      "src": "./1000052207.png",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/png"
     }
   ]
 }
