@@ -7,7 +7,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Tu Móvil - Conductor</title>
 
-    <!-- Enlace al Manifiesto exclusivo del Conductor -->
     <link rel="manifest" href="/manifest-conductor.json">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
@@ -66,9 +65,22 @@
 
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
-        /* PANEL INFERIOR ULTRA COMPACTO EN ESPERA */
-        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); padding: 10px 16px calc(14px + env(safe-area-inset-bottom)); height: 11vh; overflow: hidden; transition: height 0.4s ease; color: #f1f5f9; -webkit-overflow-scrolling: touch; }
-        .bottom-panel.viaje-entrante { height: 46vh; overflow-y: auto; animation: alertaParpadeo 1s infinite alternate; }
+        /* PANEL INFERIOR DINÁMICO: COMPACTO SOLO EN ESPERA */
+        .bottom-panel { 
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
+            background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; 
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5); 
+            padding: 10px 16px calc(14px + env(safe-area-inset-bottom)); 
+            height: 11vh; overflow: hidden; transition: height 0.4s ease; color: #f1f5f9; 
+            -webkit-overflow-scrolling: touch; 
+        }
+        .bottom-panel.viaje-activo { 
+            height: 48vh; overflow-y: auto; 
+        }
+        .bottom-panel.viaje-entrante { 
+            height: 48vh; overflow-y: auto; 
+            animation: alertaParpadeo 1s infinite alternate; 
+        }
         @keyframes alertaParpadeo { from { border-top-color: #334155; background: #1e293b; } to { border-top-color: #ef4444; background: #2d1a22; } }
 
         .panel-handle { width: 40px; height: 4px; background: #475569; border-radius: 2px; margin: 0 auto 6px; }
@@ -96,7 +108,7 @@
         
         .manifesto-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; padding: 6px 10px; border-radius: 0 8px 8px 0; font-size: 0.8rem; color: #e2e8f0; margin-top: 6px; }
 
-        /* BARRA VERDE COMPACTA CON SPINNER */
+        /* BARRA VERDE COMPACTA CON SPINNER (SOLO EN MODO ESPERA) */
         .busqueda-activa-box {
             background: #2cd44a;
             color: #ffffff;
@@ -121,8 +133,6 @@
         @keyframes girarSpinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .btn-action { width: 100%; color: white; border: none; padding: 14px; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        .btn-espera { background: #334155; color: #94a3b8; cursor: not-allowed; }
-        .btn-desconectado { background: #451a03; color: #f59e0b; cursor: not-allowed; }
         .btn-aceptar { background: #10b981; font-size: 1.1rem; }
         .btn-llegué { background: #3b82f6; }
         .btn-iniciar { background: #8b5cf6; }
@@ -576,7 +586,9 @@
 
             document.getElementById('vistaEspera').classList.add('hidden');
             document.getElementById('vistaViaje').classList.remove('hidden');
-            document.getElementById('panelConductor').classList.add('viaje-entrante');
+            const panel = document.getElementById('panelConductor');
+            panel.classList.remove('viaje-activo');
+            panel.classList.add('viaje-entrante');
 
             document.getElementById('contenedorBotonesPendiente').classList.remove('hidden');
             document.getElementById('btnAccionEnCurso').classList.add('hidden');
@@ -636,7 +648,9 @@
             viajeActivo = null; estadoFlujo = 'pendiente';
             document.getElementById('vistaViaje').classList.add('hidden');
             document.getElementById('vistaEspera').classList.remove('hidden');
-            document.getElementById('panelConductor').classList.remove('viaje-entrante');
+            const panel = document.getElementById('panelConductor');
+            panel.classList.remove('viaje-entrante');
+            panel.classList.remove('viaje-activo');
             document.getElementById('linkWhatsapp').classList.add('hidden');
 
             mostrarMsg('Viaje rechazado. Buscando nuevos pasajeros...', 'success');
@@ -656,7 +670,10 @@
                     estadoFlujo = 'aceptado';
                     localStorage.setItem('conductor_viaje_id', viajeActivo.id);
                     localStorage.setItem('conductor_estado_flujo', 'aceptado');
-                    document.getElementById('panelConductor').classList.remove('viaje-entrante');
+                    
+                    const panel = document.getElementById('panelConductor');
+                    panel.classList.remove('viaje-entrante');
+                    panel.classList.add('viaje-activo');
                     
                     document.getElementById('contenedorBotonesPendiente').classList.add('hidden');
                     const btnEnCurso = document.getElementById('btnAccionEnCurso');
@@ -737,7 +754,10 @@
                 
                 document.getElementById('vistaEspera').classList.add('hidden');
                 document.getElementById('vistaViaje').classList.remove('hidden');
-                document.getElementById('panelConductor').classList.remove('viaje-entrante');
+                
+                const panel = document.getElementById('panelConductor');
+                panel.classList.remove('viaje-entrante');
+                panel.classList.add('viaje-activo');
 
                 let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
                 let manifiestoHtml = '';
