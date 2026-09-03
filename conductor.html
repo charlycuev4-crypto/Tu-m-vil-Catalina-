@@ -95,6 +95,31 @@
         
         .manifesto-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; padding: 6px 10px; border-radius: 0 8px 8px 0; font-size: 0.8rem; color: #e2e8f0; margin-top: 6px; }
 
+        /* NUEVA BARRA VERDE COMPACTA CON SPINNER */
+        .busqueda-activa-box {
+            background: #2cd44a;
+            color: #ffffff;
+            padding: 10px 16px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(44, 212, 74, 0.4);
+            margin-top: 6px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .spinner-busqueda {
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #ffffff;
+            border-radius: 50%;
+            animation: girarSpinner 0.8s linear infinite;
+        }
+        @keyframes girarSpinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         .btn-action { width: 100%; color: white; border: none; padding: 14px; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         .btn-espera { background: #334155; color: #94a3b8; cursor: not-allowed; }
         .btn-desconectado { background: #451a03; color: #f59e0b; cursor: not-allowed; }
@@ -205,8 +230,8 @@
         </div>
 
         <div class="header-right-col">
-            <button class="google-maps-btn" id="btnAbrirGoogleMaps" onclick="abrirNavegacionGoogleMaps()">🗺️</button>
-            <button class="gps-btn" id="btnGpsCentro" onclick="alternarSeguimientoManual()">🎯</button>
+            <button class="google-maps-btn" id="btnAbrirGoogleMaps" onclick="abrirNavegacionGoogleMaps()" title="Abrir Google Maps GPS">🗺️</button>
+            <button class="gps-btn" id="btnGpsCentro" onclick="alternarSeguimientoManual()" title="Centrar GPS">🎯</button>
         </div>
     </div>
 
@@ -215,9 +240,12 @@
         <div class="msg" id="msgChofer"></div>
 
         <div id="vistaEspera">
-            <div style="text-align: center; padding: 20px 0;">
-                <p id="lblSubtextoEspera" style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 10px;">Esperando solicitudes a menos de 5 km...</p>
-                <div class="btn-action btn-espera" id="btnEstadoEsperaTexto">Buscando Pasajeros...</div>
+            <div style="text-align: center; padding: 10px 0;">
+                <p id="lblSubtextoEspera" style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 4px;">Esperando solicitudes a menos de 5 km...</p>
+                <div class="busqueda-activa-box">
+                    <div class="spinner-busqueda"></div>
+                    <span id="btnEstadoEsperaTexto">Buscando Pasajeros (5km)...</span>
+                </div>
             </div>
         </div>
 
@@ -479,7 +507,6 @@
             window.open(`https://www.google.com/maps/dir/?api=1&origin=${choferCoords.lat},${choferCoords.lng}&destination=${destLat},${destLng}&travelmode=driving`, '_blank');
         }
 
-        // NUEVA FUNCIÓN: Busca viajes pendientes recientes al abrir la app o reconectarse
         async function buscarViajesPendientesRecientes() {
             if (viajeActivo || !estaConectado) return;
             try {
@@ -493,7 +520,6 @@
 
                 if (!error && viajes && viajes.length > 0) {
                     const viajeReciente = viajes[0];
-                    // Validar si el viaje se creó hace menos de 45 segundos para que no sea un viaje viejo
                     const tiempoCreacion = new Date(viajeReciente.created_at).getTime();
                     const ahora = Date.now();
                     if ((ahora - tiempoCreacion) < 45000) {
@@ -538,13 +564,13 @@
             if (estaConectado) {
                 badge.textContent = "Móvil en Línea 🟢"; badge.className = "status-badge activo";
                 subtexto.textContent = "Esperando solicitudes a menos de 5 km...";
-                btnEspera.textContent = "Buscando Pasajeros..."; btnEspera.className = "btn-action btn-espera";
+                btnEspera.textContent = "Buscando Pasajeros (5km)...";
                 solicitarWakeLock(); iniciarRastreoGpsContinuo(); escucharNuevosViajes();
                 buscarViajesPendientesRecientes();
             } else {
                 badge.textContent = "Fuera de Línea 🔴"; badge.className = "status-badge inactivo";
                 subtexto.textContent = "Estás desconectado. No recibirás alertas.";
-                btnEspera.textContent = "Turno Pausado"; btnEspera.className = "btn-action btn-desconectado";
+                btnEspera.textContent = "Turno Pausado";
                 liberarWakeLock(); detenerRastreoGps(); if(canalSupabase) { supabaseClient.removeChannel(canalSupabase); canalSupabase = null; }
             }
         }
@@ -812,7 +838,7 @@
         document.addEventListener('visibilitychange', async () => {
             if (document.visibilityState === 'visible' && estaConectado) {
                 await solicitarWakeLock();
-                buscarViajesPendientesRecientes(); // También busca si el usuario vuelve a abrir la app desde segundo plano
+                buscarViajesPendientesRecientes();
             }
         });
 
@@ -827,7 +853,7 @@
             
             setTimeout(async () => { 
                 await verificarViajeActivoConductor(); 
-                await buscarViajesPendientesRecientes(); // Consulta inicial por si abrió tarde
+                await buscarViajesPendientesRecientes();
             }, 1000);
         });
     </script>
