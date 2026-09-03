@@ -7,9 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Tu Móvil - Conductor</title>
 
-    <!-- Enlace al Manifiesto exclusivo del Conductor -->
     <link rel="manifest" href="/manifest-conductor.json">
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -66,52 +64,56 @@
 
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
-        /* Panel Inferior: Compacto (globo abajo de todo) cuando busca viajes, expandido cuando hay viaje */
+        /* Panel Inferior: Compacto cuando busca, medida justa automática (sin espacios vacíos) cuando hay viaje */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
             background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; 
             box-shadow: 0 -10px 30px rgba(0,0,0,0.5); 
             padding: 8px 16px calc(12px + env(safe-area-inset-bottom)); 
-            height: 75px; /* Altura de globo compacto para ver el mapa al 99% */
-            overflow: hidden; transition: height 0.4s ease, background 0.4s ease; color: #f1f5f9; 
+            height: 75px; 
+            overflow: hidden; transition: height 0.3s ease, background 0.3s ease; color: #f1f5f9; 
         }
         .bottom-panel.viaje-entrante { 
-            height: 48vh; 
+            height: auto; 
+            max-height: 85vh;
             overflow-y: auto; 
             animation: alertaParpadeo 1s infinite alternate; 
         }
         .bottom-panel.viaje-activo-estado {
-            height: 45vh;
+            height: auto;
+            max-height: 85vh;
             overflow-y: auto;
         }
         @keyframes alertaParpadeo { from { border-top-color: #334155; background: #1e293b; } to { border-top-color: #ef4444; background: #2d1a22; } }
 
         .panel-handle { width: 40px; height: 4px; background: #475569; border-radius: 3px; margin: 0 auto 6px; }
         
-        .viaje-info-box { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-        .viaje-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; }
+        .viaje-info-box { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+        .viaje-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 6px; }
         
         .pasajero-perfil-container { display: flex; align-items: center; gap: 10px; }
-        .pasajero-foto-box { width: 45px; height: 45px; border-radius: 50%; background: #334155; overflow: hidden; border: 2px solid #3b82f6; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .pasajero-foto-box { width: 42px; height: 42px; border-radius: 50%; background: #334155; overflow: hidden; border: 2px solid #3b82f6; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
         .pasajero-foto-box img { width: 100%; height: 100%; object-fit: cover; }
         
-        .viaje-pasajero { font-size: 1rem; font-weight: 700; color: #fff; }
+        .viaje-pasajero { font-size: 0.95rem; font-weight: 700; color: #fff; }
         
         .whatsapp-btn {
-            background: #25d366; color: white; border: none; padding: 4px 10px;
-            border-radius: 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
-            text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 3px;
+            background: #25d366; color: white; border: none; padding: 2px 8px;
+            border-radius: 12px; font-size: 0.7rem; font-weight: 700; cursor: pointer;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;
         }
 
-        .viaje-precio { font-size: 1.2rem; font-weight: 800; color: #10b981; }
+        .viaje-precio { font-size: 1.15rem; font-weight: 800; color: #10b981; }
 
-        .input-group { background: #0f172a; border-radius: 16px; padding: 10px 14px; margin-bottom: 10px; }
-        .input-row { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: #94a3b8; }
+        .input-group { background: #0f172a; border-radius: 14px; padding: 8px 12px; margin-bottom: 8px; }
+        .input-row { display: flex; flex-direction: column; gap: 3px; font-size: 0.8rem; color: #94a3b8; }
         .input-row span { color: #f1f5f9; font-weight: 500; }
         
-        .manifesto-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; padding: 6px 10px; border-radius: 0 8px 8px 0; font-size: 0.8rem; color: #e2e8f0; margin-top: 6px; }
+        .manifesto-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; padding: 4px 8px; border-radius: 0 6px 6px 0; font-size: 0.75rem; color: #e2e8f0; margin-top: 4px; }
 
-        .btn-action { width: 100%; color: white; border: none; padding: 14px; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .btn-action { width: 100%; color: white; border: none; padding: 12px; border-radius: 50px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        
+        /* Ruedita / Radar animado para la búsqueda */
         .btn-espera { 
             background: #059669; 
             color: #ffffff; 
@@ -123,10 +125,22 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
         }
+        .ruedita-radar {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: girarRadar 0.8s linear infinite;
+        }
+        @keyframes girarRadar {
+            to { transform: rotate(360deg); }
+        }
+
         .btn-desconectado { background: #451a03; color: #f59e0b; cursor: not-allowed; padding: 8px 16px; font-size: 0.85rem; border-radius: 20px; }
-        .btn-aceptar { background: #10b981; font-size: 1.1rem; }
+        .btn-aceptar { background: #10b981; font-size: 1.05rem; }
         .btn-llegué { background: #3b82f6; }
         .btn-iniciar { background: #8b5cf6; }
         .btn-finalizar { background: #e11d48; }
@@ -244,8 +258,10 @@
 
         <div id="vistaEspera">
             <div style="text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; padding-top: 2px;">
-                <span style="font-size: 1rem;">🟢</span>
-                <div class="btn-action btn-espera" id="btnEstadoEsperaTexto">Buscando solicitudes (5 km)...</div>
+                <div class="btn-action btn-espera" id="btnEstadoEsperaTexto">
+                    <div class="ruedita-radar"></div>
+                    Buscando solicitudes (5 km)...
+                </div>
             </div>
         </div>
 
@@ -269,7 +285,7 @@
                 </div>
             </div>
 
-            <div id="contenedorBotonesPendiente" style="display: flex; gap: 10px;">
+            <div id="contenedorBotonesPendiente" style="display: flex; gap: 8px;">
                 <button class="btn-action" style="background: #ef4444; flex: 1;" onclick="rechazarViajeEntrante()">Rechazar ❌</button>
                 <button class="btn-action btn-aceptar" style="flex: 2;" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje ✅</button>
             </div>
@@ -562,7 +578,8 @@
 
             if (estaConectado) {
                 badge.textContent = "Móvil en Línea 🟢"; badge.className = "status-badge activo";
-                btnEspera.textContent = "Buscando solicitudes (5 km)..."; btnEspera.className = "btn-action btn-espera";
+                btnEspera.innerHTML = `<div class="ruedita-radar"></div>Buscando solicitudes (5 km)...`; 
+                btnEspera.className = "btn-action btn-espera";
                 solicitarWakeLock(); iniciarRastreoGpsContinuo(); escucharNuevosViajes();
                 buscarViajesPendientesRecientes();
             } else {
@@ -580,7 +597,6 @@
             document.getElementById('vistaEspera').classList.add('hidden');
             document.getElementById('vistaViaje').classList.remove('hidden');
             
-            // Activa la clase para expandir el panel con el parpadeo de alerta
             const panel = document.getElementById('panelConductor');
             panel.classList.remove('viaje-activo-estado');
             panel.classList.add('viaje-entrante');
@@ -605,8 +621,8 @@
             
             document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
                 <span>📍 <b>Recogida:</b> ${barrioPasajero}</span>
-                <span style="font-size:0.75rem; color:#94a3b8; margin-bottom:4px;">${direccionPasajero}</span>
-                <div style="border-top:1px solid #334155; margin-top:4px; padding-top:6px; display:flex; justify-content:space-between;">
+                <span style="font-size:0.75rem; color:#94a3b8; margin-bottom:2px;">${direccionPasajero}</span>
+                <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px; display:flex; justify-content:space-between;">
                     <span>🕒 <b>${minAprox} min</b> (${distanciaViaje} km)</span>
                     <span style="color:#38bdf8;">🚗 <b>${minDestino} min</b> viaje</span>
                 </div>
@@ -644,7 +660,6 @@
             document.getElementById('vistaViaje').classList.add('hidden');
             document.getElementById('vistaEspera').classList.remove('hidden');
             
-            // Vuelve al formato de globo compacto abajo de todo
             const panel = document.getElementById('panelConductor');
             panel.classList.remove('viaje-entrante');
             panel.classList.remove('viaje-activo-estado');
@@ -671,7 +686,6 @@
                     localStorage.setItem('conductor_viaje_id', viajeActivo.id);
                     localStorage.setItem('conductor_estado_flujo', 'aceptado');
                     
-                    // Cambia a estado activo con la medida correcta (no ocupa media pantalla)
                     panel.classList.remove('viaje-entrante');
                     panel.classList.add('viaje-activo-estado');
                     
@@ -714,8 +728,8 @@
 
                 document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
                     <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino}</span>
-                    <div style="border-top:1px solid #334155; margin-top:4px; padding-top:4px;">
-                        <span style="font-size:0.8rem; color:#94a3b8;">Conduciendo hacia el destino a bordo</span>
+                    <div style="border-top:1px solid #334155; margin-top:3px; padding-top:3px;">
+                        <span style="font-size:0.75rem; color:#94a3b8;">Conduciendo hacia el destino a bordo</span>
                     </div>
                     ${manifiestoHtml}
                 `;
