@@ -66,11 +66,12 @@
 
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
-        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); padding: 12px 20px calc(20px + env(safe-area-inset-bottom)); height: 26vh; overflow-y: auto; transition: height 0.4s ease; color: #f1f5f9; -webkit-overflow-scrolling: touch; }
-        .bottom-panel.viaje-entrante { height: 46vh; animation: alertaParpadeo 1s infinite alternate; }
+        /* PANEL INFERIOR ULTRA COMPACTO EN ESPERA */
+        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); padding: 10px 16px calc(14px + env(safe-area-inset-bottom)); height: 11vh; overflow: hidden; transition: height 0.4s ease; color: #f1f5f9; -webkit-overflow-scrolling: touch; }
+        .bottom-panel.viaje-entrante { height: 46vh; overflow-y: auto; animation: alertaParpadeo 1s infinite alternate; }
         @keyframes alertaParpadeo { from { border-top-color: #334155; background: #1e293b; } to { border-top-color: #ef4444; background: #2d1a22; } }
 
-        .panel-handle { width: 40px; height: 5px; background: #475569; border-radius: 3px; margin: 0 auto 10px; }
+        .panel-handle { width: 40px; height: 4px; background: #475569; border-radius: 2px; margin: 0 auto 6px; }
         
         .viaje-info-box { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
         .viaje-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; }
@@ -95,24 +96,23 @@
         
         .manifesto-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; padding: 6px 10px; border-radius: 0 8px 8px 0; font-size: 0.8rem; color: #e2e8f0; margin-top: 6px; }
 
-        /* NUEVA BARRA VERDE COMPACTA CON SPINNER */
+        /* BARRA VERDE COMPACTA CON SPINNER */
         .busqueda-activa-box {
             background: #2cd44a;
             color: #ffffff;
-            padding: 10px 16px;
+            padding: 8px 14px;
             border-radius: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
             box-shadow: 0 4px 15px rgba(44, 212, 74, 0.4);
-            margin-top: 6px;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
         .spinner-busqueda {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             border: 3px solid rgba(255, 255, 255, 0.3);
             border-top: 3px solid #ffffff;
             border-radius: 50%;
@@ -240,12 +240,9 @@
         <div class="msg" id="msgChofer"></div>
 
         <div id="vistaEspera">
-            <div style="text-align: center; padding: 10px 0;">
-                <p id="lblSubtextoEspera" style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 4px;">Esperando solicitudes a menos de 5 km...</p>
-                <div class="busqueda-activa-box">
-                    <div class="spinner-busqueda"></div>
-                    <span id="btnEstadoEsperaTexto">Buscando Pasajeros (5km)...</span>
-                </div>
+            <div class="busqueda-activa-box">
+                <div class="spinner-busqueda"></div>
+                <span id="btnEstadoEsperaTexto">Buscando Pasajeros (5km)...</span>
             </div>
         </div>
 
@@ -558,18 +555,15 @@
             if (viajeActivo) return;
             estaConectado = !estaConectado;
             const badge = document.getElementById('txtEstadoChofer');
-            const subtexto = document.getElementById('lblSubtextoEspera');
             const btnEspera = document.getElementById('btnEstadoEsperaTexto');
 
             if (estaConectado) {
                 badge.textContent = "Móvil en Línea 🟢"; badge.className = "status-badge activo";
-                subtexto.textContent = "Esperando solicitudes a menos de 5 km...";
                 btnEspera.textContent = "Buscando Pasajeros (5km)...";
                 solicitarWakeLock(); iniciarRastreoGpsContinuo(); escucharNuevosViajes();
                 buscarViajesPendientesRecientes();
             } else {
                 badge.textContent = "Fuera de Línea 🔴"; badge.className = "status-badge inactivo";
-                subtexto.textContent = "Estás desconectado. No recibirás alertas.";
                 btnEspera.textContent = "Turno Pausado";
                 liberarWakeLock(); detenerRastreoGps(); if(canalSupabase) { supabaseClient.removeChannel(canalSupabase); canalSupabase = null; }
             }
@@ -743,6 +737,7 @@
                 
                 document.getElementById('vistaEspera').classList.add('hidden');
                 document.getElementById('vistaViaje').classList.remove('hidden');
+                document.getElementById('panelConductor').classList.remove('viaje-entrante');
 
                 let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
                 let manifiestoHtml = '';
