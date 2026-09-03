@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tu Móvil - Conductor</title>
+
+    <!-- Enlace al Manifiesto para la conversión a APK -->
+    <link rel="manifest" href="/manifest.json">
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -87,7 +91,6 @@
         .input-row { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: #94a3b8; }
         .input-row span { color: #f1f5f9; font-weight: 500; }
         
-        /* Estilo para la línea del manifiesto */
         .manifesto-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; padding: 6px 10px; border-radius: 0 8px 8px 0; font-size: 0.8rem; color: #e2e8f0; margin-top: 6px; }
 
         .btn-action { width: 100%; color: white; border: none; padding: 14px; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
@@ -138,7 +141,6 @@
 </head>
 <body onclick="forzarHabilitacionAudio()">
 
-    <!-- MODAL DE CONFIGURACIÓN INICIAL CON COMPRESIÓN DE FOTO -->
     <div id="modalConfigChofer" class="hidden">
         <div class="config-card">
             <h2>🚗 Registro de Conductor</h2>
@@ -233,7 +235,6 @@
                 </div>
                 <div class="input-group">
                     <div class="input-row" id="lblDetallesRutaYBarrio">
-                        <!-- Aquí se inyectan los minutos de búsqueda, destino, distancia y el manifiesto -->
                     </div>
                 </div>
             </div>
@@ -535,8 +536,6 @@
             let minAprox = viaje.tiempo_aproximacion_min || 3;
             let minDestino = viaje.tiempo_destino_min || 10;
             let distanciaViaje = viaje.distancia_km || "0";
-            
-            // Línea del manifiesto / comentarios adicionales del viaje
             let manifiestoTexto = viaje.manifiesto || viaje.comentarios || viaje.nota || "Sin especificaciones adicionales de carga";
 
             document.getElementById('lblPasajero').innerHTML = `${viaje.pasajero_nombre || "Pasajero"}`;
