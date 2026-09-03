@@ -2,7 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#11121a">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Tu Móvil - Conductor</title>
 
     <!-- Enlace al Manifiesto exclusivo del Conductor -->
@@ -16,10 +18,10 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #11121a; height: 100vh; overflow: hidden; color: #ffffff;
+            background: #11121a; height: 100vh; height: 100dvh; overflow: hidden; color: #ffffff;
         }
 
-        #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
+        #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; height: 100dvh; z-index: 1; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
         .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
@@ -64,7 +66,7 @@
 
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
-        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); padding: 12px 20px 20px; height: 26vh; overflow-y: auto; transition: height 0.4s ease; color: #f1f5f9; -webkit-overflow-scrolling: touch; }
+        .bottom-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); padding: 12px 20px calc(20px + env(safe-area-inset-bottom)); height: 26vh; overflow-y: auto; transition: height 0.4s ease; color: #f1f5f9; -webkit-overflow-scrolling: touch; }
         .bottom-panel.viaje-entrante { height: 46vh; animation: alertaParpadeo 1s infinite alternate; }
         @keyframes alertaParpadeo { from { border-top-color: #334155; background: #1e293b; } to { border-top-color: #ef4444; background: #2d1a22; } }
 
@@ -536,7 +538,12 @@
             let minAprox = viaje.tiempo_aproximacion_min || 3;
             let minDestino = viaje.tiempo_destino_min || 10;
             let distanciaViaje = viaje.distancia_km || "0";
-            let manifiestoTexto = viaje.manifiesto || viaje.comentarios || viaje.nota || "Sin especificaciones adicionales de carga";
+            
+            let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
+            let manifiestoHtml = '';
+            if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
+                manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
+            }
 
             document.getElementById('lblPasajero').innerHTML = `${viaje.pasajero_nombre || "Pasajero"}`;
             document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
@@ -548,7 +555,7 @@
                     <span>🕒 <b>${minAprox} min</b> (${distanciaViaje} km)</span>
                     <span style="color:#38bdf8;">🚗 <b>${minDestino} min</b> viaje</span>
                 </div>
-                <div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${manifiestoTexto}</div>
+                ${manifiestoHtml}
             `;
 
             if (viaje.pasajero_foto) document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
@@ -634,14 +641,18 @@
                 await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
                 
                 let barrioDestino = viajeActivo.destino_barrio || "Destino final";
-                let manifiestoTexto = viajeActivo.manifiesto || viajeActivo.comentarios || viajeActivo.nota || "Sin especificaciones";
+                let textoManifiesto = viajeActivo.manifiesto || viajeActivo.comentarios || viajeActivo.nota || "";
+                let manifiestoHtml = '';
+                if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
+                    manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
+                }
 
                 document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
                     <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino}</span>
                     <div style="border-top:1px solid #334155; margin-top:4px; padding-top:4px;">
                         <span style="font-size:0.8rem; color:#94a3b8;">Conduciendo hacia el destino a bordo</span>
                     </div>
-                    <div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${manifiestoTexto}</div>
+                    ${manifiestoHtml}
                 `;
 
                 trazarRutaCalles(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
@@ -679,7 +690,11 @@
                 document.getElementById('vistaEspera').classList.add('hidden');
                 document.getElementById('vistaViaje').classList.remove('hidden');
 
-                let manifiestoTexto = viaje.manifiesto || viaje.comentarios || viaje.nota || "Sin especificaciones";
+                let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
+                let manifiestoHtml = '';
+                if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
+                    manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
+                }
 
                 document.getElementById('lblPasajero').innerHTML = `${viaje.pasajero_nombre || "Pasajero"}`;
                 document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
@@ -704,21 +719,21 @@
                     btnEnCurso.className = "btn-action btn-llegué"; btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
                     document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
                         <span>📍 <b>Recogida:</b> ${viaje.origen_barrio || "Zona general"}</span>
-                        <div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${manifiestoTexto}</div>
+                        ${manifiestoHtml}
                     `;
                     trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
                 } else if (estadoFlujo === 'en_puerta') {
                     btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Iniciar Viaje al Destino 🧭";
                     document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
                         <span>📍 <b>En puerta del pasajero</b></span>
-                        <div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${manifiestoTexto}</div>
+                        ${manifiestoHtml}
                     `;
                     trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
                 } else if (estadoFlujo === 'en_viaje') {
                     btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
                     document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
                         <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${viaje.destino_barrio || "Zona general"}</span>
-                        <div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${manifiestoTexto}</div>
+                        ${manifiestoHtml}
                     `;
                     trazarRutaCalles(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
                 }
