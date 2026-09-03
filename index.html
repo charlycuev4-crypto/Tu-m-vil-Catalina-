@@ -2,180 +2,783 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TuMovil - Panel de Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tu Móvil - Pasajero</title>
+
+    <!-- ENLACE AL MANIFEST Y CONFIGURACIÓN PWA PARA APK -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#38bdf8">
+    <meta name="theme-color" content="#2cd44a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Supabase & Leaflet -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-color: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #38bdf8;
-            --accent-hover: #0ea5e9;
-            --danger: #ef4444;
-            --success: #22c55e;
-            --border: #334155;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f4f4f6; height: 100vh; overflow: hidden; color: #1a1a1a;
         }
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+
+        #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
+        #mapaLeaflet { width: 100%; height: 100%; }
+
+        /* SPLASH SCREEN LIMPIO: SIN FILTRO OSCURO Y CON IMAGEN NÍTIDA */
+        #splashScreen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #0f172a url('https://files.catbox.moe/z55y2x.jpg') no-repeat center center;
+            background-size: cover;
+            color: white; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            padding: 40px 20px; text-align: center; transition: opacity 0.5s ease;
         }
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            padding: 1rem;
-            max-width: 600px;
-            margin: 0 auto;
-            min-height: 100vh;
+
+        #splashScreen > * {
+            position: relative;
+            z-index: 2;
         }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid var(--border);
+
+        .splash-logo-box {
+            width: 100px; height: 80px; background: #1e293b; border-radius: 16px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            margin-bottom: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); border: 1px solid #334155;
         }
-        h1 {
-            font-size: 1.5rem;
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+        .splash-logo-box img { width: 60px; height: 45px; border-radius: 6px; margin-bottom: 2px; object-fit: cover; }
+        .splash-logo-box span { font-size: 0.7rem; font-weight: 700; color: #2cd44a; letter-spacing: 1px; }
+        
+        .splash-form { width: 100%; max-width: 300px; display: none; flex-direction: column; gap: 10px; margin-top: 5px; }
+        .splash-form input {
+            background: #1e293b; border: 1px solid #334155; color: white; padding: 12px;
+            border-radius: 14px; outline: none; font-size: 0.95rem; text-align: center;
         }
-        .status-badge {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.6rem;
-            border-radius: 9999px;
-            background-color: rgba(34, 197, 94, 0.2);
-            color: var(--success);
-            font-weight: 600;
+
+        .selfie-guia-container {
+            width: 110px; height: 110px; border-radius: 50%; background: #1e293b;
+            border: 3px dashed #2cd44a; margin: 0 auto 5px; display: flex; align-items: center; 
+            justify-content: center; overflow: hidden; position: relative; cursor: pointer;
+            box-shadow: 0 0 15px rgba(44,212,74,0.3);
         }
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 0.75rem;
-            padding: 1.25rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        .selfie-guia-container img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .silueta-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.35); pointer-events: none; transition: opacity 0.3s;
         }
-        .card h2 {
-            font-size: 1.1rem;
-            margin-bottom: 0.75rem;
-            color: var(--text-color);
+        .silueta-overlay svg { width: 50px; height: 50px; fill: rgba(255,255,255,0.7); margin-bottom: 2px; }
+        .silueta-overlay span { font-size: 0.65rem; color: #fff; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+
+        .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .header-row { display: flex; justify-content: space-between; width: 100%; }
+        .right-buttons { display: flex; flex-direction: column; gap: 10px; }
+
+        .back-btn, .gps-btn, .manual-btn { width: 44px; height: 44px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border: none; box-shadow: 0 3px 10px rgba(0,0,0,0.2); pointer-events: auto; }
+        .gps-btn.buscando { background: #e2e8f0; animation: pulse 1s infinite; }
+        .manual-btn.activo { background: #2cd44a; color: white; animation: pulse 1s infinite; }
+        @keyframes pulse { 50% { transform: scale(1.1); } }
+
+        .mapa-hint { position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(44, 212, 74, 0.95); color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-align: center; width: 85%; max-width: 320px; }
+        .mapa-hint.visible { display: block; }
+
+        /* PANEL INFERIOR MÁS COMPACTO Y DINÁMICO CON SCROLL FLUIDO */
+        .bottom-panel { 
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
+            background: #E8E2D5; 
+            border-radius: 28px 28px 0 0; 
+            box-shadow: 0 -8px 25px rgba(0,0,0,0.2); 
+            padding: 10px 16px 18px; 
+            height: 23vh; 
+            max-height: 75vh;
+            overflow-y: auto; 
+            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            -webkit-overflow-scrolling: touch; 
+            border-top: 2px solid #2cd44a; 
         }
-        .grid-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
+        .bottom-panel:focus-within, .bottom-panel:active { height: 52vh; }
+        .bottom-panel.con-ruta { height: 32vh; }
+
+        .panel-handle { width: 38px; height: 4px; background: #b5ac9b; border-radius: 2px; margin: 0 auto 8px; cursor: pointer; }
+
+        .vehicle-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+        .vehicle-option {
+            background: #F4EFE6; border: 1.2px solid #d4cbb8; border-radius: 12px; padding: 6px;
+            text-align: center; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
         }
-        .stat-box {
-            background: rgba(15, 23, 42, 0.5);
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            border: 1px solid var(--border);
+        .vehicle-option.selected { border-color: #2cd44a; background: #dcfce7; box-shadow: 0 0 8px rgba(44,212,74,0.3); }
+        .vehicle-option span { font-size: 0.8rem; font-weight: 700; color: #1a1a1a; }
+
+        .driver-card-preview { 
+            display: flex; align-items: center; gap: 10px; margin-bottom: 8px; 
+            background: #F4EFE6; padding: 8px 10px; border-radius: 14px; 
+            border: 1.2px solid #2cd44a; 
+            box-shadow: 0 0 10px rgba(44, 212, 74, 0.2), 0 2px 8px rgba(0,0,0,0.03);
         }
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
+        .driver-img-box { width: 65px; height: 50px; border-radius: 10px; background: #e8e2d5; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; border: 1px solid #2cd44a; }
+        .driver-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .driver-info-box h3 { font-size: 0.95rem; font-weight: 700; color: #111; }
+        .driver-info-box p { font-size: 0.75rem; color: #444; }
+
+        .input-group { 
+            background: #F4EFE6; 
+            border-radius: 14px; 
+            padding: 2px 12px; 
+            margin-bottom: 8px; 
+            border: 1.2px solid #2cd44a; 
+            box-shadow: 0 0 10px rgba(44, 212, 74, 0.15);
         }
-        .stat-value {
-            font-size: 1.1rem;
-            font-weight: bold;
-            margin-top: 0.2rem;
+        .input-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; }
+        .input-row:not(:last-child) { border-bottom: 1px solid #d4cbb8; } 
+        .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .dot-green { background: #2cd44a; box-shadow: 0 0 5px rgba(44,212,74,0.6); }
+        .dot-red { background: #ef4444; }
+        .input-row input { flex: 1; border: none; font-size: 0.9rem; color: #1a1a1a; background: transparent; outline: none; }
+
+        .sugerencias { background: #F4EFE6; border-radius: 12px; max-height: 110px; overflow-y: auto; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 8px; border: 1.2px solid #2cd44a; }
+        .sugerencias.activo { display: block; }
+        .sugerencia-item { padding: 8px 10px; border-bottom: 1px solid #e2dac9; cursor: pointer; font-size: 0.8rem; color: #222; }
+
+        .price-box-live { 
+            background: #dcfce7; color: #166534; padding: 8px; border-radius: 12px; 
+            text-align: center; font-weight: 700; margin-bottom: 8px; display: none; 
+            font-size: 0.95rem; border: 1.2px solid #2cd44a; 
+            box-shadow: 0 0 10px rgba(44, 212, 74, 0.2);
         }
-        .btn {
-            display: inline-block;
-            width: 100%;
-            background-color: var(--accent);
-            color: var(--bg-color);
-            font-weight: 600;
-            padding: 0.75rem;
-            border: none;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            text-align: center;
-            font-size: 0.95rem;
-            transition: background-color 0.2s;
-            margin-top: 0.5rem;
+        .badge-nocturno { background: #fef2f2; color: #dc2626; padding: 3px 6px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; display: inline-block; margin-top: 3px; border: 1px solid #fecaca; }
+        
+        .btn-green-action { 
+            width: 100%; background: #2cd44a; color: white; border: none; padding: 12px; 
+            border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; 
+            box-shadow: 0 3px 12px rgba(44,212,74,0.35); text-align: center; margin-top: 2px; 
+            transition: background 0.2s; border: 1px solid #22b03b;
         }
-        .btn:hover {
-            background-color: var(--accent-hover);
+        .btn-green-action:hover { background: #25b83f; }
+
+        .pasajero-ping-icon { 
+            background: #2cd44a; width: 16px !important; height: 16px !important; 
+            border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); 
         }
-        ul {
-            list-style: none;
+        .destino-ping-icon { 
+            background: #ef4444; width: 16px !important; height: 16px !important; 
+            border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); 
         }
-        li.log-item {
-            font-size: 0.85rem;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            color: var(--text-muted);
+        .auto-conductor-ping {
+            font-size: 32px !important; width: 32px !important; height: 32px !important;
+            display: flex; align-items: center; justify-content: center;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
         }
-        li.log-item span {
-            color: var(--text-color);
-        }
+
+        .hidden { display: none !important; }
+        .msg { padding: 8px; border-radius: 8px; margin-bottom: 8px; font-size: 0.75rem; text-align: center; display: none; font-weight: 600; }
+        .msg.show { display: block; }
+        .msg-error { background: #fee2e2; color: #991b1b; }
+        .msg-success { background: #f0fdf4; color: #166534; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>🚗 TuMovil</h1>
-        <div class="status-badge">En línea</div>
-    </header>
-
-    <main>
-        <div class="card">
-            <h2>Panel de Control Familiar</h2>
-            <div class="grid-stats">
-                <div class="stat-box">
-                    <div class="stat-label">Estado Motor</div>
-                    <div class="stat-value" id="motor-status" style="color: var(--success);">Apagado</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">Velocidad</div>
-                    <div class="stat-value">0 km/h</div>
+    <div id="splashScreen">
+        <div class="splash-logo-box" style="display: none;">
+            <img src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Tu Móvil">
+            <span>TU MÓVIL</span>
+        </div>
+        <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 4px; font-size: 1.3rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Cargando...</h2>
+        <p id="splashSub" style="color: #cbd5e1; font-size: 0.85rem; margin-bottom: 25px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Identificación obligatoria para tu viaje</p>
+        
+        <div class="splash-form" id="splashForm">
+            <div class="selfie-guia-container" onclick="document.getElementById('inputFotoReal').click()">
+                <img id="imgPreview" src="" alt="Selfie" style="display:none;">
+                <div class="silueta-overlay" id="siluetaOverlay">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                    <span>Toca para tu Selfie</span>
                 </div>
             </div>
-            <button class="btn" onclick="toggleEngine()">Alternar Estado Motor</button>
+            
+            <input type="file" id="inputFotoReal" accept="image/*" capture="user" style="display:none" onchange="procesarFotoSelfie(this)">
+            <input type="text" id="regNombre" placeholder="Ingresá tu nombre y apellido">
+            <input type="tel" id="regTelefono" placeholder="Tu número de teléfono">
+            <button class="btn-green-action" onclick="guardarRegistroPerfil()">Comenzar a Viajar</button>
+        </div>
+    </div>
+
+    <div class="mapa-hint" id="hintManual">📍 Modo Manual: Tocá el mapa para marcar tu DESTINO</div>
+
+    <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
+
+    <div class="header-float">
+        <div class="header-row">
+            <button class="back-btn" onclick="volverAtras()">‹</button>
+            <div class="right-buttons">
+                <button class="gps-btn" id="gpsBtn" onclick="obtenerGPS()">🎯</button>
+                <button class="manual-btn" id="manualBtn" onclick="activarModoManualDestino()">📌</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-panel" id="bottomPanel">
+        <div class="panel-handle" onclick="toggleExpandirPanel()"></div>
+        <div class="msg" id="msg"></div>
+
+        <!-- PASO 1: PEDIDO -->
+        <div id="pasoDatos">
+            <div class="vehicle-selector">
+                <div class="vehicle-option selected" id="optAuto" onclick="seleccionarVehiculo('auto')">
+                    <span style="font-size: 1rem;">🚗</span>
+                    <span>Auto</span>
+                </div>
+                <div class="vehicle-option" id="optMoto" onclick="seleccionarVehiculo('moto')">
+                    <span style="font-size: 1rem;">🏍️</span>
+                    <span>Moto</span>
+                </div>
+            </div>
+
+            <div class="driver-card-preview">
+                <div class="driver-img-box">
+                    <span style="font-size: 1.2rem;" id="iconoVehiculoPreview">🚕</span>
+                </div>
+                <div class="driver-info-box">
+                    <h3>Tu Móvil</h3>
+                    <p id="txtEstructuraTarifa">Cargando tarifas...</p>
+                    <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +30% Recargo Nocturno Activo</div>
+                </div>
+            </div>
+
+            <div class="price-box-live" id="precioEstimadoBox">Tarifa Estimada: <span id="txtPrecioLive">$0</span> (<span id="txtKmLive">0</span> km)</div>
+
+            <div class="input-group">
+                <div class="input-row">
+                    <div class="dot dot-green"></div>
+                    <input type="text" id="origenDisplay" placeholder="Buscando tu ubicación..." readonly>
+                </div>
+                <div class="input-row">
+                    <div class="dot dot-red"></div>
+                    <input type="text" id="destino" placeholder="¿A dónde vamos?" autocomplete="off" oninput="buscarDireccion(this.value)">
+                </div>
+            </div>
+            <div class="sugerencias" id="sugerencias"></div>
+            <button class="btn-green-action" onclick="solicitarViaje()">Confirmar Tu Móvil</button>
         </div>
 
-        <div class="card">
-            <h2>Ubicación Actual</h2>
-            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem;">Última actualización GPS registrada desde el dispositivo móvil.</p>
-            <div class="stat-box">
-                <div class="stat-label">Coordenadas</div>
-                <div class="stat-value" style="font-size: 0.95rem;">-34.6037, -58.3816 (Simulado)</div>
+        <!-- PASO 2: ESPERA -->
+        <div id="pasoEsperando" class="hidden">
+            <div style="text-align: center; padding: 6px 0;">
+                <h4 style="margin-bottom: 4px; color: #1a1a1a; font-size: 0.95rem;">Buscando conductor cercano...</h4>
+                <p style="color: #444; font-size: 0.78rem; margin-bottom: 10px;">Tu solicitud está en el centro de despacho.</p>
+                <button class="btn-green-action" style="background: #ef4444; border-color: #dc2626;" onclick="cancelarViaje()">Cancelar</button>
             </div>
         </div>
 
-        <div class="card">
-            <h2>Registro de Actividad</h2>
-            <ul>
-                <li class="log-item"><span>Sistema inicializado</span> <i>Hace 2 min</i></li>
-                <li class="log-item"><span>Conexión establecida</span> <i>Hace 5 min</i></li>
-            </ul>
+        <!-- PASO 3: PRECIO Y CHOFER ASIGNADO -->
+        <div id="pasoPrecio" class="hidden">
+            <div class="price-box-live" style="display:block;" id="precioMonto">$0.00</div>
+            <div class="driver-card-preview">
+                <div class="driver-img-box" id="imgCondBoxContainer">
+                    <img id="imgCondFoto" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Conductor">
+                </div>
+                <div class="driver-info-box">
+                    <h3 id="nombreCond">Conductor Asignado</h3>
+                    <p id="autoCond">Vehículo en camino</p>
+                </div>
+            </div>
+            <div style="text-align: center; padding: 8px 0; color: #166534; font-weight: 700; font-size: 0.88rem;" id="estadoViajePasajero">
+                El móvil aceptó el viaje y va en camino 🚗
+            </div>
         </div>
-    </main>
+    </div>
 
     <script>
-        let engineOn = false;
-        function toggleEngine() {
-            engineOn = !engineOn;
-            const statusEl = document.getElementById('motor-status');
-            if (engineOn) {
-                statusEl.innerText = 'Encendido';
-                statusEl.style.color = '#ef4444';
+        const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let TARIFAS_ACTIVAS = {
+            base: 3000,
+            km: 400,
+            nocturno: 1.30,
+            horaInicio: 20,
+            horaFin: 8
+        };
+
+        const UBICACION_DEFAULT = [-34.54291, -58.71212];
+
+        let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
+        let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
+        let tipoVehiculoSeleccionado = 'auto';
+        let mapa = null, markerOrigen = null, markerDestino = null, markerConductor = null, rutaTrazada = null;
+        let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
+        let barrioOrigenDetectado = "Zona general";
+        let intervaloActualizacionRuta = null;
+
+        function seleccionarVehiculo(tipo) {
+            tipoVehiculoSeleccionado = tipo;
+            document.getElementById('optAuto').classList.remove('selected');
+            document.getElementById('optMoto').classList.remove('selected');
+            
+            if (tipo === 'auto') {
+                document.getElementById('optAuto').classList.add('selected');
+                document.getElementById('iconoVehiculoPreview').textContent = '🚕';
             } else {
-                statusEl.innerText = 'Apagado';
-                statusEl.style.color = '#22c55e';
+                document.getElementById('optMoto').classList.add('selected');
+                document.getElementById('iconoVehiculoPreview').textContent = '🏍️';
+            }
+            recalcularRutaYPrecio();
+        }
+
+        function hablarAnuncioPasajero(texto) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const enunciado = new SpeechSynthesisUtterance(texto);
+                enunciado.lang = 'es-AR';
+                enunciado.rate = 0.9;
+                enunciado.pitch = 1.0;
+                window.speechSynthesis.speak(enunciado);
             }
         }
+
+        async function obtenerBarrioInteligente(lat, lng) {
+            try {
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (data && data.address) {
+                    const barrio = data.address.neighbourhood || 
+                                   data.address.suburb || 
+                                   data.address.city_district || 
+                                   data.address.residential || 
+                                   data.address.town || 
+                                   "Zona general";
+                    return barrio;
+                }
+            } catch (e) {
+                console.error("Error obteniendo el barrio:", e);
+            }
+            return "Zona general";
+        }
+
+        async function cargarTarifasDesdeSupabase() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('configuracion_tarifas')
+                    .select('*')
+                    .eq('activa', true)
+                    .single();
+                    
+                if (data && !error) {
+                    TARIFAS_ACTIVAS.base = Number(data.tarifa_base);
+                    TARIFAS_ACTIVAS.km = Number(data.tarifa_km);
+                    TARIFAS_ACTIVAS.nocturno = Number(data.recargo_nocturno);
+                    TARIFAS_ACTIVAS.horaInicio = Number(data.hora_inicio_nocturno);
+                    TARIFAS_ACTIVAS.horaFin = Number(data.hora_fin_nocturno);
+                }
+            } catch (e) {
+                console.log("Usando tarifas por defecto ante error de red:", e);
+            }
+
+            document.getElementById('txtEstructuraTarifa').innerHTML = 
+                `Base $${TARIFAS_ACTIVAS.base.toLocaleString()} + $${TARIFAS_ACTIVAS.km.toLocaleString()} x Km`;
+
+            if (esHorarioNocturno()) {
+                document.getElementById('badgeNocturnoAviso').classList.remove('hidden');
+                document.getElementById('txtEstructuraTarifa').innerHTML += `<br><b>(Tarifa nocturna aplicada)</b>`;
+            }
+        }
+
+        function esHorarioNocturno() {
+            const horaActual = new Date().getHours();
+            return (horaActual >= TARIFAS_ACTIVAS.horaInicio || horaActual < TARIFAS_ACTIVAS.horaFin);
+        }
+
+        function initMapa() {
+            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(UBICACION_DEFAULT, 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
+            mapa.on('click', (e) => { if (modoDestinoManual) marcarDestinoManual(e.latlng.lat, e.latlng.lng); });
+        }
+
+        function toggleExpandirPanel() {
+            const panel = document.getElementById('bottomPanel');
+            panel.style.height = (panel.style.height === '52vh') ? '' : '52vh';
+        }
+
+        async function procesarSplashDeBienvenida() {
+            try {
+                await cargarTarifasDesdeSupabase();
+                
+                pasajeroNombre = localStorage.getItem('perfil_nombre') || "";
+                pasajeroTelefono = localStorage.getItem('perfil_telefono') || "";
+                const fotoGuardada = localStorage.getItem('perfil_foto') || "";
+                
+                if (fotoGuardada) {
+                    pasajeroBase64Foto = fotoGuardada;
+                    const imgPrev = document.getElementById('imgPreview');
+                    if(imgPrev) {
+                        imgPrev.src = fotoGuardada;
+                        imgPrev.style.display = "block";
+                        document.getElementById('siluetaOverlay').style.opacity = "0";
+                    }
+                }
+
+                if (pasajeroNombre && pasajeroTelefono && pasajeroBase64Foto) {
+                    document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
+                    await verificarViajeActivoPasajero();
+                    
+                    setTimeout(() => {
+                        cerrarSplash(); 
+                        if (!viajeId) obtenerGPS();
+                    }, 3000);
+                } else {
+                    document.getElementById('splashTitulo').textContent = "¡Foto y Datos!";
+                    document.getElementById('splashForm').style.display = "flex";
+                }
+            } catch (err) {
+                document.getElementById('splashTitulo').textContent = "¡Bienvenido!";
+                document.getElementById('splashForm').style.display = "flex";
+            }
+        }
+
+        function procesarFotoSelfie(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = 300;
+                        canvas.height = 300;
+                        ctx.drawImage(img, 0, 0, 300, 300);
+                        
+                        pasajeroBase64Foto = canvas.toDataURL('image/jpeg', 0.8);
+                        
+                        const imgPrev = document.getElementById('imgPreview');
+                        imgPrev.src = pasajeroBase64Foto;
+                        imgPrev.style.display = "block";
+                        document.getElementById('siluetaOverlay').style.opacity = "0.2";
+                    }
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        async function guardarRegistroPerfil() {
+            const nom = document.getElementById('regNombre').value.trim();
+            const tel = document.getElementById('regTelefono').value.trim();
+            if (!pasajeroBase64Foto) { alert("Por favor toca el círculo para tomarte la selfie de seguridad."); return; }
+            if (!nom || !tel) { alert("Por favor completa tu nombre y teléfono."); return; }
+            
+            try {
+                localStorage.setItem('perfil_nombre', nom); 
+                localStorage.setItem('perfil_telefono', tel);
+                localStorage.setItem('perfil_foto', pasajeroBase64Foto);
+
+                await supabaseClient
+                    .from('perfiles_usuarios')
+                    .upsert({
+                        telefono: tel,
+                        nombre: nom,
+                        foto: pasajeroBase64Foto,
+                        tipo: 'pasajero',
+                        updated_at: new Date()
+                    }, { onConflict: 'telefono' });
+            } catch(e) {
+                console.error("Excepción al guardar perfil:", e);
+            }
+            
+            pasajeroNombre = nom; 
+            pasajeroTelefono = tel;
+            cerrarSplash(); 
+            obtenerGPS();
+        }
+
+        function cerrarSplash() { 
+            const splash = document.getElementById('splashScreen'); 
+            if(splash) {
+                splash.style.opacity = "0"; 
+                setTimeout(() => splash.style.display = "none", 500); 
+            }
+        }
+
+        async function verificarViajeActivoPasajero() {
+            const guardadoId = localStorage.getItem('pasajero_viaje_id');
+            if (!guardadoId) return;
+            try {
+                const { data: viaje } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
+                if (!viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') { limpiarMemoriaPasajero(); return; }
+
+                viajeId = viaje.id;
+                origenCoords = { lat: viaje.origen_lat, lng: viaje.origen_lng };
+                destinoCoords = { lat: viaje.destino_lat, lng: viaje.destino_lng };
+                precioCalculado = viaje.precio; 
+                distanciaKm = viaje.distancia_km;
+                if (viaje.tipo_vehiculo) seleccionarVehiculo(viaje.tipo_vehiculo);
+
+                markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
+                markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
+                document.getElementById('origenDisplay').value = viaje.origen_barrio ? `Barrio: ${viaje.origen_barrio}` : "Ubicación inicial";
+                document.getElementById('destino').value = "Destino seleccionado";
+
+                await recalcularRutaYPrecio();
+
+                if (viaje.estado === 'pendiente' && !viaje.conductor_nombre) {
+                    mostrarPaso('pasoEsperando');
+                } else {
+                    document.getElementById('precioMonto').textContent = 'Total a pagar: $' + viaje.precio;
+                    document.getElementById('nombreCond').textContent = viaje.conductor_nombre || "Conductor Asignado";
+                    document.getElementById('autoCond').textContent = viaje.conductor_auto || "Vehículo en camino";
+                    if(viaje.conductor_foto) { document.getElementById('imgCondFoto').src = viaje.conductor_foto; }
+                    
+                    if(viaje.estado === 'aceptado') {
+                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
+                    } else if (viaje.estado === 'en_viaje') {
+                        document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
+                        iniciarMonitoreoDinamicoRuta();
+                    }
+                    mostrarPaso('pasoPrecio');
+                }
+                iniciarEscuchaRealtime(viajeId);
+            } catch (e) { limpiarMemoriaPasajero(); }
+        }
+
+        function limpiarMemoriaPasajero() { 
+            localStorage.removeItem('pasajero_viaje_id'); 
+            if (intervaloActualizacionRuta) clearInterval(intervaloActualizacionRuta);
+        }
+
+        function iniciarEscuchaRealtime(id) {
+            if (subViaje) supabaseClient.removeChannel(subViaje);
+            subViaje = supabaseClient
+                .channel('viaje-' + id)
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes', filter: 'id=eq.' + id }, 
+                (payload) => {
+                    const de = payload.new;
+
+                    if (de.conductor_lat && de.conductor_lng) {
+                        const latLngCond = [de.conductor_lat, de.conductor_lng];
+                        if (!markerConductor) {
+                            markerConductor = L.marker(latLngCond, { 
+                                icon: L.divIcon({ className: 'auto-conductor-ping', html: de.tipo_vehiculo === 'moto' ? '🏍️' : '🚗', iconSize: [32, 32] }) 
+                            }).addTo(mapa);
+                        } else {
+                            markerConductor.setLatLng(latLngCond);
+                        }
+                    }
+
+                    if (de.conductor_nombre && de.estado === 'pendiente') {
+                        document.getElementById('precioMonto').textContent = 'Total a pagar: $' + de.precio;
+                        document.getElementById('nombreCond').textContent = de.conductor_nombre;
+                        document.getElementById('autoCond').textContent = de.conductor_auto;
+                        if(de.conductor_foto) { document.getElementById('imgCondFoto').src = de.conductor_foto; }
+                        document.getElementById('estadoViajePasajero').innerHTML = "El móvil va en camino 🚗";
+                        
+                        if (markerConductor && markerOrigen) {
+                            const group = new L.featureGroup([markerOrigen, markerConductor]);
+                            mapa.fitBounds(group.getBounds(), { padding: [40, 40], maxZoom: 17 });
+                        }
+                        mostrarPaso('pasoPrecio');
+                    }
+                    if (de.estado === 'aceptado') {
+                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
+                        mostrarMsg('¡Tu móvil está en la puerta!', 'success');
+                        hablarAnuncioPasajero("Tu móvil ya llegó a la puerta.");
+                    }
+                    if (de.estado === 'en_viaje') {
+                        document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
+                        iniciarMonitoreoDinamicoRuta();
+                    }
+                    if (de.estado === 'cancelado') { 
+                        mostrarMsg('Viaje cancelado.', 'error'); 
+                        limpiarMemoriaPasajero(); 
+                        setTimeout(() => location.reload(), 2000); 
+                    }
+                    if (de.estado === 'finalizado') { 
+                        mostrarMsg('¡Viaje completado!', 'success'); 
+                        limpiarMemoriaPasajero(); 
+                        setTimeout(() => location.reload(), 3000); 
+                    }
+                }).subscribe();
+        }
+
+        function activarModoManualDestino() { 
+            modoDestinoManual = true; 
+            document.getElementById('manualBtn').classList.add('activo'); 
+            document.getElementById('hintManual').classList.add('visible'); 
+        }
+
+        function marcarDestinoManual(lat, lng) {
+            destinoCoords = { lat, lng }; 
+            if (markerDestino) mapa.removeLayer(markerDestino);
+            markerDestino = L.marker([lat, lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
+            document.getElementById('destino').value = "Punto marcado en mapa";
+            modoDestinoManual = false; 
+            document.getElementById('manualBtn').classList.remove('activo'); 
+            document.getElementById('hintManual').classList.remove('visible');
+            recalcularRutaYPrecio();
+        }
+
+        async function marcarOrigen(lat, lng, label) {
+            origenCoords = { lat, lng }; 
+            if (markerOrigen) mapa.removeLayer(markerOrigen);
+            markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
+            
+            barrioOrigenDetectado = await obtenerBarrioInteligente(lat, lng);
+            document.getElementById('origenDisplay').value = `Barrio: ${barrioOrigenDetectado}`;
+            
+            recalcularRutaYPrecio();
+        }
+
+        function obtenerGPS() {
+            if (!navigator.geolocation) { usarUbicacionDefault(); return; }
+            document.getElementById('gpsBtn').classList.add('buscando');
+            navigator.geolocation.getCurrentPosition(
+                (pos) => { 
+                    document.getElementById('gpsBtn').classList.remove('buscando'); 
+                    marcarOrigen(pos.coords.latitude, pos.coords.longitude, "Mi ubicación actual"); 
+                    mapa.setView([pos.coords.latitude, pos.coords.longitude], 16); 
+                },
+                () => { 
+                    document.getElementById('gpsBtn').classList.remove('buscando'); 
+                    usarUbicacionDefault(); 
+                },
+                { enableHighAccuracy: true, timeout: 7000 }
+            );
+        }
+
+        function usarUbicacionDefault() { 
+            marcarOrigen(UBICACION_DEFAULT[0], UBICACION_DEFAULT[1], "Ubicación predeterminada"); 
+            mapa.setView(UBICACION_DEFAULT, 16); 
+        }
+
+        async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
+            let inicio = puntoOrigenPersonalizado || origenCoords;
+            if (!inicio || !destinoCoords) return;
+            
+            try {
+                const url = `https://router.project-osrm.org/route/v1/car/${inicio.lng},${inicio.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true&continue_straight=default`;
+                const res = await fetch(url); 
+                const data = await res.json();
+                
+                if (data.code === 'Ok' && data.routes.length > 0) {
+                    if (rutaTrazada) mapa.removeLayer(rutaTrazada);
+                    
+                    rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.85 }).addTo(mapa);
+                    distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
+                    
+                    let subTotal = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
+                    
+                    if (tipoVehiculoSeleccionado === 'moto') {
+                        subTotal = subTotal * 0.75;
+                    }
+
+                    if (esHorarioNocturno()) { subTotal = subTotal * TARIFAS_ACTIVAS.nocturno; }
+
+                    precioCalculado = Math.round(subTotal);
+                    document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado + (tipoVehiculoSeleccionado === 'moto' ? " (Moto)" : "");
+                    document.getElementById('txtKmLive').textContent = distanciaKm;
+                    document.getElementById('precioEstimadoBox').style.display = 'block';
+                    document.getElementById('bottomPanel').classList.add('con-ruta');
+                    
+                    if (!puntoOrigenPersonalizado) {
+                        mapa.fitBounds(rutaTrazada.getBounds(), { padding: [35, 35], maxZoom: 16.5 });
+                    }
+                }
+            } catch (e) {
+                console.error("Error al calcular ruta:", e);
+            }
+        }
+
+        function iniciarMonitoreoDinamicoRuta() {
+            if (intervaloActualizacionRuta) clearInterval(intervaloActualizacionRuta);
+            intervaloActualizacionRuta = setInterval(async () => {
+                if (markerConductor && destinoCoords && viajeId) {
+                    const posActualChofer = markerConductor.getLatLng();
+                    await recalcularRutaYPrecio({ lat: posActualChofer.lat, lng: posActualChofer.lng });
+                }
+            }, 10000);
+        }
+
+        let timeoutBusqueda = null;
+        function buscarDireccion(query) {
+            clearTimeout(timeoutBusqueda);
+            if (query.length < 3) { document.getElementById('sugerencias').classList.remove('activo'); return; }
+            timeoutBusqueda = setTimeout(async () => {
+                try {
+                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Buenos Aires')}&limit=4`;
+                    const res = await fetch(url); const datos = await res.json();
+                    document.getElementById('sugerencias').innerHTML = datos.map(lugar => `
+                        <div class="sugerencia-item" onclick="seleccionarDestino('${lugar.display_name.replace(/'/g, "")}', ${lugar.lat}, ${lugar.lon})">
+                            <strong>🎯 ${lugar.display_name.split(',')[0]}</strong>
+                            <div style="font-size:0.7rem; color:#666;">${lugar.display_name.split(',').slice(1,3).join(',')}</div>
+                        </div>`).join('');
+                    if (datos.length > 0) document.getElementById('sugerencias').classList.add('activo');
+                } catch (e) {}
+            }, 400);
+        }
+
+        function seleccionarDestino(direccion, lat, lng) {
+            document.getElementById('destino').value = direccion.split(',')[0];
+            document.getElementById('sugerencias').classList.remove('activo');
+            destinoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
+            if (markerDestino) mapa.removeLayer(markerDestino);
+            markerDestino = L.marker([lat, lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
+            recalcularRutaYPrecio();
+        }
+
+        async function solicitarViaje() {
+            const destinoTexto = document.getElementById('destino').value.trim();
+            if (!destinoTexto || !origenCoords || !destinoCoords) { mostrarMsg('Seleccioná un destino válido.', 'error'); return; }
+
+            if (origenCoords.lat === UBICACION_DEFAULT[0] && origenCoords.lng === UBICACION_DEFAULT[1]) {
+                mostrarMsg('Por favor presiona el botón de GPS (🎯) para obtener tu ubicación exacta antes de pedir.', 'error');
+                return;
+            }
+
+            let baseCalculo = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
+            if (tipoVehiculoSeleccionado === 'moto') baseCalculo *= 0.75;
+            if (esHorarioNocturno()) baseCalculo *= TARIFAS_ACTIVAS.nocturno;
+            precioCalculado = Math.round(baseCalculo);
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('viajes')
+                    .insert({
+                        estado: 'pendiente',
+                        pasajero_nombre: pasajeroNombre || "Pasajero",
+                        pasajero_telefono: pasajeroTelefono || "Sin teléfono",
+                        pasajero_foto: pasajeroBase64Foto || "",
+                        tipo_vehiculo: tipoVehiculoSeleccionado,
+                        origen_lat: origenCoords.lat,
+                        origen_lng: origenCoords.lng,
+                        origen_barrio: barrioOrigenDetectado,
+                        destino_lat: destinoCoords.lat,
+                        destino_lng: destinoCoords.lng,
+                        precio: precioCalculado,
+                        distancia_km: distanciaKm
+                    }).select().single();
+
+                if (error) throw error;
+                viajeId = data.id;
+                localStorage.setItem('pasajero_viaje_id', data.id);
+                mostrarPaso('pasoEsperando');
+                iniciarEscuchaRealtime(viajeId);
+            } catch (e) { mostrarMsg('Error al solicitar: ' + e.message, 'error'); }
+        }
+
+        async function cancelarViaje() { 
+            if(viajeId) { 
+                await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeId); 
+            } 
+            limpiarMemoriaPasajero(); 
+            location.reload(); 
+        }
+        
+        function volverAtras() { cancelarViaje(); }
+        function mostrarPaso(id) { ['pasoDatos', 'pasoEsperando', 'pasoPrecio'].forEach(p => document.getElementById(p).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
+        function mostrarMsg(texto, tipo) { const msg = document.getElementById('msg'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
+
+        window.addEventListener('DOMContentLoaded', () => { initMapa(); procesarSplashDeBienvenida(); });
     </script>
 </body>
 </html>
