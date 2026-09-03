@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Color verde exacto para la franja superior del navegador -->
+    <meta name="theme-color" content="#2cd44a">
     <title>Tu Móvil - Pasajero</title>
 
     <!-- Enlace al Manifiesto para la conversión a APK -->
@@ -421,7 +423,6 @@
                     document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
                     await verificarViajeActivoPasajero();
                     
-                    // SPLASH CONFIGURADO EXACTAMENTE A 3 SEGUNDOS
                     setTimeout(() => {
                         cerrarSplash(); 
                         if (!viajeId) obtenerGPS();
@@ -468,12 +469,10 @@
             if (!nom || !tel) { alert("Por favor completa tu nombre y teléfono."); return; }
             
             try {
-                // 1. Guardar localmente como respaldo
                 localStorage.setItem('perfil_nombre', nom); 
                 localStorage.setItem('perfil_telefono', tel);
                 localStorage.setItem('perfil_foto', pasajeroBase64Foto);
 
-                // 2. Registrar o actualizar el perfil en la base de datos de Supabase para el Panel de Administrador
                 const { error } = await supabaseClient
                     .from('perfiles_usuarios')
                     .upsert({
