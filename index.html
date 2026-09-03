@@ -23,7 +23,7 @@
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
         #mapaLeaflet { width: 100%; height: 100%; }
 
-        /* SPLASH SCREEN LIMPIO: SIN FILTRO OSCURO Y CON IMAGEN NÍTIDA */
+        /* SPLASH SCREEN LIMPIO */
         #splashScreen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: #0f172a url('https://files.catbox.moe/z55y2x.jpg') no-repeat center center;
@@ -33,10 +33,7 @@
             padding: 40px 20px; text-align: center; transition: opacity 0.5s ease;
         }
 
-        #splashScreen > * {
-            position: relative;
-            z-index: 2;
-        }
+        #splashScreen > * { position: relative; z-index: 2; }
 
         .splash-logo-box {
             width: 100px; height: 80px; background: #1e293b; border-radius: 16px;
@@ -80,22 +77,22 @@
         .mapa-hint { position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(44, 212, 74, 0.95); color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-align: center; width: 85%; max-width: 320px; }
         .mapa-hint.visible { display: block; }
 
-        /* PANEL INFERIOR MÁS COMPACTO Y DINÁMICO CON SCROLL FLUIDO */
+        /* PANEL INFERIOR DINÁMICO */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
             background: #E8E2D5; 
             border-radius: 28px 28px 0 0; 
             box-shadow: 0 -8px 25px rgba(0,0,0,0.2); 
             padding: 10px 16px 18px; 
-            height: 23vh; 
+            height: 25vh; 
             max-height: 75vh;
             overflow-y: auto; 
             transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
             -webkit-overflow-scrolling: touch; 
             border-top: 2px solid #2cd44a; 
         }
-        .bottom-panel:focus-within, .bottom-panel:active { height: 52vh; }
-        .bottom-panel.con-ruta { height: 32vh; }
+        .bottom-panel:focus-within, .bottom-panel:active { height: 55vh; }
+        .bottom-panel.con-ruta { height: 35vh; }
 
         .panel-handle { width: 38px; height: 4px; background: #b5ac9b; border-radius: 2px; margin: 0 auto 8px; cursor: pointer; }
 
@@ -106,6 +103,14 @@
         }
         .vehicle-option.selected { border-color: #2cd44a; background: #dcfce7; box-shadow: 0 0 8px rgba(44,212,74,0.3); }
         .vehicle-option span { font-size: 0.8rem; font-weight: 700; color: #1a1a1a; }
+
+        /* Selector de Modo de Recogida (Asfalto / Calle difícil) */
+        .asfalto-toggle-box {
+            background: #F4EFE6; border: 1.2px solid #d4cbb8; border-radius: 12px; padding: 8px;
+            margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; font-weight: 600;
+        }
+        .asfalto-toggle-box.activo { border-color: #2cd44a; background: #dcfce7; }
+        .asfalto-toggle-btn { background: #2cd44a; color: white; border: none; padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
 
         .driver-card-preview { 
             display: flex; align-items: center; gap: 10px; margin-bottom: 8px; 
@@ -130,6 +135,7 @@
         .input-row:not(:last-child) { border-bottom: 1px solid #d4cbb8; } 
         .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
         .dot-green { background: #2cd44a; box-shadow: 0 0 5px rgba(44,212,74,0.6); }
+        .dot-blue { background: #3b82f6; box-shadow: 0 0 5px rgba(59,130,246,0.6); }
         .dot-red { background: #ef4444; }
         .input-row input { flex: 1; border: none; font-size: 0.9rem; color: #1a1a1a; background: transparent; outline: none; }
 
@@ -155,6 +161,10 @@
 
         .pasajero-ping-icon { 
             background: #2cd44a; width: 16px !important; height: 16px !important; 
+            border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); 
+        }
+        .asfalto-ping-icon { 
+            background: #3b82f6; width: 16px !important; height: 16px !important; 
             border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.4); 
         }
         .destino-ping-icon { 
@@ -200,7 +210,7 @@
         </div>
     </div>
 
-    <div class="mapa-hint" id="hintManual">📍 Modo Manual: Tocá el mapa para marcar tu DESTINO</div>
+    <div class="mapa-hint" id="hintManual">📍 Modo Manual: Tocá el mapa para marcar un punto</div>
 
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
@@ -209,7 +219,7 @@
             <button class="back-btn" onclick="volverAtras()">‹</button>
             <div class="right-buttons">
                 <button class="gps-btn" id="gpsBtn" onclick="obtenerGPS()">🎯</button>
-                <button class="manual-btn" id="manualBtn" onclick="activarModoManualDestino()">📌</button>
+                <button class="manual-btn" id="manualBtn" onclick="activarModoManual()">📌</button>
             </div>
         </div>
     </div>
@@ -231,6 +241,12 @@
                 </div>
             </div>
 
+            <!-- Selector inteligente para calle no asfaltada / punto de encuentro en asfalto -->
+            <div class="asfalto-toggle-box" id="boxAsfaltoToggle">
+                <span id="txtAsfaltoEstado">🏠 ¿Calle de tierra/difícil acceso?</span>
+                <button class="asfalto-toggle-btn" id="btnAsfaltoAccion" onclick="alternarModoAsfalto()">Elegir esquina</button>
+            </div>
+
             <div class="driver-card-preview">
                 <div class="driver-img-box">
                     <span style="font-size: 1.2rem;" id="iconoVehiculoPreview">🚕</span>
@@ -247,7 +263,11 @@
             <div class="input-group">
                 <div class="input-row">
                     <div class="dot dot-green"></div>
-                    <input type="text" id="origenDisplay" placeholder="Buscando tu ubicación..." readonly>
+                    <input type="text" id="origenDisplay" placeholder="Mi casa / ubicación real" readonly>
+                </div>
+                <div class="input-row" id="filaAsfalto" style="display:none;">
+                    <div class="dot dot-blue"></div>
+                    <input type="text" id="asfaltoDisplay" placeholder="Toca el mapa para la esquina asfaltada" readonly>
                 </div>
                 <div class="input-row">
                     <div class="dot dot-red"></div>
@@ -300,10 +320,12 @@
 
         const UBICACION_DEFAULT = [-34.54291, -58.71212];
 
-        let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
-        let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
+        let viajeId = null, subViaje = null;
+        let casaCoords = null, asfaltoCoords = null, destinoCoords = null;
+        let precioCalculado = 0, distanciaKm = 0;
+        let modoSeleccionActivo = 'destino'; // 'casa', 'asfalto', 'destino'
         let tipoVehiculoSeleccionado = 'auto';
-        let mapa = null, markerOrigen = null, markerDestino = null, markerConductor = null, rutaTrazada = null;
+        let mapa = null, markerCasa = null, markerAsfalto = null, markerDestino = null, markerConductor = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
         let barrioOrigenDetectado = "Zona general";
         let intervaloActualizacionRuta = null;
@@ -321,6 +343,30 @@
                 document.getElementById('iconoVehiculoPreview').textContent = '🏍️';
             }
             recalcularRutaYPrecio();
+        }
+
+        function alternarModoAsfalto() {
+            const box = document.getElementById('boxAsfaltoToggle');
+            const fila = document.getElementById('filaAsfalto');
+            const btn = document.getElementById('btnAsfaltoAccion');
+
+            if (fila.style.display === 'none') {
+                fila.style.display = 'flex';
+                box.classList.add('activo');
+                btn.textContent = 'Quitar esquina';
+                document.getElementById('txtAsfaltoEstado').textContent = '📌 Seleccioná esquina asfaltada en mapa';
+                modoSeleccionActivo = 'asfalto';
+                activarModoManualDirecto();
+            } else {
+                fila.style.display = 'none';
+                box.classList.remove('activo');
+                btn.textContent = 'Elegir esquina';
+                document.getElementById('txtAsfaltoEstado').textContent = '🏠 ¿Calle de tierra/difícil acceso?';
+                asfaltoCoords = null;
+                if (markerAsfalto) { mapa.removeLayer(markerAsfalto); markerAsfalto = null; }
+                modoSeleccionActivo = 'destino';
+                recalcularRutaYPrecio();
+            }
         }
 
         function hablarAnuncioPasajero(texto) {
@@ -341,17 +387,9 @@
                 const data = await res.json();
                 
                 if (data && data.address) {
-                    const barrio = data.address.neighbourhood || 
-                                   data.address.suburb || 
-                                   data.address.city_district || 
-                                   data.address.residential || 
-                                   data.address.town || 
-                                   "Zona general";
-                    return barrio;
+                    return data.address.neighbourhood || data.address.suburb || data.address.city_district || data.address.residential || data.address.town || "Zona general";
                 }
-            } catch (e) {
-                console.error("Error obteniendo el barrio:", e);
-            }
+            } catch (e) {}
             return "Zona general";
         }
 
@@ -370,16 +408,13 @@
                     TARIFAS_ACTIVAS.horaInicio = Number(data.hora_inicio_nocturno);
                     TARIFAS_ACTIVAS.horaFin = Number(data.hora_fin_nocturno);
                 }
-            } catch (e) {
-                console.log("Usando tarifas por defecto ante error de red:", e);
-            }
+            } catch (e) {}
 
             document.getElementById('txtEstructuraTarifa').innerHTML = 
                 `Base $${TARIFAS_ACTIVAS.base.toLocaleString()} + $${TARIFAS_ACTIVAS.km.toLocaleString()} x Km`;
 
             if (esHorarioNocturno()) {
                 document.getElementById('badgeNocturnoAviso').classList.remove('hidden');
-                document.getElementById('txtEstructuraTarifa').innerHTML += `<br><b>(Tarifa nocturna aplicada)</b>`;
             }
         }
 
@@ -391,12 +426,12 @@
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(UBICACION_DEFAULT, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
-            mapa.on('click', (e) => { if (modoDestinoManual) marcarDestinoManual(e.latlng.lat, e.latlng.lng); });
+            mapa.on('click', (e) => { manejarClicMapa(e.latlng.lat, e.latlng.lng); });
         }
 
         function toggleExpandirPanel() {
             const panel = document.getElementById('bottomPanel');
-            panel.style.height = (panel.style.height === '52vh') ? '' : '52vh';
+            panel.style.height = (panel.style.height === '55vh') ? '' : '55vh';
         }
 
         async function procesarSplashDeBienvenida() {
@@ -443,10 +478,8 @@
                     img.onload = function() {
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
-                        canvas.width = 300;
-                        canvas.height = 300;
+                        canvas.width = 300; canvas.height = 300;
                         ctx.drawImage(img, 0, 0, 300, 300);
-                        
                         pasajeroBase64Foto = canvas.toDataURL('image/jpeg', 0.8);
                         
                         const imgPrev = document.getElementById('imgPreview');
@@ -463,7 +496,7 @@
         async function guardarRegistroPerfil() {
             const nom = document.getElementById('regNombre').value.trim();
             const tel = document.getElementById('regTelefono').value.trim();
-            if (!pasajeroBase64Foto) { alert("Por favor toca el círculo para tomarte la selfie de seguridad."); return; }
+            if (!pasajeroBase64Foto) { alert("Por favor toca el círculo para tomarte la selfie."); return; }
             if (!nom || !tel) { alert("Por favor completa tu nombre y teléfono."); return; }
             
             try {
@@ -471,35 +504,18 @@
                 localStorage.setItem('perfil_telefono', tel);
                 localStorage.setItem('perfil_foto', pasajeroBase64Foto);
 
-                const { error } = await supabaseClient
-                    .from('perfiles_usuarios')
-                    .upsert({
-                        telefono: tel,
-                        nombre: nom,
-                        foto: pasajeroBase64Foto,
-                        tipo: 'pasajero',
-                        updated_at: new Date()
-                    }, { onConflict: 'telefono' });
-
-                if (error) {
-                    console.error("Error al sincronizar perfil con Supabase:", error);
-                }
-            } catch(e) {
-                console.error("Excepción al guardar perfil:", e);
-            }
+                await supabaseClient.from('perfiles_usuarios').upsert({
+                    telefono: tel, nombre: nom, foto: pasajeroBase64Foto, tipo: 'pasajero', updated_at: new Date()
+                }, { onConflict: 'telefono' });
+            } catch(e) {}
             
-            pasajeroNombre = nom; 
-            pasajeroTelefono = tel;
-            cerrarSplash(); 
-            obtenerGPS();
+            pasajeroNombre = nom; pasajeroTelefono = tel;
+            cerrarSplash(); obtenerGPS();
         }
 
         function cerrarSplash() { 
             const splash = document.getElementById('splashScreen'); 
-            if(splash) {
-                splash.style.opacity = "0"; 
-                setTimeout(() => splash.style.display = "none", 500); 
-            }
+            if(splash) { splash.style.opacity = "0"; setTimeout(() => splash.style.display = "none", 500); }
         }
 
         async function verificarViajeActivoPasajero() {
@@ -510,15 +526,21 @@
                 if (!viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') { limpiarMemoriaPasajero(); return; }
 
                 viajeId = viaje.id;
-                origenCoords = { lat: viaje.origen_lat, lng: viaje.origen_lng };
+                casaCoords = { lat: viaje.origen_lat, lng: viaje.origen_lng };
+                if (viaje.asfalto_lat && viaje.asfalto_lng) {
+                    asfaltoCoords = { lat: viaje.asfalto_lat, lng: viaje.asfalto_lng };
+                }
                 destinoCoords = { lat: viaje.destino_lat, lng: viaje.destino_lng };
-                precioCalculado = viaje.precio; 
-                distanciaKm = viaje.distancia_km;
+                precioCalculado = viaje.precio; distanciaKm = viaje.distancia_km;
                 if (viaje.tipo_vehiculo) seleccionarVehiculo(viaje.tipo_vehiculo);
 
-                markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
+                markerCasa = L.marker([casaCoords.lat, casaCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
+                if (asfaltoCoords) {
+                    markerAsfalto = L.marker([asfaltoCoords.lat, asfaltoCoords.lng], { icon: L.divIcon({ className: 'asfalto-ping-icon' }) }).addTo(mapa);
+                }
                 markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
-                document.getElementById('origenDisplay').value = viaje.origen_barrio ? `Barrio: ${viaje.origen_barrio}` : "Ubicación inicial";
+                
+                document.getElementById('origenDisplay').value = viaje.origen_barrio ? `Ubicación: ${viaje.origen_barrio}` : "Casa";
                 document.getElementById('destino').value = "Destino seleccionado";
 
                 await recalcularRutaYPrecio();
@@ -532,10 +554,9 @@
                     if(viaje.conductor_foto) { document.getElementById('imgCondFoto').src = viaje.conductor_foto; }
                     
                     if(viaje.estado === 'aceptado') {
-                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
+                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ AL PUNTO! 🔔";
                     } else if (viaje.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
-                        iniciarMonitoreoDinamicoRuta();
                     }
                     mostrarPaso('pasoPrecio');
                 }
@@ -550,21 +571,15 @@
 
         function iniciarEscuchaRealtime(id) {
             if (subViaje) supabaseClient.removeChannel(subViaje);
-            subViaje = supabaseClient
-                .channel('viaje-' + id)
+            subViaje = supabaseClient.channel('viaje-' + id)
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes', filter: 'id=eq.' + id }, 
                 (payload) => {
                     const de = payload.new;
-
                     if (de.conductor_lat && de.conductor_lng) {
                         const latLngCond = [de.conductor_lat, de.conductor_lng];
                         if (!markerConductor) {
-                            markerConductor = L.marker(latLngCond, { 
-                                icon: L.divIcon({ className: 'auto-conductor-ping', html: de.tipo_vehiculo === 'moto' ? '🏍️' : '🚗', iconSize: [32, 32] }) 
-                            }).addTo(mapa);
-                        } else {
-                            markerConductor.setLatLng(latLngCond);
-                        }
+                            markerConductor = L.marker(latLngCond, { icon: L.divIcon({ className: 'auto-conductor-ping', html: de.tipo_vehiculo === 'moto' ? '🏍️' : '🚗', iconSize: [32, 32] }) }).addTo(mapa);
+                        } else { markerConductor.setLatLng(latLngCond); }
                     }
 
                     if (de.conductor_nombre && de.estado === 'pendiente') {
@@ -573,60 +588,65 @@
                         document.getElementById('autoCond').textContent = de.conductor_auto;
                         if(de.conductor_foto) { document.getElementById('imgCondFoto').src = de.conductor_foto; }
                         document.getElementById('estadoViajePasajero').innerHTML = "El móvil va en camino 🚗";
-                        
-                        if (markerConductor && markerOrigen) {
-                            const group = new L.featureGroup([markerOrigen, markerConductor]);
-                            mapa.fitBounds(group.getBounds(), { padding: [40, 40], maxZoom: 17 });
-                        }
                         mostrarPaso('pasoPrecio');
                     }
                     if (de.estado === 'aceptado') {
-                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
-                        mostrarMsg('¡Tu móvil está en la puerta!', 'success');
-                        hablarAnuncioPasajero("Tu móvil ya llegó a la puerta.");
+                        document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ AL PUNTO DE ENCUENTRO! 🔔";
+                        mostrarMsg('¡Tu móvil está en el punto de encuentro!', 'success');
+                        hablarAnuncioPasajero("Tu móvil ya llegó al punto de encuentro.");
                     }
                     if (de.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
-                        iniciarMonitoreoDinamicoRuta();
                     }
-                    if (de.estado === 'cancelado') { 
-                        mostrarMsg('Viaje cancelado.', 'error'); 
-                        limpiarMemoriaPasajero(); 
-                        setTimeout(() => location.reload(), 2000); 
-                    }
-                    if (de.estado === 'finalizado') { 
-                        mostrarMsg('¡Viaje completado!', 'success'); 
-                        limpiarMemoriaPasajero(); 
-                        setTimeout(() => location.reload(), 3000); 
-                    }
+                    if (de.estado === 'cancelado') { limpiarMemoriaPasajero(); setTimeout(() => location.reload(), 2000); }
+                    if (de.estado === 'finalizado') { limpiarMemoriaPasajero(); setTimeout(() => location.reload(), 3000); }
                 }).subscribe();
         }
 
-        function activarModoManualDestino() { 
-            modoDestinoManual = true; 
-            document.getElementById('manualBtn').classList.add('activo'); 
-            document.getElementById('hintManual').classList.add('visible'); 
+        function activarModoManual() {
+            modoSeleccionActivo = 'destino';
+            document.getElementById('manualBtn').classList.add('activo');
+            document.getElementById('hintManual').textContent = '📍 Modo Manual: Tocá el mapa para marcar tu DESTINO';
+            document.getElementById('hintManual').classList.add('visible');
         }
 
-        function marcarDestinoManual(lat, lng) {
-            destinoCoords = { lat, lng }; 
-            if (markerDestino) mapa.removeLayer(markerDestino);
-            markerDestino = L.marker([lat, lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
-            document.getElementById('destino').value = "Punto marcado en mapa";
-            modoDestinoManual = false; 
-            document.getElementById('manualBtn').classList.remove('activo'); 
-            document.getElementById('hintManual').classList.remove('visible');
-            recalcularRutaYPrecio();
+        function activarModoManualDirecto() {
+            document.getElementById('manualBtn').classList.add('activo');
+            document.getElementById('hintManual').textContent = '📌 Tocá el mapa para marcar la esquina asfaltada';
+            document.getElementById('hintManual').classList.add('visible');
         }
 
-        async function marcarOrigen(lat, lng, label) {
-            origenCoords = { lat, lng }; 
-            if (markerOrigen) mapa.removeLayer(markerOrigen);
-            markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
+        function manejarClicMapa(lat, lng) {
+            if (modoSeleccionActivo === 'asfalto') {
+                asfaltoCoords = { lat, lng };
+                if (markerAsfalto) mapa.removeLayer(markerAsfalto);
+                markerAsfalto = L.marker([lat, lng], { icon: L.divIcon({ className: 'asfalto-ping-icon' }) }).addTo(mapa);
+                document.getElementById('asfaltoDisplay').value = "Esquina en asfalto seleccionada";
+                
+                modoSeleccionActivo = 'destino';
+                document.getElementById('manualBtn').classList.remove('activo');
+                document.getElementById('hintManual').classList.remove('visible');
+                recalcularRutaYPrecio();
+            } else {
+                // Modo destino manual predeterminado
+                destinoCoords = { lat, lng };
+                if (markerDestino) mapa.removeLayer(markerDestino);
+                markerDestino = L.marker([lat, lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
+                document.getElementById('destino').value = "Punto marcado en mapa";
+                modoSeleccionActivo = 'destino';
+                document.getElementById('manualBtn').classList.remove('activo');
+                document.getElementById('hintManual').classList.remove('visible');
+                recalcularRutaYPrecio();
+            }
+        }
+
+        async function establecerCasa(lat, lng) {
+            casaCoords = { lat, lng };
+            if (markerCasa) mapa.removeLayer(markerCasa);
+            markerCasa = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
             
             barrioOrigenDetectado = await obtenerBarrioInteligente(lat, lng);
-            document.getElementById('origenDisplay').value = `Barrio: ${barrioOrigenDetectado}`;
-            
+            document.getElementById('origenDisplay').value = `Ubicación: ${barrioOrigenDetectado}`;
             recalcularRutaYPrecio();
         }
 
@@ -636,44 +656,40 @@
             navigator.geolocation.getCurrentPosition(
                 (pos) => { 
                     document.getElementById('gpsBtn').classList.remove('buscando'); 
-                    marcarOrigen(pos.coords.latitude, pos.coords.longitude, "Mi ubicación actual"); 
+                    establecerCasa(pos.coords.latitude, pos.coords.longitude); 
                     mapa.setView([pos.coords.latitude, pos.coords.longitude], 16); 
                 },
-                () => { 
-                    document.getElementById('gpsBtn').classList.remove('buscando'); 
-                    usarUbicacionDefault(); 
-                },
+                () => { document.getElementById('gpsBtn').classList.remove('buscando'); usarUbicacionDefault(); },
                 { enableHighAccuracy: true, timeout: 7000 }
             );
         }
 
         function usarUbicacionDefault() { 
-            marcarOrigen(UBICACION_DEFAULT[0], UBICACION_DEFAULT[1], "Ubicación predeterminada"); 
+            establecerCasa(UBICACION_DEFAULT[0], UBICACION_DEFAULT[1]); 
             mapa.setView(UBICACION_DEFAULT, 16); 
         }
 
-        async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
-            let inicio = puntoOrigenPersonalizado || origenCoords;
-            if (!inicio || !destinoCoords) return;
+        async function recalcularRutaYPrecio() {
+            // El origen operativo para el auto es la esquina asfaltada si existe, sino la casa
+            let puntoPartida = asfaltoCoords || casaCoords;
+            if (!puntoPartida || !destinoCoords) return;
             
             try {
-                const url = `https://router.project-osrm.org/route/v1/car/${inicio.lng},${inicio.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true&continue_straight=default`;
-                const res = await fetch(url); 
-                const data = await res.json();
+                // Ruta de ida: Punto de partida (asfalto o casa) -> Destino final (con la vuelta se calcula doble tramo operativo base)
+                const url = `https://router.project-osrm.org/route/v1/car/${puntoPartida.lng},${puntoPartida.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson`;
+                const res = await fetch(url); const data = await res.json();
                 
                 if (data.code === 'Ok' && data.routes.length > 0) {
                     if (rutaTrazada) mapa.removeLayer(rutaTrazada);
                     
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.85 }).addTo(mapa);
-                    distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
+                    
+                    // Distancia calculada multiplicada x2 considerando simétricamente el trayecto redondo (ida y vuelta al punto de asfalto)
+                    distanciaKm = parseFloat(((data.routes[0].distance / 1000) * 2).toFixed(1));
                     
                     let subTotal = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
-                    
-                    if (tipoVehiculoSeleccionado === 'moto') {
-                        subTotal = subTotal * 0.75;
-                    }
-
-                    if (esHorarioNocturno()) { subTotal = subTotal * TARIFAS_ACTIVAS.nocturno; }
+                    if (tipoVehiculoSeleccionado === 'moto') subTotal *= 0.75;
+                    if (esHorarioNocturno()) subTotal *= TARIFAS_ACTIVAS.nocturno;
 
                     precioCalculado = Math.round(subTotal);
                     document.getElementById('txtPrecioLive').textContent = '$' + precioCalculado + (tipoVehiculoSeleccionado === 'moto' ? " (Moto)" : "");
@@ -681,23 +697,9 @@
                     document.getElementById('precioEstimadoBox').style.display = 'block';
                     document.getElementById('bottomPanel').classList.add('con-ruta');
                     
-                    if (!puntoOrigenPersonalizado) {
-                        mapa.fitBounds(rutaTrazada.getBounds(), { padding: [35, 35], maxZoom: 16.5 });
-                    }
+                    mapa.fitBounds(rutaTrazada.getBounds(), { padding: [35, 35], maxZoom: 16.5 });
                 }
-            } catch (e) {
-                console.error("Error al calcular ruta:", e);
-            }
-        }
-
-        function iniciarMonitoreoDinamicoRuta() {
-            if (intervaloActualizacionRuta) clearInterval(intervaloActualizacionRuta);
-            intervaloActualizacionRuta = setInterval(async () => {
-                if (markerConductor && destinoCoords && viajeId) {
-                    const posActualChofer = markerConductor.getLatLng();
-                    await recalcularRutaYPrecio({ lat: posActualChofer.lat, lng: posActualChofer.lng });
-                }
-            }, 10000);
+            } catch (e) {}
         }
 
         let timeoutBusqueda = null;
@@ -729,17 +731,7 @@
 
         async function solicitarViaje() {
             const destinoTexto = document.getElementById('destino').value.trim();
-            if (!destinoTexto || !origenCoords || !destinoCoords) { mostrarMsg('Seleccioná un destino válido.', 'error'); return; }
-
-            if (origenCoords.lat === UBICACION_DEFAULT[0] && origenCoords.lng === UBICACION_DEFAULT[1]) {
-                mostrarMsg('Por favor presiona el botón de GPS (🎯) para obtener tu ubicación exacta antes de pedir.', 'error');
-                return;
-            }
-
-            let baseCalculo = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
-            if (tipoVehiculoSeleccionado === 'moto') baseCalculo *= 0.75;
-            if (esHorarioNocturno()) baseCalculo *= TARIFAS_ACTIVAS.nocturno;
-            precioCalculado = Math.round(baseCalculo);
+            if (!destinoTexto || !casaCoords || !destinoCoords) { mostrarMsg('Seleccioná un destino válido.', 'error'); return; }
 
             try {
                 const { data, error } = await supabaseClient
@@ -750,8 +742,10 @@
                         pasajero_telefono: pasajeroTelefono || "Sin teléfono",
                         pasajero_foto: pasajeroBase64Foto || "",
                         tipo_vehiculo: tipoVehiculoSeleccionado,
-                        origen_lat: origenCoords.lat,
-                        origen_lng: origenCoords.lng,
+                        origen_lat: casaCoords.lat,
+                        origen_lng: casaCoords.lng,
+                        asfalto_lat: asfaltoCoords ? asfaltoCoords.lat : null,
+                        asfalto_lng: asfaltoCoords ? asfaltoCoords.lng : null,
                         origen_barrio: barrioOrigenDetectado,
                         destino_lat: destinoCoords.lat,
                         destino_lng: destinoCoords.lng,
@@ -768,11 +762,8 @@
         }
 
         async function cancelarViaje() { 
-            if(viajeId) { 
-                await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeId); 
-            } 
-            limpiarMemoriaPasajero(); 
-            location.reload(); 
+            if(viajeId) { await supabaseClient.from('viajes').update({ estado: 'cancelado' }).eq('id', viajeId); } 
+            limpiarMemoriaPasajero(); location.reload(); 
         }
         
         function volverAtras() { cancelarViaje(); }
