@@ -1,14 +1,20 @@
 {
   "name": "TuMovil Conductor",
   "short_name": "TuMovil Chofer",
-  "start_url": "/conductor",
+  "start_url": "/conductor.html",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#11121a",
+  "theme_color": "#38bdf8",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "https://i.ibb.co/Cp9qDcyY/1000052207.png",
       "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.ibb.co/Cp9qDcyY/1000052207.png",
+      "sizes": "512x512",
       "type": "image/png"
     }
   ]
