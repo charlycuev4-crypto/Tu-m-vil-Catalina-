@@ -109,7 +109,7 @@
                 <span>👥 Pasajeros Registrados</span>
                 <button class="close-modal" onclick="cerrarModalPasajeros()">✕</button>
             </h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Carpeta de usuarios y su historial de viajes sincronizados.</p>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Historial de usuarios sincronizados desde los viajes en vivo.</p>
             <div id="listaPasajerosContainer">
                 <p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando pasajeros...</p>
             </div>
@@ -399,49 +399,59 @@
         }
         function cerrarPerfilChofer() { document.getElementById('modalPerfilChofer').classList.add('hidden'); }
 
-        // --- GESTIÓN DE PASAJEROS CONECTADA A LA TABLA perfiles_usuarios ---
+        // --- GESTIÓN DE PASAJEROS CONECTADA DIRECTAMENTE A LA TABLA VIAJES ---
         async function abrirModalPasajeros() {
             document.getElementById('modalPasajeros').classList.remove('hidden');
             const contenedor = document.getElementById('listaPasajerosContainer');
-            contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando lista de pasajeros...</p>`;
+            contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando pasajeros desde los viajes...</p>`;
 
             try {
-                const { data: pasajeros, error } = await supabaseClient
-                    .from('perfiles_usuarios')
-                    .select('*');
+                const { data: viajes, error } = await supabaseClient
+                    .from('viajes')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
                 if (error) throw error;
 
-                if (!pasajeros || pasajeros.length === 0) {
-                    contenedor.innerHTML = `
-                        <div style="text-align: center; padding: 15px;">
-                            <p style="color: #f59e0b; font-size: 0.85rem; margin-bottom: 8px;">No se encontraron pasajeros registrados en la base.</p>
-                        </div>`;
+                if (!viajes || viajes.length === 0) {
+                    contenedor.innerHTML = `<p style="text-align: center; color: #f59e0b; padding: 20px;">No hay registros de viajes todavía.</p>`;
                     return;
                 }
 
-                let html = '';
-                pasajeros.forEach(p => {
-                    let fotoPasajero = p.foto || p.foto_url || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
-                    let telefonoPasajero = p.telefono || 'Sin teléfono';
-                    let nombrePasajero = p.nombre || 'Pasajero';
+                // Agrupamos dinámicamente a los pasajeros únicos basados en su nombre
+                let pasajerosUnicos = {};
+                viajes.forEach(v => {
+                    let nombre = v.pasajero_nombre || 'Pasajero sin nombre';
+                    if (!pasajerosUnicos[nombre]) {
+                        pasajerosUnicos[nombre] = {
+                            nombre: nombre,
+                            telefono: v.pasajero_telefono || 'Sin teléfono',
+                            foto: v.pasajero_foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'
+                        };
+                    }
+                });
 
+                let html = '';
+                for (let nombre in pasajerosUnicos) {
+                    let p = pasajerosUnicos[nombre];
                     html += `
                         <div class="driver-card" onclick='abrirPerfilPasajero(${JSON.stringify(p)})'>
                             <div class="driver-info-box">
-                                <img src="${fotoPasajero}" class="driver-avatar" alt="Foto">
+                                <img src="${p.foto}" class="driver-avatar" alt="Foto">
                                 <div class="driver-details">
-                                    <h4>📁 ${nombrePasajero}</h4>
-                                    <p>📞 ${telefonoPasajero}</p>
+                                    <h4>📁 ${p.nombre}</h4>
+                                    <p>📞 ${p.telefono}</p>
                                 </div>
                             </div>
                         </div>
                     `;
-                });
-                contenedor.innerHTML = html;
+                }
+
+                contenedor.innerHTML = html || `<p style="text-align: center; color: #f59e0b; padding: 20px;">No se encontraron pasajeros.</p>`;
 
             } catch (e) {
-                contenedor.innerHTML = `<p style="text-align: center; color: #ef4444; padding: 20px;">Error al cargar: ${e.message}</p>`;
+                console.error("Error al cargar pasajeros:", e);
+                contenedor.innerHTML = `<p style="text-align: center; color: #ef4444; padding: 20px;">Error al conectar con la base de datos.</p>`;
             }
         }
         function cerrarModalPasajeros() { document.getElementById('modalPasajeros').classList.add('hidden'); }
@@ -449,7 +459,7 @@
         async function abrirPerfilPasajero(pasajero) {
             document.getElementById('modalPerfilPasajero').classList.remove('hidden');
             
-            let fotoPasajero = pasajero.foto || pasajero.foto_url || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
+            let fotoPasajero = pasajero.foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg';
             let nombrePasajero = pasajero.nombre || 'Pasajero';
             let telefonoPasajero = pasajero.telefono || 'Sin teléfono';
 
@@ -482,20 +492,18 @@
             `;
 
             try {
-                let queryViajes = supabaseClient.from('viajes').select('*');
-                if (telefonoPasajero && telefonoPasajero !== 'Sin teléfono') {
-                    queryViajes = queryViajes.or(`pasajero_telefono.eq.${telefonoPasajero},pasajero_nombre.eq.${nombrePasajero}`);
-                } else {
-                    queryViajes = queryViajes.eq('pasajero_nombre', nombrePasajero);
-                }
+                const { data: viajes, error } = await supabaseClient
+                    .from('viajes')
+                    .select('*')
+                    .eq('pasajero_nombre', nombrePasajero)
+                    .order('created_at', { ascending: false });
 
-                const { data: viajes, error } = await queryViajes.order('created_at', { ascending: false });
                 if (error) throw error;
 
                 const historialContainer = document.getElementById('listaHistorialPasajeroContainer');
 
                 if (!viajes || viajes.length === 0) {
-                    historialContainer.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 15px;">Este pasajero aún no registra viajes realizados.</p>`;
+                    historialContainer.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 15px;">Este pasajero aún no registra viajes.</p>`;
                     document.getElementById('lblTotalViajesPasajero').textContent = "0";
                     document.getElementById('lblGastoPasajero').textContent = "$0";
                     return;
