@@ -479,6 +479,33 @@
             window.open(`https://www.google.com/maps/dir/?api=1&origin=${choferCoords.lat},${choferCoords.lng}&destination=${destLat},${destLng}&travelmode=driving`, '_blank');
         }
 
+        // NUEVA FUNCIÓN: Busca viajes pendientes recientes al abrir la app o reconectarse
+        async function buscarViajesPendientesRecientes() {
+            if (viajeActivo || !estaConectado) return;
+            try {
+                const { data: viajes, error } = await supabaseClient
+                    .from('viajes')
+                    .select('*')
+                    .eq('estado', 'pendiente')
+                    .is('conductor_nombre', null)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (!error && viajes && viajes.length > 0) {
+                    const viajeReciente = viajes[0];
+                    // Validar si el viaje se creó hace menos de 45 segundos para que no sea un viaje viejo
+                    const tiempoCreacion = new Date(viajeReciente.created_at).getTime();
+                    const ahora = Date.now();
+                    if ((ahora - tiempoCreacion) < 45000) {
+                        const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, viajeReciente.origen_lat, viajeReciente.origen_lng);
+                        if (distanciaAlViaje <= 5) {
+                            montarViajeEntrante(viajeReciente);
+                        }
+                    }
+                }
+            } catch (err) {}
+        }
+
         function escucharNuevosViajes() {
             if (canalSupabase) return;
             canalSupabase = supabaseClient.channel('despacho-chofer');
@@ -513,6 +540,7 @@
                 subtexto.textContent = "Esperando solicitudes a menos de 5 km...";
                 btnEspera.textContent = "Buscando Pasajeros..."; btnEspera.className = "btn-action btn-espera";
                 solicitarWakeLock(); iniciarRastreoGpsContinuo(); escucharNuevosViajes();
+                buscarViajesPendientesRecientes();
             } else {
                 badge.textContent = "Fuera de Línea 🔴"; badge.className = "status-badge inactivo";
                 subtexto.textContent = "Estás desconectado. No recibirás alertas.";
@@ -782,15 +810,25 @@
         function mostrarMsg(texto, tipo) { const msg = document.getElementById('msgChofer'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
 
         document.addEventListener('visibilitychange', async () => {
-            if (document.visibilityState === 'visible' && estaConectado) await solicitarWakeLock();
+            if (document.visibilityState === 'visible' && estaConectado) {
+                await solicitarWakeLock();
+                buscarViajesPendientesRecientes(); // También busca si el usuario vuelve a abrir la app desde segundo plano
+            }
         });
 
         window.addEventListener('DOMContentLoaded', () => {
             verificarRegistroChofer();
             verificarReseteoDiario();
             actualizarUIEstadisticas();
-            initMapa(); escucharNuevosViajes(); solicitarWakeLock(); iniciarRastreoGpsContinuo(); 
-            setTimeout(async () => { await verificarViajeActivoConductor(); }, 1000);
+            initMapa(); 
+            escucharNuevosViajes(); 
+            solicitarWakeLock(); 
+            iniciarRastreoGpsContinuo(); 
+            
+            setTimeout(async () => { 
+                await verificarViajeActivoConductor(); 
+                await buscarViajesPendientesRecientes(); // Consulta inicial por si abrió tarde
+            }, 1000);
         });
     </script>
 </body>
