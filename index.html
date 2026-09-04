@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tu Móvil - Pasajero</title>
 
-    <!-- Enlace al Manifiesto para la conversión a APK -->
     <link rel="manifest" href="/manifest.json">
 
     <!-- Supabase & Leaflet -->
@@ -77,7 +76,7 @@
         .mapa-hint { position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(44, 212, 74, 0.95); color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-align: center; width: 85%; max-width: 320px; }
         .mapa-hint.visible { display: block; }
 
-        /* PANEL INFERIOR CON SCROLL Y TAMAÑO ORIGINAL ADAPTADO */
+        /* PANEL INFERIOR CON SCROLL */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
             background: #E8E2D5; 
@@ -96,7 +95,6 @@
 
         .panel-handle { width: 38px; height: 4px; background: #b5ac9b; border-radius: 2px; margin: 0 auto 6px; cursor: pointer; }
 
-        /* LISTA SCROLLABLE DE VEHÍCULOS (AUTO Y MOTO) */
         .lista-vehiculos-scroll {
             max-height: 110px;
             overflow-y: auto;
@@ -134,7 +132,6 @@
         .ride-price-right { text-align: right; }
         .ride-price-right .precio-txt { font-size: 0.82rem; font-weight: 700; color: #166534; }
 
-        /* SELECTOR DE TRAYECTO (IDA / IDA Y VUELTA) */
         .trayecto-selector { display: flex; gap: 6px; margin-bottom: 6px; }
         .trayecto-option {
             flex: 1; background: #F4EFE6; border: 1px solid #d4cbb8; border-radius: 12px;
@@ -245,13 +242,11 @@
 
         <!-- PASO 1: PEDIDO -->
         <div id="pasoDatos">
-            <!-- SELECTOR DE TRAYECTO (IDA / IDA Y VUELTA) -->
             <div class="trayecto-selector">
                 <div class="trayecto-option selected" id="trayectoIda" onclick="seleccionarTrayecto('ida')">📍 Solo Ida</div>
                 <div class="trayecto-option" id="trayectoIdaVuelta" onclick="seleccionarTrayecto('ida_vuelta')">🔄 Ida y Vuelta</div>
             </div>
 
-            <!-- LISTA SCROLLABLE CON OPCIONES AUTO Y MOTO -->
             <div class="lista-vehiculos-scroll">
                 <div class="ride-option-item selected" id="optAuto" onclick="seleccionarVehiculo('auto')">
                     <div class="ride-info-left">
@@ -350,10 +345,9 @@
         let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
         let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
         let tipoVehiculoSeleccionado = 'auto';
-        let tipoTrayectoSeleccionado = 'ida'; // 'ida' o 'ida_vuelta'
+        let tipoTrayectoSeleccionado = 'ida';
         let mapa = null, markerOrigen = null, markerDestino = null, markerConductor = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
-        let barrioOrigenDetectado = "Zona general";
         let intervaloActualizacionRuta = null;
 
         function seleccionarVehiculo(tipo) {
@@ -395,27 +389,6 @@
             }
         }
 
-        async function obtenerBarrioInteligente(lat, lng) {
-            try {
-                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
-                const res = await fetch(url);
-                const data = await res.json();
-                
-                if (data && data.address) {
-                    const barrio = data.address.neighbourhood || 
-                                   data.address.suburb || 
-                                   data.address.city_district || 
-                                   data.address.residential || 
-                                   data.address.town || 
-                                   "Zona general";
-                    return barrio;
-                }
-            } catch (e) {
-                console.error("Error obteniendo el barrio:", e);
-            }
-            return "Zona general";
-        }
-
         async function cargarTarifasDesdeSupabase() {
             try {
                 const { data, error } = await supabaseClient
@@ -432,7 +405,7 @@
                     TARIFAS_ACTIVAS.horaFin = Number(data.hora_fin_nocturno);
                 }
             } catch (e) {
-                console.log("Usando tarifas por defecto ante error de red:", e);
+                console.log("Usando tarifas por defecto:", e);
             }
 
             document.getElementById('txtEstructuraTarifa').innerHTML = 
@@ -532,7 +505,7 @@
                 localStorage.setItem('perfil_telefono', tel);
                 localStorage.setItem('perfil_foto', pasajeroBase64Foto);
 
-                const { error } = await supabaseClient
+                await supabaseClient
                     .from('perfiles_usuarios')
                     .upsert({
                         telefono: tel,
@@ -541,10 +514,6 @@
                         tipo: 'pasajero',
                         updated_at: new Date()
                     }, { onConflict: 'telefono' });
-
-                if (error) {
-                    console.error("Error al sincronizar perfil con Supabase:", error);
-                }
             } catch(e) {
                 console.error("Excepción al guardar perfil:", e);
             }
@@ -579,7 +548,7 @@
 
                 markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
                 markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
-                document.getElementById('origenDisplay').value = viaje.origen_barrio ? `Barrio: ${viaje.origen_barrio}` : "Ubicación inicial";
+                document.getElementById('origenDisplay').value = "Ubicación inicial";
                 document.getElementById('destino').value = "Destino seleccionado";
 
                 await recalcularRutaYPrecio();
@@ -680,14 +649,11 @@
             recalcularRutaYPrecio();
         }
 
-        async function marcarOrigen(lat, lng, label) {
+        function marcarOrigen(lat, lng, label) {
             origenCoords = { lat, lng }; 
             if (markerOrigen) mapa.removeLayer(markerOrigen);
             markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
-            
-            barrioOrigenDetectado = await obtenerBarrioInteligente(lat, lng);
-            document.getElementById('origenDisplay').value = `Barrio: ${barrioOrigenDetectado}`;
-            
+            document.getElementById('origenDisplay').value = label;
             recalcularRutaYPrecio();
         }
 
@@ -731,7 +697,6 @@
                     let baseCalculo = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
                     if (esHorarioNocturno()) { baseCalculo = baseCalculo * TARIFAS_ACTIVAS.nocturno; }
 
-                    // Cálculo separando Auto y Moto con recargo de Ida y Vuelta si aplica
                     let multiplicadorTrayecto = (tipoTrayectoSeleccionado === 'ida_vuelta') ? 2 : 1;
 
                     let precioAuto = Math.round(baseCalculo * multiplicadorTrayecto);
@@ -800,6 +765,7 @@
             }
 
             try {
+                // Compatible 100% con las columnas originales de la base de datos
                 const { data, error } = await supabaseClient
                     .from('viajes')
                     .insert({
@@ -808,10 +774,8 @@
                         pasajero_telefono: pasajeroTelefono || "Sin teléfono",
                         pasajero_foto: pasajeroBase64Foto || "",
                         tipo_vehiculo: tipoVehiculoSeleccionado,
-                        tipo_trayecto: tipoTrayectoSeleccionado,
                         origen_lat: origenCoords.lat,
                         origen_lng: origenCoords.lng,
-                        origen_barrio: barrioOrigenDetectado,
                         destino_lat: destinoCoords.lat,
                         destino_lng: destinoCoords.lng,
                         precio: precioCalculado,
