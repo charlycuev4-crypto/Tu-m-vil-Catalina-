@@ -64,32 +64,9 @@
         .silueta-overlay svg { width: 50px; height: 50px; fill: rgba(255,255,255,0.7); margin-bottom: 2px; }
         .silueta-overlay span { font-size: 0.65rem; color: #fff; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
 
-        /* INTERFAZ GPS ESTILO GOOGLE MAPS (OCULTA POR DEFECTO) */
-        #gpsNavigationOverlay {
-            position: fixed; top: 12px; left: 12px; right: 12px; z-index: 1005;
-            display: none; flex-direction: column; gap: 6px; pointer-events: none;
-        }
-        #gpsNavigationOverlay.activo { display: flex; }
-
-        .gps-card-main {
-            background: #064e3b; color: white; border-radius: 16px; padding: 12px 16px;
-            display: flex; align-items: center; gap: 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-            pointer-events: auto; border: 1px solid #059669;
-        }
-        .gps-icon-turno { font-size: 2.2rem; line-height: 1; display: flex; align-items: center; justify-content: center; }
-        .gps-instruccion-text h2 { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }
-        .gps-instruccion-text p { font-size: 1rem; font-weight: 500; color: #a7f3d0; }
-
-        .gps-card-secundaria {
-            background: #064e3b; color: #a7f3d0; border-radius: 12px; padding: 8px 14px;
-            display: inline-flex; align-items: center; gap: 8px; width: fit-content;
-            font-size: 0.85rem; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); pointer-events: auto;
-        }
-
-        /* HEADER FLOTANTE NORMAL */
         .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .header-row { display: flex; justify-content: space-between; width: 100%; }
-        .right-buttons { display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
+        .right-buttons { display: flex; flex-direction: column; gap: 10px; }
 
         .back-btn, .gps-btn, .manual-btn { width: 44px; height: 44px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border: none; box-shadow: 0 3px 10px rgba(0,0,0,0.2); pointer-events: auto; }
         .gps-btn.buscando { background: #e2e8f0; animation: pulse 1s infinite; }
@@ -115,20 +92,39 @@
         }
         .bottom-panel:focus-within, .bottom-panel:active { height: 55vh; }
         .bottom-panel.con-ruta { height: 35vh; }
+        /* Estado compacto cuando el viaje está activo para ganar visibilidad en el GPS */
         .bottom-panel.modo-compacto { height: auto !important; max-height: 40vh; padding-bottom: 12px; }
 
         .panel-handle { width: 38px; height: 4px; background: #b5ac9b; border-radius: 2px; margin: 0 auto 6px; cursor: pointer; }
 
         .lista-vehiculos-scroll {
-            max-height: 110px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; padding-right: 2px; -webkit-overflow-scrolling: touch;
+            max-height: 110px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 6px;
+            padding-right: 2px;
+            -webkit-overflow-scrolling: touch;
         }
 
         .ride-option-item {
-            background: #F4EFE6; border: 1px solid #d4cbb8; border-radius: 12px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s;
+            background: #F4EFE6;
+            border: 1px solid #d4cbb8;
+            border-radius: 12px;
+            padding: 6px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
         .ride-option-item.selected {
-            border-color: #2cd44a; background: #dcfce7; box-shadow: 0 0 8px rgba(44,212,74,0.3); border-width: 1.5px;
+            border-color: #2cd44a;
+            background: #dcfce7;
+            box-shadow: 0 0 8px rgba(44,212,74,0.3);
+            border-width: 1.5px;
         }
 
         .ride-info-left { display: flex; align-items: center; gap: 8px; }
@@ -140,12 +136,17 @@
 
         .trayecto-selector { display: flex; gap: 6px; margin-bottom: 6px; }
         .trayecto-option {
-            flex: 1; background: #F4EFE6; border: 1px solid #d4cbb8; border-radius: 12px; padding: 6px; text-align: center; cursor: pointer; font-size: 0.78rem; font-weight: 600; color: #333; transition: all 0.2s;
+            flex: 1; background: #F4EFE6; border: 1px solid #d4cbb8; border-radius: 12px;
+            padding: 6px; text-align: center; cursor: pointer; font-size: 0.78rem; font-weight: 600; color: #333;
+            transition: all 0.2s;
         }
         .trayecto-option.selected { border-color: #2cd44a; background: #dcfce7; font-weight: 700; color: #166534; box-shadow: 0 0 6px rgba(44,212,74,0.2); }
 
         .driver-card-preview { 
-            display: flex; align-items: center; gap: 8px; margin-bottom: 6px; background: #F4EFE6; padding: 6px 10px; border-radius: 12px; border: 1px solid #2cd44a; box-shadow: 0 0 8px rgba(44, 212, 74, 0.15);
+            display: flex; align-items: center; gap: 8px; margin-bottom: 6px; 
+            background: #F4EFE6; padding: 6px 10px; border-radius: 12px; 
+            border: 1px solid #2cd44a; 
+            box-shadow: 0 0 8px rgba(44, 212, 74, 0.15);
         }
         .driver-img-box { width: 50px; height: 40px; border-radius: 8px; background: #e8e2d5; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; border: 1px solid #2cd44a; }
         .driver-img-box img { width: 100%; height: 100%; object-fit: cover; }
@@ -153,7 +154,8 @@
         .driver-info-box p { font-size: 0.7rem; color: #444; }
 
         .input-group { 
-            background: #F4EFE6; border-radius: 12px; padding: 2px 10px; margin-bottom: 6px; border: 1px solid #2cd44a; box-shadow: 0 0 8px rgba(44, 212, 74, 0.1);
+            background: #F4EFE6; border-radius: 12px; padding: 2px 10px; margin-bottom: 6px; 
+            border: 1px solid #2cd44a; box-shadow: 0 0 8px rgba(44, 212, 74, 0.1);
         }
         .input-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
         .input-row:not(:last-child) { border-bottom: 1px solid #d4cbb8; } 
@@ -167,19 +169,26 @@
         .sugerencia-item { padding: 6px 8px; border-bottom: 1px solid #e2dac9; cursor: pointer; font-size: 0.75rem; color: #222; }
 
         .price-box-live { 
-            background: #dcfce7; color: #166534; padding: 6px 10px; border-radius: 10px; text-align: center; font-weight: 700; margin-bottom: 6px; display: none; font-size: 0.85rem; border: 1px solid #2cd44a; 
+            background: #dcfce7; color: #166534; padding: 6px 10px; border-radius: 10px; 
+            text-align: center; font-weight: 700; margin-bottom: 6px; display: none; 
+            font-size: 0.85rem; border: 1px solid #2cd44a; 
         }
         .badge-nocturno { background: #fef2f2; color: #dc2626; padding: 2px 5px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; display: inline-block; margin-top: 2px; border: 1px solid #fecaca; }
         
         .btn-green-action { 
-            width: 100%; background: #2cd44a; color: white; border: none; padding: 10px; border-radius: 50px; font-size: 0.88rem; font-weight: 700; cursor: pointer; box-shadow: 0 3px 10px rgba(44,212,74,0.3); text-align: center; margin-top: 2px; transition: background 0.2s; border: 1px solid #22b03b;
+            width: 100%; background: #2cd44a; color: white; border: none; padding: 10px; 
+            border-radius: 50px; font-size: 0.88rem; font-weight: 700; cursor: pointer; 
+            box-shadow: 0 3px 10px rgba(44,212,74,0.3); text-align: center; margin-top: 2px; 
+            transition: background 0.2s; border: 1px solid #22b03b;
         }
         .btn-green-action:hover { background: #25b83f; }
 
         .pasajero-ping-icon { background: #2cd44a; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
         .destino-ping-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
         .auto-conductor-ping {
-            font-size: 30px !important; width: 30px !important; height: 30px !important; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            font-size: 30px !important; width: 30px !important; height: 30px !important;
+            display: flex; align-items: center; justify-content: center;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
         }
 
         .hidden { display: none !important; }
@@ -212,20 +221,6 @@
             <input type="text" id="regNombre" placeholder="Ingresá tu nombre y apellido">
             <input type="tel" id="regTelefono" placeholder="Tu número de teléfono">
             <button class="btn-green-action" onclick="guardarRegistroPerfil()">Comenzar a Viajar</button>
-        </div>
-    </div>
-
-    <!-- TARJETA GPS SUPERIOR (ESTILO GOOGLE MAPS) -->
-    <div id="gpsNavigationOverlay">
-        <div class="gps-card-main">
-            <div class="gps-icon-turno" id="gpsIconoManiobra">➔</div>
-            <div class="gps-instruccion-text">
-                <h2 id="gpsDistanciaTurno">0 m</h2>
-                <p id="gpsNombreCalle">En camino al destino</p>
-            </div>
-        </div>
-        <div class="gps-card-secundaria" id="gpsCardSecundaria">
-            <span>🔄 Continuar derecho</span>
         </div>
     </div>
 
@@ -356,7 +351,6 @@
         let mapa = null, markerOrigen = null, markerDestino = null, markerConductor = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
         let intervaloActualizacionRuta = null;
-        let pasosNavegacionOSRM = [];
 
         function seleccionarVehiculo(tipo) {
             tipoVehiculoSeleccionado = tipo;
@@ -578,7 +572,6 @@
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
                     } else if (viaje.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
-                        document.getElementById('gpsNavigationOverlay').classList.add('activo');
                         iniciarMonitoreoDinamicoRuta();
                     }
                     mostrarPaso('pasoPrecio');
@@ -631,7 +624,6 @@
                     }
                     if (de.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
-                        document.getElementById('gpsNavigationOverlay').classList.add('activo');
                         iniciarMonitoreoDinamicoRuta();
                     }
                     if (de.estado === 'cancelado') { 
@@ -709,12 +701,6 @@
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.85 }).addTo(mapa);
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
-                    // Procesar instrucciones de giro de OSRM para la tarjeta GPS
-                    if (data.routes[0].legs && data.routes[0].legs[0].steps) {
-                        pasosNavegacionOSRM = data.routes[0].legs[0].steps;
-                        actualizarInstruccionGPSVisual(0);
-                    }
-
                     let baseCalculo = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
                     if (esHorarioNocturno()) { baseCalculo = baseCalculo * TARIFAS_ACTIVAS.nocturno; }
 
@@ -740,36 +726,6 @@
                 }
             } catch (e) {
                 console.error("Error al calcular ruta:", e);
-            }
-        }
-
-        function actualizarInstruccionGPSVisual(indicePaso) {
-            if (!pasosNavegacionOSRM || pasosNavegacionOSRM.length === 0) return;
-            const pasoActual = pasosNavegacionOSRM[indicePaso] || pasosNavegacionOSRM[0];
-            const siguientePaso = pasosNavegacionOSRM[indicePaso + 1];
-
-            let distanciaMeters = Math.round(pasoActual.distance || 0);
-            let nombreCalle = pasoActual.name || "Continuar ruta";
-            let tipoManiobra = pasoActual.maneuver ? pasoActual.maneuver.type : "straight";
-            let modificador = pasoActual.maneuver ? pasoActual.maneuver.modifier : "";
-
-            let iconoSimbolo = "➔";
-            if (modificador.includes("left")) iconoSimbolo = "⬅️";
-            else if (modificador.includes("right")) iconoSimbolo = "➡️";
-            else if (tipoManiobra === "arrive") iconoSimbolo = "🏁";
-
-            document.getElementById('gpsIconoManiobra').textContent = iconoSimbolo;
-            document.getElementById('gpsDistanciaTurno').textContent = distanciaMeters + " m";
-            document.getElementById('gpsNombreCalle').textContent = nombreCalle;
-
-            if (siguientePaso) {
-                let modSig = siguientePaso.maneuver ? siguientePaso.maneuver.modifier : "";
-                let flechaSig = "➔";
-                if (modSig.includes("left")) flechaSig = "⬅️";
-                else if (modSig.includes("right")) flechaSig = "➡️";
-                document.getElementById('gpsCardSecundaria').innerHTML = `<span>Luego ${flechaSig} ${siguientePaso.name || 'en ruta'}</span>`;
-            } else {
-                document.getElementById('gpsCardSecundaria').innerHTML = `<span>🏁 Llegando a destino</span>`;
             }
         }
 
