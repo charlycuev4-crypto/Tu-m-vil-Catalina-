@@ -76,7 +76,7 @@
         .mapa-hint { position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(44, 212, 74, 0.95); color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-align: center; width: 85%; max-width: 320px; }
         .mapa-hint.visible { display: block; }
 
-        /* PANEL INFERIOR CON SCROLL */
+        /* PANEL INFERIOR DINÁMICO */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
             background: #E8E2D5; 
@@ -92,6 +92,8 @@
         }
         .bottom-panel:focus-within, .bottom-panel:active { height: 55vh; }
         .bottom-panel.con-ruta { height: 35vh; }
+        /* Estado compacto cuando el viaje está activo para ganar visibilidad en el GPS */
+        .bottom-panel.modo-compacto { height: auto !important; max-height: 40vh; padding-bottom: 12px; }
 
         .panel-handle { width: 38px; height: 4px; background: #b5ac9b; border-radius: 2px; margin: 0 auto 6px; cursor: pointer; }
 
@@ -321,7 +323,7 @@
                     <p id="autoCond">Vehículo en camino</p>
                 </div>
             </div>
-            <div style="text-align: center; padding: 8px 0; color: #166534; font-weight: 700; font-size: 0.88rem;" id="estadoViajePasajero">
+            <div style="text-align: center; padding: 4px 0; color: #166534; font-weight: 700; font-size: 0.85rem;" id="estadoViajePasajero">
                 El móvil aceptó el viaje y va en camino 🚗
             </div>
         </div>
@@ -430,7 +432,12 @@
 
         function toggleExpandirPanel() {
             const panel = document.getElementById('bottomPanel');
-            panel.style.height = (panel.style.height === '55vh') ? '' : '55vh';
+            if (panel.classList.contains('modo-compacto')) {
+                panel.classList.remove('modo-compacto');
+                panel.style.height = '35vh';
+            } else {
+                panel.style.height = (panel.style.height === '55vh') ? '' : '55vh';
+            }
         }
 
         async function procesarSplashDeBienvenida() {
@@ -707,7 +714,11 @@
 
                     precioCalculado = (tipoVehiculoSeleccionado === 'auto') ? precioAuto : precioMoto;
 
-                    document.getElementById('bottomPanel').classList.add('con-ruta');
+                    if (!document.getElementById('pasoPrecio').classList.contains('hidden')) {
+                        document.getElementById('bottomPanel').classList.add('modo-compacto');
+                    } else {
+                        document.getElementById('bottomPanel').classList.add('con-ruta');
+                    }
                     
                     if (!puntoOrigenPersonalizado) {
                         mapa.fitBounds(rutaTrazada.getBounds(), { padding: [35, 35], maxZoom: 16.5 });
@@ -765,7 +776,6 @@
             }
 
             try {
-                // Compatible 100% con las columnas originales de la base de datos
                 const { data, error } = await supabaseClient
                     .from('viajes')
                     .insert({
@@ -799,7 +809,20 @@
         }
         
         function volverAtras() { cancelarViaje(); }
-        function mostrarPaso(id) { ['pasoDatos', 'pasoEsperando', 'pasoPrecio'].forEach(p => document.getElementById(p).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
+        
+        function mostrarPaso(id) { 
+            ['pasoDatos', 'pasoEsperando', 'pasoPrecio'].forEach(p => document.getElementById(p).classList.add('hidden')); 
+            document.getElementById(id).classList.remove('hidden'); 
+            
+            const panel = document.getElementById('bottomPanel');
+            if (id === 'pasoPrecio') {
+                panel.classList.add('modo-compacto');
+                panel.classList.remove('con-ruta');
+            } else {
+                panel.classList.remove('modo-compacto');
+            }
+        }
+
         function mostrarMsg(texto, tipo) { const msg = document.getElementById('msg'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
 
         window.addEventListener('DOMContentLoaded', () => { initMapa(); procesarSplashDeBienvenida(); });
