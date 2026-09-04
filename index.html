@@ -20,9 +20,10 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            color: #2d3748;
         }
 
-        /* Simulación del Mapa de Fondo */
+        /* Mapa de Fondo del Pasajero */
         .map-background {
             flex: 1;
             background: #e5e3df;
@@ -30,34 +31,64 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            color: #777;
+            color: #718096;
             font-weight: bold;
+            font-size: 14px;
         }
 
-        /* Tarjeta Inferior Principal */
-        .main-card {
+        /* Tarjeta Inferior del Pasajero (Limpia) */
+        .passenger-bottom-card {
             background: #ffffff;
             border-top-left-radius: 20px;
             border-top-right-radius: 20px;
             padding: 20px;
-            box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
             z-index: 10;
         }
 
         .status-text {
-            font-size: 16px;
+            font-size: 15px;
             color: #27ae60;
             font-weight: bold;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        /* Botón de Acceso al Chat (Globo) */
-        .chat-trigger-btn {
+        .driver-card-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .driver-details {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .driver-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #cbd5e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #4a5568;
+        }
+
+        /* Globo / Botón de Acceso al Chat */
+        .chat-globe-trigger {
             background-color: #f8f9fa;
-            border: 2px solid #e2e8f0;
+            border: 1px solid #cbd5e0;
             border-radius: 12px;
             padding: 12px 16px;
             display: flex;
@@ -65,10 +96,9 @@
             justify-content: space-between;
             cursor: pointer;
             transition: background 0.2s;
-            margin-top: 10px;
         }
 
-        .chat-trigger-btn:hover {
+        .chat-globe-trigger:hover {
             background-color: #edf2f7;
         }
 
@@ -78,14 +108,17 @@
             gap: 12px;
             color: #4a5568;
             font-weight: 500;
+            font-size: 14px;
         }
 
         .chat-trigger-left i {
             color: #3182ce;
-            font-size: 20px;
+            font-size: 18px;
         }
 
-        /* VISTA EXCLUSIVA DE CHAT (Pantalla Completa superpuesta) */
+        /* ==========================================
+           VISTA EXCLUSIVA DE CHAT (Pantalla Completa)
+           ========================================== */
         .chat-fullscreen-overlay {
             position: fixed;
             top: 0;
@@ -130,7 +163,6 @@
             font-size: 14px;
         }
 
-        /* Contenedor de mensajes */
         .chat-messages-container {
             flex: 1;
             overflow-y: auto;
@@ -143,17 +175,10 @@
 
         .message {
             max-width: 75%;
-            padding: 10px 14px;
+            padding: 12px 16px;
             border-radius: 12px;
             font-size: 14px;
             line-height: 1.4;
-        }
-
-        .message.conductor {
-            background-color: #2d3748;
-            color: white;
-            align-self: flex-start;
-            border-bottom-left-radius: 2px;
         }
 
         .message.pasajero {
@@ -163,15 +188,21 @@
             border-bottom-right-radius: 2px;
         }
 
+        .message.conductor {
+            background-color: #2d3748;
+            color: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+
         .message-sender {
             font-size: 10px;
             opacity: 0.8;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
             display: block;
             font-weight: bold;
         }
 
-        /* Barra inferior para escribir mensajes */
         .chat-input-bar {
             display: flex;
             padding: 12px 15px;
@@ -182,7 +213,7 @@
 
         .chat-input-bar input {
             flex: 1;
-            padding: 12px 15px;
+            padding: 12px 16px;
             border-radius: 25px;
             border: 1px solid #cbd5e0;
             outline: none;
@@ -197,7 +228,7 @@
             background-color: #3182ce;
             color: white;
             border: none;
-            padding: 0 20px;
+            padding: 0 22px;
             border-radius: 25px;
             font-weight: bold;
             cursor: pointer;
@@ -211,43 +242,56 @@
 </head>
 <body>
 
-    <!-- FONDO / MAPA -->
+    <!-- MAPA DE FONDO -->
     <div class="map-background">
-        <span>[ Vista de Mapa / GPS ]</span>
+        <span>[ Pantalla de Seguimiento / Mapa del Pasajero ]</span>
     </div>
 
-    <!-- TARJETA PRINCIPAL DEL PASAJERO -->
-    <div class="main-card">
+    <!-- TARJETA INFERIOR DEL PASAJERO -->
+    <div class="passenger-bottom-card">
         <div class="status-text">
             <i class="fas fa-shield-alt"></i> Viajando seguro hacia tu destino...
         </div>
-        
-        <!-- Botón tipo globo para abrir el chat exclusivo -->
-        <div class="chat-trigger-btn" onclick="abrirChat()">
+
+        <!-- Información breve del conductor -->
+        <div class="driver-card-info">
+            <div class="driver-details">
+                <div class="driver-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div>
+                    <div style="font-weight: bold; font-size: 14px;">Carlos Cueva</div>
+                    <div style="font-size: 12px; color: #718096;">Ford Fiesta - Negro ($4368)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Globo / Botón de Acceso al Chat Exclusivo -->
+        <div class="chat-globe-trigger" onclick="abrirChatPasajero()">
             <div class="chat-trigger-left">
-                <i class="fas fa-comment-dots"></i>
+                <i class="fas fa-comments"></i>
                 <span>Chat con tu conductor</span>
             </div>
             <i class="fas fa-chevron-right" style="color: #a0aec0;"></i>
         </div>
     </div>
 
-    <!-- VISTA EXCLUSIVA DE CHAT (Oculta por defecto) -->
-    <div id="vistaChatExclusiva" class="chat-fullscreen-overlay" style="display: none;">
-        <!-- Cabecera del Chat -->
+    <!-- VISTA EXCLUSIVA DE CHAT (Pantalla Completa - Oculta por defecto) -->
+    <div id="vistaChatPasajero" class="chat-fullscreen-overlay" style="display: none;">
+        <!-- Cabecera del chat -->
         <div class="chat-header">
             <div class="chat-header-user">
-                <i class="fas.fa-user-circle"></i>
-                <span>Carlos Cueva (Conductor)</span>
+                <i class="fas fa-user-circle"></i>
+                <span>Chat con Carlos Cueva</span>
             </div>
-            <!-- Botón Terminar Chat / Volver -->
-            <button class="btn-terminar-chat" onclick="cerrarChat()">
+            <!-- Botón Terminar Chat para volver a la pantalla principal -->
+            <button class="btn-terminar-chat" onclick="cerrarChatPasajero()">
                 <i class="fas fa-arrow-left"></i> Terminar chat
             </button>
         </div>
 
-        <!-- Historial de Mensajes -->
-        <div class="chat-messages-container" id="contenedorMensajes">
+        <!-- Contenedor de mensajes -->
+        <div class="chat-messages-container" id="contenedorMensajesPasajero">
             <div class="message conductor">
                 <span class="message-sender">conductor:</span>
                 Hola
@@ -258,34 +302,33 @@
             </div>
         </div>
 
-        <!-- Input para Enviar Mensaje -->
+        <!-- Barra inferior para escribir -->
         <div class="chat-input-bar">
-            <input type="text" id="inputMensaje" placeholder="Escribe un mensaje al chofer...">
-            <button onclick="enviarMensaje()">Enviar</button>
+            <input type="text" id="inputMensajePasajero" placeholder="Escribe un mensaje al chofer...">
+            <button onclick="enviarMensajePasajero()">Enviar</button>
         </div>
     </div>
 
     <script>
-        // Función para abrir la página de chat exclusiva
-        function abrirChat() {
-            document.getElementById('vistaChatExclusiva').style.display = 'flex';
+        // Función para abrir la página exclusiva de chat del pasajero
+        function abrirChatPasajero() {
+            document.getElementById('vistaChatPasajero').style.display = 'flex';
             irAlUltimoMensaje();
         }
 
-        // Función para cerrar el chat y volver al mapa/panel principal
-        function cerrarChat() {
-            document.getElementById('vistaChatExclusiva').style.display = 'none';
+        // Función para cerrar el chat y volver al mapa principal
+        function cerrarChatPasajero() {
+            document.getElementById('vistaChatPasajero').style.display = 'none';
         }
 
-        // Función de ejemplo para enviar un mensaje nuevo
-        function enviarMensaje() {
-            const input = document.getElementById('inputMensaje');
+        // Función para enviar mensajes como pasajero
+        function enviarMensajePasajero() {
+            const input = document.getElementById('inputMensajePasajero');
             const texto = input.value.trim();
 
             if (texto !== "") {
-                const contenedor = document.getElementById('contenedorMensajes');
+                const contenedor = document.getElementById('contenedorMensajesPasajero');
                 
-                // Crear burbuja del pasajero
                 const nuevoDiv = document.createElement('div');
                 nuevoDiv.classList.add('message', 'pasajero');
                 nuevoDiv.innerHTML = `<span class="message-sender">pasajero:</span>${texto}`;
@@ -296,9 +339,9 @@
             }
         }
 
-        // Mantener el scroll siempre al final de los mensajes nuevos
+        // Auto-scroll al último mensaje
         function irAlUltimoMensaje() {
-            const contenedor = document.getElementById('contenedorMensajes');
+            const contenedor = document.getElementById('contenedorMensajesPasajero');
             contenedor.scrollTop = contenedor.scrollHeight;
         }
     </script>
