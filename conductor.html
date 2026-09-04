@@ -64,7 +64,6 @@
 
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
-        /* Panel Inferior: Compacto cuando busca, medida justa automática (sin espacios vacíos) cuando hay viaje */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
             background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; 
@@ -74,16 +73,10 @@
             overflow: hidden; transition: height 0.3s ease, background 0.3s ease; color: #f1f5f9; 
         }
         .bottom-panel.viaje-entrante { 
-            height: auto; 
-            max-height: 85vh;
-            overflow-y: auto; 
+            height: auto; max-height: 85vh; overflow-y: auto; 
             animation: alertaParpadeo 1s infinite alternate; 
         }
-        .bottom-panel.viaje-activo-estado {
-            height: auto;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
+        .bottom-panel.viaje-activo-estado { height: auto; max-height: 85vh; overflow-y: auto; }
         @keyframes alertaParpadeo { from { border-top-color: #334155; background: #1e293b; } to { border-top-color: #ef4444; background: #2d1a22; } }
 
         .panel-handle { width: 40px; height: 4px; background: #475569; border-radius: 3px; margin: 0 auto 6px; }
@@ -96,12 +89,22 @@
         .pasajero-foto-box img { width: 100%; height: 100%; object-fit: cover; }
         
         .viaje-pasajero { font-size: 0.95rem; font-weight: 700; color: #fff; }
+        .pasajero-rating { font-size: 0.75rem; color: #fbbf24; font-weight: 700; }
         
-        .whatsapp-btn {
-            background: #25d366; color: white; border: none; padding: 2px 8px;
-            border-radius: 12px; font-size: 0.7rem; font-weight: 700; cursor: pointer;
-            text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;
+        /* Estilos del Chat Interno Seguro */
+        .chat-toggle-btn {
+            background: #3b82f6; color: white; border: none; padding: 3px 10px;
+            border-radius: 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;
         }
+        .chat-container { background: #0f172a; border-radius: 12px; padding: 8px; margin-bottom: 8px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 6px; }
+        .chat-mensajes { max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; padding-right: 4px; }
+        .chat-burbuja { padding: 6px 10px; border-radius: 8px; max-width: 80%; word-break: break-word; }
+        .chat-burbuja.chofer { background: #1e3a8a; align-self: flex-end; color: #eff6ff; }
+        .chat-burbuja.pasajero { background: #334155; align-self: flex-start; color: #f8fafc; }
+        .chat-input-row { display: flex; gap: 6px; }
+        .chat-input-row input { flex: 1; background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 6px 10px; color: white; font-size: 0.8rem; outline: none; }
+        .chat-input-row button { background: #3b82f6; color: white; border: none; border-radius: 8px; padding: 0 12px; font-weight: 700; cursor: pointer; font-size: 0.8rem; }
 
         .viaje-precio { font-size: 1.15rem; font-weight: 800; color: #10b981; }
 
@@ -110,34 +113,19 @@
         .input-row span { color: #f1f5f9; font-weight: 500; }
         
         .manifesto-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; padding: 4px 8px; border-radius: 0 6px 6px 0; font-size: 0.75rem; color: #e2e8f0; margin-top: 4px; }
+        .ida-vuelta-badge { background: rgba(236, 72, 153, 0.15); border-left: 3px solid #ec4899; padding: 4px 8px; border-radius: 0 6px 6px 0; font-size: 0.75rem; color: #f472b6; margin-top: 4px; font-weight: 700; }
 
         .btn-action { width: 100%; color: white; border: none; padding: 12px; border-radius: 50px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         
-        /* Ruedita / Radar animado para la búsqueda */
         .btn-espera { 
-            background: #059669; 
-            color: #ffffff; 
-            cursor: default; 
-            padding: 8px 16px; 
-            font-size: 0.85rem; 
-            border-radius: 20px; 
-            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            background: #059669; color: #ffffff; cursor: default; padding: 8px 16px; font-size: 0.85rem; border-radius: 20px; 
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4); display: inline-flex; align-items: center; justify-content: center; gap: 8px;
         }
         .ruedita-radar {
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top-color: #ffffff;
-            border-radius: 50%;
+            width: 14px; height: 14px; border: 2px solid rgba(255, 255, 255, 0.3); border-top-color: #ffffff; border-radius: 50%;
             animation: girarRadar 0.8s linear infinite;
         }
-        @keyframes girarRadar {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes girarRadar { to { transform: rotate(360deg); } }
 
         .btn-desconectado { background: #451a03; color: #f59e0b; cursor: not-allowed; padding: 8px 16px; font-size: 0.85rem; border-radius: 20px; }
         .btn-aceptar { background: #10b981; font-size: 1.05rem; }
@@ -274,11 +262,24 @@
                         </div>
                         <div>
                             <div class="viaje-pasajero" id="lblPasajero">-</div>
-                            <a id="linkWhatsapp" href="#" target="_blank" class="whatsapp-btn hidden">💬 WhatsApp</a>
+                            <div class="pasajero-rating" id="lblPasajeroRating">⭐ 5.0 (Pasajero seguro)</div>
+                            <button class="chat-toggle-btn" onclick="alternarChatSeguro()">💬 Chat Seguro</button>
                         </div>
                     </div>
                     <div class="viaje-precio" id="lblPrecio">$0</div>
                 </div>
+
+                <!-- Chat Interno Seguro (Reemplaza WhatsApp) -->
+                <div id="panelChatSeguro" class="chat-container hidden">
+                    <div class="chat-mensajes" id="listaMensajesChat">
+                        <div class="chat-burbuja pasajero">Hola chofer, te espero en la esquina.</div>
+                    </div>
+                    <div class="chat-input-row">
+                        <input type="text" id="inpMensajeChat" placeholder="Escribir mensaje seguro..." onkeypress="if(event.key==='Enter')enviarMensajeChat()">
+                        <button onclick="enviarMensajeChat()">Enviar</button>
+                    </div>
+                </div>
+
                 <div class="input-group">
                     <div class="input-row" id="lblDetallesRutaYBarrio">
                     </div>
@@ -310,10 +311,8 @@
         function verificarReseteoDiario() {
             const hoy = new Date().toLocaleDateString();
             const ultimaFecha = localStorage.getItem('chofer_fecha_actual');
-
             if (ultimaFecha !== hoy) {
-                totalDia = 0;
-                cantViajesCount = 0;
+                totalDia = 0; cantViajesCount = 0;
                 localStorage.setItem('chofer_total_dia', '0');
                 localStorage.setItem('chofer_cant_viajes', '0');
                 localStorage.setItem('chofer_fecha_actual', hoy);
@@ -355,29 +354,19 @@
         function procesarYComprimirFoto(event) {
             const archivo = event.target.files[0];
             if (!archivo) return;
-
             const lector = new FileReader();
             lector.onload = function(e) {
                 const img = new Image();
                 img.src = e.target.result;
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 350; 
-                    const MAX_HEIGHT = 350;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                    } else {
-                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
+                    const MAX_WIDTH = 350; const MAX_HEIGHT = 350;
+                    let width = img.width; let height = img.height;
+                    if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } }
+                    else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                    canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-
                     base64FotoTemp = canvas.toDataURL('image/jpeg', 0.7);
                     document.getElementById('imgPreview').src = base64FotoTemp;
                 }
@@ -387,20 +376,12 @@
 
         function guardarConfigChofer(e) {
             e.preventDefault();
-            const nombre = document.getElementById('inpNombre').value.trim();
-            const telefono = document.getElementById('inpTelefono').value.trim();
-            const modelo = document.getElementById('inpModelo').value.trim();
-            const color = document.getElementById('inpColor').value.trim();
-            const patente = document.getElementById('inpPatente').value.trim();
-            const fotoFinal = base64FotoTemp || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
-
-            localStorage.setItem('cfg_auto_chofer', nombre);
-            localStorage.setItem('cfg_auto_telefono', telefono);
-            localStorage.setItem('cfg_auto_modelo', modelo);
-            localStorage.setItem('cfg_auto_color', color);
-            localStorage.setItem('cfg_auto_patente', patente);
-            localStorage.setItem('cfg_auto_foto', fotoFinal);
-
+            localStorage.setItem('cfg_auto_chofer', document.getElementById('inpNombre').value.trim());
+            localStorage.setItem('cfg_auto_telefono', document.getElementById('inpTelefono').value.trim());
+            localStorage.setItem('cfg_auto_modelo', document.getElementById('inpModelo').value.trim());
+            localStorage.setItem('cfg_auto_color', document.getElementById('inpColor').value.trim());
+            localStorage.setItem('cfg_auto_patente', document.getElementById('inpPatente').value.trim());
+            localStorage.setItem('cfg_auto_foto', base64FotoTemp || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg");
             document.getElementById('modalConfigChofer').classList.add('hidden');
             location.reload();
         }
@@ -499,8 +480,10 @@
 
                     if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
                         actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng);
-                    } else if (viajeActivo && estadoFlujo === 'en_viaje') {
-                        actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.destino_lat, viajeActivo.destino_lng);
+                    } else if (viajeActivo && (estadoFlujo === 'en_viaje' || estadoFlujo === 'retorno')) {
+                        let targetLat = (estadoFlujo === 'retorno') ? viajeActivo.origen_lat : viajeActivo.destino_lat;
+                        let targetLng = (estadoFlujo === 'retorno') ? viajeActivo.origen_lng : viajeActivo.destino_lng;
+                        actualizarRutaEnMovimiento(nuevaLat, nuevaLng, targetLat, targetLng);
                     }
                 }, (error) => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
             }
@@ -518,29 +501,37 @@
 
         function abrirNavegacionGoogleMaps() {
             if (!viajeActivo) { alert("Necesitás un viaje activo."); return; }
-            let destLat = (estadoFlujo === 'en_viaje') ? viajeActivo.destino_lat : viajeActivo.origen_lat;
-            let destLng = (estadoFlujo === 'en_viaje') ? viajeActivo.destino_lng : viajeActivo.origen_lng;
+            let destLat = (estadoFlujo === 'en_viaje') ? viajeActivo.destino_lat : ((estadoFlujo === 'retorno') ? viajeActivo.origen_lat : viajeActivo.origen_lat);
+            let destLng = (estadoFlujo === 'en_viaje') ? viajeActivo.destino_lng : ((estadoFlujo === 'retorno') ? viajeActivo.origen_lng : viajeActivo.origen_lng);
             window.open(`https://www.google.com/maps/dir/?api=1&origin=${choferCoords.lat},${choferCoords.lng}&destination=${destLat},${destLng}&travelmode=driving`, '_blank');
+        }
+
+        function alternarChatSeguro() {
+            const panelChat = document.getElementById('panelChatSeguro');
+            panelChat.classList.toggle('hidden');
+        }
+
+        function enviarMensajeChat() {
+            const input = document.getElementById('inpMensajeChat');
+            const texto = input.value.trim();
+            if(!texto) return;
+            const lista = document.getElementById('listaMensajesChat');
+            lista.innerHTML += `<div class="chat-burbuja chofer"><b>Vos:</b> ${texto}</div>`;
+            input.value = '';
+            lista.scrollTop = lista.scrollHeight;
         }
 
         async function buscarViajesPendientesRecientes() {
             if (viajeActivo || !estaConectado) return;
             try {
                 const { data: viajes, error } = await supabaseClient
-                    .from('viajes')
-                    .select('*')
-                    .eq('estado', 'pendiente')
-                    .is('conductor_nombre', null)
-                    .order('created_at', { ascending: false })
-                    .limit(1);
+                    .from('viajes').select('*').eq('estado', 'pendiente').is('conductor_nombre', null)
+                    .order('created_at', { ascending: false }).limit(1);
 
                 if (!error && viajes && viajes.length > 0) {
                     const viajeReciente = viajes[0];
-                    const tiempoCreacion = new Date(viajeReciente.created_at).getTime();
-                    const ahora = Date.now();
-                    if ((ahora - tiempoCreacion) < 45000) {
-                        const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, viajeReciente.origen_lat, viajeReciente.origen_lng);
-                        if (distanciaAlViaje <= 5) {
+                    if ((Date.now() - new Date(viajeReciente.created_at).getTime()) < 45000) {
+                        if (calcularDistanciaKm(choferCoords.lat, choferCoords.lng, viajeReciente.origen_lat, viajeReciente.origen_lng) <= 5) {
                             montarViajeEntrante(viajeReciente);
                         }
                     }
@@ -554,9 +545,9 @@
             canalSupabase
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, (payload) => {
                     if (payload.new.estado === 'pendiente' && !viajeActivo && estaConectado) {
-                        const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, payload.new.origen_lat, payload.new.origen_lng);
-                        if (distanciaAlViaje > 5) return;
-                        montarViajeEntrante(payload.new);
+                        if (calcularDistanciaKm(choferCoords.lat, choferCoords.lng, payload.new.origen_lat, payload.new.origen_lng) <= 5) {
+                            montarViajeEntrante(payload.new);
+                        }
                     }
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes' }, (payload) => {
@@ -610,11 +601,11 @@
             let minDestino = viaje.tiempo_destino_min || 10;
             let distanciaViaje = viaje.distancia_km || "0";
             
+            let esIdaVuelta = viaje.ida_y_vuelta || viaje.es_ida_vuelta || false;
+            let idaVueltaHtml = esIdaVuelta ? `<div class="ida-vuelta-badge">🔄 Servicio de Ida y Vuelta solicitado</div>` : '';
+            
             let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
-            let manifiestoHtml = '';
-            if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
-                manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
-            }
+            let manifiestoHtml = (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") ? `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>` : '';
 
             document.getElementById('lblPasajero').innerHTML = `${viaje.pasajero_nombre || "Pasajero"}`;
             document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
@@ -626,17 +617,11 @@
                     <span>🕒 <b>${minAprox} min</b> (${distanciaViaje} km)</span>
                     <span style="color:#38bdf8;">🚗 <b>${minDestino} min</b> viaje</span>
                 </div>
+                ${idaVueltaHtml}
                 ${manifiestoHtml}
             `;
 
             if (viaje.pasajero_foto) document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
-
-            if (viaje.pasajero_telefono) {
-                let telLimpio = viaje.pasajero_telefono.replace(/\D/g, '');
-                const btnWp = document.getElementById('linkWhatsapp');
-                btnWp.href = `https://wa.me/549${telLimpio}?text=Hola%20${encodeURIComponent(viaje.pasajero_nombre)},%20soy%20tu%20chofer%20de%20Tu%20Móvil.`;
-                btnWp.classList.remove('hidden');
-            }
 
             if (markerOrigen) mapa.removeLayer(markerOrigen);
             if (markerDestino) mapa.removeLayer(markerDestino);
@@ -651,7 +636,6 @@
         function rechazarViajeEntrante() {
             detenerSirenaAlerta();
             limpiarMemoriaConductor();
-
             if (markerOrigen) { mapa.removeLayer(markerOrigen); markerOrigen = null; }
             if (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
             if (rutaTrazada) { mapa.removeLayer(rutaTrazada); rutaTrazada = null; }
@@ -663,14 +647,14 @@
             const panel = document.getElementById('panelConductor');
             panel.classList.remove('viaje-entrante');
             panel.classList.remove('viaje-activo-estado');
-            
-            document.getElementById('linkWhatsapp').classList.add('hidden');
+            document.getElementById('panelChatSeguro').classList.add('hidden');
 
             mostrarMsg('Viaje rechazado. Buscando nuevos pasajeros...', 'success');
         }
 
         async function procesarLojicaViaje() {
             const panel = document.getElementById('panelConductor');
+            let esIdaVuelta = viajeActivo.ida_y_vuelta || viajeActivo.es_ida_vuelta || false;
 
             if (estadoFlujo === 'pendiente') {
                 detenerSirenaAlerta();
@@ -696,7 +680,6 @@
                     btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
 
                     document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
-
                     autocentrarMapa = true;
                     document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                     mapa.setView([choferCoords.lat, choferCoords.lng], 17);
@@ -707,54 +690,64 @@
             const btnEnCurso = document.getElementById('btnAccionEnCurso');
             if (estadoFlujo === 'aceptado') {
                 estadoFlujo = 'en_puerta'; localStorage.setItem('conductor_estado_flujo', 'en_puerta');
-                btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Iniciar Viaje al Destino 🧭";
+                btnEnCurso.className = "btn-action btn-iniciar"; 
+                btnEnCurso.textContent = esIdaVuelta ? "Iniciar Ida al Primer Destino 🧭" : "Iniciar Viaje al Destino 🧭";
                 document.getElementById('txtEstadoChofer').textContent = "En la Puerta 📍";
                 await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeActivo.id);
                 return;
             }
             if (estadoFlujo === 'en_puerta') {
                 estadoFlujo = 'en_viaje'; localStorage.setItem('conductor_estado_flujo', 'en_viaje');
-                btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
-                document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
+                btnEnCurso.className = "btn-action btn-llegué"; 
+                btnEnCurso.textContent = esIdaVuelta ? "Llegué a la Parada (Esperando Retorno) 📍" : "Llegué al Destino Final 🏁";
+                document.getElementById('txtEstadoChofer').textContent = "En Viaje 🧭";
                 
                 await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
-                
-                let barrioDestino = viajeActivo.destino_barrio || "Destino final";
-                let textoManifiesto = viajeActivo.manifiesto || viajeActivo.comentarios || viajeActivo.nota || "";
-                let manifiestoHtml = '';
-                if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
-                    manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
-                }
-
-                document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
-                    <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino}</span>
-                    <div style="border-top:1px solid #334155; margin-top:3px; padding-top:3px;">
-                        <span style="font-size:0.75rem; color:#94a3b8;">Conduciendo hacia el destino a bordo</span>
-                    </div>
-                    ${manifiestoHtml}
-                `;
-
                 trazarRutaCalles(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
-                
                 autocentrarMapa = true;
                 document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                 return;
             }
             if (estadoFlujo === 'en_viaje') {
-                let montoViaje = parseFloat(viajeActivo.precio || '0');
-                totalDia += montoViaje;
-                ultimoViajeMonto = montoViaje;
-                cantViajesCount += 1;
-
-                localStorage.setItem('chofer_total_dia', totalDia);
-                localStorage.setItem('chofer_ultimo_monto', ultimoViajeMonto);
-                localStorage.setItem('chofer_cant_viajes', cantViajesCount);
-                actualizarUIEstadisticas();
-
-                await supabaseClient.from('viajes').update({ estado: 'finalizado' }).eq('id', viajeActivo.id);
-                limpiarMemoriaConductor(); liberarWakeLock(); detenerRastreoGps();
-                setTimeout(() => location.reload(), 2000);
+                if (esIdaVuelta) {
+                    // Si es ida y vuelta, al llegar al destino cambiamos a estado de retorno
+                    estadoFlujo = 'retorno'; localStorage.setItem('conductor_estado_flujo', 'retorno');
+                    btnEnCurso.className = "btn-action btn-finalizar"; 
+                    btnEnCurso.textContent = "Finalizar Viaje de Ida y Vuelta y Cobrar ($" + viajeActivo.precio + ") 💵";
+                    document.getElementById('txtEstadoChofer').textContent = "Retornando al Origen 🔄";
+                    
+                    mostrarMsg('Llegó a la 1° parada. Realizando el retorno al punto inicial.', 'success');
+                    trazarRutaCalles(viajeActivo.destino_lat, viajeActivo.destino_lng, viajeActivo.origen_lat, viajeActivo.origen_lng);
+                    autocentrarMapa = true;
+                    return;
+                } else {
+                    // Viaje simple: cobro y finalización directa al llegar al destino
+                    finalizarYCobrarViaje();
+                }
+                return;
             }
+            if (estadoFlujo === 'retorno') {
+                // Completó el retorno del ida y vuelta
+                finalizarYCobrarViaje();
+            }
+        }
+
+        async function finalizarYCobrarViaje() {
+            let montoViaje = parseFloat(viajeActivo.precio || '0');
+            totalDia += montoViaje;
+            ultimoViajeMonto = montoViaje;
+            cantViajesCount += 1;
+
+            localStorage.setItem('chofer_total_dia', totalDia);
+            localStorage.setItem('chofer_ultimo_monto', ultimoViajeMonto);
+            localStorage.setItem('chofer_cant_viajes', cantViajesCount);
+            actualizarUIEstadisticas();
+
+            await supabaseClient.from('viajes').update({ estado: 'finalizado' }).eq('id', viajeActivo.id);
+            limpiarMemoriaConductor(); liberarWakeLock(); detenerRastreoGps();
+            
+            alert(`Viaje finalizado con éxito. Total cobrado: $${montoViaje}`);
+            setTimeout(() => location.reload(), 1500);
         }
 
         async function verificarViajeActivoConductor() {
@@ -773,23 +766,11 @@
                 panel.classList.remove('viaje-entrante');
                 panel.classList.add('viaje-activo-estado');
 
-                let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
-                let manifiestoHtml = '';
-                if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
-                    manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
-                }
-
+                let esIdaVuelta = viaje.ida_y_vuelta || viaje.es_ida_vuelta || false;
                 document.getElementById('lblPasajero').innerHTML = `${viaje.pasajero_nombre || "Pasajero"}`;
                 document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
 
                 if (viaje.pasajero_foto) document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
-
-                if (viaje.pasajero_telefono) {
-                    let telLimpio = viaje.pasajero_telefono.replace(/\D/g, '');
-                    const btnWp = document.getElementById('linkWhatsapp');
-                    btnWp.href = `https://wa.me/549${telLimpio}?text=Hola%20${encodeURIComponent(viaje.pasajero_nombre)},%20soy%20tu%20chofer%20de%20Tu%20Móvil.`;
-                    btnWp.classList.remove('hidden');
-                }
 
                 markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
                 markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
@@ -800,25 +781,16 @@
 
                 if (estadoFlujo === 'aceptado') {
                     btnEnCurso.className = "btn-action btn-llegué"; btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
-                    document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
-                        <span>📍 <b>Recogida:</b> ${viaje.origen_barrio || "Zona general"}</span>
-                        ${manifiestoHtml}
-                    `;
                     trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
                 } else if (estadoFlujo === 'en_puerta') {
-                    btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Iniciar Viaje al Destino 🧭";
-                    document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
-                        <span>📍 <b>En puerta del pasajero</b></span>
-                        ${manifiestoHtml}
-                    `;
+                    btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = esIdaVuelta ? "Iniciar Ida al Primer Destino 🧭" : "Iniciar Viaje al Destino 🧭";
                     trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
                 } else if (estadoFlujo === 'en_viaje') {
-                    btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
-                    document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
-                        <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${viaje.destino_barrio || "Zona general"}</span>
-                        ${manifiestoHtml}
-                    `;
+                    btnEnCurso.className = "btn-action btn-llegué"; btnEnCurso.textContent = esIdaVuelta ? "Llegué a la Parada (Esperando Retorno) 📍" : "Llegué al Destino Final 🏁";
                     trazarRutaCalles(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+                } else if (estadoFlujo === 'retorno') {
+                    btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje de Ida y Vuelta y Cobrar ($" + viaje.precio + ") 💵";
+                    trazarRutaCalles(viaje.destino_lat, viaje.destino_lng, viaje.origen_lat, viaje.origen_lng);
                 }
             } catch (e) { limpiarMemoriaConductor(); }
         }
@@ -836,27 +808,18 @@
             } catch (e) {}
         }
 
-        let ultimoCalculoRuta = 0;
-        let ultimaLatRuta = 0;
-        let ultimaLngRuta = 0;
-
+        let ultimoCalculoRuta = 0, ultimaLatRuta = 0, ultimaLngRuta = 0;
         function distanciaEnMetros(lat1, lon1, lat2, lon2) {
-            let dLat = (lat2 - lat1) * Math.PI / 180;
-            let dLon = (lon2 - lon1) * Math.PI / 180;
-            let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                    Math.sin(dLon/2) * Math.sin(dLon/2);
-            let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return 6371000 * c;
+            let dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
+            let a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+            return 6371000 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
         function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
             let ahora = Date.now();
             let seDesvio = (ultimaLatRuta === 0) || (distanciaEnMetros(lat1, lon1, ultimaLatRuta, ultimaLngRuta) > 35);
-            
             if ((ahora - ultimoCalculoRuta > 6000) || seDesvio) {
-                ultimaLatRuta = lat1;
-                ultimaLngRuta = lon1;
+                ultimaLatRuta = lat1; ultimaLngRuta = lon1;
                 trazarRutaCalles(lat1, lon1, lat2, lon2);
                 ultimoCalculoRuta = ahora;
             }
