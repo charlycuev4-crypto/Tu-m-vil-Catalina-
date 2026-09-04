@@ -64,20 +64,24 @@
 
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
+        /* Panel inferior con soporte para Scroll total */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
             background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; 
             box-shadow: 0 -10px 30px rgba(0,0,0,0.5); 
-            padding: 8px 16px calc(12px + env(safe-area-inset-bottom)); 
+            padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); 
             height: 75px; 
             overflow: hidden; transition: height 0.3s ease, background 0.3s ease; color: #f1f5f9; 
         }
-        .bottom-panel.viaje-entrante { 
-            height: auto; max-height: 85vh; overflow-y: auto; 
-            animation: alertaParpadeo 1s infinite alternate; 
+        .bottom-panel.viaje-entrante, 
+        .bottom-panel.viaje-activo-estado { 
+            height: auto; 
+            max-height: 80vh; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch;
         }
-        .bottom-panel.viaje-activo-estado {
-            height: auto; max-height: 85vh; overflow-y: auto;
+        .bottom-panel.viaje-entrante { 
+            animation: alertaParpadeo 1s infinite alternate; 
         }
         @keyframes alertaParpadeo { from { border-top-color: #334155; background: #1e293b; } to { border-top-color: #ef4444; background: #2d1a22; } }
 
@@ -91,13 +95,6 @@
         .pasajero-foto-box img { width: 100%; height: 100%; object-fit: cover; }
         
         .viaje-pasajero { font-size: 0.95rem; font-weight: 700; color: #fff; }
-        
-        .whatsapp-btn {
-            background: #25d366; color: white; border: none; padding: 2px 8px;
-            border-radius: 12px; font-size: 0.7rem; font-weight: 700; cursor: pointer;
-            text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;
-        }
-
         .viaje-precio { font-size: 1.15rem; font-weight: 800; color: #10b981; }
 
         .input-group { background: #0f172a; border-radius: 14px; padding: 8px 12px; margin-bottom: 8px; }
@@ -112,7 +109,7 @@
             padding: 8px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 6px;
         }
         .chat-mensajes-lista {
-            max-height: 110px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
+            max-height: 100px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
             font-size: 0.78rem; padding-right: 4px;
         }
         .chat-msg-item { padding: 5px 8px; border-radius: 8px; max-width: 85%; word-break: break-word; }
@@ -130,7 +127,7 @@
             padding: 0 12px; font-weight: 700; font-size: 0.8rem; cursor: pointer;
         }
 
-        .btn-action { width: 100%; color: white; border: none; padding: 12px; border-radius: 50px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .btn-action { width: 100%; color: white; border: none; padding: 12px; border-radius: 50px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-bottom: 6px;}
         
         .btn-espera { 
             background: #059669; color: #ffffff; cursor: default; padding: 8px 16px; 
@@ -276,7 +273,6 @@
                         </div>
                         <div>
                             <div class="viaje-pasajero" id="lblPasajero">-</div>
-                            <a id="linkWhatsapp" href="#" target="_blank" class="whatsapp-btn hidden">💬 WhatsApp</a>
                         </div>
                     </div>
                     <div class="viaje-precio" id="lblPrecio">$0</div>
@@ -297,9 +293,9 @@
                 </div>
             </div>
 
-            <div id="contenedorBotonesPendiente" style="display: flex; gap: 8px;">
-                <button class="btn-action" style="background: #ef4444; flex: 1;" onclick="rechazarViajeEntrante()">Rechazar ❌</button>
-                <button class="btn-action btn-aceptar" style="flex: 2;" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje ✅</button>
+            <div id="contenedorBotonesPendiente" style="display: flex; gap: 8px; margin-bottom: 8px;">
+                <button class="btn-action" style="background: #ef4444; flex: 1; margin-bottom: 0;" onclick="rechazarViajeEntrante()">Rechazar ❌</button>
+                <button class="btn-action btn-aceptar" style="flex: 2; margin-bottom: 0;" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje ✅</button>
             </div>
 
             <button class="btn-action btn-aceptar hidden" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
@@ -637,9 +633,7 @@
                     emisor: 'conductor',
                     mensaje: texto
                 }]);
-            } catch (e) {
-                console.error("Error al enviar mensaje:", e);
-            }
+            } catch (e) {}
         }
         // ---------------------------------------
 
@@ -704,13 +698,6 @@
 
             if (viaje.pasajero_foto) document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
 
-            if (viaje.pasajero_telefono) {
-                let telLimpio = viaje.pasajero_telefono.replace(/\D/g, '');
-                const btnWp = document.getElementById('linkWhatsapp');
-                btnWp.href = `https://wa.me/549${telLimpio}?text=Hola%20${encodeURIComponent(viaje.pasajero_nombre)},%20soy%20tu%20chofer%20de%20Tu%20Móvil.`;
-                btnWp.classList.remove('hidden');
-            }
-
             if (markerOrigen) mapa.removeLayer(markerOrigen);
             if (markerDestino) mapa.removeLayer(markerDestino);
 
@@ -737,7 +724,6 @@
             panel.classList.remove('viaje-entrante');
             panel.classList.remove('viaje-activo-estado');
             
-            document.getElementById('linkWhatsapp').classList.add('hidden');
             if(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); canalChatSupabase = null; }
 
             mostrarMsg('Viaje rechazado. Buscando nuevos pasajeros...', 'success');
@@ -771,7 +757,6 @@
 
                     document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
 
-                    // Iniciar el chat en tiempo real para este viaje
                     iniciarChatViaje(viajeActivo.id);
 
                     autocentrarMapa = true;
@@ -863,13 +848,6 @@
                 document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
 
                 if (viaje.pasajero_foto) document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
-
-                if (viaje.pasajero_telefono) {
-                    let telLimpio = viaje.pasajero_telefono.replace(/\D/g, '');
-                    const btnWp = document.getElementById('linkWhatsapp');
-                    btnWp.href = `https://wa.me/549${telLimpio}?text=Hola%20${encodeURIComponent(viaje.pasajero_nombre)},%20soy%20tu%20chofer%20de%20Tu%20Móvil.`;
-                    btnWp.classList.remove('hidden');
-                }
 
                 markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
                 markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
