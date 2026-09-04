@@ -64,6 +64,22 @@
         .silueta-overlay svg { width: 50px; height: 50px; fill: rgba(255,255,255,0.7); margin-bottom: 2px; }
         .silueta-overlay span { font-size: 0.65rem; color: #fff; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
 
+        /* TARJETA DE NAVEGACIÓN SUPERIOR (TIPO GOOGLE MAPS) */
+        #navHeaderGuia {
+            position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000;
+            background: #064e3b; color: white; border-radius: 16px; padding: 14px 18px;
+            display: none; align-items: center; gap: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            border: 2px solid #2cd44a; animation: slideDown 0.3s ease;
+        }
+        .nav-flecha-grande { font-size: 2.2rem; line-height: 1; }
+        .nav-info-texto h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 2px; }
+        .nav-info-texto p { font-size: 0.9rem; color: #a7f3d0; }
+
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
         .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .header-row { display: flex; justify-content: space-between; width: 100%; }
         .right-buttons { display: flex; flex-direction: column; gap: 10px; }
@@ -92,8 +108,13 @@
         }
         .bottom-panel:focus-within, .bottom-panel:active { height: 55vh; }
         .bottom-panel.con-ruta { height: 35vh; }
-        /* Estado compacto cuando el viaje está activo para ganar visibilidad en el GPS */
         .bottom-panel.modo-compacto { height: auto !important; max-height: 40vh; padding-bottom: 12px; }
+        .bottom-panel.modo-navegacion {
+            height: auto !important;
+            background: #ffffff;
+            border-top: 4px solid #2cd44a;
+            padding: 16px 20px 24px;
+        }
 
         .panel-handle { width: 38px; height: 4px; background: #b5ac9b; border-radius: 2px; margin: 0 auto 6px; cursor: pointer; }
 
@@ -224,6 +245,15 @@
         </div>
     </div>
 
+    <!-- TARJETA DE NAVEGACIÓN SUPERIOR (ESTILO GOOGLE MAPS) -->
+    <div id="navHeaderGuia">
+        <div class="nav-flecha-grande" id="navIconoManiobra">↩️</div>
+        <div class="nav-info-texto">
+            <h2 id="navDistanciaManiobra">50 m</h2>
+            <p id="navInstruccionTxt">Buscando ruta de viaje...</p>
+        </div>
+    </div>
+
     <div class="mapa-hint" id="hintManual">📍 Modo Manual: Tocá el mapa para marcar tu DESTINO</div>
 
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
@@ -351,6 +381,8 @@
         let mapa = null, markerOrigen = null, markerDestino = null, markerConductor = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
         let intervaloActualizacionRuta = null;
+        let pasosRutaActual = [];
+        let modoNavegacionActivo = false;
 
         function seleccionarVehiculo(tipo) {
             tipoVehiculoSeleccionado = tipo;
@@ -572,6 +604,7 @@
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
                     } else if (viaje.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
+                        activarModoNavegacionVisual(true);
                         iniciarMonitoreoDinamicoRuta();
                     }
                     mostrarPaso('pasoPrecio');
@@ -602,6 +635,10 @@
                         } else {
                             markerConductor.setLatLng(latLngCond);
                         }
+                        
+                        if (modoNavegacionActivo) {
+                            actualizarVistaNavegacionGPS(de.conductor_lat, de.conductor_lng);
+                        }
                     }
 
                     if (de.conductor_nombre && de.estado === 'pendiente') {
@@ -624,6 +661,7 @@
                     }
                     if (de.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
+                        activarModoNavegacionVisual(true);
                         iniciarMonitoreoDinamicoRuta();
                     }
                     if (de.estado === 'cancelado') { 
@@ -637,6 +675,58 @@
                         setTimeout(() => location.reload(), 3000); 
                     }
                 }).subscribe();
+        }
+
+        function activarModoNavegacionVisual(activar) {
+            modoNavegacionActivo = activar;
+            const navHeader = document.getElementById('navHeaderGuia');
+            const panel = document.getElementById('bottomPanel');
+
+            if (activar) {
+                navHeader.style.display = 'flex';
+                panel.classList.add('modo-navegacion');
+                panel.classList.remove('modo-compacto');
+            } else {
+                navHeader.style.display = 'none';
+                panel.classList.remove('modo-navegacion');
+            }
+        }
+
+        function actualizarVistaNavegacionGPS(lat, lng) {
+            if (!mapa) return;
+            mapa.setView([lat, lng], 17, { animate: true });
+
+            if (pasosRutaActual && pasosRutaActual.length > 0) {
+                let pasoActual = pasosRutaActual[0];
+                document.getElementById('navDistanciaManiobra').textContent = Math.round(pasoActual.distance) + " m";
+                document.getElementById('navInstruccionTxt').textContent = traducirManiobraOSRM(pasoActual.maneuver);
+                document.getElementById('navIconoManiobra').innerHTML = obtenerIconoManiobra(pasoActual.maneuver.type, pasoActual.maneuver.modifier);
+            }
+        }
+
+        function traducirManiobraOSRM(maniobra) {
+            const modifier = maniobra.modifier || '';
+            const tipo = maniobra.type || '';
+            
+            if (tipo === 'turn') {
+                if (modifier.includes('left')) return 'Gira a la izquierda';
+                if (modifier.includes('right')) return 'Gira a la derecha';
+            } else if (tipo === 'arrive') {
+                return 'Has llegado a tu destino';
+            } else if (tipo === 'depart') {
+                return 'Inicia la marcha por la calle';
+            }
+            return 'Continúa por la avenida';
+        }
+
+        function obtenerIconoManiobra(tipo, modifier) {
+            if (tipo === 'turn') {
+                if (modifier && modifier.includes('left')) return '↩️';
+                if (modifier && modifier.includes('right')) return '↪️';
+                return '🔄';
+            }
+            if (tipo === 'arrive') return '📍';
+            return '⬆️';
         }
 
         function activarModoManualDestino() { 
@@ -701,6 +791,11 @@
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.85 }).addTo(mapa);
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
+                    // Guardar los pasos de navegación devueltos por OSRM
+                    if (data.routes[0].legs && data.routes[0].legs[0].steps) {
+                        pasosRutaActual = data.routes[0].legs[0].steps;
+                    }
+                    
                     let baseCalculo = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
                     if (esHorarioNocturno()) { baseCalculo = baseCalculo * TARIFAS_ACTIVAS.nocturno; }
 
@@ -714,13 +809,13 @@
 
                     precioCalculado = (tipoVehiculoSeleccionado === 'auto') ? precioAuto : precioMoto;
 
-                    if (!document.getElementById('pasoPrecio').classList.contains('hidden')) {
+                    if (!document.getElementById('pasoPrecio').classList.contains('hidden') && !modoNavegacionActivo) {
                         document.getElementById('bottomPanel').classList.add('modo-compacto');
-                    } else {
+                    } else if (!modoNavegacionActivo) {
                         document.getElementById('bottomPanel').classList.add('con-ruta');
                     }
                     
-                    if (!puntoOrigenPersonalizado) {
+                    if (!puntoOrigenPersonalizado && !modoNavegacionActivo) {
                         mapa.fitBounds(rutaTrazada.getBounds(), { padding: [35, 35], maxZoom: 16.5 });
                     }
                 }
@@ -815,10 +910,10 @@
             document.getElementById(id).classList.remove('hidden'); 
             
             const panel = document.getElementById('bottomPanel');
-            if (id === 'pasoPrecio') {
+            if (id === 'pasoPrecio' && !modoNavegacionActivo) {
                 panel.classList.add('modo-compacto');
                 panel.classList.remove('con-ruta');
-            } else {
+            } else if (!modoNavegacionActivo) {
                 panel.classList.remove('modo-compacto');
             }
         }
