@@ -64,6 +64,44 @@
 
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
+        /* NUEVO: Globo Flotante de Chat para el Conductor */
+        #btnAbrirChatFlotante {
+            position: fixed; bottom: 120px; right: 20px; z-index: 500;
+            width: 55px; height: 55px; background: #38bdf8; color: #0f172a;
+            border-radius: 50%; display: none; align-items: center; justify-content: center;
+            font-size: 1.6rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4); cursor: pointer;
+            border: 2px solid white; transition: transform 0.2s;
+        }
+        #btnAbrirChatFlotante:active { transform: scale(0.9); }
+
+        /* NUEVO: Ventana Modal de Chat Flotante */
+        #modalChatFlotante {
+            position: fixed; bottom: 80px; left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
+            background: #1e293b; border: 2px solid #38bdf8; border-radius: 16px;
+            padding: 12px; z-index: 600; display: none; flex-direction: column; gap: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); color: #f1f5f9;
+        }
+        #modalChatFlotante.activo { display: flex; }
+
+        .chat-mensajes-lista {
+            max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
+            font-size: 0.78rem; padding-right: 4px; background: #0f172a; padding: 8px; border-radius: 10px; border: 1px solid #334155;
+        }
+        .chat-msg-item { padding: 5px 8px; border-radius: 8px; max-width: 85%; word-break: break-word; }
+        .chat-msg-item.admin { background: #1e3a8a; align-self: flex-start; color: #93c5fd; }
+        .chat-msg-item.pasajero { background: #334155; align-self: flex-start; color: #f1f5f9; }
+        .chat-msg-item.conductor { background: #059669; align-self: flex-end; color: #ffffff; }
+        
+        .chat-input-row { display: flex; gap: 6px; }
+        .chat-input-row input {
+            flex: 1; background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+            padding: 6px 10px; color: white; font-size: 0.8rem; outline: none;
+        }
+        .chat-input-row button {
+            background: #38bdf8; color: #0f172a; border: none; border-radius: 8px;
+            padding: 0 12px; font-weight: 700; font-size: 0.8rem; cursor: pointer;
+        }
+
         /* Panel inferior con soporte para Scroll total */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
@@ -102,30 +140,6 @@
         .input-row span { color: #f1f5f9; font-weight: 500; }
         
         .manifesto-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; padding: 4px 8px; border-radius: 0 6px 6px 0; font-size: 0.75rem; color: #e2e8f0; margin-top: 4px; }
-
-        /* Estilos del Chat Integrado */
-        .chat-container-box {
-            background: #0f172a; border: 1px solid #334155; border-radius: 12px;
-            padding: 8px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 6px;
-        }
-        .chat-mensajes-lista {
-            max-height: 100px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
-            font-size: 0.78rem; padding-right: 4px;
-        }
-        .chat-msg-item { padding: 5px 8px; border-radius: 8px; max-width: 85%; word-break: break-word; }
-        .chat-msg-item.admin { background: #1e3a8a; align-self: flex-start; color: #93c5fd; }
-        .chat-msg-item.pasajero { background: #1e293b; align-self: flex-start; color: #f1f5f9; border: 1px solid #334155; }
-        .chat-msg-item.conductor { background: #059669; align-self: flex-end; color: #ffffff; }
-        
-        .chat-input-row { display: flex; gap: 6px; }
-        .chat-input-row input {
-            flex: 1; background: #1e293b; border: 1px solid #334155; border-radius: 8px;
-            padding: 6px 10px; color: white; font-size: 0.8rem; outline: none;
-        }
-        .chat-input-row button {
-            background: #38bdf8; color: #0f172a; border: none; border-radius: 8px;
-            padding: 0 12px; font-weight: 700; font-size: 0.8rem; cursor: pointer;
-        }
 
         .btn-action { width: 100%; color: white; border: none; padding: 12px; border-radius: 50px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-bottom: 6px;}
         
@@ -223,6 +237,24 @@
 
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
+    <!-- Botón Globo Flotante para abrir el Chat -->
+    <div id="btnAbrirChatFlotante" onclick="toggleChatFlotante()">💬</div>
+
+    <!-- Ventana Modal de Chat Flotante -->
+    <div id="modalChatFlotante">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 6px;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">💬 Chat con el Pasajero</span>
+            <button onclick="toggleChatFlotante()" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-weight: bold; cursor: pointer; font-size: 0.75rem;">✕</button>
+        </div>
+        <div class="chat-mensajes-lista" id="listaMensajesChat">
+            <div style="color: #64748b; text-align: center; font-size: 0.75rem;">Chat del viaje iniciado...</div>
+        </div>
+        <div class="chat-input-row">
+            <input type="text" id="inpMensajeChat" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter') enviarMensajeChat()">
+            <button onclick="enviarMensajeChat()">Enviar</button>
+        </div>
+    </div>
+
     <div class="header-float">
         <div class="header-left-col">
             <div class="status-badge activo" id="txtEstadoChofer" onclick="conmutarEstadoConexion()">Móvil en Línea 🟢</div>
@@ -279,17 +311,6 @@
                 </div>
                 <div class="input-group">
                     <div class="input-row" id="lblDetallesRutaYBarrio"></div>
-                </div>
-
-                <!-- Chat en Vivo Integrado -->
-                <div class="chat-container-box">
-                    <div class="chat-mensajes-lista" id="listaMensajesChat">
-                        <div style="color: #64748b; text-align: center; font-size: 0.75rem;">Chat del viaje iniciado...</div>
-                    </div>
-                    <div class="chat-input-row">
-                        <input type="text" id="inpMensajeChat" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter') enviarMensajeChat()">
-                        <button onclick="enviarMensajeChat()">Enviar</button>
-                    </div>
                 </div>
             </div>
 
@@ -570,7 +591,12 @@
                 .subscribe();
         }
 
-        // --- SISTEMA DE CHAT EN TIEMPO REAL ---
+        /* Control del Chat Flotante */
+        function toggleChatFlotante() {
+            const modal = document.getElementById('modalChatFlotante');
+            modal.classList.toggle('activo');
+        }
+
         function iniciarChatViaje(viajeId) {
             cargarHistorialMensajes(viajeId);
             if (canalChatSupabase) supabaseClient.removeChannel(canalChatSupabase);
@@ -596,6 +622,7 @@
                     .order('created_at', { ascending: true });
 
                 const listaHtml = document.getElementById('listaMensajesChat');
+                if (!listaHtml) return;
                 listaHtml.innerHTML = '';
                 if (data && data.length > 0) {
                     data.forEach(msg => agregarMensajeAlDom(msg));
@@ -607,6 +634,8 @@
 
         function agregarMensajeAlDom(msg) {
             const listaHtml = document.getElementById('listaMensajesChat');
+            if (!listaHtml) return;
+
             if (listaHtml.innerHTML.includes('No hay mensajes previos')) {
                 listaHtml.innerHTML = '';
             }
@@ -635,7 +664,6 @@
                 }]);
             } catch (e) {}
         }
-        // ---------------------------------------
 
         function conmutarEstadoConexion() {
             if (viajeActivo) return;
@@ -725,6 +753,7 @@
             panel.classList.remove('viaje-activo-estado');
             
             if(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); canalChatSupabase = null; }
+            document.getElementById('btnAbrirChatFlotante').style.display = 'none';
 
             mostrarMsg('Viaje rechazado. Buscando nuevos pasajeros...', 'success');
         }
@@ -758,6 +787,7 @@
                     document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
 
                     iniciarChatViaje(viajeActivo.id);
+                    document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
 
                     autocentrarMapa = true;
                     document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
@@ -837,6 +867,7 @@
                 panel.classList.add('viaje-activo-estado');
 
                 iniciarChatViaje(viaje.id);
+                document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
 
                 let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
                 let manifiestoHtml = '';
