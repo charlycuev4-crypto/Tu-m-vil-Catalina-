@@ -112,12 +112,6 @@
         .ride-price-right { text-align: right; }
         .ride-price-right .precio-txt { font-size: 0.82rem; font-weight: 700; color: #166534; }
 
-        .trayecto-selector { display: flex; gap: 6px; margin-bottom: 6px; }
-        .trayecto-option {
-            flex: 1; background: #F4EFE6; border: 1px solid #d4cbb8; border-radius: 12px; padding: 6px; text-align: center; cursor: pointer; font-size: 0.78rem; font-weight: 600; color: #333; transition: all 0.2s;
-        }
-        .trayecto-option.selected { border-color: #2cd44a; background: #dcfce7; font-weight: 700; color: #166534; box-shadow: 0 0 6px rgba(44,212,74,0.2); }
-
         .driver-card-preview { 
             display: flex; align-items: center; gap: 8px; margin-bottom: 6px; background: #F4EFE6; padding: 6px 10px; border-radius: 12px; border: 1px solid #2cd44a; box-shadow: 0 0 8px rgba(44, 212, 74, 0.15);
         }
@@ -150,7 +144,7 @@
         }
         .btn-green-action:hover { background: #25b83f; }
 
-        /* NUEVO: Globo Flotante de Chat (Botón) */
+        /* Globo Flotante de Chat (Botón) */
         #btnAbrirChatFlotante {
             position: fixed; bottom: 120px; right: 20px; z-index: 500;
             width: 55px; height: 55px; background: #2cd44a; color: white;
@@ -160,7 +154,7 @@
         }
         #btnAbrirChatFlotante:active { transform: scale(0.9); }
 
-        /* NUEVO: Ventana Modal de Chat Flotante */
+        /* Ventana Modal de Chat Flotante */
         #modalChatFlotante {
             position: fixed; bottom: 80px; left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
             background: #F4EFE6; border: 2px solid #2cd44a; border-radius: 16px;
@@ -267,11 +261,6 @@
 
         <!-- PASO 1: PEDIDO -->
         <div id="pasoDatos">
-            <div class="trayecto-selector">
-                <div class="trayecto-option selected" id="trayectoIda" onclick="seleccionarTrayecto('ida')">📍 Solo Ida</div>
-                <div class="trayecto-option" id="trayectoIdaVuelta" onclick="seleccionarTrayecto('ida_vuelta')">🔄 Ida y Vuelta</div>
-            </div>
-
             <div class="lista-vehiculos-scroll">
                 <div class="ride-option-item selected" id="optAuto" onclick="seleccionarVehiculo('auto')">
                     <div class="ride-info-left">
@@ -370,7 +359,6 @@
         let viajeId = null, subViaje = null, origenCoords = null, destinoCoords = null;
         let precioCalculado = 0, distanciaKm = 0, modoDestinoManual = false;
         let tipoVehiculoSeleccionado = 'auto';
-        let tipoTrayectoSeleccionado = 'ida';
         let mapa = null, markerOrigen = null, markerDestino = null, markerConductor = null, rutaTrazada = null;
         let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
         let intervaloActualizacionRuta = null;
@@ -387,19 +375,6 @@
             } else {
                 document.getElementById('optMoto').classList.add('selected');
                 document.getElementById('iconoVehiculoPreview').textContent = '🏍️';
-            }
-            recalcularRutaYPrecio();
-        }
-
-        function seleccionarTrayecto(trayecto) {
-            tipoTrayectoSeleccionado = trayecto;
-            document.getElementById('trayectoIda').classList.remove('selected');
-            document.getElementById('trayectoIdaVuelta').classList.remove('selected');
-
-            if (trayecto === 'ida') {
-                document.getElementById('trayectoIda').classList.add('selected');
-            } else {
-                document.getElementById('trayectoIdaVuelta').classList.add('selected');
             }
             recalcularRutaYPrecio();
         }
@@ -663,7 +638,6 @@
                 }).subscribe();
         }
 
-        /* Control del Chat Flotante */
         function toggleChatFlotante() {
             const modal = document.getElementById('modalChatFlotante');
             modal.classList.toggle('activo');
@@ -804,11 +778,8 @@
                     let baseCalculo = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
                     if (esHorarioNocturno()) { baseCalculo = baseCalculo * TARIFAS_ACTIVAS.nocturno; }
 
-                    // Lógica aplicada: Multiplicador de trayecto (Si es ida y vuelta, se duplica)
-                    let multiplicadorTrayecto = (tipoTrayectoSeleccionado === 'ida_vuelta') ? 2 : 1;
-
-                    let precioAuto = Math.round(baseCalculo * multiplicadorTrayecto);
-                    let precioMoto = Math.round((baseCalculo * 0.75) * multiplicadorTrayecto);
+                    let precioAuto = Math.round(baseCalculo);
+                    let precioMoto = Math.round(baseCalculo * 0.75);
 
                     document.getElementById('precioAutoTxt').textContent = '$' + precioAuto;
                     document.getElementById('precioMotoTxt').textContent = '$' + precioMoto;
