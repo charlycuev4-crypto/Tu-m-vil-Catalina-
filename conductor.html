@@ -73,8 +73,9 @@
 
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
+        /* CORRECCIÓN: Chat reposicionado debajo de los botones derechos para no tapar ganancias */
         #modalChatFlotante {
-            position: fixed; top: 80px; left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
+            position: fixed; top: 155px; right: 16px; width: 300px; max-width: calc(100vw - 32px);
             background: #1e293b; border: 2px solid #38bdf8; border-radius: 16px;
             padding: 12px; z-index: 600; display: none; flex-direction: column; gap: 8px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); color: #f1f5f9;
@@ -82,8 +83,8 @@
         #modalChatFlotante.activo { display: flex; }
 
         .chat-mensajes-lista {
-            max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
-            font-size: 0.78rem; padding-right: 4px; background: #0f172a; padding: 8px; border-radius: 10px; border: 1px solid #334155;
+            max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
+            font-size: 0.78rem; padding: 8px; background: #0f172a; border-radius: 10px; border: 1px solid #334155;
         }
         .chat-msg-item { padding: 5px 8px; border-radius: 8px; max-width: 85%; word-break: break-word; }
         .chat-msg-item.admin { background: #1e3a8a; align-self: flex-start; color: #93c5fd; }
