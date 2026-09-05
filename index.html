@@ -144,7 +144,21 @@
         }
         .btn-green-action:hover { background: #25b83f; }
 
-        /* Globo Flotante de Chat (Botón) */
+        /* ALERTA DE LLEGADA A PUERTA */
+        #alertaTimbreLlegada {
+            position: fixed; top: 75px; left: 16px; right: 16px; z-index: 1100;
+            background: #ef4444; color: white; padding: 12px 16px; border-radius: 14px;
+            display: none; align-items: center; justify-content: space-between;
+            box-shadow: 0 5px 20px rgba(239, 68, 68, 0.5); animation: pulseAlerta 0.8s infinite alternate;
+            border: 2px solid white;
+        }
+        @keyframes pulseAlerta {
+            0% { transform: scale(1); background: #ef4444; }
+            100% { transform: scale(1.02); background: #dc2626; }
+        }
+        #alertaTimbreLlegada.activo { display: flex; }
+
+        /* Globo Flotante de Chat (Botón con animación de alerta de mensaje) */
         #btnAbrirChatFlotante {
             position: fixed; bottom: 120px; right: 20px; z-index: 500;
             width: 55px; height: 55px; background: #2cd44a; color: white;
@@ -153,6 +167,14 @@
             border: 2px solid white; transition: transform 0.2s;
         }
         #btnAbrirChatFlotante:active { transform: scale(0.9); }
+        #btnAbrirChatFlotante.alerta-mensaje {
+            background: #ef4444 !important;
+            animation: pulseChatPasajero 0.6s infinite alternate;
+        }
+        @keyframes pulseChatPasajero {
+            0% { transform: scale(1); box-shadow: 0 0 0 rgba(239, 68, 68, 0.7); }
+            100% { transform: scale(1.1); box-shadow: 0 0 15px rgba(239, 68, 68, 0.9); }
+        }
 
         /* Ventana Modal de Chat Flotante */
         #modalChatFlotante {
@@ -221,6 +243,15 @@
             <input type="tel" id="regTelefono" placeholder="Tu número de teléfono">
             <button class="btn-green-action" onclick="guardarRegistroPerfil()">Comenzar a Viajar</button>
         </div>
+    </div>
+
+    <!-- ALERTA DE TIMBRE LLEGADA A PUERTA -->
+    <div id="alertaTimbreLlegada">
+        <div>
+            <div style="font-size: 0.85rem; font-weight: 800;">🔔 ¡EL MÓVIL ESTÁ EN LA PUERTA!</div>
+            <div style="font-size: 0.7rem; opacity: 0.9;">Suena el timbre hasta que atiendas.</div>
+        </div>
+        <button onclick="silenciarTimbreLlegada()" style="background: white; color: #ef4444; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.75rem; cursor: pointer;">Silenciar 🔕</button>
     </div>
 
     <div class="mapa-hint" id="hintManual">📍 Modo Manual: Tocá el mapa para marcar tu DESTINO</div>
@@ -363,8 +394,80 @@
         let pasajeroNombre = "", pasajeroTelefono = "", pasajeroBase64Foto = "";
         let intervaloActualizacionRuta = null;
         let canalChatPasajeroSupabase = null;
+        
+        // Variables para el timbre de llegada a puerta
+        let intervaloTimbreInsistente = null;
+        let audioCtxPasajero = null;
 
-        // NUEVA FUNCIÓN: Geocodificación inversa automática para el pasajero
+        // Variables para la alerta de mensaje nuevo en el chat del pasajero
+        let intervaloAlertaChatPasajero = null;
+
+        // Función general de pitido sintetizado
+        function reproducirPitidoAudio(frecuencia = 880, duracion = 0.3) {
+            try {
+                if (!audioCtxPasajero) {
+                    audioCtxPasajero = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtxPasajero.state === 'suspended') {
+                    audioCtxPasajero.resume();
+                }
+                const osc = audioCtxPasajero.createOscillator();
+                const gain = audioCtxPasajero.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(frecuencia, audioCtxPasajero.currentTime);
+                gain.gain.setValueAtTime(0.3, audioCtxPasajero.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtxPasajero.currentTime + duracion);
+                osc.connect(gain);
+                gain.connect(audioCtxPasajero.destination);
+                osc.start();
+                osc.stop(audioCtxPasajero.currentTime + duracion);
+            } catch (e) {}
+        }
+
+        function iniciarTimbreInsistente() {
+            if (intervaloTimbreInsistente) return;
+            document.getElementById('alertaTimbreLlegada').classList.add('activo');
+            reproducirPitidoAudio(880, 0.3);
+            intervaloTimbreInsistente = setInterval(() => {
+                reproducirPitidoAudio(880, 0.3);
+            }, 1000);
+        }
+
+        function silenciarTimbreLlegada() {
+            if (intervaloTimbreInsistente) {
+                clearInterval(intervaloTimbreInsistente);
+                intervaloTimbreInsistente = null;
+            }
+            document.getElementById('alertaTimbreLlegada').classList.remove('activo');
+        }
+
+        // ALERTA DE MENSAJE NUEVO PARA EL PASAJERO
+        function activarAlertaChatPasajero() {
+            const modal = document.getElementById('modalChatFlotante');
+            const btnChat = document.getElementById('btnAbrirChatFlotante');
+            
+            // Si el chat ya está abierto, no activamos la alerta sonora visual
+            if (modal.classList.contains('activo')) return;
+
+            if (intervaloAlertaChatPasajero) return; // Ya está sonando/parpadeando
+
+            btnChat.classList.add('alerta-mensaje');
+            reproducirPitidoAudio(650, 0.25); // Tono distintivo para mensaje
+            
+            intervaloAlertaChatPasajero = setInterval(() => {
+                reproducirPitidoAudio(650, 0.25);
+            }, 1500);
+        }
+
+        function detenerAlertaChatPasajero() {
+            if (intervaloAlertaChatPasajero) {
+                clearInterval(intervaloAlertaChatPasajero);
+                intervaloAlertaChatPasajero = null;
+            }
+            const btnChat = document.getElementById('btnAbrirChatFlotante');
+            btnChat.classList.remove('alerta-mensaje');
+        }
+
         async function obtenerDireccionYBarrioPasajero(lat, lon) {
             try {
                 const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`);
@@ -575,7 +678,6 @@
                 markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
                 markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
                 
-                // Ejecutamos geocodificación inversa para mostrar la calle real en el input recuperado
                 const direccionRealOrigen = await obtenerDireccionYBarrioPasajero(origenCoords.lat, origenCoords.lng);
                 document.getElementById('origenDisplay').value = direccionRealOrigen;
                 document.getElementById('destino').value = "Destino seleccionado";
@@ -592,6 +694,7 @@
                     
                     if(viaje.estado === 'aceptado') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
+                        iniciarTimbreInsistente();
                     } else if (viaje.estado === 'en_viaje') {
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
                         iniciarMonitoreoDinamicoRuta();
@@ -607,6 +710,8 @@
         function limpiarMemoriaPasajero() { 
             localStorage.removeItem('pasajero_viaje_id'); 
             if (intervaloActualizacionRuta) clearInterval(intervaloActualizacionRuta);
+            silenciarTimbreLlegada();
+            detenerAlertaChatPasajero();
         }
 
         function iniciarEscuchaRealtime(id) {
@@ -647,8 +752,10 @@
                         document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
                         mostrarMsg('¡Tu móvil está en la puerta!', 'success');
                         hablarAnuncioPasajero("Tu móvil ya llegó a la puerta.");
+                        iniciarTimbreInsistente();
                     }
                     if (de.estado === 'en_viaje') {
+                        silenciarTimbreLlegada();
                         document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
                         iniciarMonitoreoDinamicoRuta();
                     }
@@ -668,6 +775,11 @@
         function toggleChatFlotante() {
             const modal = document.getElementById('modalChatFlotante');
             modal.classList.toggle('activo');
+            
+            if (modal.classList.contains('activo')) {
+                // Al abrir el chat del pasajero, detenemos la alerta de mensaje nuevo
+                detenerAlertaChatPasajero();
+            }
         }
 
         function iniciarChatPasajero(viajeId) {
@@ -682,6 +794,11 @@
                     filter: `viaje_id=eq.${viajeId}`
                 }, payload => {
                     agregarMensajeAlDomPasajero(payload.new);
+                    
+                    // Si el mensaje entrante es del conductor o admin, activamos la alerta de chat en el pasajero
+                    if (payload.new.emisor === 'conductor' || payload.new.emisor === 'admin') {
+                        activarAlertaChatPasajero();
+                    }
                 })
                 .subscribe();
         }
@@ -751,7 +868,6 @@
             if (markerDestino) mapa.removeLayer(markerDestino);
             markerDestino = L.marker([lat, lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
             
-            // Geocodificación inversa también para el destino manual si se desea o dejar el texto genérico/limpio
             obtenerDireccionYBarrioPasajero(lat, lng).then(dir => {
                 document.getElementById('destino').value = dir;
             });
@@ -767,7 +883,6 @@
             if (markerOrigen) mapa.removeLayer(markerOrigen);
             markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
             
-            // Obtenemos la calle y barrio real automáticamente mediante geocodificación inversa
             document.getElementById('origenDisplay').value = "Buscando calle real...";
             const direccionReal = labelPersonalizada || await obtenerDireccionYBarrioPasajero(lat, lng);
             document.getElementById('origenDisplay').value = direccionReal;
