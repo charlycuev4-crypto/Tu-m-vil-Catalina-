@@ -126,6 +126,14 @@
         .btn-iniciar { background: #8b5cf6; }
         .btn-finalizar { background: #e11d48; }
 
+        /* Panel especial de cobro directo en tablero */
+        .panel-cobro-tablero {
+            background: #0f172a; border: 2px solid #10b981; border-radius: 16px; padding: 14px; text-align: center; margin-bottom: 8px;
+        }
+        .panel-cobro-tablero h3 { color: #10b981; font-size: 1.1rem; margin-bottom: 4px; }
+        .panel-cobro-tablero .monto-cobro { font-size: 1.8rem; font-weight: 900; color: #ffffff; margin: 6px 0; }
+        .panel-cobro-tablero p { font-size: 0.8rem; color: #94a3b8; }
+
         .chofer-auto-icon {
             background: #1e293b; width: 38px !important; height: 38px !important;
             border: 3px solid #38bdf8; border-radius: 50%; display: flex;
@@ -181,7 +189,7 @@
                     <input type="text" id="inpNombre" placeholder="Ej: Juan Pérez" required>
                 </div>
                 <div class="config-field">
-                    <label>Número de WhatsApp</label>
+                    <label>Número de Teléfono</label>
                     <input type="tel" id="inpTelefono" placeholder="Ej: 1123456789" required>
                 </div>
                 <div class="config-field">
@@ -237,7 +245,7 @@
 
         <div id="vistaEspera">
             <div style="text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; padding-top: 2px;">
-                <div class="btn-action btn-espera">
+                <div class="btn-action btn-espera" id="btnEstadoEsperaTexto">
                     <div class="ruedita-radar"></div>
                     Buscando solicitudes (5 km)...
                 </div>
@@ -265,6 +273,15 @@
             <div id="contenedorBotonesPendiente" style="display: flex; gap: 8px;">
                 <button class="btn-action" style="background: #ef4444; flex: 1;" onclick="rechazarViajeEntrante()">Rechazar ❌</button>
                 <button class="btn-action btn-aceptar" style="flex: 2;" onclick="procesarLojicaViaje()">Aceptar Viaje ✅</button>
+            </div>
+
+            <div id="contenedorCobroTablero" class="hidden">
+                <div class="panel-cobro-tablero">
+                    <h3>🏁 ¡Viaje Finalizado!</h3>
+                    <p>Cobrar al pasajero la tarifa exacta:</p>
+                    <div class="monto-cobro" id="lblMontoCobroFinal">$0</div>
+                </div>
+                <button class="btn-action btn-aceptar" onclick="confirmarCobroYReiniciar()">Cobrar y Finalizar Turno ✅</button>
             </div>
 
             <button class="btn-action btn-aceptar hidden" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
@@ -549,6 +566,7 @@
             panel.classList.add('viaje-entrante');
 
             document.getElementById('contenedorBotonesPendiente').classList.remove('hidden');
+            document.getElementById('contenedorCobroTablero').classList.add('hidden');
             document.getElementById('btnAccionEnCurso').classList.add('hidden');
 
             let valorTrayecto = viaje.tipo_trayecto || viaje.trayecto || "";
@@ -660,11 +678,11 @@
                 
                 if (esIdaYVueltaGlobal) {
                     btnEnCurso.className = "btn-action btn-llegué"; 
-                    btnEnCurso.textContent = "Llegué a Primera Parada 🛑";
+                    btnEnCurso.textContent = "Llegué a 1era Parada (Ida) 🛑";
                     document.getElementById('txtEstadoChofer').textContent = "En Camino a 1era Parada 🧭";
                 } else {
                     btnEnCurso.className = "btn-action btn-finalizar"; 
-                    btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
+                    btnEnCurso.textContent = "Finalizar Viaje / Cobrar 💵";
                     document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
                 }
 
@@ -674,46 +692,58 @@
                 return;
             }
 
-            // NUEVO ESTADO: Si es ida y vuelta, tras llegar a la primera parada, iniciamos la segunda
+            // SEGUNDA PARADA (VUELTA) PARA VIAJES DE IDA Y VUELTA
             if (estadoFlujo === 'en_viaje' && esIdaYVueltaGlobal) {
                 estadoFlujo = 'segunda_parada';
                 localStorage.setItem('conductor_estado_flujo', 'segunda_parada');
 
                 btnEnCurso.className = "btn-action btn-finalizar"; 
-                btnEnCurso.textContent = "Finalizar 2da Parada / Cobrar 💵";
-                document.getElementById('txtEstadoChofer').textContent = "En 2da Parada (Vuelta) 🔄";
+                btnEnCurso.textContent = "Fin de Viaje / Ver Cobro 💵";
+                document.getElementById('txtEstadoChofer').textContent = "Regresando (2da Parada) 🔄";
 
                 document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
                     <span style="color:#38bdf8;">🔄 <b>Iniciando 2da Parada (Vuelta)</b></span>
-                    <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">Dirigiéndose al punto de retorno o destino final.</div>
+                    <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">Dirigiéndose al destino final de retorno.</div>
                 `;
 
-                // Aquí puedes trazar la ruta de regreso al origen u otro punto si aplica
                 trazarRutaCalles(viajeActivo.destino_lat, viajeActivo.destino_lng, viajeActivo.origen_lat, viajeActivo.origen_lng);
                 autocentrarMapa = true;
                 return;
             }
 
-            // FINALIZAR VIAJE DEFINITIVO
+            // FINALIZAR Y ABRIR MENÚ DE COBRO DIRECTAMENTE EN EL TABLERO
             if (estadoFlujo === 'en_viaje' || estadoFlujo === 'segunda_parada') {
-                let montoViaje = parseFloat(viajeActivo.precio || '0');
-                totalDia += montoViaje;
-                ultimoViajeMonto = montoViaje;
-                cantViajesCount += 1;
+                estadoFlujo = 'cobrando';
+                localStorage.setItem('conductor_estado_flujo', 'cobrando');
 
-                localStorage.setItem('chofer_total_dia', totalDia);
-                localStorage.setItem('chofer_ultimo_monto', ultimoViajeMonto);
-                localStorage.setItem('chofer_cant_viajes', cantViajesCount);
-                actualizarUIEstadisticas();
+                let montoViaje = parseFloat(viajeActivo.precio || '0');
+                
+                // Ocultar botón de acción y mostrar el panel de cobro integrado en el tablero
+                btnEnCurso.classList.add('hidden');
+                document.getElementById('contenedorCobroTablero').classList.remove('hidden');
+                document.getElementById('lblMontoCobroFinal').textContent = '$' + montoViaje.toLocaleString('es-AR');
+                document.getElementById('txtEstadoChofer').textContent = "Cobrando Viaje 💵";
 
                 await supabaseClient.from('viajes').update({ estado: 'finalizado' }).eq('id', viajeActivo.id);
-                
-                // Mensaje claro de fin de viaje y cobro
-                alert(`🏁 ¡Fin del viaje!\n\nPor favor, cobrar al pasajero la tarifa de: $${montoViaje.toLocaleString('es-AR')}`);
-
-                limpiarMemoriaConductor(); liberarWakeLock(); detenerRastreoGps();
-                setTimeout(() => location.reload(), 1500);
             }
+        }
+
+        async function confirmarCobroYReiniciar() {
+            let montoViaje = parseFloat(viajeActivo.precio || '0');
+            totalDia += montoViaje;
+            ultimoViajeMonto = montoViaje;
+            cantViajesCount += 1;
+
+            localStorage.setItem('chofer_total_dia', totalDia);
+            localStorage.setItem('chofer_ultimo_monto', ultimoViajeMonto);
+            localStorage.setItem('chofer_cant_viajes', cantViajesCount);
+            actualizarUIEstadisticas();
+
+            limpiarMemoriaConductor(); 
+            liberarWakeLock(); 
+            detenerRastreoGps();
+            
+            location.reload();
         }
 
         async function verificarViajeActivoConductor() {
@@ -722,7 +752,7 @@
             if (!guardadoId) return;
             try {
                 const { data: viaje } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
-                if (!viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') { limpiarMemoriaConductor(); return; }
+                if (!viaje || viaje.estado === 'cancelado') { limpiarMemoriaConductor(); return; }
                 viajeActivo = viaje; estadoFlujo = guardadoEstado || 'aceptado';
                 
                 let valorTrayecto = viaje.tipo_trayecto || viaje.trayecto || "";
@@ -753,23 +783,30 @@
 
                 document.getElementById('contenedorBotonesPendiente').classList.add('hidden');
                 const btnEnCurso = document.getElementById('btnAccionEnCurso');
-                btnEnCurso.classList.remove('hidden');
 
                 if (estadoFlujo === 'aceptado') {
+                    btnEnCurso.classList.remove('hidden');
                     btnEnCurso.className = "btn-action btn-llegué"; btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
                     trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
                 } else if (estadoFlujo === 'en_puerta') {
+                    btnEnCurso.classList.remove('hidden');
                     btnEnCurso.className = "btn-action btn-iniciar"; 
                     btnEnCurso.textContent = esIdaYVueltaGlobal ? "Iniciar Primera Parada 🧭" : "Iniciar Viaje al Destino 🧭";
                     trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
                 } else if (estadoFlujo === 'en_viaje') {
+                    btnEnCurso.classList.remove('hidden');
                     btnEnCurso.className = esIdaYVueltaGlobal ? "btn-action btn-llegué" : "btn-action btn-finalizar"; 
-                    btnEnCurso.textContent = esIdaYVueltaGlobal ? "Llegué a Primera Parada 🛑" : "Finalizar Viaje y Cobrar 💵";
+                    btnEnCurso.textContent = esIdaYVueltaGlobal ? "Llegué a 1era Parada (Ida) 🛑" : "Finalizar Viaje / Cobrar 💵";
                     trazarRutaCalles(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
                 } else if (estadoFlujo === 'segunda_parada') {
+                    btnEnCurso.classList.remove('hidden');
                     btnEnCurso.className = "btn-action btn-finalizar"; 
-                    btnEnCurso.textContent = "Finalizar 2da Parada / Cobrar 💵";
+                    btnEnCurso.textContent = "Fin de Viaje / Ver Cobro 💵";
                     trazarRutaCalles(viaje.destino_lat, viaje.destino_lng, viaje.origen_lat, viaje.origen_lng);
+                } else if (estadoFlujo === 'cobrando') {
+                    btnEnCurso.classList.add('hidden');
+                    document.getElementById('contenedorCobroTablero').classList.remove('hidden');
+                    document.getElementById('lblMontoCobroFinal').textContent = '$' + parseFloat(viaje.precio).toLocaleString('es-AR');
                 }
             } catch (e) { limpiarMemoriaConductor(); }
         }
@@ -798,7 +835,7 @@
         }
 
         function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
-            let ahora = Date.now();
+            letahora = Date.now();
             if ((ahora - ultimoCalculoRuta > 6000) || distanciaEnMetros(lat1, lon1, ultimaLatRuta, ultimaLngRuta) > 35) {
                 ultimaLatRuta = lat1; ultimaLngRuta = lon1;
                 trazarRutaCalles(lat1, lon1, lat2, lon2);
