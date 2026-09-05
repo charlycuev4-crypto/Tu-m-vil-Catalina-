@@ -2,384 +2,1036 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TuMovil - Panel de Control Familiar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#11121a">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Tu Móvil - Conductor</title>
+
+    <link rel="manifest" href="/manifest-conductor.json">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #11121a; height: 100vh; height: 100dvh; overflow: hidden; color: #ffffff;
         }
 
-        body {
-            background-color: #0b131b;
-            color: #ffffff;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
+        #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; height: 100dvh; z-index: 1; }
+        #mapaLeaflet { width: 100%; height: 100%; }
+
+        .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+        .header-left-col { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; max-width: 55%; }
+        
+        .status-badge { background: #1e293b; color: #38bdf8; padding: 8px 14px; border-radius: 30px; font-weight: 700; font-size: 0.8rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #334155; cursor: pointer; user-select: none; text-align: center; white-space: nowrap; }
+        .status-badge.activo { background: #059669; color: #ffffff; border-color: #10b981; }
+        .status-badge.inactivo { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
+
+        .ganancias-scroll-container {
+            display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px 2px;
+            scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+        }
+        .ganancias-scroll-container::-webkit-scrollbar { display: none; }
+
+        .burbuja-stat {
+            background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(8px);
+            border: 1px solid #334155; padding: 6px 12px; border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4); flex: 0 0 auto; scroll-snap-align: start;
+            min-width: 130px; display: flex; flex-direction: column; justify-content: center;
+        }
+        .burbuja-label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
+        .burbuja-valor { font-size: 0.95rem; font-weight: 800; color: #38bdf8; }
+        .burbuja-valor.verde { color: #10b981; }
+
+        .header-right-col { display: flex; gap: 8px; pointer-events: auto; flex-direction: column; align-items: flex-end; }
+        .gps-btn { width: 44px; height: 44px; border-radius: 50%; background: #1e293b; color: white; display: flex; align-items: center; justify-content: center; border: 1px solid #334155; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .gps-btn.seguimiento-on { background: #059669; border-color: #10b981; animation: pulsoGps 2s infinite; }
+
+        .google-maps-btn {
+            width: 44px; height: 44px; border-radius: 50%; background: #ffffff; color: #1a73e8;
+            display: flex; align-items: center; justify-content: center; border: 1px solid #dadce0;
+            font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
-        /* Simulación del Mapa de Fondo */
-        .map-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #1e293b;
-            background-image: 
-                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-            z-index: 1;
+        #btnAbrirChatFlotante {
+            pointer-events: auto;
+            width: 44px; height: 44px; background: #38bdf8; color: #0f172a;
+            border-radius: 50%; display: none; align-items: center; justify-content: center;
+            font-size: 1.3rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4); cursor: pointer;
+            border: 2px solid white; transition: transform 0.2s;
+        }
+        #btnAbrirChatFlotante:active { transform: scale(0.9); }
+
+        .test-audio-btn {
+            background: #ea580c; color: white; border: none; padding: 6px 12px;
+            border-radius: 20px; font-weight: bold; font-size: 0.7rem; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; gap: 4px;
+            border: 1px solid #c2410c; width: fit-content;
         }
 
-        /* Elementos flotantes superiores */
-        .top-status {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #10b981;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-weight: bold;
-            font-size: 14px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+
+        #modalChatFlotante {
+            position: fixed; top: 80px; left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
+            background: #1e293b; border: 2px solid #38bdf8; border-radius: 16px;
+            padding: 12px; z-index: 600; display: none; flex-direction: column; gap: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); color: #f1f5f9;
+        }
+        #modalChatFlotante.activo { display: flex; }
+
+        .chat-mensajes-lista {
+            max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
+            font-size: 0.78rem; padding-right: 4px; background: #0f172a; padding: 8px; border-radius: 10px; border: 1px solid #334155;
+        }
+        .chat-msg-item { padding: 5px 8px; border-radius: 8px; max-width: 85%; word-break: break-word; }
+        .chat-msg-item.admin { background: #1e3a8a; align-self: flex-start; color: #93c5fd; }
+        .chat-msg-item.pasajero { background: #334155; align-self: flex-start; color: #f1f5f9; }
+        .chat-msg-item.conductor { background: #059669; align-self: flex-end; color: #ffffff; }
+        
+        .chat-input-row { display: flex; gap: 6px; }
+        .chat-input-row input {
+            flex: 1; background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+            padding: 6px 10px; color: white; font-size: 0.8rem; outline: none;
+        }
+        .chat-input-row button {
+            background: #38bdf8; color: #0f172a; border: none; border-radius: 8px;
+            padding: 0 12px; font-weight: 700; font-size: 0.8rem; cursor: pointer;
         }
 
-        .earnings-container {
-            position: absolute;
-            top: 70px;
-            left: 15px;
-            display: flex;
-            gap: 10px;
-            z-index: 10;
+        .bottom-panel { 
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
+            background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; 
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5); 
+            padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); 
+            height: 75px; 
+            overflow: hidden; transition: height 0.3s ease, background 0.3s ease; color: #f1f5f9; 
+        }
+        .bottom-panel.viaje-entrante, 
+        .bottom-panel.viaje-activo-estado { 
+            height: auto; max-height: 80vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+        }
+        .bottom-panel.viaje-entrante { animation: alertaParpadeo 1s infinite alternate; }
+        @keyframes alertaParpadeo { from { border-top-color: #334155; background: #1e293b; } to { border-top-color: #ef4444; background: #2d1a22; } }
+
+        .panel-handle { width: 40px; height: 4px; background: #475569; border-radius: 3px; margin: 0 auto 6px; }
+        
+        .viaje-info-box { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+        .viaje-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 6px; }
+        
+        .pasajero-perfil-container { display: flex; align-items: center; gap: 10px; }
+        .pasajero-foto-box { width: 42px; height: 42px; border-radius: 50%; background: #334155; overflow: hidden; border: 2px solid #3b82f6; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .pasajero-foto-box img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .viaje-pasajero { font-size: 0.95rem; font-weight: 700; color: #fff; }
+        .viaje-precio { font-size: 1.15rem; font-weight: 800; color: #10b981; }
+
+        .input-group { background: #0f172a; border-radius: 14px; padding: 8px 12px; margin-bottom: 8px; }
+        .input-row { display: flex; flex-direction: column; gap: 3px; font-size: 0.8rem; color: #94a3b8; }
+        .input-row span { color: #f1f5f9; font-weight: 500; }
+        
+        .manifesto-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; padding: 4px 8px; border-radius: 0 6px 6px 0; font-size: 0.75rem; color: #e2e8f0; margin-top: 4px; }
+
+        .btn-action { width: 100%; color: white; border: none; padding: 12px; border-radius: 50px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-bottom: 6px;}
+        
+        .btn-espera { 
+            background: #059669; color: #ffffff; cursor: default; padding: 8px 16px; 
+            font-size: 0.85rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .ruedita-radar {
+            width: 14px; height: 14px; border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #ffffff; border-radius: 50%; animation: girarRadar 0.8s linear infinite;
+        }
+        @keyframes girarRadar { to { transform: rotate(360deg); } }
+
+        .btn-desconectado { background: #451a03; color: #f59e0b; cursor: not-allowed; padding: 8px 16px; font-size: 0.85rem; border-radius: 20px; }
+        .btn-aceptar { background: #10b981; font-size: 1.05rem; }
+        .btn-llegué { background: #3b82f6; }
+        .btn-iniciar { background: #8b5cf6; }
+        .btn-finalizar { background: #e11d48; }
+
+        .chofer-auto-icon {
+            background: #1e293b; width: 38px !important; height: 38px !important;
+            border: 3px solid #38bdf8; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 1.1rem;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
         }
 
-        .earning-card {
-            background: #1e293b;
-            padding: 8px 12px;
-            border-radius: 12px;
-            border: 1px solid #334155;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        .pasajero-origen-icon { background: #10b981; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
+        .pasajero-destino-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
+
+        #modalConfigChofer {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.95);
+            z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .config-card {
+            background: #1e293b; border: 1px solid #334155; border-radius: 20px; width: 100%; max-width: 400px;
+            padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); color: #f1f5f9; max-height: 90vh; overflow-y: auto;
+        }
+        .config-card h2 { font-size: 1.25rem; margin-bottom: 6px; color: #38bdf8; text-align: center; }
+        .config-card p { font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px; text-align: center; }
+        .config-field { margin-bottom: 12px; }
+        .config-field label { display: block; font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; }
+        .config-field input {
+            width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px 14px;
+            color: white; font-size: 0.95rem; outline: none;
+        }
+        .preview-selfie {
+            width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8;
+            margin: 0 auto 10px; display: block; background: #0f172a;
         }
 
-        .earning-card span {
-            font-size: 10px;
-            color: #94a3b8;
-            display: block;
-            text-transform: uppercase;
-        }
-
-        .earning-card strong {
-            font-size: 14px;
-            color: #34d399;
-        }
-
-        /* NUEVA UBICACIÓN: Botón flotante de chat reubicado arriba del panel inferior derecho */
-        .chat-float-btn {
-            position: absolute;
-            bottom: 240px; /* Justo arriba del panel de viaje inferior */
-            right: 20px;
-            width: 55px;
-            height: 55px;
-            background: #38bdf8;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            z-index: 20;
-            cursor: pointer;
-            border: 2px solid #ffffff;
-            transition: transform 0.2s;
-        }
-
-        .chat-float-btn:active {
-            transform: scale(0.95);
-        }
-
-        .chat-float-btn svg {
-            width: 26px;
-            height: 26px;
-            fill: #0f172a;
-        }
-
-        /* Contenedor del Chat (Ventana emergente) */
-        .chat-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(11, 19, 27, 0.85);
-            backdrop-filter: blur(5px);
-            z-index: 100;
-            display: none;
-            flex-direction: column;
-            justify-content: flex-end;
-            padding: 15px;
-        }
-
-        .chat-overlay.active {
-            display: flex;
-        }
-
-        .chat-box {
-            background: #1e293b;
-            width: 100%;
-            border-radius: 20px;
-            border: 1px solid #334155;
-            display: flex;
-            flex-direction: column;
-            max-height: 80vh;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .chat-header {
-            padding: 15px;
-            border-bottom: 1px solid #334155;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .chat-header h3 {
-            font-size: 16px;
-            color: #38bdf8;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .close-chat {
-            background: #ef4444;
-            color: white;
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-
-        .chat-body {
-            padding: 15px;
-            height: 150px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            color: #94a3b8;
-            font-size: 13px;
-        }
-
-        .chat-footer {
-            padding: 12px;
-            border-top: 1px solid #334155;
-            display: flex;
-            gap: 10px;
-        }
-
-        .chat-footer input {
-            flex: 1;
-            background: #0f172a;
-            border: 1px solid #475569;
-            padding: 10px 15px;
-            border-radius: 10px;
-            color: white;
-            outline: none;
-            font-size: 14px;
-        }
-
-        .chat-footer button {
-            background: #38bdf8;
-            color: #0f172a;
-            border: none;
-            padding: 0 18px;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        /* Panel Inferior del Conductor (Menú del pasajero) */
-        .bottom-panel {
-            position: absolute;
-            bottom: 15px;
-            left: 15px;
-            right: 15px;
-            background: #1e293b;
-            border-radius: 20px;
-            padding: 18px;
-            border: 1px solid #334155;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            z-index: 10;
-        }
-
-        .passenger-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .passenger-details {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .passenger-avatar {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background: #475569;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            overflow: hidden;
-            border: 2px solid #38bdf8;
-        }
-
-        .passenger-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .passenger-name {
-            font-size: 16px;
-            font-weight: bold;
-            color: #ffffff;
-        }
-
-        .trip-price {
-            font-size: 18px;
-            font-weight: bold;
-            color: #34d399;
-        }
-
-        .trip-route {
-            background: #0f172a;
-            padding: 10px 12px;
-            border-radius: 10px;
-            font-size: 12px;
-            color: #cbd5e1;
-            margin-bottom: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .action-btn {
-            width: 100%;
-            background: linear-gradient(135deg, #38bdf8, #0284c7);
-            color: #0f172a;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3);
-            text-align: center;
-        }
+        .hidden { display: none !important; }
+        .msg { padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.8rem; text-align: center; display: none; font-weight: 600; }
+        .msg.show { display: block; }
     </style>
 </head>
-<body>
+<body onclick="forzarHabilitacionAudio()">
 
-    <!-- Simulación del Mapa -->
-    <div class="map-background"></div>
-
-    <!-- Estado Superior -->
-    <div class="top-status">
-        🚗 Yendo al Pasajero
-    </div>
-
-    <!-- Panel de Ganancias -->
-    <div class="earnings-container">
-        <div class="earning-card">
-            <span>Total del día</span>
-            <strong>$42.120</strong>
-        </div>
-        <div class="earning-card">
-            <span>Último</span>
-            <strong>$4.400</strong>
-        </div>
-    </div>
-
-    <!-- BOTÓN FLOTANTE DEL CHAT (Reubicado en la parte inferior derecha) -->
-    <div class="chat-float-btn" onclick="toggleChat()">
-        <svg viewBox="0 0 24 24">
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-        </svg>
-    </div>
-
-    <!-- VENTANA DEL CHAT CON EL PASAJERO (Pantalla Completa / Expandida) -->
-    <div class="chat-overlay" id="chatOverlay">
-        <div class="chat-box">
-            <div class="chat-header">
-                <h3>💬 Chat con el Pasajero</h3>
-                <!-- Botón X para cerrar y volver al tablero principal -->
-                <button class="close-chat" onclick="toggleChat()">✕</button>
-            </div>
-            <div class="chat-body">
-                <p>No hay mensajes previos. Escribe algo...</p>
-            </div>
-            <div class="chat-footer">
-                <input type="text" placeholder="Escribe un mensaje...">
-                <button>Enviar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- PANEL INFERIOR DEL CONDUCTOR -->
-    <div class="bottom-panel">
-        <div class="passenger-info">
-            <div class="passenger-details">
-                <div class="passenger-avatar">
-                    <span style="font-size: 12px; color: #fff;">GH</span>
+    <div id="modalConfigChofer" class="hidden">
+        <div class="config-card">
+            <h2>🚗 Registro de Conductor</h2>
+            <p>Ingresá tus datos y tu selfie para que los pasajeros te reconozcan.</p>
+            <form id="formConfigChofer" onsubmit="guardarConfigChofer(event)">
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <img id="imgPreview" class="preview-selfie" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Foto Perfil">
+                    <label style="font-size: 0.75rem; color: #38bdf8; cursor: pointer; text-decoration: underline;">
+                        Subir Foto / Selfie 📷
+                        <input type="file" id="inpFotoFile" accept="image/*" style="display: none;" onchange="procesarYComprimirFoto(event)">
+                    </label>
                 </div>
-                <div class="passenger-name">Gerlo hoty</div>
+                <div class="config-field">
+                    <label>Nombre y Apellido</label>
+                    <input type="text" id="inpNombre" placeholder="Ej: Juan Pérez" required>
+                </div>
+                <div class="config-field">
+                    <label>Número de WhatsApp</label>
+                    <input type="tel" id="inpTelefono" placeholder="Ej: 1123456789" required>
+                </div>
+                <div class="config-field">
+                    <label>Marca y Modelo del Auto</label>
+                    <input type="text" id="inpModelo" placeholder="Ej: Fiat Cronos" required>
+                </div>
+                <div class="config-field">
+                    <label>Color del Auto</label>
+                    <input type="text" id="inpColor" placeholder="Ej: Blanco" required>
+                </div>
+                <div class="config-field">
+                    <label>Patente / Dominio</label>
+                    <input type="text" id="inpPatente" placeholder="Ej: AB123CD" required>
+                </div>
+                <button type="submit" class="btn-action btn-aceptar" style="margin-top: 10px;" id="btnGuardarRegistro">Guardar y Empezar ✅</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
+
+    <div id="modalChatFlotante">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 6px;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">💬 Chat con el Pasajero</span>
+            <button onclick="toggleChatFlotante()" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-weight: bold; cursor: pointer; font-size: 0.75rem;">✕</button>
+        </div>
+        <div class="chat-mensajes-lista" id="listaMensajesChat">
+            <div style="color: #64748b; text-align: center; font-size: 0.75rem;">Chat del viaje iniciado...</div>
+        </div>
+        <div class="chat-input-row">
+            <input type="text" id="inpMensajeChat" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter') enviarMensajeChat()">
+            <button onclick="enviarMensajeChat()">Enviar</button>
+        </div>
+    </div>
+
+    <div class="header-float">
+        <div class="header-left-col">
+            <div class="status-badge activo" id="txtEstadoChofer" onclick="conmutarEstadoConexion()">Móvil en Línea 🟢</div>
+            
+            <div class="ganancias-scroll-container">
+                <div class="burbuja-stat">
+                    <span class="burbuja-label">Total del Día</span>
+                    <span class="burbuja-valor verde" id="lblTotalDia">$0</span>
+                </div>
+                <div class="burbuja-stat">
+                    <span class="burbuja-label">Último Viaje</span>
+                    <span class="burbuja-valor" id="lblUltimoViaje">$0</span>
+                </div>
+                <div class="burbuja-stat">
+                    <span class="burbuja-label">Viajes Realizados</span>
+                    <span class="burbuja-valor" id="lblCantViajes">0</span>
+                </div>
             </div>
-            <div class="trip-price">$5720</div>
+
+            <button class="test-audio-btn" id="btnTestSonido" onclick="probarCampanaManual(event)">🔊 Probar Timbre</button>
         </div>
 
-        <div class="trip-route">
-            <div>📍 <strong>Recogida:</strong> Trujui (Solano López)</div>
-            <div>🏁 <strong>Destino:</strong> Trujui (Avenida Bernardo Caveri)</div>
-            <div>⏱️ 1 min de viaje real (0.0 km)</div>
+        <div class="header-right-col">
+            <button id="btnAbrirChatFlotante" onclick="toggleChatFlotante()">💬</button>
+            <button class="google-maps-btn" id="btnAbrirGoogleMaps" onclick="abrirNavegacionGoogleMaps()">🗺️</button>
+            <button class="gps-btn" id="btnGpsCentro" onclick="alternarSeguimientoManual()">🎯</button>
+        </div>
+    </div>
+
+    <div class="bottom-panel" id="panelConductor">
+        <div class="panel-handle"></div>
+        <div class="msg" id="msgChofer"></div>
+
+        <div id="vistaEspera">
+            <div style="text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; padding-top: 2px;">
+                <div class="btn-action btn-espera" id="btnEstadoEsperaTexto">
+                    <div class="ruedita-radar"></div>
+                    Buscando solicitudes (5 km)...
+                </div>
+            </div>
         </div>
 
-        <button class="action-btn">Ya llegué a la puerta 🔓</button>
+        <div id="vistaViaje" class="hidden">
+            <div class="viaje-info-box">
+                <div class="viaje-header">
+                    <div class="pasajero-perfil-container">
+                        <div class="pasajero-foto-box">
+                            <img id="imgPasajeroFoto" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Pasajero">
+                        </div>
+                        <div>
+                            <div class="viaje-pasajero" id="lblPasajero">-</div>
+                        </div>
+                    </div>
+                    <div class="viaje-precio" id="lblPrecio">$0</div>
+                </div>
+                <div class="input-group">
+                    <div class="input-row" id="lblDetallesRutaYBarrio"></div>
+                </div>
+            </div>
+
+            <div id="contenedorBotonesPendiente" style="display: flex; gap: 8px; margin-bottom: 8px;">
+                <button class="btn-action" style="background: #ef4444; flex: 1; margin-bottom: 0;" onclick="rechazarViajeEntrante()">Rechazar ❌</button>
+                <button class="btn-action btn-aceptar" style="flex: 2; margin-bottom: 0;" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje ✅</button>
+            </div>
+
+            <button class="btn-action btn-aceptar hidden" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
+        </div>
     </div>
 
     <script>
-        function toggleChat() {
-            const overlay = document.getElementById('chatOverlay');
-            overlay.classList.toggle('active');
+        const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "";
+        let FOTO_CHOFER = localStorage.getItem('cfg_auto_foto') || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
+        let AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " - " + (localStorage.getItem('cfg_auto_color') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
+
+        let totalDia = parseFloat(localStorage.getItem('chofer_total_dia') || '0');
+        let ultimoViajeMonto = parseFloat(localStorage.getItem('chofer_ultimo_monto') || '0');
+        let cantViajesCount = parseInt(localStorage.getItem('chofer_cant_viajes') || '0');
+
+        function verificarReseteoDiario() {
+            const hoy = new Date().toLocaleDateString();
+            const ultimaFecha = localStorage.getItem('chofer_fecha_actual');
+
+            if (ultimaFecha !== hoy) {
+                totalDia = 0;
+                cantViajesCount = 0;
+                localStorage.setItem('chofer_total_dia', '0');
+                localStorage.setItem('chofer_cant_viajes', '0');
+                localStorage.setItem('chofer_fecha_actual', hoy);
+            }
         }
+
+        function actualizarUIEstadisticas() {
+            document.getElementById('lblTotalDia').textContent = '$' + totalDia.toLocaleString('es-AR');
+            document.getElementById('lblUltimoViaje').textContent = '$' + ultimoViajeMonto.toLocaleString('es-AR');
+            document.getElementById('lblCantViajes').textContent = cantViajesCount;
+        }
+
+        let canalSupabase = null;
+        let canalChatSupabase = null;
+        let estaConectado = true; 
+        let wakeLock = null; 
+        let idRastreadorGps = null; 
+        let autocentrarMapa = true;  
+        
+        let audioCtx = null;
+        let intervaloCampana = null;
+        let base64FotoTemp = "";
+
+        function verificarRegistroChofer() {
+            if (!localStorage.getItem('cfg_auto_chofer') || !localStorage.getItem('cfg_auto_patente')) {
+                document.getElementById('modalConfigChofer').classList.remove('hidden');
+            } else {
+                document.getElementById('inpNombre').value = localStorage.getItem('cfg_auto_chofer') || '';
+                document.getElementById('inpTelefono').value = localStorage.getItem('cfg_auto_telefono') || '';
+                document.getElementById('inpModelo').value = localStorage.getItem('cfg_auto_modelo') || '';
+                document.getElementById('inpColor').value = localStorage.getItem('cfg_auto_color') || '';
+                document.getElementById('inpPatente').value = localStorage.getItem('cfg_auto_patente') || '';
+                if(localStorage.getItem('cfg_auto_foto')) {
+                    document.getElementById('imgPreview').src = localStorage.getItem('cfg_auto_foto');
+                    base64FotoTemp = localStorage.getItem('cfg_auto_foto');
+                }
+            }
+        }
+
+        function procesarYComprimirFoto(event) {
+            const archivo = event.target.files[0];
+            if (!archivo) return;
+
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 350; const MAX_HEIGHT = 350;
+                    let width = img.width; let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    } else {
+                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                    }
+
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    base64FotoTemp = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById('imgPreview').src = base64FotoTemp;
+                }
+            }
+            lector.readAsDataURL(archivo);
+        }
+
+        function guardarConfigChofer(e) {
+            e.preventDefault();
+            const nombre = document.getElementById('inpNombre').value.trim();
+            const telefono = document.getElementById('inpTelefono').value.trim();
+            const modelo = document.getElementById('inpModelo').value.trim();
+            const color = document.getElementById('inpColor').value.trim();
+            const patente = document.getElementById('inpPatente').value.trim();
+            const fotoFinal = base64FotoTemp || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
+
+            localStorage.setItem('cfg_auto_chofer', nombre);
+            localStorage.setItem('cfg_auto_telefono', telefono);
+            localStorage.setItem('cfg_auto_modelo', modelo);
+            localStorage.setItem('cfg_auto_color', color);
+            localStorage.setItem('cfg_auto_patente', patente);
+            localStorage.setItem('cfg_auto_foto', fotoFinal);
+
+            document.getElementById('modalConfigChofer').classList.add('hidden');
+            location.reload();
+        }
+
+        function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+        }
+
+        async function obtenerDireccionYBarrio(lat, lon) {
+            try {
+                let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+                    headers: { 'Accept-Language': 'es' }
+                });
+                let data = await res.json();
+                if (data && data.address) {
+                    let calle = data.address.road || data.address.pedestrian || data.address.suburb || "Calle sin nombre";
+                    let numero = data.address.house_number ? ` ${data.address.house_number}` : "";
+                    let barrio = data.address.neighbourhood || data.address.suburb || data.address.city_district || data.address.town || data.address.city || "Zona general";
+                    return {
+                        calleCompleta: `${calle}${numero}`.trim(),
+                        barrio: barrio
+                    };
+                }
+            } catch (e) {}
+            return { calleCompleta: "Punto exacto", barrio: "Zona general" };
+        }
+
+        async function solicitarWakeLock() {
+            if (!('wakeLock' in navigator)) return;
+            try { if (!wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
+        }
+        function liberarWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; } }
+
+        function forzarHabilitacionAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            else if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function tocarUnRepiqueDeCampana() {
+            if (!audioCtx) return;
+            try {
+                let osc = audioCtx.createOscillator();
+                let gainNode = audioCtx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(1475, audioCtx.currentTime); 
+                gainNode.gain.setValueAtTime(0.9, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+                osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.8);
+            } catch(e) {}
+        }
+
+        function comenzarSirenaAlerta() {
+            if (intervaloCampana) return;
+            forzarHabilitacionAudio();
+            intervaloCampana = setInterval(() => { tocarUnRepiqueDeCampana(); }, 500);
+        }
+        function detenerSirenaAlerta() {
+            if (intervaloCampana) { clearInterval(intervaloCampana); intervaloCampana = null; }
+        }
+
+        function probarCampanaManual(e) {
+            e.stopPropagation();
+            forzarHabilitacionAudio();
+            tocarUnRepiqueDeCampana();
+            const btn = document.getElementById('btnTestSonido');
+            btn.textContent = "🔔 ¡Sonando Ok!";
+            btn.style.background = "#059669";
+            setTimeout(() => { btn.textContent = "🔊 Probar Timbre"; btn.style.background = "#ea580c"; }, 2000);
+        }
+
+        const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
+        let mapa = null, markerChofer = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
+        let choferCoords = { lat: -34.545, lng: -58.715 }; 
+        let viajeActivo = null;
+        let estadoFlujo = 'pendiente'; 
+
+        function initMapa() {
+            mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
+            
+            const iconoAuto = L.divIcon({ className: 'chofer-auto-icon', html: '🚗', iconSize: [38, 38], iconAnchor: [19, 19] });
+            markerChofer = L.marker([choferCoords.lat, choferCoords.lng], { icon: iconoAuto }).addTo(mapa);
+
+            mapa.on('dragstart', () => {
+                autocentrarMapa = false;
+                document.getElementById('btnGpsCentro').classList.remove('seguimiento-on');
+            });
+        }
+
+        function iniciarRastreoGpsContinuo() {
+            if (idRastreadorGps) return;
+            if (navigator.geolocation) {
+                idRastreadorGps = navigator.geolocation.watchPosition(async (pos) => {
+                    const nuevaLat = pos.coords.latitude;
+                    const nuevaLng = pos.coords.longitude;
+                    choferCoords = { lat: nuevaLat, lng: nuevaLng };
+                    
+                    if (markerChofer) markerChofer.setLatLng([nuevaLat, nuevaLng]);
+
+                    if (autocentrarMapa) {
+                        let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
+                        mapa.setView([nuevaLat, nuevaLng], zoomActual);
+                        document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
+                    }
+
+                    if (viajeActivo && viajeActivo.id) {
+                        try {
+                            await supabaseClient.from('viajes').update({ conductor_lat: nuevaLat, conductor_lng: nuevaLng }).eq('id', viajeActivo.id);
+                        } catch (err) {}
+                    }
+
+                    if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
+                        actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng);
+                    } else if (viajeActivo && estadoFlujo === 'en_viaje') {
+                        actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.destino_lat, viajeActivo.destino_lng);
+                    }
+                }, (error) => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
+            }
+        }
+
+        function detenerRastreoGps() {
+            if (idRastreadorGps) { navigator.geolocation.clearWatch(idRastreadorGps); idRastreadorGps = null; }
+        }
+
+        function alternarSeguimientoManual() {
+            autocentrarMapa = true;
+            document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
+            mapa.setView([choferCoords.lat, choferCoords.lng], (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15);
+        }
+
+        function abrirNavegacionGoogleMaps() {
+            if (!viajeActivo) { alert("Necesitás un viaje activo."); return; }
+            let destLat = (estadoFlujo === 'en_viaje') ? viajeActivo.destino_lat : viajeActivo.origen_lat;
+            let destLng = (estadoFlujo === 'en_viaje') ? viajeActivo.destino_lng : viajeActivo.origen_lng;
+            window.open(`https://www.google.com/maps/dir/?api=1&origin=${choferCoords.lat},${choferCoords.lng}&destination=${destLat},${destLng}&travelmode=driving`, '_blank');
+        }
+
+        async function buscarViajesPendientesRecientes() {
+            if (viajeActivo || !estaConectado) return;
+            try {
+                const { data: viajes, error } = await supabaseClient
+                    .from('viajes').select('*').eq('estado', 'pendiente').is('conductor_nombre', null)
+                    .order('created_at', { ascending: false }).limit(1);
+
+                if (!error && viajes && viajes.length > 0) {
+                    const viajeReciente = viajes[0];
+                    const tiempoCreacion = new Date(viajeReciente.created_at).getTime();
+                    const ahora = Date.now();
+                    if ((ahora - tiempoCreacion) < 45000) {
+                        const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, viajeReciente.origen_lat, viajeReciente.origen_lng);
+                        if (distanciaAlViaje <= 5) { montarViajeEntrante(viajeReciente); }
+                    }
+                }
+            } catch (err) {}
+        }
+
+        function escucharNuevosViajes() {
+            if (canalSupabase) return;
+            canalSupabase = supabaseClient.channel('despacho-chofer');
+            canalSupabase
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, (payload) => {
+                    if (payload.new.estado === 'pendiente' && !viajeActivo && estaConectado) {
+                        const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, payload.new.origen_lat, payload.new.origen_lng);
+                        if (distanciaAlViaje > 5) return;
+                        montarViajeEntrante(payload.new);
+                    }
+                })
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes' }, (payload) => {
+                    if (viajeActivo && payload.new.id === viajeActivo.id && payload.new.estado === 'cancelado') {
+                        detenerSirenaAlerta();
+                        mostrarMsg('El pasajero canceló el viaje.', 'success');
+                        limpiarMemoriaConductor();
+                        setTimeout(() => location.reload(), 3000);
+                    }
+                })
+                .subscribe();
+        }
+
+        function toggleChatFlotante() {
+            const modal = document.getElementById('modalChatFlotante');
+            modal.classList.toggle('activo');
+        }
+
+        function iniciarChatViaje(viajeId) {
+            cargarHistorialMensajes(viajeId);
+            if (canalChatSupabase) supabaseClient.removeChannel(canalChatSupabase);
+
+            canalChatSupabase = supabaseClient.channel(`chat_viaje_${viajeId}`)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'mensajes',
+                    filter: `viaje_id=eq.${viajeId}`
+                }, payload => {
+                    agregarMensajeAlDom(payload.new);
+                })
+                .subscribe();
+        }
+
+        async function cargarHistorialMensajes(viajeId) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('mensajes')
+                    .select('*')
+                    .eq('viaje_id', viajeId)
+                    .order('created_at', { ascending: true });
+
+                const listaHtml = document.getElementById('listaMensajesChat');
+                if (!listaHtml) return;
+                listaHtml.innerHTML = '';
+                if (data && data.length > 0) {
+                    data.forEach(msg => agregarMensajeAlDom(msg));
+                } else {
+                    listaHtml.innerHTML = '<div style="color: #64748b; text-align: center; font-size: 0.75rem;">No hay mensajes previos. Escribe algo...</div>';
+                }
+            } catch (e) {}
+        }
+
+        function agregarMensajeAlDom(msg) {
+            const listaHtml = document.getElementById('listaMensajesChat');
+            if (!listaHtml) return;
+
+            if (listaHtml.innerHTML.includes('No hay mensajes previos')) {
+                listaHtml.innerHTML = '';
+            }
+            const div = document.createElement('div');
+            let claseEmisor = 'pasajero';
+            if (msg.emisor === 'conductor') claseEmisor = 'conductor';
+            if (msg.emisor === 'admin') claseEmisor = 'admin';
+
+            div.className = `chat-msg-item ${claseEmisor}`;
+            div.innerHTML = `<span style="font-size:0.65rem; opacity:0.7; display:block;"><b>${msg.emisor}:</b></span> ${msg.mensaje}`;
+            listaHtml.appendChild(div);
+            listaHtml.scrollTop = listaHtml.scrollHeight;
+        }
+
+        async function enviarMensajeChat() {
+            const input = document.getElementById('inpMensajeChat');
+            const texto = input.value.trim();
+            if (!texto || !viajeActivo) return;
+
+            input.value = '';
+            try {
+                await supabaseClient.from('mensajes').insert([{
+                    viaje_id: viajeActivo.id,
+                    emisor: 'conductor',
+                    mensaje: texto
+                }]);
+            } catch (e) {}
+        }
+
+        function conmutarEstadoConexion() {
+            if (viajeActivo) return;
+            estaConectado = !estaConectado;
+            const badge = document.getElementById('txtEstadoChofer');
+            const btnEspera = document.getElementById('btnEstadoEsperaTexto');
+
+            if (estaConectado) {
+                badge.textContent = "Móvil en Línea 🟢"; badge.className = "status-badge activo";
+                btnEspera.innerHTML = `<div class="ruedita-radar"></div>Buscando solicitudes (5 km)...`; 
+                btnEspera.className = "btn-action btn-espera";
+                solicitarWakeLock(); iniciarRastreoGpsContinuo(); escucharNuevosViajes();
+                buscarViajesPendientesRecientes();
+            } else {
+                badge.textContent = "Fuera de Línea 🔴"; badge.className = "status-badge inactivo";
+                btnEspera.textContent = "Turno Pausado"; btnEspera.className = "btn-action btn-desconectado";
+                liberarWakeLock(); detenerRastreoGps(); if(canalSupabase) { supabaseClient.removeChannel(canalSupabase); canalSupabase = null; }
+            }
+        }
+
+        async function montarViajeEntrante(viaje) {
+            viajeActivo = viaje;
+            estadoFlujo = 'pendiente';
+            comenzarSirenaAlerta();
+
+            document.getElementById('vistaEspera').classList.add('hidden');
+            document.getElementById('vistaViaje').classList.remove('hidden');
+            
+            const panel = document.getElementById('panelConductor');
+            panel.classList.remove('viaje-activo-estado');
+            panel.classList.add('viaje-entrante');
+
+            document.getElementById('contenedorBotonesPendiente').classList.remove('hidden');
+            document.getElementById('btnAccionEnCurso').classList.add('hidden');
+
+            let origenInfo = await obtenerDireccionYBarrio(viaje.origen_lat, viaje.origen_lng);
+            let destinoInfo = await obtenerDireccionYBarrio(viaje.destino_lat, viaje.destino_lng);
+
+            let barrioOrigen = viaje.origen_barrio || origenInfo.barrio;
+            let calleOrigen = viaje.origen_direccion || origenInfo.calleCompleta;
+            let barrioDestino = viaje.destino_barrio || destinoInfo.barrio;
+            let calleDestino = viaje.destino_direccion || destinoInfo.calleCompleta;
+            
+            let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
+            let manifiestoHtml = '';
+            if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
+                manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
+            }
+
+            document.getElementById('lblPasajero').innerHTML = `${viaje.pasajero_nombre || "Pasajero"}`;
+            document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
+            
+            document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
+                <span>📍 <b>Recogida:</b> ${barrioOrigen} (${calleOrigen})</span>
+                <span style="color:#ef4444; margin-top:2px;">🏁 <b>Destino:</b> ${barrioDestino} (${calleDestino})</span>
+                <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px; display:flex; justify-content:space-between;" id="cajaMetricasRuta">
+                    <span>🕒 Calculando ruta local...</span>
+                </div>
+                ${manifiestoHtml}
+            `;
+
+            if (viaje.pasajero_foto) document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
+
+            if (markerOrigen) mapa.removeLayer(markerOrigen);
+            if (markerDestino) mapa.removeLayer(markerDestino);
+
+            markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
+            markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
+
+            autocentrarMapa = true; 
+            await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+        }
+
+        function rechazarViajeEntrante() {
+            detenerSirenaAlerta();
+            limpiarMemoriaConductor();
+
+            if (markerOrigen) { mapa.removeLayer(markerOrigen); markerOrigen = null; }
+            if (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
+            if (rutaTrazada) { mapa.removeLayer(rutaTrazada); rutaTrazada = null; }
+
+            viajeActivo = null; estadoFlujo = 'pendiente';
+            document.getElementById('vistaViaje').classList.add('hidden');
+            document.getElementById('vistaEspera').classList.remove('hidden');
+            
+            const panel = document.getElementById('panelConductor');
+            panel.classList.remove('viaje-entrante');
+            panel.classList.remove('viaje-activo-estado');
+            
+            if(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); canalChatSupabase = null; }
+            document.getElementById('btnAbrirChatFlotante').style.display = 'none';
+
+            mostrarMsg('Viaje rechazado. Buscando nuevos pasajeros...', 'success');
+        }
+
+        async function procesarLojicaViaje() {
+            const panel = document.getElementById('panelConductor');
+
+            if (estadoFlujo === 'pendiente') {
+                detenerSirenaAlerta();
+                try {
+                    const { error } = await supabaseClient.from('viajes').update({ 
+                        conductor_nombre: NOMBRE_CHOFER, 
+                        conductor_auto: AUTO_CHOFER,
+                        conductor_foto: FOTO_CHOFER 
+                    }).eq('id', viajeActivo.id);
+                    if (error) throw error;
+                    
+                    estadoFlujo = 'aceptado';
+                    localStorage.setItem('conductor_viaje_id', viajeActivo.id);
+                    localStorage.setItem('conductor_estado_flujo', 'aceptado');
+                    
+                    panel.classList.remove('viaje-entrante');
+                    panel.classList.add('viaje-activo-estado');
+                    
+                    document.getElementById('contenedorBotonesPendiente').classList.add('hidden');
+                    const btnEnCurso = document.getElementById('btnAccionEnCurso');
+                    btnEnCurso.classList.remove('hidden');
+                    btnEnCurso.className = "btn-action btn-llegué"; 
+                    btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
+
+                    document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
+
+                    iniciarChatViaje(viajeActivo.id);
+                    document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
+
+                    autocentrarMapa = true;
+                    document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
+                    mapa.setView([choferCoords.lat, choferCoords.lng], 17);
+                } catch (e) { location.reload(); }
+                return;
+            }
+
+            const btnEnCurso = document.getElementById('btnAccionEnCurso');
+            if (estadoFlujo === 'aceptado') {
+                estadoFlujo = 'en_puerta'; localStorage.setItem('conductor_estado_flujo', 'en_puerta');
+                btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Iniciar Viaje al Destino 🧭";
+                document.getElementById('txtEstadoChofer').textContent = "En la Puerta 📍";
+                await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeActivo.id);
+                return;
+            }
+            if (estadoFlujo === 'en_puerta') {
+                estadoFlujo = 'en_viaje'; localStorage.setItem('conductor_estado_flujo', 'en_viaje');
+                
+                btnEnCurso.className = "btn-action btn-finalizar"; 
+                btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
+                document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
+                
+                await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
+                
+                let destinoInfo = await obtenerDireccionYBarrio(viajeActivo.destino_lat, viajeActivo.destino_lng);
+                let barrioDestino = viajeActivo.destino_barrio || destinoInfo.barrio;
+                let calleDestino = viajeActivo.destino_direccion || destinoInfo.calleCompleta;
+
+                let textoManifiesto = viajeActivo.manifiesto || viajeActivo.comentarios || viajeActivo.nota || "";
+                let manifiestoHtml = '';
+                if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
+                    manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
+                }
+
+                document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
+                    <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino} (${calleDestino})</span>
+                    <div style="border-top:1px solid #334155; margin-top:3px; padding-top:3px;" id="cajaMetricasRuta">
+                        <span>🕒 Calculando ruta al destino...</span>
+                    </div>
+                    ${manifiestoHtml}
+                `;
+
+                await trazarRutaCallesYCalcularMetricas(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng, null, null);
+                
+                autocentrarMapa = true;
+                document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
+                return;
+            }
+            if (estadoFlujo === 'en_viaje') {
+                let montoViaje = parseFloat(viajeActivo.precio || '0');
+                totalDia += montoViaje;
+                ultimoViajeMonto = montoViaje;
+                cantViajesCount += 1;
+
+                localStorage.setItem('chofer_total_dia', totalDia);
+                localStorage.setItem('chofer_ultimo_monto', ultimoViajeMonto);
+                localStorage.setItem('chofer_cant_viajes', cantViajesCount);
+                actualizarUIEstadisticas();
+
+                await supabaseClient.from('viajes').update({ estado: 'finalizado' }).eq('id', viajeActivo.id);
+                limpiarMemoriaConductor(); liberarWakeLock(); detenerRastreoGps();
+                if(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); }
+                setTimeout(() => location.reload(), 2000);
+            }
+        }
+
+        async function verificarViajeActivoConductor() {
+            const guardadoId = localStorage.getItem('conductor_viaje_id');
+            const guardadoEstado = localStorage.getItem('conductor_estado_flujo');
+            if (!guardadoId) return;
+            try {
+                const { data: viaje } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
+                if (!viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') { limpiarMemoriaConductor(); return; }
+                viajeActivo = viaje; estadoFlujo = guardadoEstado || 'aceptado';
+                
+                document.getElementById('vistaEspera').classList.add('hidden');
+                document.getElementById('vistaViaje').classList.remove('hidden');
+
+                const panel = document.getElementById('panelConductor');
+                panel.classList.remove('viaje-entrante');
+                panel.classList.add('viaje-activo-estado');
+
+                iniciarChatViaje(viaje.id);
+                document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
+
+                let origenInfo = await obtenerDireccionYBarrio(viaje.origen_lat, viaje.origen_lng);
+                let destinoInfo = await obtenerDireccionYBarrio(viaje.destino_lat, viaje.destino_lng);
+                let barrioOrigen = viaje.origen_barrio || origenInfo.barrio;
+                let calleOrigen = viaje.origen_direccion || origenInfo.calleCompleta;
+                let barrioDestino = viaje.destino_barrio || destinoInfo.barrio;
+                let calleDestino = viaje.destino_direccion || destinoInfo.calleCompleta;
+
+                let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
+                let manifiestoHtml = '';
+                if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
+                    manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
+                }
+
+                document.getElementById('lblPasajero').innerHTML = `${viaje.pasajero_nombre || "Pasajero"}`;
+                document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
+
+                if (viaje.pasajero_foto) document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
+
+                markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
+                markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
+
+                document.getElementById('contenedorBotonesPendiente').classList.add('hidden');
+                const btnEnCurso = document.getElementById('btnAccionEnCurso');
+                btnEnCurso.classList.remove('hidden');
+
+                if (estadoFlujo === 'aceptado') {
+                    btnEnCurso.className = "btn-action btn-llegué"; btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
+                    document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
+                        <span>📍 <b>Recogida:</b> ${barrioOrigen} (${calleOrigen})</span>
+                        <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Calculando...</span></div>
+                        ${manifiestoHtml}
+                    `;
+                    await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+                } else if (estadoFlujo === 'en_puerta') {
+                    btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Iniciar Viaje al Destino 🧭";
+                    document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
+                        <span>📍 <b>En puerta del pasajero</b> (${barrioOrigen})</span>
+                        <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Pasajero a bordo</span></div>
+                        ${manifiestoHtml}
+                    `;
+                    await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+                } else if (estadoFlujo === 'en_viaje') {
+                    btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
+                    document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
+                        <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino} (${calleDestino})</span>
+                        <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Calculando viaje...</span></div>
+                        ${manifiestoHtml}
+                    `;
+                    await trazarRutaCallesYCalcularMetricas(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng, null, null);
+                }
+            } catch (e) { limpiarMemoriaConductor(); }
+        }
+
+        function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id'); localStorage.removeItem('conductor_estado_flujo'); }
+
+        async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDestinoExtra = null, lonDestinoExtra = null) {
+            try {
+                let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
+                if (latDestinoExtra && lonDestinoExtra) {
+                    url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${lonDestinoExtra},${lonDestinoExtra}`;
+                }
+                url += `?overview=full&geometries=geojson`;
+
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                let distanciaKm = 0;
+                let minutosEstimados = 0;
+                let rutaValida = false;
+
+                if (data.code === 'Ok' && data.routes.length > 0) {
+                    let distanciaMetros = data.routes[0].distance;
+                    let duracionSegundos = data.routes[0].duration;
+
+                    distanciaKm = (distanciaMetros / 1000);
+                    minutosEstimados = Math.max(1, Math.round(duracionSegundos / 60));
+
+                    if (distanciaKm < 100) {
+                        rutaValida = true;
+                        if (rutaTrazada) mapa.removeLayer(rutaTrazada);
+                        rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#3b82f6', weight: 6, opacity: 0.9 }).addTo(mapa);
+                    }
+                }
+
+                if (!rutaValida) {
+                    let distanciaLineaMetros = calcularDistanciaKm(lat1, lon1, lat2, lon2) * 1000;
+                    distanciaKm = (distanciaLineaMetros / 1000) * 1.3; 
+                    minutosEstimados = Math.max(1, Math.round((distanciaKm / 30) * 60));
+                }
+
+                let cajaMetricas = document.getElementById('cajaMetricasRuta');
+                if (cajaMetricas) {
+                    if (latDestinoExtra) {
+                        cajaMetricas.innerHTML = `<span>🕒 <b>${minutosEstimados} min</b> (${distanciaKm.toFixed(1)} km al pasajero)</span>`;
+                    } else {
+                        cajaMetricas.innerHTML = `<span>🕒 <b>${minutosEstimados} min</b> de viaje real (${distanciaKm.toFixed(1)} km)</span>`;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        let ultimoCalculoRuta = 0;
+        let ultimaLatRuta = 0;
+        let ultimaLngRuta = 0;
+
+        function distanciaEnMetros(lat1, lon1, lat2, lon2) {
+            let dLat = (lat2 - lat1) * Math.PI / 180;
+            let dLon = (lon2 - lon1) * Math.PI / 180;
+            let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return 6371000 * c;
+        }
+
+        async function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
+            let ahora = Date.now();
+            let seDesvio = (ultimaLatRuta === 0) || (distanciaEnMetros(lat1, lon1, ultimaLatRuta, ultimaLngRuta) > 35);
+            
+            if ((ahora - ultimoCalculoRuta > 6000) || seDesvio) {
+                ultimaLatRuta = lat1;
+                ultimaLngRuta = lon1;
+                await trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, null, null);
+                ultimoCalculoRuta = ahora;
+            }
+        }
+
+        function mostrarMsg(texto, tipo) { const msg = document.getElementById('msgChofer'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
+
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && estaConectado) {
+                await solicitarWakeLock();
+                buscarViajesPendientesRecientes();
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            verificarRegistroChofer();
+            verificarReseteoDiario();
+            actualizarUIEstadisticas();
+            initMapa(); 
+            escucharNuevosViajes(); 
+            solicitarWakeLock(); 
+            iniciarRastreoGpsContinuo(); 
+            
+            setTimeout(async () => { 
+                await verificarViajeActivoConductor(); 
+                await buscarViajesPendientesRecientes(); 
+            }, 1000);
+        });
     </script>
 </body>
 </html>
