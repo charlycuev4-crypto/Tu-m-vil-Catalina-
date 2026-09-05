@@ -364,6 +364,26 @@
         let intervaloActualizacionRuta = null;
         let canalChatPasajeroSupabase = null;
 
+        // NUEVA FUNCIÓN: Geocodificación inversa automática para el pasajero
+        async function obtenerDireccionYBarrioPasajero(lat, lon) {
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`);
+                const data = await res.json();
+                if (data && data.address) {
+                    const calle = data.address.road || data.address.pedestrian || data.address.suburb || "Ubicación actual";
+                    const altura = data.address.house_number ? ` ${data.address.house_number}` : "";
+                    const barrio = data.address.suburb || data.address.neighbourhood || data.address.city || data.address.town || "";
+                    
+                    let direccionLimpia = `${calle}${altura}`;
+                    if (barrio && !direccionLimpia.includes(barrio)) {
+                        direccionLimpia += ` (${barrio})`;
+                    }
+                    return direccionLimpia;
+                }
+            } catch (e) {}
+            return "Ubicación actual";
+        }
+
         function seleccionarVehiculo(tipo) {
             tipoVehiculoSeleccionado = tipo;
             document.getElementById('optAuto').classList.remove('selected');
@@ -424,7 +444,11 @@
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(UBICACION_DEFAULT, 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
-            mapa.on('click', (e) => { if (modoDestinoManual) marcarDestinoManual(e.latlng.lat, e.latlng.lng); });
+            mapa.on('click', (e) => { 
+                if (modoDestinoManual) {
+                    marcarDestinoManual(e.latlng.lat, e.latlng.lng); 
+                }
+            });
         }
 
         function toggleExpandirPanel() {
@@ -550,7 +574,10 @@
 
                 markerOrigen = L.marker([origenCoords.lat, origenCoords.lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
                 markerDestino = L.marker([destinoCoords.lat, destinoCoords.lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
-                document.getElementById('origenDisplay').value = "Ubicación inicial";
+                
+                // Ejecutamos geocodificación inversa para mostrar la calle real en el input recuperado
+                const direccionRealOrigen = await obtenerDireccionYBarrioPasajero(origenCoords.lat, origenCoords.lng);
+                document.getElementById('origenDisplay').value = direccionRealOrigen;
                 document.getElementById('destino').value = "Destino seleccionado";
 
                 await recalcularRutaYPrecio();
@@ -723,18 +750,28 @@
             destinoCoords = { lat, lng }; 
             if (markerDestino) mapa.removeLayer(markerDestino);
             markerDestino = L.marker([lat, lng], { icon: L.divIcon({ className: 'destino-ping-icon' }) }).addTo(mapa);
-            document.getElementById('destino').value = "Punto marcado en mapa";
+            
+            // Geocodificación inversa también para el destino manual si se desea o dejar el texto genérico/limpio
+            obtenerDireccionYBarrioPasajero(lat, lng).then(dir => {
+                document.getElementById('destino').value = dir;
+            });
+
             modoDestinoManual = false; 
             document.getElementById('manualBtn').classList.remove('activo'); 
             document.getElementById('hintManual').classList.remove('visible');
             recalcularRutaYPrecio();
         }
 
-        function marcarOrigen(lat, lng, label) {
+        async function marcarOrigen(lat, lng, labelPersonalizada = null) {
             origenCoords = { lat, lng }; 
             if (markerOrigen) mapa.removeLayer(markerOrigen);
             markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
-            document.getElementById('origenDisplay').value = label;
+            
+            // Obtenemos la calle y barrio real automáticamente mediante geocodificación inversa
+            document.getElementById('origenDisplay').value = "Buscando calle real...";
+            const direccionReal = labelPersonalizada || await obtenerDireccionYBarrioPasajero(lat, lng);
+            document.getElementById('origenDisplay').value = direccionReal;
+
             recalcularRutaYPrecio();
         }
 
@@ -744,7 +781,7 @@
             navigator.geolocation.getCurrentPosition(
                 (pos) => { 
                     document.getElementById('gpsBtn').classList.remove('buscando'); 
-                    marcarOrigen(pos.coords.latitude, pos.coords.longitude, "Mi ubicación actual"); 
+                    marcarOrigen(pos.coords.latitude, pos.coords.longitude); 
                     mapa.setView([pos.coords.latitude, pos.coords.longitude], 16); 
                 },
                 () => { 
