@@ -64,7 +64,6 @@
 
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
-        /* Globo Flotante de Chat para el Conductor */
         #btnAbrirChatFlotante {
             position: fixed; bottom: 120px; right: 20px; z-index: 500;
             width: 55px; height: 55px; background: #38bdf8; color: #0f172a;
@@ -74,7 +73,6 @@
         }
         #btnAbrirChatFlotante:active { transform: scale(0.9); }
 
-        /* Ventana Modal de Chat Flotante */
         #modalChatFlotante {
             position: fixed; bottom: 80px; left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
             background: #1e293b; border: 2px solid #38bdf8; border-radius: 16px;
@@ -102,7 +100,6 @@
             padding: 0 12px; font-weight: 700; font-size: 0.8rem; cursor: pointer;
         }
 
-        /* Panel inferior con soporte para Scroll total */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
             background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; 
@@ -113,14 +110,9 @@
         }
         .bottom-panel.viaje-entrante, 
         .bottom-panel.viaje-activo-estado { 
-            height: auto; 
-            max-height: 80vh; 
-            overflow-y: auto; 
-            -webkit-overflow-scrolling: touch;
+            height: auto; max-height: 80vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
-        .bottom-panel.viaje-entrante { 
-            animation: alertaParpadeo 1s infinite alternate; 
-        }
+        .bottom-panel.viaje-entrante { animation: alertaParpadeo 1s infinite alternate; }
         @keyframes alertaParpadeo { from { border-top-color: #334155; background: #1e293b; } to { border-top-color: #ef4444; background: #2d1a22; } }
 
         .panel-handle { width: 40px; height: 4px; background: #475569; border-radius: 3px; margin: 0 auto 6px; }
@@ -237,10 +229,8 @@
 
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
-    <!-- Botón Globo Flotante para abrir el Chat -->
     <div id="btnAbrirChatFlotante" onclick="toggleChatFlotante()">💬</div>
 
-    <!-- Ventana Modal de Chat Flotante -->
     <div id="modalChatFlotante">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 6px;">
             <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">💬 Chat con el Pasajero</span>
@@ -591,7 +581,6 @@
                 .subscribe();
         }
 
-        /* Control del Chat Flotante */
         function toggleChatFlotante() {
             const modal = document.getElementById('modalChatFlotante');
             modal.classList.toggle('activo');
@@ -705,7 +694,6 @@
             let minDestino = viaje.tiempo_destino_min || 10;
             let distanciaViaje = viaje.distancia_km || "0";
             
-            // --- AQUÍ INTEGRAMOS LA LECTURA DEL TIPO DE TRAYECTO ---
             let tipoTrayecto = viaje.tipo_trayecto || "Solo Ida";
             let colorBadgeTrayecto = tipoTrayecto === 'Ida y Vuelta' ? '#8b5cf6' : '#3b82f6';
             let badgeTrayectoHtml = `<div style="background: ${colorBadgeTrayecto}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-bottom: 4px;">🚖 ${tipoTrayecto}</div>`;
@@ -812,12 +800,21 @@
             }
             if (estadoFlujo === 'en_puerta') {
                 estadoFlujo = 'en_viaje'; localStorage.setItem('conductor_estado_flujo', 'en_viaje');
-                btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
-                document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
+                
+                let tipoTrayecto = viajeActivo.tipo_trayecto || "Solo Ida";
+                
+                if (tipoTrayecto === 'Ida y Vuelta') {
+                    btnEnCurso.className = "btn-action btn-iniciar"; 
+                    btnEnCurso.textContent = "Regresar al Punto de Origen 🔄";
+                    document.getElementById('txtEstadoChofer').textContent = "En Destino (Esperando Retorno) 🔄";
+                } else {
+                    btnEnCurso.className = "btn-action btn-finalizar"; 
+                    btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
+                    document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
+                }
                 
                 await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
                 
-                let tipoTrayecto = viajeActivo.tipo_trayecto || "Solo Ida";
                 let colorBadgeTrayecto = tipoTrayecto === 'Ida y Vuelta' ? '#8b5cf6' : '#3b82f6';
                 let badgeTrayectoHtml = `<div style="background: ${colorBadgeTrayecto}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-bottom: 4px;">🚖 ${tipoTrayecto}</div>`;
 
@@ -832,7 +829,7 @@
                     ${badgeTrayectoHtml}
                     <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino}</span>
                     <div style="border-top:1px solid #334155; margin-top:3px; padding-top:3px;">
-                        <span style="font-size:0.75rem; color:#94a3b8;">Conduciendo hacia el destino a bordo</span>
+                        <span style="font-size:0.75rem; color:#94a3b8;">${tipoTrayecto === 'Ida y Vuelta' ? 'Viaje de Ida y Vuelta en curso' : 'Conduciendo hacia el destino'}</span>
                     </div>
                     ${manifiestoHtml}
                 `;
@@ -844,6 +841,21 @@
                 return;
             }
             if (estadoFlujo === 'en_viaje') {
+                let tipoTrayecto = viajeActivo.tipo_trayecto || "Solo Ida";
+
+                // Si es ida y vuelta y recién da clic en regresar, trazamos la ruta de vuelta antes de finalizar
+                if (tipoTrayecto === 'Ida y Vuelta' && btnEnCurso.textContent.includes('Regresar')) {
+                    btnEnCurso.className = "btn-action btn-finalizar";
+                    btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
+                    document.getElementById('txtEstadoChofer').textContent = "Regresando al Origen 🔄";
+                    
+                    // Trazar ruta desde el destino de vuelta al origen inicial
+                    trazarRutaCalles(viajeActivo.destino_lat, viajeActivo.destino_lng, viajeActivo.origen_lat, viajeActivo.origen_lng);
+                    autocentrarMapa = true;
+                    return;
+                }
+
+                // Finalizar definitivamente
                 let montoViaje = parseFloat(viajeActivo.precio || '0');
                 totalDia += montoViaje;
                 ultimoViajeMonto = montoViaje;
@@ -919,7 +931,11 @@
                     `;
                     trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
                 } else if (estadoFlujo === 'en_viaje') {
-                    btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
+                    if (tipoTrayecto === 'Ida y Vuelta') {
+                        btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Regresar al Punto de Origen 🔄";
+                    } else {
+                        btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
+                    }
                     document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
                         ${badgeTrayectoHtml}
                         <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${viaje.destino_barrio || "Zona general"}</span>
@@ -958,7 +974,7 @@
         }
 
         function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
-            let ahora = Date.now();
+            letahora = Date.now();
             let seDesvio = (ultimaLatRuta === 0) || (distanciaEnMetros(lat1, lon1, ultimaLatRuta, ultimaLngRuta) > 35);
             
             if ((ahora - ultimoCalculoRuta > 6000) || seDesvio) {
