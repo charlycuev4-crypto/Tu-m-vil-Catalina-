@@ -138,6 +138,24 @@
         
         .manifesto-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; padding: 4px 8px; border-radius: 0 6px 6px 0; font-size: 0.75rem; color: #e2e8f0; margin-top: 4px; }
 
+        /* Estilo distintivo para el badge de tipo de trayecto */
+        .trayecto-badge {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid #10b981;
+            padding: 3px 8px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+        .trayecto-badge.ida-vuelta {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border-color: #38bdf8;
+        }
+
         .btn-action { width: 100%; color: white; border: none; padding: 12px; border-radius: 50px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-bottom: 6px;}
         
         .btn-espera { 
@@ -699,16 +717,16 @@
             let minDestino = viaje.tiempo_destino_min || 10;
             let distanciaViaje = viaje.distancia_km || "0";
             
+            // 🔄 LÓGICA DE TRAYECTO: Identifica si es ida y vuelta o solo ida
+            let esIdaVuelta = (viaje.trayecto === 'ida_vuelta' || viaje.trayecto === 'Ida y Vuelta');
+            let badgeTrayectoHtml = esIdaVuelta 
+                ? `<div class="trayecto-badge ida-vuelta">🔄 Viaje de Ida y Vuelta</div>` 
+                : `<div class="trayecto-badge">📍 Viaje de Solo Ida</div>`;
+
             let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
             let manifiestoHtml = '';
             if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
                 manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
-            }
-
-            // NUEVO: Verificamos si es viaje de ida y vuelta para mostrar la etiqueta
-            let badgeTrayectoHtml = '';
-            if (viaje.tipo_trayecto === 'ida_vuelta' || viaje.tipo_trayecto === 'Ida y Vuelta') {
-                badgeTrayectoHtml = `<div style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fcd34d; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; margin-top: 4px; text-align: center;">🔄 VIAJE DE IDA Y VUELTA</div>`;
             }
 
             document.getElementById('lblPasajero').innerHTML = `${viaje.pasajero_nombre || "Pasajero"}`;
@@ -717,12 +735,12 @@
             document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
                 <span>📍 <b>Recogida:</b> ${barrioPasajero}</span>
                 <span style="font-size:0.75rem; color:#94a3b8; margin-bottom:2px;">${direccionPasajero}</span>
-                <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px; display:flex; justify-content:space-between;">
+                ${badgeTrayectoHtml}
+                <div style="border-top:1px solid #334155; margin-top:5px; padding-top:4px; display:flex; justify-content:space-between;">
                     <span>🕒 <b>${minAprox} min</b> (${distanciaViaje} km)</span>
                     <span style="color:#38bdf8;">🚗 <b>${minDestino} min</b> viaje</span>
                 </div>
                 ${manifiestoHtml}
-                ${badgeTrayectoHtml}
             `;
 
             if (viaje.pasajero_foto) document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
@@ -813,24 +831,24 @@
                 await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
                 
                 let barrioDestino = viajeActivo.destino_barrio || "Destino final";
+                let esIdaVuelta = (viajeActivo.trayecto === 'ida_vuelta' || viajeActivo.trayecto === 'Ida y Vuelta');
+                let badgeTrayectoHtml = esIdaVuelta 
+                    ? `<div class="trayecto-badge ida-vuelta">🔄 Viaje de Ida y Vuelta</div>` 
+                    : `<div class="trayecto-badge">📍 Viaje de Solo Ida</div>`;
+
                 let textoManifiesto = viajeActivo.manifiesto || viajeActivo.comentarios || viajeActivo.nota || "";
                 let manifiestoHtml = '';
                 if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
                     manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
                 }
 
-                let badgeTrayectoHtml = '';
-                if (viajeActivo.tipo_trayecto === 'ida_vuelta' || viajeActivo.tipo_trayecto === 'Ida y Vuelta') {
-                    badgeTrayectoHtml = `<div style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fcd34d; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; margin-top: 4px; text-align: center;">🔄 VIAJE DE IDA Y VUELTA</div>`;
-                }
-
                 document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
                     <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino}</span>
+                    ${badgeTrayectoHtml}
                     <div style="border-top:1px solid #334155; margin-top:3px; padding-top:3px;">
                         <span style="font-size:0.75rem; color:#94a3b8;">Conduciendo hacia el destino a bordo</span>
                     </div>
                     ${manifiestoHtml}
-                    ${badgeTrayectoHtml}
                 `;
 
                 trazarRutaCalles(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
@@ -876,15 +894,15 @@
                 iniciarChatViaje(viaje.id);
                 document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
 
+                let esIdaVuelta = (viaje.trayecto === 'ida_vuelta' || viaje.trayecto === 'Ida y Vuelta');
+                let badgeTrayectoHtml = esIdaVuelta 
+                    ? `<div class="trayecto-badge ida-vuelta">🔄 Viaje de Ida y Vuelta</div>` 
+                    : `<div class="trayecto-badge">📍 Viaje de Solo Ida</div>`;
+
                 let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
                 let manifiestoHtml = '';
                 if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
                     manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
-                }
-
-                let badgeTrayectoHtml = '';
-                if (viaje.tipo_trayecto === 'ida_vuelta' || viaje.tipo_trayecto === 'Ida y Vuelta') {
-                    badgeTrayectoHtml = `<div style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fcd34d; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; margin-top: 4px; text-align: center;">🔄 VIAJE DE IDA Y VUELTA</div>`;
                 }
 
                 document.getElementById('lblPasajero').innerHTML = `${viaje.pasajero_nombre || "Pasajero"}`;
@@ -903,24 +921,24 @@
                     btnEnCurso.className = "btn-action btn-llegué"; btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
                     document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
                         <span>📍 <b>Recogida:</b> ${viaje.origen_barrio || "Zona general"}</span>
-                        ${manifiestoHtml}
                         ${badgeTrayectoHtml}
+                        ${manifiestoHtml}
                     `;
                     trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
                 } else if (estadoFlujo === 'en_puerta') {
                     btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Iniciar Viaje al Destino 🧭";
                     document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
                         <span>📍 <b>En puerta del pasajero</b></span>
-                        ${manifiestoHtml}
                         ${badgeTrayectoHtml}
+                        ${manifiestoHtml}
                     `;
                     trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
                 } else if (estadoFlujo === 'en_viaje') {
                     btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
                     document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
                         <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${viaje.destino_barrio || "Zona general"}</span>
-                        ${manifiestoHtml}
                         ${badgeTrayectoHtml}
+                        ${manifiestoHtml}
                     `;
                     trazarRutaCalles(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
                 }
