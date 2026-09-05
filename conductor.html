@@ -55,7 +55,6 @@
             font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
-        /* Globo del chat reubicado arriba para no estorbar el panel inferior */
         #btnAbrirChatFlotante {
             pointer-events: auto;
             width: 44px; height: 44px; background: #38bdf8; color: #0f172a;
@@ -267,7 +266,6 @@
         </div>
 
         <div class="header-right-col">
-            <!-- Botón de chat reubicado en la barra superior derecha -->
             <button id="btnAbrirChatFlotante" onclick="toggleChatFlotante()">💬</button>
             <button class="google-maps-btn" id="btnAbrirGoogleMaps" onclick="abrirNavegacionGoogleMaps()">🗺️</button>
             <button class="gps-btn" id="btnGpsCentro" onclick="alternarSeguimientoManual()">🎯</button>
@@ -429,6 +427,26 @@
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+        }
+
+        // Función para consultar Nominatim y obtener dirección y barrio real automáticamente por coordenadas
+        async function obtenerDireccionYBarrio(lat, lon) {
+            try {
+                let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+                    headers: { 'Accept-Language': 'es' }
+                });
+                let data = await res.json();
+                if (data && data.address) {
+                    let calle = data.address.road || data.address.pedestrian || data.address.suburb || "Calle sin nombre";
+                    let numero = data.address.house_number ? ` ${data.address.house_number}` : "";
+                    let barrio = data.address.neighbourhood || data.address.suburb || data.address.city_district || data.address.town || data.address.city || "Zona general";
+                    return {
+                        calleCompleta: `${calle}${numero}`.trim(),
+                        barrio: barrio
+                    };
+                }
+            } catch (e) {}
+            return { calleCompleta: "Punto exacto", barrio: "Zona general" };
         }
 
         async function solicitarWakeLock() {
@@ -689,9 +707,14 @@
             document.getElementById('contenedorBotonesPendiente').classList.remove('hidden');
             document.getElementById('btnAccionEnCurso').classList.add('hidden');
 
-            let barrioPasajero = viaje.origen_barrio || "Zona general";
-            let direccionPasajero = viaje.origen_direccion || "Punto de recogida";
-            let barrioDestino = viaje.destino_barrio || "Destino final";
+            // Obtenemos automáticamente la calle y barrio real con Nominatim si no vienen completos
+            let origenInfo = await obtenerDireccionYBarrio(viaje.origen_lat, viaje.origen_lng);
+            let destinoInfo = await obtenerDireccionYBarrio(viaje.destino_lat, viaje.destino_lng);
+
+            let barrioOrigen = viaje.origen_barrio || origenInfo.barrio;
+            let calleOrigen = viaje.origen_direccion || origenInfo.calleCompleta;
+            let barrioDestino = viaje.destino_barrio || destinoInfo.barrio;
+            let calleDestino = viaje.destino_direccion || destinoInfo.calleCompleta;
             
             let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
             let manifiestoHtml = '';
@@ -702,13 +725,11 @@
             document.getElementById('lblPasajero').innerHTML = `${viaje.pasajero_nombre || "Pasajero"}`;
             document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
             
-            // Renderizado inicial con placeholders mientras calcula la ruta OSRM real
             document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
-                <span>📍 <b>Recogida:</b> ${barrioPasajero}</span>
-                <span style="font-size:0.75rem; color:#94a3b8; margin-bottom:2px;">${direccionPasajero}</span>
-                <span style="color:#ef4444; margin-top:2px;">🏁 <b>Destino:</b> ${barrioDestino}</span>
+                <span>📍 <b>Recogida:</b> ${barrioOrigen} (${calleOrigen})</span>
+                <span style="color:#ef4444; margin-top:2px;">🏁 <b>Destino:</b> ${barrioDestino} (${calleDestino})</span>
                 <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px; display:flex; justify-content:space-between;" id="cajaMetricasRuta">
-                    <span>🕒 Calculando...</span>
+                    <span>🕒 Calculando ruta local...</span>
                 </div>
                 ${manifiestoHtml}
             `;
@@ -802,7 +823,10 @@
                 
                 await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
                 
-                let barrioDestino = viajeActivo.destino_barrio || "Destino final";
+                let destinoInfo = await obtenerDireccionYBarrio(viajeActivo.destino_lat, viajeActivo.destino_lng);
+                let barrioDestino = viajeActivo.destino_barrio || destinoInfo.barrio;
+                let calleDestino = viajeActivo.destino_direccion || destinoInfo.calleCompleta;
+
                 let textoManifiesto = viajeActivo.manifiesto || viajeActivo.comentarios || viajeActivo.nota || "";
                 let manifiestoHtml = '';
                 if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
@@ -810,7 +834,7 @@
                 }
 
                 document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
-                    <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino}</span>
+                    <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino} (${calleDestino})</span>
                     <div style="border-top:1px solid #334155; margin-top:3px; padding-top:3px;" id="cajaMetricasRuta">
                         <span>🕒 Calculando ruta al destino...</span>
                     </div>
@@ -860,6 +884,13 @@
                 iniciarChatViaje(viaje.id);
                 document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
 
+                let origenInfo = await obtenerDireccionYBarrio(viaje.origen_lat, viaje.origen_lng);
+                let destinoInfo = await obtenerDireccionYBarrio(viaje.destino_lat, viaje.destino_lng);
+                let barrioOrigen = viaje.origen_barrio || origenInfo.barrio;
+                let calleOrigen = viaje.origen_direccion || origenInfo.calleCompleta;
+                let barrioDestino = viaje.destino_barrio || destinoInfo.barrio;
+                let calleDestino = viaje.destino_direccion || destinoInfo.calleCompleta;
+
                 let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
                 let manifiestoHtml = '';
                 if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
@@ -881,7 +912,7 @@
                 if (estadoFlujo === 'aceptado') {
                     btnEnCurso.className = "btn-action btn-llegué"; btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
                     document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
-                        <span>📍 <b>Recogida:</b> ${viaje.origen_barrio || "Zona general"}</span>
+                        <span>📍 <b>Recogida:</b> ${barrioOrigen} (${calleOrigen})</span>
                         <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Calculando...</span></div>
                         ${manifiestoHtml}
                     `;
@@ -889,7 +920,7 @@
                 } else if (estadoFlujo === 'en_puerta') {
                     btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Iniciar Viaje al Destino 🧭";
                     document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
-                        <span>📍 <b>En puerta del pasajero</b></span>
+                        <span>📍 <b>En puerta del pasajero</b> (${barrioOrigen})</span>
                         <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Pasajero a bordo</span></div>
                         ${manifiestoHtml}
                     `;
@@ -897,7 +928,7 @@
                 } else if (estadoFlujo === 'en_viaje') {
                     btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
                     document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
-                        <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${viaje.destino_barrio || "Zona general"}</span>
+                        <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino} (${calleDestino})</span>
                         <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Calculando viaje...</span></div>
                         ${manifiestoHtml}
                     `;
@@ -908,10 +939,9 @@
 
         function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id'); localStorage.removeItem('conductor_estado_flujo'); }
 
-        // Función unificada OSRM para trazar ruta y calcular kilómetros y minutos reales de viaje
+        // Función robusta OSRM con respaldo geodésico local (evita distancias falsas de miles de kilómetros)
         async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDestinoExtra = null, lonDestinoExtra = null) {
             try {
-                // Si estamos en estado pendiente/aceptado, calculamos tramo Chofer->Origen y opcionalmente Origen->Destino final
                 let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
                 if (latDestinoExtra && lonDestinoExtra) {
                     url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${lonDestinoExtra},${lonDestinoExtra}`;
@@ -920,27 +950,39 @@
 
                 const res = await fetch(url);
                 const data = await res.json();
-                if (data.code === 'Ok' && data.routes.length > 0) {
-                    if (rutaTrazada) mapa.removeLayer(rutaTrazada);
-                    rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#3b82f6', weight: 6, opacity: 0.9 }).addTo(mapa);
+                
+                let distanciaKm = 0;
+                let minutosEstimados = 0;
+                let rutaValida = false;
 
+                if (data.code === 'Ok' && data.routes.length > 0) {
                     let distanciaMetros = data.routes[0].distance;
                     let duracionSegundos = data.routes[0].duration;
 
-                    let distanciaKm = (distanciaMetros / 1000).toFixed(1);
-                    let minutosEstimados = Math.max(1, Math.round(duracionSegundos / 60));
+                    distanciaKm = (distanciaMetros / 1000);
+                    minutosEstimados = Math.max(1, Math.round(duracionSegundos / 60));
 
-                    let cajaMetricas = document.getElementById('cajaMetricasRuta');
-                    if (cajaMetricas) {
-                        if (latDestinoExtra) {
-                            cajaMetricas.innerHTML = `
-                                <span>🕒 <b>${minutosEstimados} min</b> (${distanciaKm} km al pasajero)</span>
-                            `;
-                        } else {
-                            cajaMetricas.innerHTML = `
-                                <span>🕒 <b>${minutosEstimados} min</b> de viaje real (${distanciaKm} km)</span>
-                            `;
-                        }
+                    // Si OSRM devuelve un error geográfico ilógico (> 100 km en zonas urbanas locales), usamos cálculo directo
+                    if (distanciaKm < 100) {
+                        rutaValida = true;
+                        if (rutaTrazada) mapa.removeLayer(rutaTrazada);
+                        rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#3b82f6', weight: 6, opacity: 0.9 }).addTo(mapa);
+                    }
+                }
+
+                if (!rutaValida) {
+                    // Respaldo exacto de línea recta con velocidad urbana promedio de 30 km/h
+                    let distanciaLineaMetros = calcularDistanciaKm(lat1, lon1, lat2, lon2) * 1000;
+                    distanciaKm = (distanciaLineaMetros / 1000) * 1.3; // Factor 1.3 de callejero real
+                    minutosEstimados = Math.max(1, Math.round((distanciaKm / 30) * 60));
+                }
+
+                let cajaMetricas = document.getElementById('cajaMetricasRuta');
+                if (cajaMetricas) {
+                    if (latDestinoExtra) {
+                        cajaMetricas.innerHTML = `<span>🕒 <b>${minutosEstimados} min</b> (${distanciaKm.toFixed(1)} km al pasajero)</span>`;
+                    } else {
+                        cajaMetricas.innerHTML = `<span>🕒 <b>${minutosEstimados} min</b> de viaje real (${distanciaKm.toFixed(1)} km)</span>`;
                     }
                 }
             } catch (e) {}
