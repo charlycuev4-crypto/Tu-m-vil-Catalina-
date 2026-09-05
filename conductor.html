@@ -64,59 +64,24 @@
 
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
-        #btnAbrirChatFlotante {
-            position: fixed; bottom: 120px; right: 20px; z-index: 500;
-            width: 55px; height: 55px; background: #38bdf8; color: #0f172a;
-            border-radius: 50%; display: none; align-items: center; justify-content: center;
-            font-size: 1.6rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4); cursor: pointer;
-            border: 2px solid white; transition: transform 0.2s;
-        }
-        #btnAbrirChatFlotante:active { transform: scale(0.9); }
-
-        #modalChatFlotante {
-            position: fixed; bottom: 80px; left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
-            background: #1e293b; border: 2px solid #38bdf8; border-radius: 16px;
-            padding: 12px; z-index: 600; display: none; flex-direction: column; gap: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); color: #f1f5f9;
-        }
-        #modalChatFlotante.activo { display: flex; }
-
-        .chat-mensajes-lista {
-            max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
-            font-size: 0.78rem; padding-right: 4px; background: #0f172a; padding: 8px; border-radius: 10px; border: 1px solid #334155;
-        }
-        .chat-msg-item { padding: 5px 8px; border-radius: 8px; max-width: 85%; word-break: break-word; }
-        .chat-msg-item.admin { background: #1e3a8a; align-self: flex-start; color: #93c5fd; }
-        .chat-msg-item.pasajero { background: #334155; align-self: flex-start; color: #f1f5f9; }
-        .chat-msg-item.conductor { background: #059669; align-self: flex-end; color: #ffffff; }
-        
-        .chat-input-row { display: flex; gap: 6px; }
-        .chat-input-row input {
-            flex: 1; background: #0f172a; border: 1px solid #334155; border-radius: 8px;
-            padding: 6px 10px; color: white; font-size: 0.8rem; outline: none;
-        }
-        .chat-input-row button {
-            background: #38bdf8; color: #0f172a; border: none; border-radius: 8px;
-            padding: 0 12px; font-weight: 700; font-size: 0.8rem; cursor: pointer;
-        }
-
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
             background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; 
             box-shadow: 0 -10px 30px rgba(0,0,0,0.5); 
-            padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); 
+            padding: 8px 16px calc(12px + env(safe-area-inset-bottom)); 
             height: 75px; 
             overflow: hidden; transition: height 0.3s ease, background 0.3s ease; color: #f1f5f9; 
         }
-        .bottom-panel.viaje-entrante, 
-        .bottom-panel.viaje-activo-estado { 
-            height: auto; 
-            max-height: 80vh; 
-            overflow-y: auto; 
-            -webkit-overflow-scrolling: touch;
-        }
         .bottom-panel.viaje-entrante { 
+            height: auto; 
+            max-height: 85vh;
+            overflow-y: auto; 
             animation: alertaParpadeo 1s infinite alternate; 
+        }
+        .bottom-panel.viaje-activo-estado {
+            height: auto;
+            max-height: 85vh;
+            overflow-y: auto;
         }
         @keyframes alertaParpadeo { from { border-top-color: #334155; background: #1e293b; } to { border-top-color: #ef4444; background: #2d1a22; } }
 
@@ -130,6 +95,13 @@
         .pasajero-foto-box img { width: 100%; height: 100%; object-fit: cover; }
         
         .viaje-pasajero { font-size: 0.95rem; font-weight: 700; color: #fff; }
+        
+        .whatsapp-btn {
+            background: #25d366; color: white; border: none; padding: 2px 8px;
+            border-radius: 12px; font-size: 0.7rem; font-weight: 700; cursor: pointer;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;
+        }
+
         .viaje-precio { font-size: 1.15rem; font-weight: 800; color: #10b981; }
 
         .input-group { background: #0f172a; border-radius: 14px; padding: 8px 12px; margin-bottom: 8px; }
@@ -137,37 +109,50 @@
         .input-row span { color: #f1f5f9; font-weight: 500; }
         
         .manifesto-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; padding: 4px 8px; border-radius: 0 6px 6px 0; font-size: 0.75rem; color: #e2e8f0; margin-top: 4px; }
-
-        /* Estilo distintivo para el badge de tipo de trayecto */
+        
+        /* Insignia / Badge de Trayecto */
         .trayecto-badge {
             display: inline-block;
-            background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
-            border: 1px solid #10b981;
-            padding: 3px 8px;
-            border-radius: 8px;
+            background: #334155;
+            color: #94a3b8;
             font-size: 0.75rem;
             font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
             margin-top: 4px;
         }
         .trayecto-badge.ida-vuelta {
-            background: rgba(56, 189, 248, 0.15);
+            background: rgba(59, 130, 246, 0.2);
             color: #38bdf8;
-            border-color: #38bdf8;
+            border: 1px solid #3b82f6;
         }
 
-        .btn-action { width: 100%; color: white; border: none; padding: 12px; border-radius: 50px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-bottom: 6px;}
+        .btn-action { width: 100%; color: white; border: none; padding: 12px; border-radius: 50px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         
         .btn-espera { 
-            background: #059669; color: #ffffff; cursor: default; padding: 8px 16px; 
-            font-size: 0.85rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
-            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            background: #059669; 
+            color: #ffffff; 
+            cursor: default; 
+            padding: 8px 16px; 
+            font-size: 0.85rem; 
+            border-radius: 20px; 
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         .ruedita-radar {
-            width: 14px; height: 14px; border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top-color: #ffffff; border-radius: 50%; animation: girarRadar 0.8s linear infinite;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: girarRadar 0.8s linear infinite;
         }
-        @keyframes girarRadar { to { transform: rotate(360deg); } }
+        @keyframes girarRadar {
+            to { transform: rotate(360deg); }
+        }
 
         .btn-desconectado { background: #451a03; color: #f59e0b; cursor: not-allowed; padding: 8px 16px; font-size: 0.85rem; border-radius: 20px; }
         .btn-aceptar { background: #10b981; font-size: 1.05rem; }
@@ -201,6 +186,8 @@
             width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px 14px;
             color: white; font-size: 0.95rem; outline: none;
         }
+        .config-field input:focus { border-color: #38bdf8; }
+
         .preview-selfie {
             width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8;
             margin: 0 auto 10px; display: block; background: #0f172a;
@@ -252,22 +239,6 @@
 
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
-    <div id="btnAbrirChatFlotante" onclick="toggleChatFlotante()">💬</div>
-
-    <div id="modalChatFlotante">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 6px;">
-            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">💬 Chat con el Pasajero</span>
-            <button onclick="toggleChatFlotante()" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-weight: bold; cursor: pointer; font-size: 0.75rem;">✕</button>
-        </div>
-        <div class="chat-mensajes-lista" id="listaMensajesChat">
-            <div style="color: #64748b; text-align: center; font-size: 0.75rem;">Chat del viaje iniciado...</div>
-        </div>
-        <div class="chat-input-row">
-            <input type="text" id="inpMensajeChat" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter') enviarMensajeChat()">
-            <button onclick="enviarMensajeChat()">Enviar</button>
-        </div>
-    </div>
-
     <div class="header-float">
         <div class="header-left-col">
             <div class="status-badge activo" id="txtEstadoChofer" onclick="conmutarEstadoConexion()">Móvil en Línea 🟢</div>
@@ -318,18 +289,20 @@
                         </div>
                         <div>
                             <div class="viaje-pasajero" id="lblPasajero">-</div>
+                            <a id="linkWhatsapp" href="#" target="_blank" class="whatsapp-btn hidden">💬 WhatsApp</a>
                         </div>
                     </div>
                     <div class="viaje-precio" id="lblPrecio">$0</div>
                 </div>
                 <div class="input-group">
-                    <div class="input-row" id="lblDetallesRutaYBarrio"></div>
+                    <div class="input-row" id="lblDetallesRutaYBarrio">
+                    </div>
                 </div>
             </div>
 
-            <div id="contenedorBotonesPendiente" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                <button class="btn-action" style="background: #ef4444; flex: 1; margin-bottom: 0;" onclick="rechazarViajeEntrante()">Rechazar ❌</button>
-                <button class="btn-action btn-aceptar" style="flex: 2; margin-bottom: 0;" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje ✅</button>
+            <div id="contenedorBotonesPendiente" style="display: flex; gap: 8px;">
+                <button class="btn-action" style="background: #ef4444; flex: 1;" onclick="rechazarViajeEntrante()">Rechazar ❌</button>
+                <button class="btn-action btn-aceptar" style="flex: 2;" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje ✅</button>
             </div>
 
             <button class="btn-action btn-aceptar hidden" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
@@ -369,7 +342,6 @@
         }
 
         let canalSupabase = null;
-        let canalChatSupabase = null;
         let estaConectado = true; 
         let wakeLock = null; 
         let idRastreadorGps = null; 
@@ -405,8 +377,10 @@
                 img.src = e.target.result;
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 350; const MAX_HEIGHT = 350;
-                    let width = img.width; let height = img.height;
+                    const MAX_WIDTH = 350; 
+                    const MAX_HEIGHT = 350;
+                    let width = img.width;
+                    let height = img.height;
 
                     if (width > height) {
                         if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
@@ -414,7 +388,8 @@
                         if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
                     }
 
-                    canvas.width = width; canvas.height = height;
+                    canvas.width = width;
+                    canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
@@ -567,8 +542,12 @@
             if (viajeActivo || !estaConectado) return;
             try {
                 const { data: viajes, error } = await supabaseClient
-                    .from('viajes').select('*').eq('estado', 'pendiente').is('conductor_nombre', null)
-                    .order('created_at', { ascending: false }).limit(1);
+                    .from('viajes')
+                    .select('*')
+                    .eq('estado', 'pendiente')
+                    .is('conductor_nombre', null)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
 
                 if (!error && viajes && viajes.length > 0) {
                     const viajeReciente = viajes[0];
@@ -576,7 +555,9 @@
                     const ahora = Date.now();
                     if ((ahora - tiempoCreacion) < 45000) {
                         const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, viajeReciente.origen_lat, viajeReciente.origen_lng);
-                        if (distanciaAlViaje <= 5) { montarViajeEntrante(viajeReciente); }
+                        if (distanciaAlViaje <= 5) {
+                            montarViajeEntrante(viajeReciente);
+                        }
                     }
                 }
             } catch (err) {}
@@ -602,79 +583,6 @@
                     }
                 })
                 .subscribe();
-        }
-
-        function toggleChatFlotante() {
-            const modal = document.getElementById('modalChatFlotante');
-            modal.classList.toggle('activo');
-        }
-
-        function iniciarChatViaje(viajeId) {
-            cargarHistorialMensajes(viajeId);
-            if (canalChatSupabase) supabaseClient.removeChannel(canalChatSupabase);
-
-            canalChatSupabase = supabaseClient.channel(`chat_viaje_${viajeId}`)
-                .on('postgres_changes', {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'mensajes',
-                    filter: `viaje_id=eq.${viajeId}`
-                }, payload => {
-                    agregarMensajeAlDom(payload.new);
-                })
-                .subscribe();
-        }
-
-        async function cargarHistorialMensajes(viajeId) {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('mensajes')
-                    .select('*')
-                    .eq('viaje_id', viajeId)
-                    .order('created_at', { ascending: true });
-
-                const listaHtml = document.getElementById('listaMensajesChat');
-                if (!listaHtml) return;
-                listaHtml.innerHTML = '';
-                if (data && data.length > 0) {
-                    data.forEach(msg => agregarMensajeAlDom(msg));
-                } else {
-                    listaHtml.innerHTML = '<div style="color: #64748b; text-align: center; font-size: 0.75rem;">No hay mensajes previos. Escribe algo...</div>';
-                }
-            } catch (e) {}
-        }
-
-        function agregarMensajeAlDom(msg) {
-            const listaHtml = document.getElementById('listaMensajesChat');
-            if (!listaHtml) return;
-
-            if (listaHtml.innerHTML.includes('No hay mensajes previos')) {
-                listaHtml.innerHTML = '';
-            }
-            const div = document.createElement('div');
-            let claseEmisor = 'pasajero';
-            if (msg.emisor === 'conductor') claseEmisor = 'conductor';
-            if (msg.emisor === 'admin') claseEmisor = 'admin';
-
-            div.className = `chat-msg-item ${claseEmisor}`;
-            div.innerHTML = `<span style="font-size:0.65rem; opacity:0.7; display:block;"><b>${msg.emisor}:</b></span> ${msg.mensaje}`;
-            listaHtml.appendChild(div);
-            listaHtml.scrollTop = listaHtml.scrollHeight;
-        }
-
-        async function enviarMensajeChat() {
-            const input = document.getElementById('inpMensajeChat');
-            const texto = input.value.trim();
-            if (!texto || !viajeActivo) return;
-
-            input.value = '';
-            try {
-                await supabaseClient.from('mensajes').insert([{
-                    viaje_id: viajeActivo.id,
-                    emisor: 'conductor',
-                    mensaje: texto
-                }]);
-            } catch (e) {}
         }
 
         function conmutarEstadoConexion() {
@@ -717,8 +625,15 @@
             let minDestino = viaje.tiempo_destino_min || 10;
             let distanciaViaje = viaje.distancia_km || "0";
             
-            // 🔄 LÓGICA DE TRAYECTO: Identifica si es ida y vuelta o solo ida
-            let esIdaVuelta = (viaje.trayecto === 'ida_vuelta' || viaje.trayecto === 'Ida y Vuelta');
+            // 🔄 LÓGICA DE TRAYECTO: Lee tipo_trayecto (o trayecto por compatibilidad)
+            let valorTrayecto = viaje.tipo_trayecto || viaje.trayecto || "";
+            let esIdaVuelta = (
+                valorTrayecto === 'ida_vuelta' || 
+                valorTrayecto === 'Ida y Vuelta' || 
+                valorTrayecto === 'Ida y vuelta' || 
+                valorTrayecto === true
+            );
+
             let badgeTrayectoHtml = esIdaVuelta 
                 ? `<div class="trayecto-badge ida-vuelta">🔄 Viaje de Ida y Vuelta</div>` 
                 : `<div class="trayecto-badge">📍 Viaje de Solo Ida</div>`;
@@ -736,7 +651,7 @@
                 <span>📍 <b>Recogida:</b> ${barrioPasajero}</span>
                 <span style="font-size:0.75rem; color:#94a3b8; margin-bottom:2px;">${direccionPasajero}</span>
                 ${badgeTrayectoHtml}
-                <div style="border-top:1px solid #334155; margin-top:5px; padding-top:4px; display:flex; justify-content:space-between;">
+                <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px; display:flex; justify-content:space-between;">
                     <span>🕒 <b>${minAprox} min</b> (${distanciaViaje} km)</span>
                     <span style="color:#38bdf8;">🚗 <b>${minDestino} min</b> viaje</span>
                 </div>
@@ -744,6 +659,13 @@
             `;
 
             if (viaje.pasajero_foto) document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
+
+            if (viaje.pasajero_telefono) {
+                let telLimpio = viaje.pasajero_telefono.replace(/\D/g, '');
+                const btnWp = document.getElementById('linkWhatsapp');
+                btnWp.href = `https://wa.me/549${telLimpio}?text=Hola%20${encodeURIComponent(viaje.pasajero_nombre)},%20soy%20tu%20chofer%20de%20Tu%20Móvil.`;
+                btnWp.classList.remove('hidden');
+            }
 
             if (markerOrigen) mapa.removeLayer(markerOrigen);
             if (markerDestino) mapa.removeLayer(markerDestino);
@@ -771,8 +693,7 @@
             panel.classList.remove('viaje-entrante');
             panel.classList.remove('viaje-activo-estado');
             
-            if(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); canalChatSupabase = null; }
-            document.getElementById('btnAbrirChatFlotante').style.display = 'none';
+            document.getElementById('linkWhatsapp').classList.add('hidden');
 
             mostrarMsg('Viaje rechazado. Buscando nuevos pasajeros...', 'success');
         }
@@ -805,9 +726,6 @@
 
                     document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
 
-                    iniciarChatViaje(viajeActivo.id);
-                    document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
-
                     autocentrarMapa = true;
                     document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                     mapa.setView([choferCoords.lat, choferCoords.lng], 17);
@@ -831,10 +749,17 @@
                 await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
                 
                 let barrioDestino = viajeActivo.destino_barrio || "Destino final";
-                let esIdaVuelta = (viajeActivo.trayecto === 'ida_vuelta' || viajeActivo.trayecto === 'Ida y Vuelta');
+                
+                let valorTrayecto = viajeActivo.tipo_trayecto || viajeActivo.trayecto || "";
+                let esIdaVuelta = (
+                    valorTrayecto === 'ida_vuelta' || 
+                    valorTrayecto === 'Ida y Vuelta' || 
+                    valorTrayecto === 'Ida y vuelta' || 
+                    valorTrayecto === true
+                );
                 let badgeTrayectoHtml = esIdaVuelta 
-                    ? `<div class="trayecto-badge ida-vuelta">🔄 Viaje de Ida y Vuelta</div>` 
-                    : `<div class="trayecto-badge">📍 Viaje de Solo Ida</div>`;
+                    ? `<div class="trayecto-badge ida-vuelta" style="margin-bottom:4px;">🔄 Viaje de Ida y Vuelta</div>` 
+                    : ``;
 
                 let textoManifiesto = viajeActivo.manifiesto || viajeActivo.comentarios || viajeActivo.nota || "";
                 let manifiestoHtml = '';
@@ -870,7 +795,6 @@
 
                 await supabaseClient.from('viajes').update({ estado: 'finalizado' }).eq('id', viajeActivo.id);
                 limpiarMemoriaConductor(); liberarWakeLock(); detenerRastreoGps();
-                if(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); }
                 setTimeout(() => location.reload(), 2000);
             }
         }
@@ -891,10 +815,13 @@
                 panel.classList.remove('viaje-entrante');
                 panel.classList.add('viaje-activo-estado');
 
-                iniciarChatViaje(viaje.id);
-                document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
-
-                let esIdaVuelta = (viaje.trayecto === 'ida_vuelta' || viaje.trayecto === 'Ida y Vuelta');
+                let valorTrayecto = viaje.tipo_trayecto || viaje.trayecto || "";
+                let esIdaVuelta = (
+                    valorTrayecto === 'ida_vuelta' || 
+                    valorTrayecto === 'Ida y Vuelta' || 
+                    valorTrayecto === 'Ida y vuelta' || 
+                    valorTrayecto === true
+                );
                 let badgeTrayectoHtml = esIdaVuelta 
                     ? `<div class="trayecto-badge ida-vuelta">🔄 Viaje de Ida y Vuelta</div>` 
                     : `<div class="trayecto-badge">📍 Viaje de Solo Ida</div>`;
@@ -909,6 +836,13 @@
                 document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
 
                 if (viaje.pasajero_foto) document.getElementById('imgPasajeroFoto').src = viaje.pasajero_foto;
+
+                if (viaje.pasajero_telefono) {
+                    let telLimpio = viaje.pasajero_telefono.replace(/\D/g, '');
+                    const btnWp = document.getElementById('linkWhatsapp');
+                    btnWp.href = `https://wa.me/549${telLimpio}?text=Hola%20${encodeURIComponent(viaje.pasajero_nombre)},%20soy%20tu%20chofer%20de%20Tu%20Móvil.`;
+                    btnWp.classList.remove('hidden');
+                }
 
                 markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
                 markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
@@ -935,9 +869,10 @@
                     trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
                 } else if (estadoFlujo === 'en_viaje') {
                     btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
+                    let badgeDestinoHtml = esIdaVuelta ? `<div class="trayecto-badge ida-vuelta" style="margin-bottom:4px;">🔄 Viaje de Ida y Vuelta</div>` : ``;
                     document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
                         <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${viaje.destino_barrio || "Zona general"}</span>
-                        ${badgeTrayectoHtml}
+                        ${badgeDestinoHtml}
                         ${manifiestoHtml}
                     `;
                     trazarRutaCalles(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
