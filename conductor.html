@@ -55,6 +55,16 @@
             font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
+        /* Globo del chat reubicado arriba para no estorbar el panel inferior */
+        #btnAbrirChatFlotante {
+            pointer-events: auto;
+            width: 44px; height: 44px; background: #38bdf8; color: #0f172a;
+            border-radius: 50%; display: none; align-items: center; justify-content: center;
+            font-size: 1.3rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4); cursor: pointer;
+            border: 2px solid white; transition: transform 0.2s;
+        }
+        #btnAbrirChatFlotante:active { transform: scale(0.9); }
+
         .test-audio-btn {
             background: #ea580c; color: white; border: none; padding: 6px 12px;
             border-radius: 20px; font-weight: bold; font-size: 0.7rem; cursor: pointer;
@@ -64,17 +74,8 @@
 
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
-        #btnAbrirChatFlotante {
-            position: fixed; bottom: 120px; right: 20px; z-index: 500;
-            width: 55px; height: 55px; background: #38bdf8; color: #0f172a;
-            border-radius: 50%; display: none; align-items: center; justify-content: center;
-            font-size: 1.6rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4); cursor: pointer;
-            border: 2px solid white; transition: transform 0.2s;
-        }
-        #btnAbrirChatFlotante:active { transform: scale(0.9); }
-
         #modalChatFlotante {
-            position: fixed; bottom: 80px; left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
+            position: fixed; top: 80px; left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
             background: #1e293b; border: 2px solid #38bdf8; border-radius: 16px;
             padding: 12px; z-index: 600; display: none; flex-direction: column; gap: 8px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); color: #f1f5f9;
@@ -229,8 +230,6 @@
 
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
-    <div id="btnAbrirChatFlotante" onclick="toggleChatFlotante()">💬</div>
-
     <div id="modalChatFlotante">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 6px;">
             <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">💬 Chat con el Pasajero</span>
@@ -268,6 +267,8 @@
         </div>
 
         <div class="header-right-col">
+            <!-- Botón de chat reubicado en la barra superior derecha -->
+            <button id="btnAbrirChatFlotante" onclick="toggleChatFlotante()">💬</button>
             <button class="google-maps-btn" id="btnAbrirGoogleMaps" onclick="abrirNavegacionGoogleMaps()">🗺️</button>
             <button class="gps-btn" id="btnGpsCentro" onclick="alternarSeguimientoManual()">🎯</button>
         </div>
@@ -673,7 +674,7 @@
             }
         }
 
-        function montarViajeEntrante(viaje) {
+        async function montarViajeEntrante(viaje) {
             viajeActivo = viaje;
             estadoFlujo = 'pendiente';
             comenzarSirenaAlerta();
@@ -690,14 +691,8 @@
 
             let barrioPasajero = viaje.origen_barrio || "Zona general";
             let direccionPasajero = viaje.origen_direccion || "Punto de recogida";
-            let minAprox = viaje.tiempo_aproximacion_min || 3;
-            let minDestino = viaje.tiempo_destino_min || 10;
-            let distanciaViaje = viaje.distancia_km || "0";
+            let barrioDestino = viaje.destino_barrio || "Destino final";
             
-            let tipoTrayecto = viaje.tipo_trayecto || "Solo Ida";
-            let colorBadgeTrayecto = tipoTrayecto === 'Ida y Vuelta' ? '#8b5cf6' : '#3b82f6';
-            let badgeTrayectoHtml = `<div style="background: ${colorBadgeTrayecto}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-bottom: 4px;">🚖 ${tipoTrayecto}</div>`;
-
             let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
             let manifiestoHtml = '';
             if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
@@ -707,13 +702,13 @@
             document.getElementById('lblPasajero').innerHTML = `${viaje.pasajero_nombre || "Pasajero"}`;
             document.getElementById('lblPrecio').textContent = '$' + viaje.precio;
             
+            // Renderizado inicial con placeholders mientras calcula la ruta OSRM real
             document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
-                ${badgeTrayectoHtml}
                 <span>📍 <b>Recogida:</b> ${barrioPasajero}</span>
                 <span style="font-size:0.75rem; color:#94a3b8; margin-bottom:2px;">${direccionPasajero}</span>
-                <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px; display:flex; justify-content:space-between;">
-                    <span>🕒 <b>${minAprox} min</b> (${distanciaViaje} km)</span>
-                    <span style="color:#38bdf8;">🚗 <b>${minDestino} min</b> viaje</span>
+                <span style="color:#ef4444; margin-top:2px;">🏁 <b>Destino:</b> ${barrioDestino}</span>
+                <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px; display:flex; justify-content:space-between;" id="cajaMetricasRuta">
+                    <span>🕒 Calculando...</span>
                 </div>
                 ${manifiestoHtml}
             `;
@@ -727,7 +722,7 @@
             markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
 
             autocentrarMapa = true; 
-            trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
+            await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
         }
 
         function rechazarViajeEntrante() {
@@ -801,23 +796,12 @@
             if (estadoFlujo === 'en_puerta') {
                 estadoFlujo = 'en_viaje'; localStorage.setItem('conductor_estado_flujo', 'en_viaje');
                 
-                let tipoTrayecto = viajeActivo.tipo_trayecto || "Solo Ida";
-                
-                if (tipoTrayecto === 'Ida y Vuelta') {
-                    btnEnCurso.className = "btn-action btn-iniciar"; 
-                    btnEnCurso.textContent = "Regresar al Punto de Origen 🔄";
-                    document.getElementById('txtEstadoChofer').textContent = "En Destino (Esperando Retorno) 🔄";
-                } else {
-                    btnEnCurso.className = "btn-action btn-finalizar"; 
-                    btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
-                    document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
-                }
+                btnEnCurso.className = "btn-action btn-finalizar"; 
+                btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
+                document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
                 
                 await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
                 
-                let colorBadgeTrayecto = tipoTrayecto === 'Ida y Vuelta' ? '#8b5cf6' : '#3b82f6';
-                let badgeTrayectoHtml = `<div style="background: ${colorBadgeTrayecto}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-bottom: 4px;">🚖 ${tipoTrayecto}</div>`;
-
                 let barrioDestino = viajeActivo.destino_barrio || "Destino final";
                 let textoManifiesto = viajeActivo.manifiesto || viajeActivo.comentarios || viajeActivo.nota || "";
                 let manifiestoHtml = '';
@@ -826,36 +810,20 @@
                 }
 
                 document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
-                    ${badgeTrayectoHtml}
                     <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino}</span>
-                    <div style="border-top:1px solid #334155; margin-top:3px; padding-top:3px;">
-                        <span style="font-size:0.75rem; color:#94a3b8;">${tipoTrayecto === 'Ida y Vuelta' ? 'Viaje de Ida y Vuelta en curso' : 'Conduciendo hacia el destino'}</span>
+                    <div style="border-top:1px solid #334155; margin-top:3px; padding-top:3px;" id="cajaMetricasRuta">
+                        <span>🕒 Calculando ruta al destino...</span>
                     </div>
                     ${manifiestoHtml}
                 `;
 
-                trazarRutaCalles(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
+                await trazarRutaCallesYCalcularMetricas(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng, null, null);
                 
                 autocentrarMapa = true;
                 document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
                 return;
             }
             if (estadoFlujo === 'en_viaje') {
-                let tipoTrayecto = viajeActivo.tipo_trayecto || "Solo Ida";
-
-                // Si es ida y vuelta y recién da clic en regresar, trazamos la ruta de vuelta antes de finalizar
-                if (tipoTrayecto === 'Ida y Vuelta' && btnEnCurso.textContent.includes('Regresar')) {
-                    btnEnCurso.className = "btn-action btn-finalizar";
-                    btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
-                    document.getElementById('txtEstadoChofer').textContent = "Regresando al Origen 🔄";
-                    
-                    // Trazar ruta desde el destino de vuelta al origen inicial
-                    trazarRutaCalles(viajeActivo.destino_lat, viajeActivo.destino_lng, viajeActivo.origen_lat, viajeActivo.origen_lng);
-                    autocentrarMapa = true;
-                    return;
-                }
-
-                // Finalizar definitivamente
                 let montoViaje = parseFloat(viajeActivo.precio || '0');
                 totalDia += montoViaje;
                 ultimoViajeMonto = montoViaje;
@@ -892,10 +860,6 @@
                 iniciarChatViaje(viaje.id);
                 document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
 
-                let tipoTrayecto = viaje.tipo_trayecto || "Solo Ida";
-                let colorBadgeTrayecto = tipoTrayecto === 'Ida y Vuelta' ? '#8b5cf6' : '#3b82f6';
-                let badgeTrayectoHtml = `<div style="background: ${colorBadgeTrayecto}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-bottom: 4px;">🚖 ${tipoTrayecto}</div>`;
-
                 let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
                 let manifiestoHtml = '';
                 if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
@@ -917,44 +881,67 @@
                 if (estadoFlujo === 'aceptado') {
                     btnEnCurso.className = "btn-action btn-llegué"; btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
                     document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
-                        ${badgeTrayectoHtml}
                         <span>📍 <b>Recogida:</b> ${viaje.origen_barrio || "Zona general"}</span>
+                        <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Calculando...</span></div>
                         ${manifiestoHtml}
                     `;
-                    trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
+                    await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
                 } else if (estadoFlujo === 'en_puerta') {
                     btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Iniciar Viaje al Destino 🧭";
                     document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
-                        ${badgeTrayectoHtml}
                         <span>📍 <b>En puerta del pasajero</b></span>
+                        <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Pasajero a bordo</span></div>
                         ${manifiestoHtml}
                     `;
-                    trazarRutaCalles(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng);
+                    await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
                 } else if (estadoFlujo === 'en_viaje') {
-                    if (tipoTrayecto === 'Ida y Vuelta') {
-                        btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Regresar al Punto de Origen 🔄";
-                    } else {
-                        btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
-                    }
+                    btnEnCurso.className = "btn-action btn-finalizar"; btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
                     document.getElementById('lblDetallesRutaYBarrio').innerHTML = `
-                        ${badgeTrayectoHtml}
                         <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${viaje.destino_barrio || "Zona general"}</span>
+                        <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Calculando viaje...</span></div>
                         ${manifiestoHtml}
                     `;
-                    trazarRutaCalles(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+                    await trazarRutaCallesYCalcularMetricas(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng, null, null);
                 }
             } catch (e) { limpiarMemoriaConductor(); }
         }
 
         function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id'); localStorage.removeItem('conductor_estado_flujo'); }
 
-        async function trazarRutaCalles(lat1, lon1, lat2, lon2) {
+        // Función unificada OSRM para trazar ruta y calcular kilómetros y minutos reales de viaje
+        async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDestinoExtra = null, lonDestinoExtra = null) {
             try {
-                const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`);
+                // Si estamos en estado pendiente/aceptado, calculamos tramo Chofer->Origen y opcionalmente Origen->Destino final
+                let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
+                if (latDestinoExtra && lonDestinoExtra) {
+                    url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${lonDestinoExtra},${lonDestinoExtra}`;
+                }
+                url += `?overview=full&geometries=geojson`;
+
+                const res = await fetch(url);
                 const data = await res.json();
                 if (data.code === 'Ok' && data.routes.length > 0) {
                     if (rutaTrazada) mapa.removeLayer(rutaTrazada);
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#3b82f6', weight: 6, opacity: 0.9 }).addTo(mapa);
+
+                    let distanciaMetros = data.routes[0].distance;
+                    let duracionSegundos = data.routes[0].duration;
+
+                    let distanciaKm = (distanciaMetros / 1000).toFixed(1);
+                    let minutosEstimados = Math.max(1, Math.round(duracionSegundos / 60));
+
+                    let cajaMetricas = document.getElementById('cajaMetricasRuta');
+                    if (cajaMetricas) {
+                        if (latDestinoExtra) {
+                            cajaMetricas.innerHTML = `
+                                <span>🕒 <b>${minutosEstimados} min</b> (${distanciaKm} km al pasajero)</span>
+                            `;
+                        } else {
+                            cajaMetricas.innerHTML = `
+                                <span>🕒 <b>${minutosEstimados} min</b> de viaje real (${distanciaKm} km)</span>
+                            `;
+                        }
+                    }
                 }
             } catch (e) {}
         }
@@ -973,14 +960,14 @@
             return 6371000 * c;
         }
 
-        function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
-            letahora = Date.now();
+        async function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
+            let ahora = Date.now();
             let seDesvio = (ultimaLatRuta === 0) || (distanciaEnMetros(lat1, lon1, ultimaLatRuta, ultimaLngRuta) > 35);
             
             if ((ahora - ultimoCalculoRuta > 6000) || seDesvio) {
                 ultimaLatRuta = lat1;
                 ultimaLngRuta = lon1;
-                trazarRutaCalles(lat1, lon1, lat2, lon2);
+                await trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, null, null);
                 ultimoCalculoRuta = ahora;
             }
         }
