@@ -382,8 +382,7 @@
         let TARIFAS_ACTIVAS = {
             base: 3000,
             km: 400,
-            nocturno: 1.30,
-            domingoRecargo: 1.30, // <-- Ahora el domingo aplica el mismo 30% extra (1.30) igual que la nocturna
+            recargo: 1.30, // 30% extra unificado para domingo o nocturno
             horaInicio: 20,
             horaFin: 8
         };
@@ -517,7 +516,7 @@
                 if (data && !error) {
                     TARIFAS_ACTIVAS.base = Number(data.tarifa_base);
                     TARIFAS_ACTIVAS.km = Number(data.tarifa_km);
-                    TARIFAS_ACTIVAS.nocturno = Number(data.recargo_nocturno);
+                    TARIFAS_ACTIVAS.recargo = Number(data.recargo_nocturno || 1.30);
                     TARIFAS_ACTIVAS.horaInicio = Number(data.hora_inicio_nocturno);
                     TARIFAS_ACTIVAS.horaFin = Number(data.hora_fin_nocturno);
                 }
@@ -921,17 +920,11 @@
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.85 }).addTo(mapa);
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
-                    // --- CÁLCULO DE TARIFA CON RECARGO 30% NOCTURNO Y/O DOMINGO ---
+                    // --- CÁLCULO DE TARIFA CON UN ÚNICO RECARGO DEL 30% SI ES DOMINGO O NOCHE ---
                     let baseCalculo = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
                     
-                    // Si es horario nocturno, aplica el 30% extra (x1.30)
-                    if (esHorarioNocturno()) { 
-                        baseCalculo = baseCalculo * TARIFAS_ACTIVAS.nocturno; 
-                    }
-
-                    // Si es domingo, aplica también el 30% extra (x1.30) durante todo el día
-                    if (esDiaDomingo()) {
-                        baseCalculo = baseCalculo * TARIFAS_ACTIVAS.domingoRecargo;
+                    if (esDiaDomingo() || esHorarioNocturno()) { 
+                        baseCalculo = baseCalculo * TARIFAS_ACTIVAS.recargo; 
                     }
 
                     let precioAuto = Math.round(baseCalculo);
