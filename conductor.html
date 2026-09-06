@@ -64,7 +64,6 @@
         }
         #btnAbrirChatFlotante:active { transform: scale(0.9); }
 
-        /* Animación de latido para el botón de chat cuando hay mensajes sin leer */
         @keyframes latidoChat {
             0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
             50% { transform: scale(1.15); box-shadow: 0 0 0 12px rgba(56, 189, 248, 0); }
@@ -570,6 +569,7 @@
             window.open(`https://www.google.com/maps/dir/?api=1&origin=${choferCoords.lat},${choferCoords.lng}&destination=${destLat},${destLng}&travelmode=driving`, '_blank');
         }
 
+        // --- OPTIMIZACIÓN DE CONEXIÓN INMEDIATA ---
         async function buscarViajesPendientesRecientes() {
             if (viajeActivo || !estaConectado) return;
             try {
@@ -581,7 +581,7 @@
                     const viajeReciente = viajes[0];
                     const tiempoCreacion = new Date(viajeReciente.created_at).getTime();
                     const ahora = Date.now();
-                    if ((ahora - tiempoCreacion) < 45000) {
+                    if ((ahora - tiempoCreacion) < 60000) { // Aumentado levemente el margen para asegurar captura
                         const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, viajeReciente.origen_lat, viajeReciente.origen_lng);
                         if (distanciaAlViaje <= 5) { montarViajeEntrante(viajeReciente); }
                     }
@@ -591,6 +591,9 @@
 
         function escucharNuevosViajes() {
             if (canalSupabase) return;
+            // Chequeo rápido inicial al encender la escucha
+            buscarViajesPendientesRecientes();
+
             canalSupabase = supabaseClient.channel('despacho-chofer');
             canalSupabase
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, (payload) => {
@@ -615,7 +618,6 @@
             const modal = document.getElementById('modalChatFlotante');
             modal.classList.toggle('activo');
 
-            // Al abrir el chat, apagamos la animación de alerta del botón
             if (modal.classList.contains('activo')) {
                 const btnChat = document.getElementById('btnAbrirChatFlotante');
                 if (btnChat) btnChat.classList.remove('chat-alerta-activo');
@@ -635,7 +637,6 @@
                 }, payload => {
                     agregarMensajeAlDom(payload.new);
 
-                    // Si entra un mensaje del pasajero y el chat está cerrado, activamos timbre y animación
                     const modalChat = document.getElementById('modalChatFlotante');
                     if (payload.new.emisor !== 'conductor' && !modalChat.classList.contains('activo')) {
                         tocarUnRepiqueDeCampana();
