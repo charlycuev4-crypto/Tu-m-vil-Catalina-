@@ -138,6 +138,7 @@
             background: #dcfce7; color: #166534; padding: 6px 10px; border-radius: 10px; text-align: center; font-weight: 700; margin-bottom: 6px; display: none; font-size: 0.85rem; border: 1px solid #2cd44a; 
         }
         .badge-nocturno { background: #fef2f2; color: #dc2626; padding: 2px 5px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; display: inline-block; margin-top: 2px; border: 1px solid #fecaca; }
+        .badge-domingo { background: #eff6ff; color: #2563eb; padding: 2px 5px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; display: inline-block; margin-top: 2px; border: 1px solid #bfdbfe; }
         
         .btn-green-action { 
             width: 100%; background: #2cd44a; color: white; border: none; padding: 10px; border-radius: 50px; font-size: 0.88rem; font-weight: 700; cursor: pointer; box-shadow: 0 3px 10px rgba(44,212,74,0.3); text-align: center; margin-top: 2px; transition: background 0.2s; border: 1px solid #22b03b;
@@ -158,7 +159,7 @@
         }
         #alertaTimbreLlegada.activo { display: flex; }
 
-        /* Globo Flotante de Chat (Botón con animación de alerta de mensaje) */
+        /* Globo Flotante de Chat */
         #btnAbrirChatFlotante {
             position: fixed; bottom: 120px; right: 20px; z-index: 500;
             width: 55px; height: 55px; background: #2cd44a; color: white;
@@ -327,7 +328,8 @@
                 <div class="driver-info-box">
                     <h3>Tu Móvil</h3>
                     <p id="txtEstructuraTarifa">Cargando tarifas...</p>
-                    <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +30% Recargo Nocturno Activo</div>
+                    <div id="badgeNocturnoAviso" class="badge-nocturno hidden">🌙 +30% Recargo Nocturno</div>
+                    <div id="badgeDomingoAviso" class="badge-domingo hidden">☀️ +30% Tarifa Domingo</div>
                 </div>
             </div>
 
@@ -381,6 +383,7 @@
             base: 3000,
             km: 400,
             nocturno: 1.30,
+            domingoRecargo: 1.30, // <-- Ahora el domingo aplica el mismo 30% extra (1.30) igual que la nocturna
             horaInicio: 20,
             horaFin: 8
         };
@@ -395,14 +398,10 @@
         let intervaloActualizacionRuta = null;
         let canalChatPasajeroSupabase = null;
         
-        // Variables para el timbre de llegada a puerta
         let intervaloTimbreInsistente = null;
         let audioCtxPasajero = null;
-
-        // Variables para la alerta de mensaje nuevo en el chat del pasajero
         let intervaloAlertaChatPasajero = null;
 
-        // Función general de pitido sintetizado
         function reproducirPitidoAudio(frecuencia = 880, duracion = 0.3) {
             try {
                 if (!audioCtxPasajero) {
@@ -441,19 +440,14 @@
             document.getElementById('alertaTimbreLlegada').classList.remove('activo');
         }
 
-        // ALERTA DE MENSAJE NUEVO PARA EL PASAJERO
         function activarAlertaChatPasajero() {
             const modal = document.getElementById('modalChatFlotante');
             const btnChat = document.getElementById('btnAbrirChatFlotante');
-            
-            // Si el chat ya está abierto, no activamos la alerta sonora visual
             if (modal.classList.contains('activo')) return;
-
-            if (intervaloAlertaChatPasajero) return; // Ya está sonando/parpadeando
+            if (intervaloAlertaChatPasajero) return;
 
             btnChat.classList.add('alerta-mensaje');
-            reproducirPitidoAudio(650, 0.25); // Tono distintivo para mensaje
-            
+            reproducirPitidoAudio(650, 0.25);
             intervaloAlertaChatPasajero = setInterval(() => {
                 reproducirPitidoAudio(650, 0.25);
             }, 1500);
@@ -476,7 +470,6 @@
                     const calle = data.address.road || data.address.pedestrian || data.address.suburb || "Ubicación actual";
                     const altura = data.address.house_number ? ` ${data.address.house_number}` : "";
                     const barrio = data.address.suburb || data.address.neighbourhood || data.address.city || data.address.town || "";
-                    
                     let direccionLimpia = `${calle}${altura}`;
                     if (barrio && !direccionLimpia.includes(barrio)) {
                         direccionLimpia += ` (${barrio})`;
@@ -535,13 +528,20 @@
 
             if (esHorarioNocturno()) {
                 document.getElementById('badgeNocturnoAviso').classList.remove('hidden');
-                document.getElementById('txtEstructuraTarifa').innerHTML += `<br><b>(Tarifa nocturna aplicada)</b>`;
+            }
+            if (esDiaDomingo()) {
+                document.getElementById('badgeDomingoAviso').classList.remove('hidden');
             }
         }
 
         function esHorarioNocturno() {
             const horaActual = new Date().getHours();
             return (horaActual >= TARIFAS_ACTIVAS.horaInicio || horaActual < TARIFAS_ACTIVAS.horaFin);
+        }
+
+        function esDiaDomingo() {
+            const diaActual = new Date().getDay();
+            return diaActual === 0; // 0 representa el domingo
         }
 
         function initMapa() {
@@ -775,9 +775,7 @@
         function toggleChatFlotante() {
             const modal = document.getElementById('modalChatFlotante');
             modal.classList.toggle('activo');
-            
             if (modal.classList.contains('activo')) {
-                // Al abrir el chat del pasajero, detenemos la alerta de mensaje nuevo
                 detenerAlertaChatPasajero();
             }
         }
@@ -794,8 +792,6 @@
                     filter: `viaje_id=eq.${viajeId}`
                 }, payload => {
                     agregarMensajeAlDomPasajero(payload.new);
-                    
-                    // Si el mensaje entrante es del conductor o admin, activamos la alerta de chat en el pasajero
                     if (payload.new.emisor === 'conductor' || payload.new.emisor === 'admin') {
                         activarAlertaChatPasajero();
                     }
@@ -805,7 +801,7 @@
 
         async function cargarHistorialMensajesPasajero(viajeId) {
             try {
-                const { data, error } = await supabaseClient
+                const { data } = await supabaseClient
                     .from('mensajes')
                     .select('*')
                     .eq('viaje_id', viajeId)
@@ -826,11 +822,9 @@
         function agregarMensajeAlDomPasajero(msg) {
             const listaHtml = document.getElementById('listaMensajesChatPasajero');
             if (!listaHtml) return;
-            
             if (listaHtml.innerHTML.includes('Sin mensajes aún')) {
                 listaHtml.innerHTML = '';
             }
-            
             const div = document.createElement('div');
             let claseEmisor = 'pasajero';
             if (msg.emisor === 'conductor') claseEmisor = 'conductor';
@@ -927,8 +921,18 @@
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.85 }).addTo(mapa);
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
+                    // --- CÁLCULO DE TARIFA CON RECARGO 30% NOCTURNO Y/O DOMINGO ---
                     let baseCalculo = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
-                    if (esHorarioNocturno()) { baseCalculo = baseCalculo * TARIFAS_ACTIVAS.nocturno; }
+                    
+                    // Si es horario nocturno, aplica el 30% extra (x1.30)
+                    if (esHorarioNocturno()) { 
+                        baseCalculo = baseCalculo * TARIFAS_ACTIVAS.nocturno; 
+                    }
+
+                    // Si es domingo, aplica también el 30% extra (x1.30) durante todo el día
+                    if (esDiaDomingo()) {
+                        baseCalculo = baseCalculo * TARIFAS_ACTIVAS.domingoRecargo;
+                    }
 
                     let precioAuto = Math.round(baseCalculo);
                     let precioMoto = Math.round(baseCalculo * 0.75);
