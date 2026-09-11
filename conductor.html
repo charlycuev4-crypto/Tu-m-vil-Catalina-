@@ -569,7 +569,6 @@
             window.open(`https://www.google.com/maps/dir/?api=1&origin=${choferCoords.lat},${choferCoords.lng}&destination=${destLat},${destLng}&travelmode=driving`, '_blank');
         }
 
-        // --- OPTIMIZACIÓN DE CONEXIÓN INMEDIATA ---
         async function buscarViajesPendientesRecientes() {
             if (viajeActivo || !estaConectado) return;
             try {
@@ -581,7 +580,7 @@
                     const viajeReciente = viajes[0];
                     const tiempoCreacion = new Date(viajeReciente.created_at).getTime();
                     const ahora = Date.now();
-                    if ((ahora - tiempoCreacion) < 60000) { // Aumentado levemente el margen para asegurar captura
+                    if ((ahora - tiempoCreacion) < 60000) { 
                         const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, viajeReciente.origen_lat, viajeReciente.origen_lng);
                         if (distanciaAlViaje <= 5) { montarViajeEntrante(viajeReciente); }
                     }
@@ -591,7 +590,6 @@
 
         function escucharNuevosViajes() {
             if (canalSupabase) return;
-            // Chequeo rápido inicial al encender la escucha
             buscarViajesPendientesRecientes();
 
             canalSupabase = supabaseClient.channel('despacho-chofer');
@@ -1044,6 +1042,15 @@
                 buscarViajesPendientesRecientes();
             }
         });
+
+        // --- REGISTRO DEL SERVICE WORKER (CLAVE PARA MODO NATIVO) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registrado con éxito', reg))
+                    .catch(err => console.log('Error al registrar Service Worker', err));
+            });
+        }
 
         window.addEventListener('DOMContentLoaded', () => {
             verificarRegistroChofer();
