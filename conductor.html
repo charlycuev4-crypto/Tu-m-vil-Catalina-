@@ -84,6 +84,26 @@
 
         @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
+        /* Estilos del Menú Lateral con identidad TuMovil */
+        .menu-lateral-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6);
+            z-index: 9998; display: none; backdrop-filter: blur(4px);
+        }
+        .menu-lateral-overlay.activo { display: block; }
+        .menu-lateral-contenido {
+            position: absolute; top: 0; left: 0; bottom: 0; width: 280px; 
+            background: #0d2318; border-right: 1px solid #14532d; padding: 20px; 
+            display: flex; flex-direction: column; gap: 16px; box-shadow: 5px 0 25px rgba(0,0,0,0.6); 
+            color: #f1f5f9; animation: deslizarMenu 0.3s ease;
+        }
+        @keyframes deslizarMenu { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+        .menu-header { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #14532d; padding-bottom: 12px; }
+        .menu-avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #22c55e; }
+        .menu-stats-row { display: flex; justify-content: space-around; background: #051911; padding: 10px; border-radius: 10px; font-size: 0.8rem; text-align: center; border: 1px solid #14532d; }
+        .menu-links { display: flex; flex-direction: column; gap: 8px; }
+        .menu-links div { padding: 11px 14px; background: #051911; border: 1px solid #14532d; border-radius: 10px; cursor: pointer; font-size: 0.9font-weight: 500; transition: background 0.2s; }
+        .menu-links div:active { background: #14532d; }
+
         #modalChatFlotante {
             position: fixed; top: 155px; right: 16px; width: 300px; max-width: calc(100vw - 32px);
             background: #1e293b; border: 2px solid #38bdf8; border-radius: 16px;
@@ -201,6 +221,32 @@
 </head>
 <body onclick="forzarHabilitacionAudio()">
 
+    <!-- Menú Lateral Deslizante -->
+    <div id="modalMenuLateral" class="menu-lateral-overlay" onclick="toggleMenuLateral()">
+        <div class="menu-lateral-contenido" onclick="event.stopPropagation()">
+            <div class="menu-header">
+                <img id="imgMenuPerfil" class="menu-avatar" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Foto">
+                <div style="flex:1; overflow:hidden;">
+                    <h3 id="lblMenuNombre" style="font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Conductor</h3>
+                    <span style="font-size:0.75rem; color:#22c55e;">★ 4.80 • TuMovil</span>
+                </div>
+                <button onclick="toggleMenuLateral()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
+            </div>
+            
+            <div class="menu-stats-row">
+                <div><span style="display:block; font-size:0.65rem; color:#94a3b8;">Aceptación</span><b style="color:#22c55e;">100%</b></div>
+                <div><span style="display:block; font-size:0.65rem; color:#94a3b8;">Viajes</span><b id="lblMenuCantViajes" style="color:#38bdf8;">0</b></div>
+            </div>
+
+            <div class="menu-links">
+                <div onclick="alert('Sección de Ganancias detalladas próximamente');">💰 Ganancias</div>
+                <div onclick="alert('Historial de viajes realizados');">📋 Historial de Viajes</div>
+                <div onclick="document.getElementById('modalConfigChofer').classList.remove('hidden'); toggleMenuLateral();">⚙️ Configuración del Auto</div>
+                <div onclick="alert('Soporte técnico de TuMovil');">🛠️ Ayuda / Soporte</div>
+            </div>
+        </div>
+    </div>
+
     <div id="modalConfigChofer" class="hidden">
         <div class="config-card">
             <h2>🚗 Registro de Conductor</h2>
@@ -256,7 +302,10 @@
 
     <div class="header-float">
         <div class="header-left-col">
-            <div class="status-badge activo" id="txtEstadoChofer" onclick="conmutarEstadoConexion()">Móvil en Línea 🟢</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button id="btnAbrirMenuLateral" onclick="toggleMenuLateral()" style="width: 44px; height: 44px; border-radius: 50%; background: #0d2318; color: #22c55e; display: flex; align-items: center; justify-content: center; border: 1px solid #14532d; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">☰</button>
+                <div class="status-badge activo" id="txtEstadoChofer" onclick="conmutarEstadoConexion()">Móvil en Línea 🟢</div>
+            </div>
             
             <div class="ganancias-scroll-container">
                 <div class="burbuja-stat">
@@ -365,6 +414,19 @@
         let audioCtx = null;
         let intervaloCampana = null;
         let base64FotoTemp = "";
+
+        function toggleMenuLateral() {
+            const modal = document.getElementById('modalMenuLateral');
+            modal.classList.toggle('activo');
+            
+            if (modal.classList.contains('activo')) {
+                document.getElementById('lblMenuNombre').textContent = localStorage.getItem('cfg_auto_chofer') || "Conductor";
+                document.getElementById('lblMenuCantViajes').textContent = localStorage.getItem('chofer_cant_viajes') || '0';
+                if(localStorage.getItem('cfg_auto_foto')) {
+                    document.getElementById('imgMenuPerfil').src = localStorage.getItem('cfg_auto_foto');
+                }
+            }
+        }
 
         function verificarRegistroChofer() {
             if (!localStorage.getItem('cfg_auto_chofer') || !localStorage.getItem('cfg_auto_patente')) {
@@ -569,7 +631,6 @@
             window.open(`https://www.google.com/maps/dir/?api=1&origin=${choferCoords.lat},${choferCoords.lng}&destination=${destLat},${destLng}&travelmode=driving`, '_blank');
         }
 
-        // --- OPTIMIZACIÓN DE CONEXIÓN INMEDIATA ---
         async function buscarViajesPendientesRecientes() {
             if (viajeActivo || !estaConectado) return;
             try {
@@ -581,7 +642,7 @@
                     const viajeReciente = viajes[0];
                     const tiempoCreacion = new Date(viajeReciente.created_at).getTime();
                     const ahora = Date.now();
-                    if ((ahora - tiempoCreacion) < 60000) { // Aumentado levemente el margen para asegurar captura
+                    if ((ahora - tiempoCreacion) < 60000) {
                         const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, viajeReciente.origen_lat, viajeReciente.origen_lng);
                         if (distanciaAlViaje <= 5) { montarViajeEntrante(viajeReciente); }
                     }
@@ -591,7 +652,6 @@
 
         function escucharNuevosViajes() {
             if (canalSupabase) return;
-            // Chequeo rápido inicial al encender la escucha
             buscarViajesPendientesRecientes();
 
             canalSupabase = supabaseClient.channel('despacho-chofer');
