@@ -214,10 +214,10 @@
         }
 
         .hidden { display: none !important; }
-        .msg { padding: 6px; border-radius: 6px; margin-bottom: 6px; font-size: 0.72rem; text-align: center; display: none; font-weight: 600; }
+        .msg { padding: 8px; border-radius: 8px; margin-bottom: 6px; font-size: 0.78rem; text-align: center; display: none; font-weight: 600; line-height: 1.3; }
         .msg.show { display: block; }
-        .msg-error { background: #fee2e2; color: #991b1b; }
-        .msg-success { background: #f0fdf4; color: #166534; }
+        .msg-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .msg-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
     </style>
 </head>
 <body>
@@ -352,6 +352,9 @@
             <div style="text-align: center; padding: 6px 0;">
                 <h4 style="margin-bottom: 4px; color: #1a1a1a; font-size: 0.95rem;">Buscando conductor cercano...</h4>
                 <p style="color: #444; font-size: 0.78rem; margin-bottom: 10px;">Tu solicitud está en el centro de despacho.</p>
+                <div id="avisoFidelidadEspera" class="hidden" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; border-radius: 10px; padding: 8px; font-size: 0.78rem; font-weight: 700; margin-bottom: 10px;">
+                    🎉 ¡Promo 6to Viaje Aplicada! 50% de descuento en este viaje.
+                </div>
                 <button class="btn-green-action" style="background: #ef4444; border-color: #dc2626;" onclick="cancelarViaje()">Cancelar</button>
             </div>
         </div>
@@ -359,6 +362,9 @@
         <!-- PASO 3: PRECIO Y CHOFER ASIGNADO -->
         <div id="pasoPrecio" class="hidden">
             <div class="price-box-live" style="display:block;" id="precioMonto">$0.00</div>
+            <div id="avisoFidelidadAsignado" class="hidden" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; border-radius: 8px; padding: 6px; font-size: 0.75rem; font-weight: 700; text-align: center; margin-bottom: 6px;">
+                🎉 ¡Incluye 50% de descuento por tu 6to viaje!
+            </div>
             <div class="driver-card-preview">
                 <div class="driver-img-box" id="imgCondBoxContainer">
                     <img id="imgCondFoto" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Conductor">
@@ -382,7 +388,7 @@
         let TARIFAS_ACTIVAS = {
             base: 3000,
             km: 600,
-            recargo: 1.30, // 30% extra unificado para domingo o nocturno
+            recargo: 1.30,
             horaInicio: 20,
             horaFin: 8
         };
@@ -540,7 +546,7 @@
 
         function esDiaDomingo() {
             const diaActual = new Date().getDay();
-            return diaActual === 0; // 0 representa el domingo
+            return diaActual === 0;
         }
 
         function initMapa() {
@@ -835,21 +841,6 @@
             listaHtml.scrollTop = listaHtml.scrollHeight;
         }
 
-        async function enviarMensajeChatPasajero() {
-            const input = document.getElementById('inpMensajeChatPasajero');
-            const texto = input.value.trim();
-            if (!texto || !viajeId) return;
-
-            input.value = '';
-            try {
-                await supabaseClient.from('mensajes').insert([{
-                    viaje_id: viajeId,
-                    emisor: 'pasajero',
-                    mensaje: texto
-                }]);
-            } catch (e) {}
-        }
-
         function activarModoManualDestino() { 
             modoDestinoManual = true; 
             document.getElementById('manualBtn').classList.add('activo'); 
@@ -920,7 +911,6 @@
                     rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.85 }).addTo(mapa);
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
-                    // --- CÁLCULO DE TARIFA CON UN ÚNICO RECARGO DEL 30% SI ES DOMINGO O NOCHE ---
                     let baseCalculo = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
                     
                     if (esDiaDomingo() || esHorarioNocturno()) { 
@@ -998,7 +988,6 @@
                 let precioFinalACobrar = precioCalculado;
                 let esDescuentoFidelidad = false;
 
-                // --- VERIFICAR FIDELIDAD (6to viaje, máx 12 km) ---
                 if (pasajeroTelefono) {
                     const { data: viajesPrevios, error: errHistorial } = await supabaseClient
                         .from('viajes')
@@ -1041,8 +1030,17 @@
                 viajeId = data.id;
                 localStorage.setItem('pasajero_viaje_id', data.id);
                 
+                // --- MOSTRAR AVISO FIJO EN ESPERA Y ASIGNADO ---
+                const avisoEspera = document.getElementById('avisoFidelidadEspera');
+                const avisoAsignado = document.getElementById('avisoFidelidadAsignado');
+                
                 if (esDescuentoFidelidad) {
-                    mostrarMsg('🎉 ¡Felicidades! Se aplicó el 50% de descuento por tu 6to viaje.', 'success');
+                    if (avisoEspera) avisoEspera.classList.remove('hidden');
+                    if (avisoAsignado) avisoAsignado.classList.remove('hidden');
+                    // También dejamos un mensaje un poco más largo en la burbuja superior sin que se borre rápido de inmediato si se desea, o delegamos a los avisos fijos inferiores
+                } else {
+                    if (avisoEspera) avisoEspera.classList.add('hidden');
+                    if (avisoAsignado) avisoAsignado.classList.add('hidden');
                 }
 
                 mostrarPaso('pasoEsperando');
@@ -1073,7 +1071,17 @@
             }
         }
 
-        function mostrarMsg(texto, tipo) { const msg = document.getElementById('msg'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
+        function mostrarMsg(texto, tipo) { 
+            const msg = document.getElementById('msg'); 
+            msg.textContent = texto; 
+            msg.className = 'msg msg-' + tipo + ' show'; 
+            // Si es un mensaje de éxito de fidelidad, dejamos que dure más tiempo (10 segundos) o no lo ocultamos automáticamente si prefieres
+            setTimeout(() => {
+                if(!texto.includes('6to viaje')) {
+                    msg.classList.remove('show');
+                }
+            }, 8000); 
+        }
 
         window.addEventListener('DOMContentLoaded', () => { initMapa(); procesarSplashDeBienvenida(); });
     </script>
