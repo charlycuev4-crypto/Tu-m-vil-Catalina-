@@ -381,7 +381,7 @@
 
         let TARIFAS_ACTIVAS = {
             base: 3000,
-            km: 600,
+            km: 400,
             recargo: 1.30, // 30% extra unificado para domingo o nocturno
             horaInicio: 20,
             horaFin: 8
@@ -995,34 +995,6 @@
             }
 
             try {
-                let precioFinalACobrar = precioCalculado;
-                let esDescuentoFidelidad = false;
-
-                // --- VERIFICAR FIDELIDAD (6to viaje, máx 12 km en Moreno / San Miguel) ---
-                if (pasajeroTelefono) {
-                    const { data: viajesPrevios, error: errHistorial } = await supabaseClient
-                        .from('viajes')
-                        .select('*')
-                        .eq('pasajero_telefono', pasajeroTelefono)
-                        .in('estado', ['finalizado', 'completado']);
-
-                    if (!errHistorial) {
-                        let totalViajesPrevios = viajesPrevios ? viajesPrevios.length : 0;
-                        let numeroDeEsteViaje = totalViajesPrevios + 1;
-
-                        if (numeroDeEsteViaje % 6 === 0) {
-                            // Validamos que sea un viaje local dentro del radio (<= 12 km)
-                            if (distanciaKm <= 12) {
-                                precioFinalACobrar = Math.round(precioCalculado / 2);
-                                esDescuentoFidelidad = true;
-                            } else {
-                                mostrarMsg('⚠️ Tu 6to viaje supera los 12 km permitidos para la promo local. Se aplicará la tarifa normal.', 'error');
-                            }
-                        }
-                    }
-                }
-
-                // --- INSERTAR EL VIAJE EN SUPABASE ---
                 const { data, error } = await supabaseClient
                     .from('viajes')
                     .insert({
@@ -1035,19 +1007,13 @@
                         origen_lng: origenCoords.lng,
                         destino_lat: destinoCoords.lat,
                         destino_lng: destinoCoords.lng,
-                        precio: precioFinalACobrar,
-                        distancia_km: distanciaKm,
-                        es_fidelidad: esDescuentoFidelidad // Guardamos la marca para el conductor
+                        precio: precioCalculado,
+                        distancia_km: distanciaKm
                     }).select().single();
 
                 if (error) throw error;
                 viajeId = data.id;
                 localStorage.setItem('pasajero_viaje_id', data.id);
-                
-                if (esDescuentoFidelidad) {
-                    mostrarMsg('🎁 ¡Felicidades! Por ser nuestro cliente frecuente, este 6to viaje local tiene un 50% de descuento.', 'success');
-                }
-
                 mostrarPaso('pasoEsperando');
                 iniciarEscuchaRealtime(viajeId);
             } catch (e) { mostrarMsg('Error al solicitar: ' + e.message, 'error'); }
