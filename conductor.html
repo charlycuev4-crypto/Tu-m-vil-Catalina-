@@ -720,75 +720,48 @@
                 manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
             }
 
-            const contenedorViaje = document.getElementById('contenedorViajeEntrante');
-            
+            let avisoFidelidadHtml = '';
             if (viaje.es_fidelidad === true) {
-                contenedorViaje.innerHTML = `
+                avisoFidelidadHtml = `
                     <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
                         <h4 style="color: #b45309; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
                         <p style="color: #92400e; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
                     </div>
-                    <div class="viaje-info-box">
-                        <div class="viaje-header">
-                            <div class="pasajero-perfil-container">
-                                <div class="pasajero-foto-box">
-                                    <img id="imgPasajeroFoto" src="${viaje.pasajero_foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" alt="Pasajero">
-                                </div>
-                                <div>
-                                    <div class="viaje-pasajero">${viaje.pasajero_nombre || "Pasajero"}</div>
-                                </div>
-                            </div>
-                            <div class="viaje-precio">$${viaje.precio}</div>
-                        </div>
-                        <div class="input-group">
-                            <div class="input-row">
-                                <span>📍 <b>Recogida:</b> ${barrioOrigen} (${calleOrigen})</span>
-                                <span style="color:#ef4444; margin-top:2px;">🏁 <b>Destino:</b> ${barrioDestino} (${calleDestino})</span>
-                                <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px; display:flex; justify-content:space-between;" id="cajaMetricasRuta">
-                                    <span>🕒 Calculando ruta local...</span>
-                                </div>
-                                ${manifiestoHtml}
-                            </div>
-                        </div>
-                    </div>
-                    <div id="contenedorBotonesPendiente" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                        <button class="btn-action" style="background: #ef4444; flex: 1; margin-bottom: 0;" onclick="rechazarViajeEntrante()">Rechazar ❌</button>
-                        <button class="btn-action btn-aceptar" style="flex: 2; margin-bottom: 0;" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje ✅</button>
-                    </div>
-                    <button class="btn-action btn-aceptar hidden" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
-                `;
-            } else {
-                contenedorViaje.innerHTML = `
-                    <div class="viaje-info-box">
-                        <div class="viaje-header">
-                            <div class="pasajero-perfil-container">
-                                <div class="pasajero-foto-box">
-                                    <img id="imgPasajeroFoto" src="${viaje.pasajero_foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" alt="Pasajero">
-                                </div>
-                                <div>
-                                    <div class="viaje-pasajero">${viaje.pasajero_nombre || "Pasajero"}</div>
-                                </div>
-                            </div>
-                            <div class="viaje-precio">$${viaje.precio}</div>
-                        </div>
-                        <div class="input-group">
-                            <div class="input-row">
-                                <span>📍 <b>Recogida:</b> ${barrioOrigen} (${calleOrigen})</span>
-                                <span style="color:#ef4444; margin-top:2px;">🏁 <b>Destino:</b> ${barrioDestino} (${calleDestino})</span>
-                                <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px; display:flex; justify-content:space-between;" id="cajaMetricasRuta">
-                                    <span>🕒 Calculando ruta local...</span>
-                                </div>
-                                ${manifiestoHtml}
-                            </div>
-                        </div>
-                    </div>
-                    <div id="contenedorBotonesPendiente" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                        <button class="btn-action" style="background: #ef4444; flex: 1; margin-bottom: 0;" onclick="rechazarViajeEntrante()">Rechazar ❌</button>
-                        <button class="btn-action btn-aceptar" style="flex: 2; margin-bottom: 0;" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje ✅</button>
-                    </div>
-                    <button class="btn-action btn-aceptar hidden" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
                 `;
             }
+
+            const contenedorViaje = document.getElementById('contenedorViajeEntrante');
+            contenedorViaje.innerHTML = `
+                ${avisoFidelidadHtml}
+                <div class="viaje-info-box">
+                    <div class="viaje-header">
+                        <div class="pasajero-perfil-container">
+                            <div class="pasajero-foto-box">
+                                <img id="imgPasajeroFoto" src="${viaje.pasajero_foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" alt="Pasajero">
+                            </div>
+                            <div>
+                                <div class="viaje-pasajero">${viaje.pasajero_nombre || "Pasajero"}</div>
+                            </div>
+                        </div>
+                        <div class="viaje-precio">$${viaje.precio}</div>
+                    </div>
+                    <div class="input-group">
+                        <div class="input-row">
+                            <span>📍 <b>Recogida:</b> ${barrioOrigen} (${calleOrigen})</span>
+                            <span style="color:#ef4444; margin-top:2px;">🏁 <b>Destino:</b> ${barrioDestino} (${calleDestino})</span>
+                            <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px; display:flex; justify-content:space-between;" id="cajaMetricasRuta">
+                                <span>🕒 Calculando ruta local...</span>
+                            </div>
+                            ${manifiestoHtml}
+                        </div>
+                    </div>
+                </div>
+                <div id="contenedorBotonesPendiente" style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <button class="btn-action" style="background: #ef4444; flex: 1; margin-bottom: 0;" onclick="rechazarViajeEntrante()">Rechazar ❌</button>
+                    <button class="btn-action btn-aceptar" style="flex: 2; margin-bottom: 0;" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje ✅</button>
+                </div>
+                <button class="btn-action btn-aceptar hidden" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
+            `;
 
             if (markerOrigen) mapa.removeLayer(markerOrigen);
             if (markerDestino) mapa.removeLayer(markerDestino);
@@ -889,8 +862,19 @@
                     manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
                 }
 
+                let avisoFidelidadHtml = '';
+                if (viajeActivo.es_fidelidad === true) {
+                    avisoFidelidadHtml = `
+                        <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+                            <h4 style="color: #b45309; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
+                            <p style="color: #92400e; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
+                        </div>
+                    `;
+                }
+
                 const contenedorViaje = document.getElementById('contenedorViajeEntrante');
                 contenedorViaje.innerHTML = `
+                    ${avisoFidelidadHtml}
                     <div class="viaje-info-box">
                         <div class="viaje-header">
                             <div class="pasajero-perfil-container">
@@ -972,6 +956,16 @@
                     manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
                 }
 
+                let avisoFidelidadHtml = '';
+                if (viaje.es_fidelidad === true) {
+                    avisoFidelidadHtml = `
+                        <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+                            <h4 style="color: #b45309; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
+                            <p style="color: #92400e; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
+                        </div>
+                    `;
+                }
+
                 markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
                 markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
 
@@ -979,6 +973,7 @@
                 
                 if (estadoFlujo === 'aceptado') {
                     contenedorViaje.innerHTML = `
+                        ${avisoFidelidadHtml}
                         <div class="viaje-info-box">
                             <div class="viaje-header">
                                 <div class="pasajero-perfil-container">
@@ -1004,6 +999,7 @@
                     await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
                 } else if (estadoFlujo === 'en_puerta') {
                     contenedorViaje.innerHTML = `
+                        ${avisoFidelidadHtml}
                         <div class="viaje-info-box">
                             <div class="viaje-header">
                                 <div class="pasajero-perfil-container">
@@ -1029,6 +1025,7 @@
                     await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
                 } else if (estadoFlujo === 'en_viaje') {
                     contenedorViaje.innerHTML = `
+                        ${avisoFidelidadHtml}
                         <div class="viaje-info-box">
                             <div class="viaje-header">
                                 <div class="pasajero-perfil-container">
@@ -1062,7 +1059,7 @@
             try {
                 let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
                 if (latDestinoExtra && lonDestinoExtra) {
-                    url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${latDestinoExtra},${lonDestinoExtra}`;
+                    url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${lonDestinoExtra},${lonDestinoExtra}`;
                 }
                 url += `?overview=full&geometries=geojson`;
 
@@ -1125,7 +1122,7 @@
             if ((ahora - ultimoCalculoRuta > 6000) || seDesvio) {
                 ultimaLatRuta = lat1;
                 ultimaLngRuta = lon1;
-                await trazarRualCallesYCalcularMetricas = trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, null, null);
+                await trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, null, null);
                 ultimoCalculoRuta = ahora;
             }
         }
