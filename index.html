@@ -995,6 +995,32 @@
             }
 
             try {
+                let precioFinalACobrar = precioCalculado;
+                let esDescuentoFidelidad = false;
+
+                // --- VERIFICAR FIDELIDAD (6to viaje, máx 12 km) ---
+                if (pasajeroTelefono) {
+                    const { data: viajesPrevios, error: errHistorial } = await supabaseClient
+                        .from('viajes')
+                        .select('*')
+                        .eq('pasajero_telefono', pasajeroTelefono)
+                        .in('estado', ['finalizado', 'completado']);
+
+                    if (!errHistorial) {
+                        let totalViajesPrevios = viajesPrevios ? viajesPrevios.length : 0;
+                        let numeroDeEsteViaje = totalViajesPrevios + 1;
+
+                        if (numeroDeEsteViaje % 6 === 0) {
+                            if (distanciaKm <= 12) {
+                                precioFinalACobrar = Math.round(precioCalculado / 2);
+                                esDescuentoFidelidad = true;
+                            } else {
+                                mostrarMsg('⚠️ Tu 6to viaje supera los 12 km permitidos para la promo. Se aplicará la tarifa normal.', 'error');
+                            }
+                        }
+                    }
+                }
+
                 const { data, error } = await supabaseClient
                     .from('viajes')
                     .insert({
@@ -1007,13 +1033,18 @@
                         origen_lng: origenCoords.lng,
                         destino_lat: destinoCoords.lat,
                         destino_lng: destinoCoords.lng,
-                        precio: precioCalculado,
+                        precio: precioFinalACobrar,
                         distancia_km: distanciaKm
                     }).select().single();
 
                 if (error) throw error;
                 viajeId = data.id;
                 localStorage.setItem('pasajero_viaje_id', data.id);
+                
+                if (esDescuentoFidelidad) {
+                    mostrarMsg('🎉 ¡Felicidades! Se aplicó el 50% de descuento por tu 6to viaje.', 'success');
+                }
+
                 mostrarPaso('pasoEsperando');
                 iniciarEscuchaRealtime(viajeId);
             } catch (e) { mostrarMsg('Error al solicitar: ' + e.message, 'error'); }
