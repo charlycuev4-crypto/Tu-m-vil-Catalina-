@@ -995,6 +995,29 @@
             }
 
             try {
+                // --- 1. VERIFICAR FIDELIDAD (6to viaje con 50% de descuento) ---
+                let precioFinalACobrar = precioCalculado;
+                let esDescuentoFidelidad = false;
+
+                if (pasajeroTelefono) {
+                    const { data: viajesPrevios, error: errHistorial } = await supabaseClient
+                        .from('viajes')
+                        .select('*')
+                        .eq('pasajero_telefono', pasajeroTelefono)
+                        .in('estado', ['finalizado', 'completado']);
+
+                    if (!errHistorial) {
+                        let totalViajesPrevios = viajesPrevios ? viajesPrevios.length : 0;
+                        let numeroDeEsteViaje = totalViajesPrevios + 1;
+
+                        if (numeroDeEsteViaje % 6 === 0) {
+                            precioFinalACobrar = Math.round(precioCalculado / 2);
+                            esDescuentoFidelidad = true;
+                        }
+                    }
+                }
+
+                // --- 2. INSERTAR EL VIAJE CON EL PRECIO CORRESPONDIENTE ---
                 const { data, error } = await supabaseClient
                     .from('viajes')
                     .insert({
@@ -1007,13 +1030,18 @@
                         origen_lng: origenCoords.lng,
                         destino_lat: destinoCoords.lat,
                         destino_lng: destinoCoords.lng,
-                        precio: precioCalculado,
+                        precio: precioFinalACobrar,
                         distancia_km: distanciaKm
                     }).select().single();
 
                 if (error) throw error;
                 viajeId = data.id;
                 localStorage.setItem('pasajero_viaje_id', data.id);
+                
+                if (esDescuentoFidelidad) {
+                    mostrarMsg('🎁 ¡Felicidades! Este es tu 6to viaje y tiene 50% de descuento.', 'success');
+                }
+
                 mostrarPaso('pasoEsperando');
                 iniciarEscuchaRealtime(viajeId);
             } catch (e) { mostrarMsg('Error al solicitar: ' + e.message, 'error'); }
