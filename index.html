@@ -16,7 +16,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f4f4f6; height: 100vh; overflow: hidden; color: #1a1a1a;
+            background: #090d16; height: 100vh; overflow: hidden; color: #f8fafc;
         }
 
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
@@ -25,7 +25,7 @@
         /* SPLASH SCREEN */
         #splashScreen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #0f172a url('https://files.catbox.moe/z55y2x.jpg') no-repeat center center;
+            background: #090d16 url('https://files.catbox.moe/z55y2x.jpg') no-repeat center center;
             background-size: cover;
             color: white; z-index: 9999;
             display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
@@ -37,14 +37,14 @@
         .splash-logo-box {
             width: 100px; height: 80px; background: #1e293b; border-radius: 16px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            margin-bottom: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); border: 1px solid #334155;
+            margin-bottom: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.6); border: 1px solid #334155;
         }
         .splash-logo-box img { width: 60px; height: 45px; border-radius: 6px; margin-bottom: 2px; object-fit: cover; }
         .splash-logo-box span { font-size: 0.7rem; font-weight: 700; color: #2cd44a; letter-spacing: 1px; }
         
         .splash-form { width: 100%; max-width: 300px; display: none; flex-direction: column; gap: 10px; margin-top: 5px; }
         .splash-form input {
-            background: #1e293b; border: 1px solid #334155; color: white; padding: 12px;
+            background: rgba(15, 23, 42, 0.85); border: 1px solid #334155; color: white; padding: 12px;
             border-radius: 14px; outline: none; font-size: 0.95rem; text-align: center;
         }
 
@@ -59,7 +59,7 @@
         .silueta-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.35); pointer-events: none; transition: opacity 0.3s;
+            background: rgba(0,0,0,0.4); pointer-events: none; transition: opacity 0.3s;
         }
         .silueta-overlay svg { width: 50px; height: 50px; fill: rgba(255,255,255,0.7); margin-bottom: 2px; }
         .silueta-overlay span { font-size: 0.65rem; color: #fff; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
@@ -68,20 +68,20 @@
         .header-row { display: flex; justify-content: space-between; width: 100%; }
         .right-buttons { display: flex; flex-direction: column; gap: 10px; }
 
-        .back-btn, .gps-btn, .manual-btn { width: 44px; height: 44px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border: none; box-shadow: 0 3px 10px rgba(0,0,0,0.2); pointer-events: auto; }
-        .gps-btn.buscando { background: #e2e8f0; animation: pulse 1s infinite; }
-        .manual-btn.activo { background: #2cd44a; color: white; animation: pulse 1s infinite; }
+        .back-btn, .gps-btn, .manual-btn { width: 44px; height: 44px; border-radius: 50%; background: #111c2e; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border: 1px solid #334155; box-shadow: 0 4px 12px rgba(0,0,0,0.4); pointer-events: auto; }
+        .gps-btn.buscando { background: #1e293b; animation: pulse 1s infinite; }
+        .manual-btn.activo { background: #2cd44a; color: white; animation: pulse 1s infinite; border-color: #2cd44a; }
         @keyframes pulse { 50% { transform: scale(1.1); } }
 
-        .mapa-hint { position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(44, 212, 74, 0.95); color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-align: center; width: 85%; max-width: 320px; }
+        .mapa-hint { position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(15, 23, 42, 0.95); border: 1px solid #2cd44a; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4); text-align: center; width: 85%; max-width: 320px; }
         .mapa-hint.visible { display: block; }
 
-        /* PANEL INFERIOR DINÁMICO CON ESTÉTICA UNIFICADA */
+        /* PANEL INFERIOR OSCURO ESTILO BANNER */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
-            background: #E8E2D5; 
+            background: linear-gradient(180deg, #0f172a 0%, #070b14 100%); 
             border-radius: 28px 28px 0 0; 
-            box-shadow: 0 -8px 25px rgba(0,0,0,0.2); 
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.6); 
             padding: 10px 16px 16px; 
             height: 27vh; 
             max-height: 80vh;
@@ -94,54 +94,56 @@
         .bottom-panel.con-ruta { height: 35vh; }
         .bottom-panel.modo-compacto { height: auto !important; max-height: 75vh; padding-bottom: 12px; }
 
-        .panel-handle { width: 38px; height: 4px; background: #b5ac9b; border-radius: 2px; margin: 0 auto 6px; cursor: pointer; }
+        .panel-handle { width: 38px; height: 4px; background: #334155; border-radius: 2px; margin: 0 auto 6px; cursor: pointer; }
 
         .lista-vehiculos-scroll {
             max-height: 110px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; padding-right: 2px; -webkit-overflow-scrolling: touch;
         }
 
         .ride-option-item {
-            background: #F4EFE6; border: 1px solid #d4cbb8; border-radius: 12px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s;
+            background: #111c2e; border: 1px solid #1e293b; border-radius: 12px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s;
         }
-        .ride-option-item.selected { border-color: #2cd44a; background: #dcfce7; box-shadow: 0 0 8px rgba(44,212,74,0.3); border-width: 1.5px; }
+        .ride-option-item.selected { border-color: #2cd44a; background: rgba(44, 212, 74, 0.1); box-shadow: 0 0 10px rgba(44,212,74,0.25); border-width: 1.5px; }
 
         .ride-info-left { display: flex; align-items: center; gap: 8px; }
         .ride-icon-box { font-size: 1.1rem; width: 26px; text-align: center; }
-        .ride-details h4 { font-size: 0.8rem; font-weight: 700; color: #1a1a1a; }
-        .ride-details p { font-size: 0.65rem; color: #555; }
+        .ride-details h4 { font-size: 0.8rem; font-weight: 700; color: #f8fafc; }
+        .ride-details p { font-size: 0.65rem; color: #94a3b8; }
         .ride-price-right { text-align: right; }
-        .ride-price-right .precio-txt { font-size: 0.82rem; font-weight: 700; color: #166534; }
+        .ride-price-right .precio-txt { font-size: 0.82rem; font-weight: 700; color: #4ade80; }
 
         .driver-card-preview { 
-            display: flex; align-items: center; gap: 8px; margin-bottom: 6px; background: #F4EFE6; padding: 6px 10px; border-radius: 12px; border: 1px solid #2cd44a; box-shadow: 0 0 8px rgba(44, 212, 74, 0.15);
+            display: flex; align-items: center; gap: 8px; margin-bottom: 6px; background: #111c2e; padding: 6px 10px; border-radius: 12px; border: 1px solid #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
-        .driver-img-box { width: 50px; height: 40px; border-radius: 8px; background: #e8e2d5; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; border: 1px solid #2cd44a; }
+        .driver-img-box { width: 50px; height: 40px; border-radius: 8px; background: #1e293b; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; border: 1px solid #2cd44a; }
         .driver-img-box img { width: 100%; height: 100%; object-fit: cover; }
-        .driver-info-box h3 { font-size: 0.85rem; font-weight: 700; color: #111; }
-        .driver-info-box p { font-size: 0.7rem; color: #444; }
+        .driver-info-box h3 { font-size: 0.85rem; font-weight: 700; color: #f8fafc; }
+        .driver-info-box p { font-size: 0.7rem; color: #94a3b8; }
 
         .input-group { 
-            background: #F4EFE6; border-radius: 12px; padding: 2px 10px; margin-bottom: 6px; border: 1px solid #2cd44a; box-shadow: 0 0 8px rgba(44, 212, 74, 0.1);
+            background: #111c2e; border-radius: 12px; padding: 2px 10px; margin-bottom: 6px; border: 1px solid #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         .input-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
-        .input-row:not(:last-child) { border-bottom: 1px solid #d4cbb8; } 
+        .input-row:not(:last-child) { border-bottom: 1px solid #1e293b; } 
         .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-        .dot-green { background: #2cd44a; box-shadow: 0 0 4px rgba(44,212,74,0.6); }
+        .dot-green { background: #2cd44a; box-shadow: 0 0 6px rgba(44,212,74,0.8); }
         .dot-red { background: #ef4444; }
-        .input-row input { flex: 1; border: none; font-size: 0.82rem; color: #1a1a1a; background: transparent; outline: none; }
+        .input-row input { flex: 1; border: none; font-size: 0.82rem; color: #f8fafc; background: transparent; outline: none; }
+        .input-row input::placeholder { color: #64748b; }
 
-        .sugerencias { background: #F4EFE6; border-radius: 10px; max-height: 90px; overflow-y: auto; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 6px; border: 1px solid #2cd44a; }
+        .sugerencias { background: #111c2e; border-radius: 10px; max-height: 90px; overflow-y: auto; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 6px; border: 1px solid #1e293b; }
         .sugerencias.activo { display: block; }
-        .sugerencia-item { padding: 6px 8px; border-bottom: 1px solid #e2dac9; cursor: pointer; font-size: 0.75rem; color: #222; }
+        .sugerencia-item { padding: 6px 8px; border-bottom: 1px solid #1e293b; cursor: pointer; font-size: 0.75rem; color: #e2e8f0; }
+        .sugerencia-item:hover { background: #1e293b; }
 
         .price-box-live { 
-            background: #dcfce7; color: #166534; padding: 6px 10px; border-radius: 10px; text-align: center; font-weight: 700; margin-bottom: 6px; display: none; font-size: 0.85rem; border: 1px solid #2cd44a; 
+            background: rgba(44, 212, 74, 0.15); color: #4ade80; padding: 6px 10px; border-radius: 10px; text-align: center; font-weight: 700; margin-bottom: 6px; display: none; font-size: 0.85rem; border: 1px solid #2cd44a; 
         }
-        .badge-nocturno { background: #fef2f2; color: #dc2626; padding: 2px 5px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; display: inline-block; margin-top: 2px; border: 1px solid #fecaca; }
-        .badge-domingo { background: #eff6ff; color: #2563eb; padding: 2px 5px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; display: inline-block; margin-top: 2px; border: 1px solid #bfdbfe; }
+        .badge-nocturno { background: rgba(239, 68, 68, 0.15); color: #f87171; padding: 2px 5px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; display: inline-block; margin-top: 2px; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-domingo { background: rgba(37, 99, 235, 0.15); color: #60a5fa; padding: 2px 5px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; display: inline-block; margin-top: 2px; border: 1px solid rgba(37, 99, 235, 0.3); }
         
         .btn-green-action { 
-            width: 100%; background: #2cd44a; color: white; border: none; padding: 10px; border-radius: 50px; font-size: 0.88rem; font-weight: 700; cursor: pointer; box-shadow: 0 3px 10px rgba(44,212,74,0.3); text-align: center; margin-top: 2px; transition: background 0.2s; border: 1px solid #22b03b;
+            width: 100%; background: #2cd44a; color: #090d16; border: none; padding: 10px; border-radius: 50px; font-size: 0.88rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(44,212,74,0.4); text-align: center; margin-top: 2px; transition: background 0.2s; border: 1px solid #22b03b;
         }
         .btn-green-action:hover { background: #25b83f; }
 
@@ -162,14 +164,14 @@
         /* Globo Flotante de Chat */
         #btnAbrirChatFlotante {
             position: fixed; bottom: 120px; right: 20px; z-index: 500;
-            width: 55px; height: 55px; background: #2cd44a; color: white;
+            width: 55px; height: 55px; background: #2cd44a; color: #090d16;
             border-radius: 50%; display: none; align-items: center; justify-content: center;
-            font-size: 1.6rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer;
-            border: 2px solid white; transition: transform 0.2s;
+            font-size: 1.6rem; box-shadow: 0 4px 20px rgba(44,212,74,0.4); cursor: pointer;
+            border: 2px solid #090d16; transition: transform 0.2s;
         }
         #btnAbrirChatFlotante:active { transform: scale(0.9); }
         #btnAbrirChatFlotante.alerta-mensaje {
-            background: #ef4444 !important;
+            background: #ef4444 !important; color: white !important;
             animation: pulseChatPasajero 0.6s infinite alternate;
         }
         @keyframes pulseChatPasajero {
@@ -180,44 +182,44 @@
         /* Ventana Modal de Chat Flotante */
         #modalChatFlotante {
             position: fixed; bottom: 80px; left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
-            background: #F4EFE6; border: 2px solid #2cd44a; border-radius: 16px;
+            background: #0f172a; border: 2px solid #2cd44a; border-radius: 16px;
             padding: 12px; z-index: 600; display: none; flex-direction: column; gap: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
         }
         #modalChatFlotante.activo { display: flex; }
 
         .chat-mensajes-lista {
             height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
-            font-size: 0.78rem; padding-right: 4px; background: white; padding: 8px; border-radius: 10px; border: 1px solid #d4cbb8;
+            font-size: 0.78rem; padding-right: 4px; background: #070b14; padding: 8px; border-radius: 10px; border: 1px solid #1e293b;
         }
         .chat-msg-item { padding: 6px 10px; border-radius: 8px; max-width: 85%; word-break: break-word; }
         .chat-msg-item.admin { background: #1e3a8a; align-self: flex-start; color: #93c5fd; }
         .chat-msg-item.conductor { background: #1e293b; align-self: flex-start; color: #f1f5f9; }
-        .chat-msg-item.pasajero { background: #2cd44a; align-self: flex-end; color: #ffffff; }
+        .chat-msg-item.pasajero { background: #2cd44a; align-self: flex-end; color: #090d16; font-weight: 600; }
         
         .chat-input-row { display: flex; gap: 6px; }
         .chat-input-row input {
-            flex: 1; background: #ffffff; border: 1px solid #d4cbb8; border-radius: 8px;
-            padding: 8px 10px; font-size: 0.8rem; outline: none; color: #1a1a1a;
+            flex: 1; background: #111c2e; border: 1px solid #1e293b; border-radius: 8px;
+            padding: 8px 10px; font-size: 0.8rem; outline: none; color: #f8fafc;
         }
         .chat-input-row button {
-            background: #2cd44a; color: white; border: none; border-radius: 8px;
-            padding: 0 14px; font-weight: 700; font-size: 0.8rem; cursor: pointer;
+            background: #2cd44a; color: #090d16; border: none; border-radius: 8px;
+            padding: 0 14px; font-weight: 800; font-size: 0.8rem; cursor: pointer;
         }
 
-        .pasajero-ping-icon { background: #2cd44a; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
-        .destino-ping-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
+        .pasajero-ping-icon { background: #2cd44a; width: 14px !important; height: 14px !important; border: 2px solid #090d16; border-radius: 50%; box-shadow: 0 0 10px rgba(44,212,74,0.8); }
+        .destino-ping-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid #090d16; border-radius: 50%; box-shadow: 0 0 10px rgba(239,68,68,0.8); }
         .auto-conductor-ping {
             font-size: 30px !important; width: 30px !important; height: 30px !important;
             display: flex; align-items: center; justify-content: center;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.8));
         }
 
         .hidden { display: none !important; }
         .msg { padding: 8px; border-radius: 8px; margin-bottom: 6px; font-size: 0.78rem; text-align: center; display: none; font-weight: 600; line-height: 1.3; }
         .msg.show { display: block; }
-        .msg-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-        .msg-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .msg-error { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .msg-success { background: rgba(44, 212, 74, 0.2); color: #4ade80; border: 1px solid rgba(44, 212, 74, 0.4); }
     </style>
 </head>
 <body>
@@ -228,7 +230,7 @@
             <span>TU MÓVIL</span>
         </div>
         <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 4px; font-size: 1.3rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Cargando...</h2>
-        <p id="splashSub" style="color: #cbd5e1; font-size: 0.85rem; margin-bottom: 25px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Identificación obligatoria para tu viaje</p>
+        <p id="splashSub" style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 25px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Identificación obligatoria para tu viaje</p>
         
         <div class="splash-form" id="splashForm">
             <div class="selfie-guia-container" onclick="document.getElementById('inputFotoReal').click()">
@@ -264,8 +266,8 @@
 
     <!-- Ventana Modal de Chat Flotante -->
     <div id="modalChatFlotante">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d4cbb8; padding-bottom: 6px;">
-            <span style="font-size: 0.82rem; font-weight: 700; color: #166534;">💬 Chat con tu Conductor</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: #4ade80;">💬 Chat con tu Conductor</span>
             <button onclick="toggleChatFlotante()" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-weight: bold; cursor: pointer; font-size: 0.75rem;">✕</button>
         </div>
         <div class="chat-mensajes-lista" id="listaMensajesChatPasajero">
@@ -350,19 +352,19 @@
         <!-- PASO 2: ESPERA -->
         <div id="pasoEsperando" class="hidden">
             <div style="text-align: center; padding: 6px 0;">
-                <h4 style="margin-bottom: 4px; color: #1a1a1a; font-size: 0.95rem;">Buscando conductor cercano...</h4>
-                <p style="color: #444; font-size: 0.78rem; margin-bottom: 10px;">Tu solicitud está en el centro de despacho.</p>
-                <div id="avisoFidelidadEspera" class="hidden" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; border-radius: 10px; padding: 8px; font-size: 0.78rem; font-weight: 700; margin-bottom: 10px;">
+                <h4 style="margin-bottom: 4px; color: #f8fafc; font-size: 0.95rem;">Buscando conductor cercano...</h4>
+                <p style="color: #94a3b8; font-size: 0.78rem; margin-bottom: 10px;">Tu solicitud está en el centro de despacho.</p>
+                <div id="avisoFidelidadEspera" class="hidden" style="background: rgba(44, 212, 74, 0.15); color: #4ade80; border: 1px solid rgba(44, 212, 74, 0.3); border-radius: 10px; padding: 8px; font-size: 0.78rem; font-weight: 700; margin-bottom: 10px;">
                     🎉 ¡Promo 6to Viaje Aplicada! 50% de descuento en este viaje.
                 </div>
-                <button class="btn-green-action" style="background: #ef4444; border-color: #dc2626;" onclick="cancelarViaje()">Cancelar</button>
+                <button class="btn-green-action" style="background: #ef4444; color: white; border-color: #dc2626;" onclick="cancelarViaje()">Cancelar</button>
             </div>
         </div>
 
         <!-- PASO 3: PRECIO Y CHOFER ASIGNADO -->
         <div id="pasoPrecio" class="hidden">
             <div class="price-box-live" style="display:block;" id="precioMonto">$0.00</div>
-            <div id="avisoFidelidadAsignado" class="hidden" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; border-radius: 8px; padding: 6px; font-size: 0.75rem; font-weight: 700; text-align: center; margin-bottom: 6px;">
+            <div id="avisoFidelidadAsignado" class="hidden" style="background: rgba(44, 212, 74, 0.15); color: #4ade80; border: 1px solid rgba(44, 212, 74, 0.3); border-radius: 8px; padding: 6px; font-size: 0.75rem; font-weight: 700; text-align: center; margin-bottom: 6px;">
                 🎉 ¡Incluye 50% de descuento por tu 6to viaje!
             </div>
             <div class="driver-card-preview">
@@ -374,7 +376,7 @@
                     <p id="autoCond">Vehículo en camino</p>
                 </div>
             </div>
-            <div style="text-align: center; padding: 4px 0; color: #166534; font-weight: 700; font-size: 0.85rem;" id="estadoViajePasajero">
+            <div style="text-align: center; padding: 4px 0; color: #4ade80; font-weight: 700; font-size: 0.85rem;" id="estadoViajePasajero">
                 El móvil aceptó el viaje y va en camino 🚗
             </div>
         </div>
@@ -551,7 +553,8 @@
 
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(UBICACION_DEFAULT, 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
+            // Usamos mapa oscuro de CartoDB Dark Matter para hacer juego perfecto con los colores
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(mapa);
             mapa.on('click', (e) => { 
                 if (modoDestinoManual) {
                     marcarDestinoManual(e.latlng.lat, e.latlng.lng); 
@@ -925,7 +928,7 @@
                 if (data.code === 'Ok' && data.routes.length > 0) {
                     if (rutaTrazada) mapa.removeLayer(rutaTrazada);
                     
-                    rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.85 }).addTo(mapa);
+                    rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.9 }).addTo(mapa);
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
                     let baseCalculo = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
@@ -976,7 +979,7 @@
                     document.getElementById('sugerencias').innerHTML = datos.map(lugar => `
                         <div class="sugerencia-item" onclick="seleccionarDestino('${lugar.display_name.replace(/'/g, "")}', ${lugar.lat}, ${lugar.lon})">
                             <strong>🎯 ${lugar.display_name.split(',')[0]}</strong>
-                            <div style="font-size:0.7rem; color:#666;">${lugar.display_name.split(',').slice(1,3).join(',')}</div>
+                            <div style="font-size:0.7rem; color:#94a3b8;">${lugar.display_name.split(',').slice(1,3).join(',')}</div>
                         </div>`).join('');
                     if (datos.length > 0) document.getElementById('sugerencias').classList.add('activo');
                 } catch (e) {}
