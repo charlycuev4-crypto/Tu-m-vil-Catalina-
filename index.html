@@ -13,10 +13,20 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <style>
+        :root {
+            --color-primario: #2cd44a;
+            --color-primario-hover: #22b03b;
+            --fondo-oscuro: #0f172a;
+            --fondo-tarjeta: #1e293b;
+            --borde-tarjeta: #334155;
+            --texto-principal: #f8fafc;
+            --texto-secundario: #94a3b8;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #090d16; height: 100vh; overflow: hidden; color: #f8fafc;
+            background: #090d16; height: 100vh; overflow: hidden; color: var(--texto-principal);
         }
 
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; z-index: 1; }
@@ -25,7 +35,7 @@
         /* SPLASH SCREEN */
         #splashScreen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #090d16 url('https://files.catbox.moe/z55y2x.jpg') no-repeat center center;
+            background: var(--fondo-oscuro) url('https://files.catbox.moe/z55y2x.jpg') no-repeat center center;
             background-size: cover;
             color: white; z-index: 9999;
             display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
@@ -35,22 +45,22 @@
         #splashScreen > * { position: relative; z-index: 2; }
 
         .splash-logo-box {
-            width: 100px; height: 80px; background: #1e293b; border-radius: 16px;
+            width: 100px; height: 80px; background: var(--fondo-tarjeta); border-radius: 16px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            margin-bottom: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.6); border: 1px solid #334155;
+            margin-bottom: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.5); border: 1px solid var(--borde-tarjeta);
         }
         .splash-logo-box img { width: 60px; height: 45px; border-radius: 6px; margin-bottom: 2px; object-fit: cover; }
-        .splash-logo-box span { font-size: 0.7rem; font-weight: 700; color: #2cd44a; letter-spacing: 1px; }
+        .splash-logo-box span { font-size: 0.7rem; font-weight: 700; color: var(--color-primario); letter-spacing: 1px; }
         
         .splash-form { width: 100%; max-width: 300px; display: none; flex-direction: column; gap: 10px; margin-top: 5px; }
         .splash-form input {
-            background: rgba(15, 23, 42, 0.85); border: 1px solid #334155; color: white; padding: 12px;
+            background: var(--fondo-tarjeta); border: 1px solid var(--borde-tarjeta); color: white; padding: 12px;
             border-radius: 14px; outline: none; font-size: 0.95rem; text-align: center;
         }
 
         .selfie-guia-container {
-            width: 110px; height: 110px; border-radius: 50%; background: #1e293b;
-            border: 3px dashed #2cd44a; margin: 0 auto 5px; display: flex; align-items: center; 
+            width: 110px; height: 110px; border-radius: 50%; background: var(--fondo-tarjeta);
+            border: 3px dashed var(--color-primario); margin: 0 auto 5px; display: flex; align-items: center; 
             justify-content: center; overflow: hidden; position: relative; cursor: pointer;
             box-shadow: 0 0 15px rgba(44,212,74,0.3);
         }
@@ -59,7 +69,7 @@
         .silueta-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.4); pointer-events: none; transition: opacity 0.3s;
+            background: rgba(15,23,42,0.6); pointer-events: none; transition: opacity 0.3s;
         }
         .silueta-overlay svg { width: 50px; height: 50px; fill: rgba(255,255,255,0.7); margin-bottom: 2px; }
         .silueta-overlay span { font-size: 0.65rem; color: #fff; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
@@ -68,106 +78,106 @@
         .header-row { display: flex; justify-content: space-between; width: 100%; }
         .right-buttons { display: flex; flex-direction: column; gap: 10px; }
 
-        .back-btn, .gps-btn, .manual-btn { width: 44px; height: 44px; border-radius: 50%; background: #111c2e; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border: 1px solid #334155; box-shadow: 0 4px 12px rgba(0,0,0,0.4); pointer-events: auto; }
-        .gps-btn.buscando { background: #1e293b; animation: pulse 1s infinite; }
-        .manual-btn.activo { background: #2cd44a; color: white; animation: pulse 1s infinite; border-color: #2cd44a; }
+        .back-btn, .gps-btn, .manual-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--fondo-tarjeta); color: var(--texto-principal); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border: 1px solid var(--borde-tarjeta); box-shadow: 0 4px 12px rgba(0,0,0,0.3); pointer-events: auto; }
+        .gps-btn.buscando { background: #334155; animation: pulse 1s infinite; }
+        .manual-btn.activo { background: var(--color-primario); color: #0f172a; animation: pulse 1s infinite; border-color: var(--color-primario); }
         @keyframes pulse { 50% { transform: scale(1.1); } }
 
-        .mapa-hint { position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(15, 23, 42, 0.95); border: 1px solid #2cd44a; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4); text-align: center; width: 85%; max-width: 320px; }
+        .mapa-hint { position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(15, 23, 42, 0.95); color: var(--color-primario); border: 1px solid var(--color-primario); padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.4); text-align: center; width: 85%; max-width: 320px; }
         .mapa-hint.visible { display: block; }
 
-        /* PANEL INFERIOR OSCURO ESTILO BANNER */
+        /* PANEL INFERIOR DINÁMICO */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
-            background: linear-gradient(180deg, #0f172a 0%, #070b14 100%); 
+            background: var(--fondo-oscuro); 
             border-radius: 28px 28px 0 0; 
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.6); 
+            box-shadow: 0 -8px 25px rgba(0,0,0,0.4); 
             padding: 10px 16px 16px; 
             height: 27vh; 
             max-height: 80vh;
             overflow-y: auto; 
             transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
             -webkit-overflow-scrolling: touch; 
-            border-top: 2px solid #2cd44a; 
+            border-top: 2px solid var(--color-primario); 
         }
         .bottom-panel:focus-within, .bottom-panel:active { height: 60vh; }
         .bottom-panel.con-ruta { height: 35vh; }
         .bottom-panel.modo-compacto { height: auto !important; max-height: 75vh; padding-bottom: 12px; }
 
-        .panel-handle { width: 38px; height: 4px; background: #334155; border-radius: 2px; margin: 0 auto 6px; cursor: pointer; }
+        .panel-handle { width: 38px; height: 4px; background: var(--borde-tarjeta); border-radius: 2px; margin: 0 auto 6px; cursor: pointer; }
 
         .lista-vehiculos-scroll {
             max-height: 110px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; padding-right: 2px; -webkit-overflow-scrolling: touch;
         }
 
         .ride-option-item {
-            background: #111c2e; border: 1px solid #1e293b; border-radius: 12px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s;
+            background: var(--fondo-tarjeta); border: 1px solid var(--borde-tarjeta); border-radius: 12px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s;
         }
-        .ride-option-item.selected { border-color: #2cd44a; background: rgba(44, 212, 74, 0.1); box-shadow: 0 0 10px rgba(44,212,74,0.25); border-width: 1.5px; }
+        .ride-option-item.selected { border-color: var(--color-primario); background: #162235; box-shadow: 0 0 10px rgba(44,212,74,0.2); border-width: 1.5px; }
 
         .ride-info-left { display: flex; align-items: center; gap: 8px; }
         .ride-icon-box { font-size: 1.1rem; width: 26px; text-align: center; }
-        .ride-details h4 { font-size: 0.8rem; font-weight: 700; color: #f8fafc; }
-        .ride-details p { font-size: 0.65rem; color: #94a3b8; }
+        .ride-details h4 { font-size: 0.8rem; font-weight: 700; color: var(--texto-principal); }
+        .ride-details p { font-size: 0.65rem; color: var(--texto-secundario); }
         .ride-price-right { text-align: right; }
-        .ride-price-right .precio-txt { font-size: 0.82rem; font-weight: 700; color: #4ade80; }
+        .ride-price-right .precio-txt { font-size: 0.82rem; font-weight: 700; color: var(--color-primario); }
 
         .driver-card-preview { 
-            display: flex; align-items: center; gap: 8px; margin-bottom: 6px; background: #111c2e; padding: 6px 10px; border-radius: 12px; border: 1px solid #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex; align-items: center; gap: 8px; margin-bottom: 6px; background: var(--fondo-tarjeta); padding: 6px 10px; border-radius: 12px; border: 1px solid var(--borde-tarjeta); box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
         }
-        .driver-img-box { width: 50px; height: 40px; border-radius: 8px; background: #1e293b; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; border: 1px solid #2cd44a; }
+        .driver-img-box { width: 50px; height: 40px; border-radius: 8px; background: #0f172a; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; border: 1px solid var(--borde-tarjeta); }
         .driver-img-box img { width: 100%; height: 100%; object-fit: cover; }
-        .driver-info-box h3 { font-size: 0.85rem; font-weight: 700; color: #f8fafc; }
-        .driver-info-box p { font-size: 0.7rem; color: #94a3b8; }
+        .driver-info-box h3 { font-size: 0.85rem; font-weight: 700; color: var(--texto-principal); }
+        .driver-info-box p { font-size: 0.7rem; color: var(--texto-secundario); }
 
         .input-group { 
-            background: #111c2e; border-radius: 12px; padding: 2px 10px; margin-bottom: 6px; border: 1px solid #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            background: var(--fondo-tarjeta); border-radius: 12px; padding: 2px 10px; margin-bottom: 6px; border: 1px solid var(--borde-tarjeta); box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
         }
         .input-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
-        .input-row:not(:last-child) { border-bottom: 1px solid #1e293b; } 
+        .input-row:not(:last-child) { border-bottom: 1px solid var(--borde-tarjeta); } 
         .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-        .dot-green { background: #2cd44a; box-shadow: 0 0 6px rgba(44,212,74,0.8); }
+        .dot-green { background: var(--color-primario); box-shadow: 0 0 4px rgba(44,212,74,0.6); }
         .dot-red { background: #ef4444; }
-        .input-row input { flex: 1; border: none; font-size: 0.82rem; color: #f8fafc; background: transparent; outline: none; }
+        .input-row input { flex: 1; border: none; font-size: 0.82rem; color: var(--texto-principal); background: transparent; outline: none; }
         .input-row input::placeholder { color: #64748b; }
 
-        .sugerencias { background: #111c2e; border-radius: 10px; max-height: 90px; overflow-y: auto; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 6px; border: 1px solid #1e293b; }
+        .sugerencias { background: var(--fondo-tarjeta); border-radius: 10px; max-height: 90px; overflow-y: auto; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 6px; border: 1px solid var(--borde-tarjeta); }
         .sugerencias.activo { display: block; }
-        .sugerencia-item { padding: 6px 8px; border-bottom: 1px solid #1e293b; cursor: pointer; font-size: 0.75rem; color: #e2e8f0; }
-        .sugerencia-item:hover { background: #1e293b; }
+        .sugerencia-item { padding: 6px 8px; border-bottom: 1px solid var(--borde-tarjeta); cursor: pointer; font-size: 0.75rem; color: var(--texto-principal); }
+        .sugerencia-item:hover { background: #334155; }
 
         .price-box-live { 
-            background: rgba(44, 212, 74, 0.15); color: #4ade80; padding: 6px 10px; border-radius: 10px; text-align: center; font-weight: 700; margin-bottom: 6px; display: none; font-size: 0.85rem; border: 1px solid #2cd44a; 
+            background: #102218; color: var(--color-primario); padding: 6px 10px; border-radius: 10px; text-align: center; font-weight: 700; margin-bottom: 6px; display: none; font-size: 0.85rem; border: 1px solid #1e462d; 
         }
-        .badge-nocturno { background: rgba(239, 68, 68, 0.15); color: #f87171; padding: 2px 5px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; display: inline-block; margin-top: 2px; border: 1px solid rgba(239, 68, 68, 0.3); }
-        .badge-domingo { background: rgba(37, 99, 235, 0.15); color: #60a5fa; padding: 2px 5px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; display: inline-block; margin-top: 2px; border: 1px solid rgba(37, 99, 235, 0.3); }
+        .badge-nocturno { background: #3f1515; color: #fca5a5; padding: 2px 5px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; display: inline-block; margin-top: 2px; border: 1px solid #7f1d1d; }
+        .badge-domingo { background: #172554; color: #93c5fd; padding: 2px 5px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; display: inline-block; margin-top: 2px; border: 1px solid #1e40af; }
         
         .btn-green-action { 
-            width: 100%; background: #2cd44a; color: #090d16; border: none; padding: 10px; border-radius: 50px; font-size: 0.88rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(44,212,74,0.4); text-align: center; margin-top: 2px; transition: background 0.2s; border: 1px solid #22b03b;
+            width: 100%; background: var(--color-primario); color: #0f172a; border: none; padding: 10px; border-radius: 50px; font-size: 0.88rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(44,212,74,0.3); text-align: center; margin-top: 2px; transition: background 0.2s; border: 1px solid var(--color-primario-hover);
         }
-        .btn-green-action:hover { background: #25b83f; }
+        .btn-green-action:hover { background: var(--color-primario-hover); }
 
         /* ALERTA DE LLEGADA A PUERTA */
         #alertaTimbreLlegada {
             position: fixed; top: 75px; left: 16px; right: 16px; z-index: 1100;
-            background: #ef4444; color: white; padding: 12px 16px; border-radius: 14px;
+            background: #7f1d1d; color: #fca5a5; padding: 12px 16px; border-radius: 14px;
             display: none; align-items: center; justify-content: space-between;
-            box-shadow: 0 5px 20px rgba(239, 68, 68, 0.5); animation: pulseAlerta 0.8s infinite alternate;
-            border: 2px solid white;
+            box-shadow: 0 5px 20px rgba(127, 29, 29, 0.6); animation: pulseAlerta 0.8s infinite alternate;
+            border: 2px solid #ef4444;
         }
         @keyframes pulseAlerta {
-            0% { transform: scale(1); background: #ef4444; }
-            100% { transform: scale(1.02); background: #dc2626; }
+            0% { transform: scale(1); background: #7f1d1d; }
+            100% { transform: scale(1.02); background: #991b1b; }
         }
         #alertaTimbreLlegada.activo { display: flex; }
 
         /* Globo Flotante de Chat */
         #btnAbrirChatFlotante {
             position: fixed; bottom: 120px; right: 20px; z-index: 500;
-            width: 55px; height: 55px; background: #2cd44a; color: #090d16;
+            width: 55px; height: 55px; background: var(--color-primario); color: #0f172a;
             border-radius: 50%; display: none; align-items: center; justify-content: center;
-            font-size: 1.6rem; box-shadow: 0 4px 20px rgba(44,212,74,0.4); cursor: pointer;
-            border: 2px solid #090d16; transition: transform 0.2s;
+            font-size: 1.6rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4); cursor: pointer;
+            border: 2px solid var(--fondo-oscuro); transition: transform 0.2s;
         }
         #btnAbrirChatFlotante:active { transform: scale(0.9); }
         #btnAbrirChatFlotante.alerta-mensaje {
@@ -182,44 +192,44 @@
         /* Ventana Modal de Chat Flotante */
         #modalChatFlotante {
             position: fixed; bottom: 80px; left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
-            background: #0f172a; border: 2px solid #2cd44a; border-radius: 16px;
+            background: var(--fondo-tarjeta); border: 2px solid var(--color-primario); border-radius: 16px;
             padding: 12px; z-index: 600; display: none; flex-direction: column; gap: 8px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         #modalChatFlotante.activo { display: flex; }
 
         .chat-mensajes-lista {
             height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
-            font-size: 0.78rem; padding-right: 4px; background: #070b14; padding: 8px; border-radius: 10px; border: 1px solid #1e293b;
+            font-size: 0.78rem; padding-right: 4px; background: #0f172a; padding: 8px; border-radius: 10px; border: 1px solid var(--borde-tarjeta);
         }
         .chat-msg-item { padding: 6px 10px; border-radius: 8px; max-width: 85%; word-break: break-word; }
         .chat-msg-item.admin { background: #1e3a8a; align-self: flex-start; color: #93c5fd; }
-        .chat-msg-item.conductor { background: #1e293b; align-self: flex-start; color: #f1f5f9; }
-        .chat-msg-item.pasajero { background: #2cd44a; align-self: flex-end; color: #090d16; font-weight: 600; }
+        .chat-msg-item.conductor { background: #334155; align-self: flex-start; color: #f1f5f9; }
+        .chat-msg-item.pasajero { background: var(--color-primario); align-self: flex-end; color: #0f172a; font-weight: 600; }
         
         .chat-input-row { display: flex; gap: 6px; }
         .chat-input-row input {
-            flex: 1; background: #111c2e; border: 1px solid #1e293b; border-radius: 8px;
-            padding: 8px 10px; font-size: 0.8rem; outline: none; color: #f8fafc;
+            flex: 1; background: #0f172a; border: 1px solid var(--borde-tarjeta); border-radius: 8px;
+            padding: 8px 10px; font-size: 0.8rem; outline: none; color: var(--texto-principal);
         }
         .chat-input-row button {
-            background: #2cd44a; color: #090d16; border: none; border-radius: 8px;
-            padding: 0 14px; font-weight: 800; font-size: 0.8rem; cursor: pointer;
+            background: var(--color-primario); color: #0f172a; border: none; border-radius: 8px;
+            padding: 0 14px; font-weight: 700; font-size: 0.8rem; cursor: pointer;
         }
 
-        .pasajero-ping-icon { background: #2cd44a; width: 14px !important; height: 14px !important; border: 2px solid #090d16; border-radius: 50%; box-shadow: 0 0 10px rgba(44,212,74,0.8); }
-        .destino-ping-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid #090d16; border-radius: 50%; box-shadow: 0 0 10px rgba(239,68,68,0.8); }
+        .pasajero-ping-icon { background: var(--color-primario); width: 14px !important; height: 14px !important; border: 2px solid #0f172a; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .destino-ping-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid #0f172a; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .auto-conductor-ping {
             font-size: 30px !important; width: 30px !important; height: 30px !important;
             display: flex; align-items: center; justify-content: center;
-            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.8));
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
         }
 
         .hidden { display: none !important; }
         .msg { padding: 8px; border-radius: 8px; margin-bottom: 6px; font-size: 0.78rem; text-align: center; display: none; font-weight: 600; line-height: 1.3; }
         .msg.show { display: block; }
-        .msg-error { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
-        .msg-success { background: rgba(44, 212, 74, 0.2); color: #4ade80; border: 1px solid rgba(44, 212, 74, 0.4); }
+        .msg-error { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+        .msg-success { background: #102218; color: var(--color-primario); border: 1px solid #1e462d; }
     </style>
 </head>
 <body>
@@ -230,7 +240,7 @@
             <span>TU MÓVIL</span>
         </div>
         <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 4px; font-size: 1.3rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Cargando...</h2>
-        <p id="splashSub" style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 25px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Identificación obligatoria para tu viaje</p>
+        <p id="splashSub" style="color: var(--texto-secundario); font-size: 0.85rem; margin-bottom: 25px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Identificación obligatoria para tu viaje</p>
         
         <div class="splash-form" id="splashForm">
             <div class="selfie-guia-container" onclick="document.getElementById('inputFotoReal').click()">
@@ -254,7 +264,7 @@
             <div style="font-size: 0.85rem; font-weight: 800;">🔔 ¡EL MÓVIL ESTÁ EN LA PUERTA!</div>
             <div style="font-size: 0.7rem; opacity: 0.9;">Suena el timbre hasta que atiendas.</div>
         </div>
-        <button onclick="silenciarTimbreLlegada()" style="background: white; color: #ef4444; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.75rem; cursor: pointer;">Silenciar 🔕</button>
+        <button onclick="silenciarTimbreLlegada()" style="background: white; color: #7f1d1d; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.75rem; cursor: pointer;">Silenciar 🔕</button>
     </div>
 
     <div class="mapa-hint" id="hintManual">📍 Modo Manual: Tocá el mapa para marcar tu DESTINO</div>
@@ -266,12 +276,12 @@
 
     <!-- Ventana Modal de Chat Flotante -->
     <div id="modalChatFlotante">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
-            <span style="font-size: 0.82rem; font-weight: 700; color: #4ade80;">💬 Chat con tu Conductor</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--borde-tarjeta); padding-bottom: 6px;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: var(--color-primario);">💬 Chat con tu Conductor</span>
             <button onclick="toggleChatFlotante()" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-weight: bold; cursor: pointer; font-size: 0.75rem;">✕</button>
         </div>
         <div class="chat-mensajes-lista" id="listaMensajesChatPasajero">
-            <div style="color: #64748b; text-align: center; font-size: 0.75rem;">Esperando mensajes...</div>
+            <div style="color: var(--texto-secundario); text-align: center; font-size: 0.75rem;">Esperando mensajes...</div>
         </div>
         <div class="chat-input-row">
             <input type="text" id="inpMensajeChatPasajero" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter') enviarMensajeChatPasajero()">
@@ -352,19 +362,19 @@
         <!-- PASO 2: ESPERA -->
         <div id="pasoEsperando" class="hidden">
             <div style="text-align: center; padding: 6px 0;">
-                <h4 style="margin-bottom: 4px; color: #f8fafc; font-size: 0.95rem;">Buscando conductor cercano...</h4>
-                <p style="color: #94a3b8; font-size: 0.78rem; margin-bottom: 10px;">Tu solicitud está en el centro de despacho.</p>
-                <div id="avisoFidelidadEspera" class="hidden" style="background: rgba(44, 212, 74, 0.15); color: #4ade80; border: 1px solid rgba(44, 212, 74, 0.3); border-radius: 10px; padding: 8px; font-size: 0.78rem; font-weight: 700; margin-bottom: 10px;">
+                <h4 style="margin-bottom: 4px; color: var(--texto-principal); font-size: 0.95rem;">Buscando conductor cercano...</h4>
+                <p style="color: var(--texto-secundario); font-size: 0.78rem; margin-bottom: 10px;">Tu solicitud está en el centro de despacho.</p>
+                <div id="avisoFidelidadEspera" class="hidden" style="background: #102218; color: var(--color-primario); border: 1px solid #1e462d; border-radius: 10px; padding: 8px; font-size: 0.78rem; font-weight: 700; margin-bottom: 10px;">
                     🎉 ¡Promo 6to Viaje Aplicada! 50% de descuento en este viaje.
                 </div>
-                <button class="btn-green-action" style="background: #ef4444; color: white; border-color: #dc2626;" onclick="cancelarViaje()">Cancelar</button>
+                <button class="btn-green-action" style="background: #7f1d1d; color: #fca5a5; border-color: #991b1b;" onclick="cancelarViaje()">Cancelar</button>
             </div>
         </div>
 
         <!-- PASO 3: PRECIO Y CHOFER ASIGNADO -->
         <div id="pasoPrecio" class="hidden">
             <div class="price-box-live" style="display:block;" id="precioMonto">$0.00</div>
-            <div id="avisoFidelidadAsignado" class="hidden" style="background: rgba(44, 212, 74, 0.15); color: #4ade80; border: 1px solid rgba(44, 212, 74, 0.3); border-radius: 8px; padding: 6px; font-size: 0.75rem; font-weight: 700; text-align: center; margin-bottom: 6px;">
+            <div id="avisoFidelidadAsignado" class="hidden" style="background: #102218; color: var(--color-primario); border: 1px solid #1e462d; border-radius: 8px; padding: 6px; font-size: 0.75rem; font-weight: 700; text-align: center; margin-bottom: 6px;">
                 🎉 ¡Incluye 50% de descuento por tu 6to viaje!
             </div>
             <div class="driver-card-preview">
@@ -376,7 +386,7 @@
                     <p id="autoCond">Vehículo en camino</p>
                 </div>
             </div>
-            <div style="text-align: center; padding: 4px 0; color: #4ade80; font-weight: 700; font-size: 0.85rem;" id="estadoViajePasajero">
+            <div style="text-align: center; padding: 4px 0; color: var(--color-primario); font-weight: 700; font-size: 0.85rem;" id="estadoViajePasajero">
                 El móvil aceptó el viaje y va en camino 🚗
             </div>
         </div>
@@ -553,8 +563,7 @@
 
         function initMapa() {
             mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(UBICACION_DEFAULT, 14);
-            // Usamos mapa oscuro de CartoDB Dark Matter para hacer juego perfecto con los colores
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(mapa);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
             mapa.on('click', (e) => { 
                 if (modoDestinoManual) {
                     marcarDestinoManual(e.latlng.lat, e.latlng.lng); 
@@ -822,7 +831,7 @@
                 if (data && data.length > 0) {
                     data.forEach(msg => agregarMensajeAlDomPasajero(msg));
                 } else {
-                    listaHtml.innerHTML = '<div style="color: #64748b; text-align: center; font-size: 0.75rem;">Sin mensajes aún.</div>';
+                    listaHtml.innerHTML = '<div style="color: var(--texto-secundario); text-align: center; font-size: 0.75rem;">Sin mensajes aún.</div>';
                 }
             } catch (e) {}
         }
@@ -928,7 +937,7 @@
                 if (data.code === 'Ok' && data.routes.length > 0) {
                     if (rutaTrazada) mapa.removeLayer(rutaTrazada);
                     
-                    rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.9 }).addTo(mapa);
+                    rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.85 }).addTo(mapa);
                     distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     
                     let baseCalculo = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
@@ -979,7 +988,7 @@
                     document.getElementById('sugerencias').innerHTML = datos.map(lugar => `
                         <div class="sugerencia-item" onclick="seleccionarDestino('${lugar.display_name.replace(/'/g, "")}', ${lugar.lat}, ${lugar.lon})">
                             <strong>🎯 ${lugar.display_name.split(',')[0]}</strong>
-                            <div style="font-size:0.7rem; color:#94a3b8;">${lugar.display_name.split(',').slice(1,3).join(',')}</div>
+                            <div style="font-size:0.7rem; color:var(--texto-secundario);">${lugar.display_name.split(',').slice(1,3).join(',')}</div>
                         </div>`).join('');
                     if (datos.length > 0) document.getElementById('sugerencias').classList.add('activo');
                 } catch (e) {}
