@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#11121a">
+    <meta name="theme-color" content="#0b1b12">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>TuMovil - Conductor</title>
+    <title>TuMóvil - Conductor</title>
 
     <link rel="manifest" href="/manifest-conductor.json">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
@@ -16,7 +16,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #11121a; height: 100vh; height: 100dvh; overflow: hidden; color: #ffffff;
+            background: #0b1b12; height: 100vh; height: 100dvh; overflow: hidden; color: #ffffff;
         }
 
         #mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; height: 100dvh; z-index: 1; }
@@ -25,8 +25,8 @@
         .header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
         .header-left-col { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; max-width: 55%; }
         
-        .status-badge { background: #1e293b; color: #38bdf8; padding: 8px 14px; border-radius: 30px; font-weight: 700; font-size: 0.8rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #334155; cursor: pointer; user-select: none; text-align: center; white-space: nowrap; }
-        .status-badge.activo { background: #059669; color: #ffffff; border-color: #10b981; }
+        .status-badge { background: #0f2e1b; color: #4ade80; padding: 8px 14px; border-radius: 30px; font-weight: 700; font-size: 0.8rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #166534; cursor: pointer; user-select: none; text-align: center; white-space: nowrap; }
+        .status-badge.activo { background: #15803d; color: #ffffff; border-color: #22c55e; }
         .status-badge.inactivo { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
 
         .ganancias-scroll-container {
@@ -36,28 +36,28 @@
         .ganancias-scroll-container::-webkit-scrollbar { display: none; }
 
         .burbuja-stat {
-            background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(8px);
-            border: 1px solid #334155; padding: 6px 12px; border-radius: 16px;
+            background: rgba(15, 46, 27, 0.95); backdrop-filter: blur(8px);
+            border: 1px solid #166534; padding: 6px 12px; border-radius: 16px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.4); flex: 0 0 auto; scroll-snap-align: start;
             min-width: 130px; display: flex; flex-direction: column; justify-content: center;
         }
-        .burbuja-label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
-        .burbuja-valor { font-size: 0.95rem; font-weight: 800; color: #38bdf8; }
-        .burbuja-valor.verde { color: #10b981; }
+        .burbuja-label { font-size: 0.65rem; color: #86efac; text-transform: uppercase; font-weight: 700; }
+        .burbuja-valor { font-size: 0.95rem; font-weight: 800; color: #4ade80; }
+        .burbuja-valor.verde { color: #22c55e; }
 
         .header-right-col { display: flex; gap: 8px; pointer-events: auto; flex-direction: column; align-items: flex-end; }
-        .gps-btn { width: 44px; height: 44px; border-radius: 50%; background: #1e293b; color: white; display: flex; align-items: center; justify-content: center; border: 1px solid #334155; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .gps-btn.seguimiento-on { background: #059669; border-color: #10b981; animation: pulsoGps 2s infinite; }
+        .gps-btn { width: 44px; height: 44px; border-radius: 50%; background: #0f2e1b; color: white; display: flex; align-items: center; justify-content: center; border: 1px solid #166534; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .gps-btn.seguimiento-on { background: #15803d; border-color: #22c55e; animation: pulsoGps 2s infinite; }
 
         .google-maps-btn {
-            width: 44px; height: 44px; border-radius: 50%; background: #ffffff; color: #1a73e8;
-            display: flex; align-items: center; justify-content: center; border: 1px solid #dadce0;
+            width: 44px; height: 44px; border-radius: 50%; background: #ffffff; color: #15803d;
+            display: flex; align-items: center; justify-content: center; border: 1px solid #166534;
             font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
         #btnAbrirChatFlotante {
             pointer-events: auto;
-            width: 44px; height: 44px; background: #38bdf8; color: #0f172a;
+            width: 44px; height: 44px; background: #22c55e; color: #0b1b12;
             border-radius: 50%; display: none; align-items: center; justify-content: center;
             font-size: 1.3rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4); cursor: pointer;
             border: 2px solid white; transition: transform 0.2s;
@@ -65,28 +65,28 @@
         #btnAbrirChatFlotante:active { transform: scale(0.9); }
 
         @keyframes latidoChat {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
-            50% { transform: scale(1.15); box-shadow: 0 0 0 12px rgba(56, 189, 248, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            50% { transform: scale(1.15); box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
         }
         .chat-alerta-activo {
             animation: latidoChat 1s infinite ease-in-out;
-            background: #0284c7 !important;
+            background: #16a34a !important;
             border-color: #ffffff !important;
         }
 
         .test-audio-btn {
-            background: #ea580c; color: white; border: none; padding: 6px 12px;
+            background: #c2410c; color: white; border: none; padding: 6px 12px;
             border-radius: 20px; font-weight: bold; font-size: 0.7rem; cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; gap: 4px;
-            border: 1px solid #c2410c; width: fit-content;
+            border: 1px solid #9a3412; width: fit-content;
         }
 
-        @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+        @keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
 
         #modalChatFlotante {
             position: fixed; top: 155px; right: 16px; width: 300px; max-width: calc(100vw - 32px);
-            background: #1e293b; border: 2px solid #38bdf8; border-radius: 16px;
+            background: #0f2e1b; border: 2px solid #22c55e; border-radius: 16px;
             padding: 12px; z-index: 600; display: none; flex-direction: column; gap: 8px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); color: #f1f5f9;
         }
@@ -94,26 +94,26 @@
 
         .chat-mensajes-lista {
             max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
-            font-size: 0.78rem; padding: 8px; background: #0f172a; border-radius: 10px; border: 1px solid #334155;
+            font-size: 0.78rem; padding: 8px; background: #08120d; border-radius: 10px; border: 1px solid #166534;
         }
         .chat-msg-item { padding: 5px 8px; border-radius: 8px; max-width: 85%; word-break: break-word; }
-        .chat-msg-item.admin { background: #1e3a8a; align-self: flex-start; color: #93c5fd; }
-        .chat-msg-item.pasajero { background: #334155; align-self: flex-start; color: #f1f5f9; }
-        .chat-msg-item.conductor { background: #059669; align-self: flex-end; color: #ffffff; }
+        .chat-msg-item.admin { background: #14532d; align-self: flex-start; color: #86efac; }
+        .chat-msg-item.pasajero { background: #1e293b; align-self: flex-start; color: #f1f5f9; }
+        .chat-msg-item.conductor { background: #15803d; align-self: flex-end; color: #ffffff; }
         
         .chat-input-row { display: flex; gap: 6px; }
         .chat-input-row input {
-            flex: 1; background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+            flex: 1; background: #08120d; border: 1px solid #166534; border-radius: 8px;
             padding: 6px 10px; color: white; font-size: 0.8rem; outline: none;
         }
         .chat-input-row button {
-            background: #38bdf8; color: #0f172a; border: none; border-radius: 8px;
+            background: #22c55e; color: #0b1b12; border: none; border-radius: 8px;
             padding: 0 12px; font-weight: 700; font-size: 0.8rem; cursor: pointer;
         }
 
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
-            background: #1e293b; border-radius: 24px 24px 0 0; border-top: 1px solid #334155; 
+            background: #0f2e1b; border-radius: 24px 24px 0 0; border-top: 1px solid #166534; 
             box-shadow: 0 -10px 30px rgba(0,0,0,0.5); 
             padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); 
             height: 75px; 
@@ -124,32 +124,33 @@
             height: auto; max-height: 80vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
         .bottom-panel.viaje-entrante { animation: alertaParpadeo 1s infinite alternate; }
-        @keyframes alertaParpadeo { from { border-top-color: #334155; background: #1e293b; } to { border-top-color: #ef4444; background: #2d1a22; } }
+        @keyframes alertaParpadeo { from { border-top-color: #166534; background: #0f2e1b; } to { border-top-color: #22c55e; background: #143621; } }
 
-        .panel-handle { width: 40px; height: 4px; background: #475569; border-radius: 3px; margin: 0 auto 6px; }
+        .panel-handle { width: 40px; height: 4px; background: #166534; border-radius: 3px; margin: 0 auto 6px; }
         
         .viaje-info-box { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
-        .viaje-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 6px; }
+        .viaje-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #166534; padding-bottom: 6px; }
         
         .pasajero-perfil-container { display: flex; align-items: center; gap: 10px; }
-        .pasajero-foto-box { width: 42px; height: 42px; border-radius: 50%; background: #334155; overflow: hidden; border: 2px solid #3b82f6; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .pasajero-foto-box { width: 42px; height: 42px; border-radius: 50%; background: #166534; overflow: hidden; border: 2px solid #22c55e; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
         .pasajero-foto-box img { width: 100%; height: 100%; object-fit: cover; }
         
         .viaje-pasajero { font-size: 0.95rem; font-weight: 700; color: #fff; }
-        .viaje-precio { font-size: 1.15rem; font-weight: 800; color: #10b981; }
+        .viaje-precio { font-size: 1.15rem; font-weight: 800; color: #4ade80; }
 
-        .input-group { background: #0f172a; border-radius: 14px; padding: 8px 12px; margin-bottom: 8px; }
-        .input-row { display: flex; flex-direction: column; gap: 3px; font-size: 0.8rem; color: #94a3b8; }
+        .input-group { background: #08120d; border-radius: 14px; padding: 8px 12px; margin-bottom: 8px; border: 1px solid #166534; }
+        .input-row { display: flex; flex-direction: column; gap: 3px; font-size: 0.8rem; color: #86efac; }
         .input-row span { color: #f1f5f9; font-weight: 500; }
         
-        .manifesto-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; padding: 4px 8px; border-radius: 0 6px 6px 0; font-size: 0.75rem; color: #e2e8f0; margin-top: 4px; }
+        .manifesto-box { background: rgba(34, 197, 94, 0.1); border-left: 3px solid #22c55e; padding: 4px 8px; border-radius: 0 6px 6px 0; font-size: 0.75rem; color: #e2e8f0; margin-top: 4px; }
 
         .btn-action { width: 100%; color: white; border: none; padding: 12px; border-radius: 50px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-bottom: 6px;}
         
         .btn-espera { 
-            background: #059669; color: #ffffff; cursor: default; padding: 8px 16px; 
-            font-size: 0.85rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
+            background: #15803d; color: #ffffff; cursor: default; padding: 8px 16px; 
+            font-size: 0.85rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(21, 128, 61, 0.4);
             display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            border: 1px solid #22c55e;
         }
         .ruedita-radar {
             width: 14px; height: 14px; border: 2px solid rgba(255, 255, 255, 0.3);
@@ -158,40 +159,40 @@
         @keyframes girarRadar { to { transform: rotate(360deg); } }
 
         .btn-desconectado { background: #451a03; color: #f59e0b; cursor: not-allowed; padding: 8px 16px; font-size: 0.85rem; border-radius: 20px; }
-        .btn-aceptar { background: #10b981; font-size: 1.05rem; }
-        .btn-llegué { background: #3b82f6; }
-        .btn-iniciar { background: #8b5cf6; }
+        .btn-aceptar { background: #15803d; font-size: 1.05rem; border: 1px solid #22c55e; }
+        .btn-llegué { background: #16a34a; }
+        .btn-iniciar { background: #0d9488; }
         .btn-finalizar { background: #e11d48; }
 
         .chofer-auto-icon {
-            background: #1e293b; width: 38px !important; height: 38px !important;
-            border: 3px solid #38bdf8; border-radius: 50%; display: flex;
+            background: #0f2e1b; width: 38px !important; height: 38px !important;
+            border: 3px solid #22c55e; border-radius: 50%; display: flex;
             align-items: center; justify-content: center; font-size: 1.1rem;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.6);
         }
 
-        .pasajero-origen-icon { background: #10b981; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
+        .pasajero-origen-icon { background: #22c55e; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
         .pasajero-destino-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
 
         #modalConfigChofer {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.95);
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(11, 27, 18, 0.95);
             z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
         }
         .config-card {
-            background: #1e293b; border: 1px solid #334155; border-radius: 20px; width: 100%; max-width: 400px;
+            background: #0f2e1b; border: 1px solid #166534; border-radius: 20px; width: 100%; max-width: 400px;
             padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); color: #f1f5f9; max-height: 90vh; overflow-y: auto;
         }
-        .config-card h2 { font-size: 1.25rem; margin-bottom: 6px; color: #38bdf8; text-align: center; }
-        .config-card p { font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px; text-align: center; }
+        .config-card h2 { font-size: 1.25rem; margin-bottom: 6px; color: #4ade80; text-align: center; }
+        .config-card p { font-size: 0.85rem; color: #86efac; margin-bottom: 16px; text-align: center; }
         .config-field { margin-bottom: 12px; }
-        .config-field label { display: block; font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; }
+        .config-field label { display: block; font-size: 0.75rem; font-weight: 700; color: #86efac; margin-bottom: 4px; text-transform: uppercase; }
         .config-field input {
-            width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px 14px;
+            width: 100%; background: #08120d; border: 1px solid #166534; border-radius: 10px; padding: 10px 14px;
             color: white; font-size: 0.95rem; outline: none;
         }
         .preview-selfie {
-            width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #38bdf8;
-            margin: 0 auto 10px; display: block; background: #0f172a;
+            width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #22c55e;
+            margin: 0 auto 10px; display: block; background: #08120d;
         }
 
         .hidden { display: none !important; }
@@ -208,7 +209,7 @@
             <form id="formConfigChofer" onsubmit="guardarConfigChofer(event)">
                 <div style="text-align: center; margin-bottom: 12px;">
                     <img id="imgPreview" class="preview-selfie" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Foto Perfil">
-                    <label style="font-size: 0.75rem; color: #38bdf8; cursor: pointer; text-decoration: underline;">
+                    <label style="font-size: 0.75rem; color: #4ade80; cursor: pointer; text-decoration: underline;">
                         Subir Foto / Selfie 📷
                         <input type="file" id="inpFotoFile" accept="image/*" style="display: none;" onchange="procesarYComprimirFoto(event)">
                     </label>
@@ -241,12 +242,12 @@
     <div id="mapaContainer"><div id="mapaLeaflet"></div></div>
 
     <div id="modalChatFlotante">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 6px;">
-            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">💬 Chat con el Pasajero</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #166534; padding-bottom: 6px;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: #4ade80;">💬 Chat con el Pasajero</span>
             <button onclick="toggleChatFlotante()" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-weight: bold; cursor: pointer; font-size: 0.75rem;">✕</button>
         </div>
         <div class="chat-mensajes-lista" id="listaMensajesChat">
-            <div style="color: #64748b; text-align: center; font-size: 0.75rem;">Chat del viaje iniciado...</div>
+            <div style="color: #86efac; text-align: center; font-size: 0.75rem;">Chat del viaje iniciado...</div>
         </div>
         <div class="chat-input-row">
             <input type="text" id="inpMensajeChat" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter') enviarMensajeChat()">
@@ -345,7 +346,6 @@
         let base64FotoTemp = "";
         let silentAudioInterval = null;
 
-        // Mecanismo para evitar que el navegador duerma la PWA en segundo plano
         function mantenerActivoSegundoPlano() {
             if (silentAudioInterval) return;
             silentAudioInterval = setInterval(() => {
@@ -355,16 +355,15 @@
                     try {
                         let osc = audioCtx.createOscillator();
                         let gain = audioCtx.createGain();
-                        gain.gain.setValueAtTime(0.00001, audioCtx.currentTime); // Volumen casi imperceptible
+                        gain.gain.setValueAtTime(0.00001, audioCtx.currentTime);
                         osc.connect(gain);
                         gain.connect(audioCtx.destination);
                         osc.start();
                         osc.stop(audioCtx.currentTime + 0.1);
                     } catch(e){}
                 }
-                // Aprovechamos para sonmear la base de datos por si el websocket se desconectó
                 buscarViajesPendientesRecientes();
-            }, 15000); // Cada 15 segundos mantiene la app despierta
+            }, 15000);
         }
 
         function verificarRegistroChofer() {
@@ -499,8 +498,8 @@
             tocarUnRepiqueDeCampana();
             const btn = document.getElementById('btnTestSonido');
             btn.textContent = "🔔 ¡Sonando Ok!";
-            btn.style.background = "#059669";
-            setTimeout(() => { btn.textContent = "🔊 Probar Timbre"; btn.style.background = "#ea580c"; }, 2000);
+            btn.style.background = "#15803d";
+            setTimeout(() => { btn.textContent = "🔊 Probar Timbre"; btn.style.background = "#c2410c"; }, 2000);
         }
 
         const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
@@ -660,7 +659,7 @@
                 if (data && data.length > 0) {
                     data.forEach(msg => agregarMensajeAlDom(msg));
                 } else {
-                    listaHtml.innerHTML = '<div style="color: #64748b; text-align: center; font-size: 0.75rem;">No hay mensajes previos. Escribe algo...</div>';
+                    listaHtml.innerHTML = '<div style="color: #86efac; text-align: center; font-size: 0.75rem;">No hay mensajes previos. Escribe algo...</div>';
                 }
             } catch (e) {}
         }
@@ -749,9 +748,9 @@
             let avisoFidelidadHtml = '';
             if (viaje.es_fidelidad === true) {
                 avisoFidelidadHtml = `
-                    <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
-                        <h4 style="color: #b45309; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
-                        <p style="color: #92400e; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
+                    <div style="background: #143621; border: 2px solid #22c55e; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+                        <h4 style="color: #4ade80; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
+                        <p style="color: #86efac; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
                     </div>
                 `;
             }
@@ -775,7 +774,7 @@
                         <div class="input-row">
                             <span>📍 <b>Recogida:</b> ${barrioOrigen} (${calleOrigen})</span>
                             <span style="color:#ef4444; margin-top:2px;">🏁 <b>Destino:</b> ${barrioDestino} (${calleDestino})</span>
-                            <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px; display:flex; justify-content:space-between;" id="cajaMetricasRuta">
+                            <div style="border-top:1px solid #166534; margin-top:3px; padding-top:4px; display:flex; justify-content:space-between;" id="cajaMetricasRuta">
                                 <span>🕒 Calculando ruta local...</span>
                             </div>
                             ${manifiestoHtml}
@@ -891,9 +890,9 @@
                 let avisoFidelidadHtml = '';
                 if (viajeActivo.es_fidelidad === true) {
                     avisoFidelidadHtml = `
-                        <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
-                            <h4 style="color: #b45309; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
-                            <p style="color: #92400e; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
+                        <div style="background: #143621; border: 2px solid #22c55e; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+                            <h4 style="color: #4ade80; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
+                            <p style="color: #86efac; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
                         </div>
                     `;
                 }
@@ -916,7 +915,7 @@
                         <div class="input-group">
                             <div class="input-row">
                                 <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino} (${calleDestino})</span>
-                                <div style="border-top:1px solid #334155; margin-top:3px; padding-top:3px;" id="cajaMetricasRuta">
+                                <div style="border-top:1px solid #166534; margin-top:3px; padding-top:3px;" id="cajaMetricasRuta">
                                     <span>🕒 Calculando viaje...</span>
                                 </div>
                                 ${manifiestoHtml}
@@ -986,9 +985,9 @@
                 let avisoFidelidadHtml = '';
                 if (viaje.es_fidelidad === true) {
                     avisoFidelidadHtml = `
-                        <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
-                            <h4 style="color: #b45309; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
-                            <p style="color: #92400e; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
+                        <div style="background: #143621; border: 2px solid #22c55e; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+                            <h4 style="color: #4ade80; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
+                            <p style="color: #86efac; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
                         </div>
                     `;
                 }
@@ -1016,7 +1015,7 @@
                             <div class="input-group">
                                 <div class="input-row">
                                     <span>📍 <b>Recogida:</b> ${barrioOrigen} (${calleOrigen})</span>
-                                    <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Calculando...</span></div>
+                                    <div style="border-top:1px solid #166534; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Calculando...</span></div>
                                     ${manifiestoHtml}
                                 </div>
                             </div>
@@ -1042,7 +1041,7 @@
                             <div class="input-group">
                                 <div class="input-row">
                                     <span>📍 <b>En puerta del pasajero</b> (${barrioOrigen})</span>
-                                    <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Pasajero a bordo</span></div>
+                                    <div style="border-top:1px solid #166534; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Pasajero a bordo</span></div>
                                     ${manifiestoHtml}
                                 </div>
                             </div>
@@ -1068,7 +1067,7 @@
                             <div class="input-group">
                                 <div class="input-row">
                                     <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino} (${calleDestino})</span>
-                                    <div style="border-top:1px solid #334155; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Calculando viaje...</span></div>
+                                    <div style="border-top:1px solid #166534; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Calculando viaje...</span></div>
                                     ${manifiestoHtml}
                                 </div>
                             </div>
@@ -1086,7 +1085,7 @@
             try {
                 let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
                 if (latDestinoExtra && lonDestinoExtra) {
-                    url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${lonDestinoExtra},${lonDestinoExtra}`;
+                    url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${latDestinoExtra},${lonDestinoExtra}`;
                 }
                 url += `?overview=full&geometries=geojson`;
 
@@ -1107,7 +1106,7 @@
                     if (distanciaKm < 100) {
                         rutaValida = true;
                         if (rutaTrazada) mapa.removeLayer(rutaTrazada);
-                        rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#3b82f6', weight: 6, opacity: 0.9 }).addTo(mapa);
+                        rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#22c55e', weight: 6, opacity: 0.9 }).addTo(mapa);
                     }
                 }
 
