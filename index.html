@@ -76,7 +76,7 @@
         .mapa-hint { position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(44, 212, 74, 0.95); color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-align: center; width: 85%; max-width: 320px; }
         .mapa-hint.visible { display: block; }
 
-        /* PANEL INFERIOR DINÁMICO */
+        /* PANEL INFERIOR DINÁMICO CON ESTÉTICA UNIFICADA */
         .bottom-panel { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
             background: #E8E2D5; 
@@ -785,16 +785,16 @@
             }
         }
 
-        function iniciarChatPasajero(viajeId) {
-            cargarHistorialMensajesPasajero(viajeId);
+        function iniciarChatPasajero(viajeIdActivo) {
+            cargarHistorialMensajesPasajero(viajeIdActivo);
             if (canalChatPasajeroSupabase) supabaseClient.removeChannel(canalChatPasajeroSupabase);
 
-            canalChatPasajeroSupabase = supabaseClient.channel(`chat_viaje_pasajero_${viajeId}`)
+            canalChatPasajeroSupabase = supabaseClient.channel(`chat_viaje_pasajero_${viajeIdActivo}`)
                 .on('postgres_changes', {
                     event: 'INSERT',
                     schema: 'public',
                     table: 'mensajes',
-                    filter: `viaje_id=eq.${viajeId}`
+                    filter: `viaje_id=eq.${viajeIdActivo}`
                 }, payload => {
                     agregarMensajeAlDomPasajero(payload.new);
                     if (payload.new.emisor === 'conductor' || payload.new.emisor === 'admin') {
@@ -804,12 +804,12 @@
                 .subscribe();
         }
 
-        async function cargarHistorialMensajesPasajero(viajeId) {
+        async function cargarHistorialMensajesPasajero(viajeIdActivo) {
             try {
                 const { data } = await supabaseClient
                     .from('mensajes')
                     .select('*')
-                    .eq('viaje_id', viajeId)
+                    .eq('viaje_id', viajeIdActivo)
                     .order('created_at', { ascending: true });
 
                 const listaHtml = document.getElementById('listaMensajesChatPasajero');
@@ -822,6 +822,23 @@
                     listaHtml.innerHTML = '<div style="color: #64748b; text-align: center; font-size: 0.75rem;">Sin mensajes aún.</div>';
                 }
             } catch (e) {}
+        }
+
+        async function enviarMensajeChatPasajero() {
+            const inp = document.getElementById('inpMensajeChatPasajero');
+            const texto = inp.value.trim();
+            if (!texto || !viajeId) return;
+
+            try {
+                inp.value = '';
+                await supabaseClient.from('mensajes').insert({
+                    viaje_id: viajeId,
+                    emisor: 'pasajero',
+                    mensaje: texto
+                });
+            } catch (e) {
+                alert('No se pudo enviar el mensaje.');
+            }
         }
 
         function agregarMensajeAlDomPasajero(msg) {
@@ -1030,14 +1047,12 @@
                 viajeId = data.id;
                 localStorage.setItem('pasajero_viaje_id', data.id);
                 
-                // --- MOSTRAR AVISO FIJO EN ESPERA Y ASIGNADO ---
                 const avisoEspera = document.getElementById('avisoFidelidadEspera');
                 const avisoAsignado = document.getElementById('avisoFidelidadAsignado');
                 
                 if (esDescuentoFidelidad) {
                     if (avisoEspera) avisoEspera.classList.remove('hidden');
                     if (avisoAsignado) avisoAsignado.classList.remove('hidden');
-                    // También dejamos un mensaje un poco más largo en la burbuja superior sin que se borre rápido de inmediato si se desea, o delegamos a los avisos fijos inferiores
                 } else {
                     if (avisoEspera) avisoEspera.classList.add('hidden');
                     if (avisoAsignado) avisoAsignado.classList.add('hidden');
@@ -1075,7 +1090,6 @@
             const msg = document.getElementById('msg'); 
             msg.textContent = texto; 
             msg.className = 'msg msg-' + tipo + ' show'; 
-            // Si es un mensaje de éxito de fidelidad, dejamos que dure más tiempo (10 segundos) o no lo ocultamos automáticamente si prefieres
             setTimeout(() => {
                 if(!texto.includes('6to viaje')) {
                     msg.classList.remove('show');
