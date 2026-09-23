@@ -547,14 +547,13 @@ function usarUbicacionDefault() {
 }
 
 // ==========================================================
-// FUNCIÓN DE RUTEO ACTUALIZADA CON WAYPOINTS PARA EVITAR EL ARROYO
+// FUNCIÓN DE RUTEO CON WAYPOINTS SEGUROS PARA EVITAR EL ARROYO
 // ==========================================================
 async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
     let inicio = puntoOrigenPersonalizado || origenCoords;
     if (!inicio || !destinoCoords) return;
     
     try {
-        // Forzamos al GPS a pasar por los puntos clave de asfalto seguro
         let waypointsRuta = [
             `${inicio.lng},${inicio.lat}`,
             `-58.772579,-34.573305`, // Solano López y Fray Luis León
@@ -625,12 +624,10 @@ function buscarDireccion(query) {
         let resultadosHtml = '';
 
         if (puntosLocalesCalles && puntosLocalesCalles.length > 0) {
-            // Normalizamos texto: quitamos tildes y pasamos a minúsculas
             const limpiarTexto = (txt) => txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             const queryLimia = limpiarTexto(query);
             const palabrasQuery = queryLimia.split(' ').filter(p => p.length > 0);
 
-            // Filtramos permitiendo que las palabras coincidan sin importar el orden ni los tildes
             let filtradosLocales = puntosLocalesCalles.filter(p => {
                 let nombreLugar = limpiarTexto(p.nombre);
                 let zonaLugar = limpiarTexto(p.zona || '');
@@ -784,7 +781,7 @@ function mostrarPaso(id) {
         panel.classList.add('modo-compacto');
         panel.classList.remove('con-ruta');
     } else {
-        panel.classList.remove('modo-compacto'>);
+        panel.classList.remove('modo-compacto');
     }
 }
 
