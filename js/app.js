@@ -547,22 +547,14 @@ function usarUbicacionDefault() {
 }
 
 // ==========================================================
-// FUNCIÓN DE RUTEO CON WAYPOINTS SEGUROS PARA EVITAR EL ARROYO
+// RUTEO NATURAL DE PUNTO A PUNTO (SIN PUNTOS FORZADOS)
 // ==========================================================
 async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
     let inicio = puntoOrigenPersonalizado || origenCoords;
     if (!inicio || !destinoCoords) return;
     
     try {
-        let waypointsRuta = [
-            `${inicio.lng},${inicio.lat}`,
-            `-58.772579,-34.573305`, // Solano López y Fray Luis León
-            `-58.773195,-34.572789`, // Pedro de Mendoza y Fray Luis León
-            `-58.768190,-34.568256`, // Pedro de Mendoza y Murillo
-            `${destinoCoords.lng},${destinoCoords.lat}`
-        ].join(';');
-
-        const url = `https://router.project-osrm.org/route/v1/car/${waypointsRuta}?overview=full&geometries=geojson&steps=true&continue_straight=default`;
+        const url = `https://router.project-osrm.org/route/v1/car/${inicio.lng},${inicio.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true&continue_straight=default`;
         const res = await fetch(url); 
         const data = await res.json();
         
