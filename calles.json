@@ -178,5 +178,54 @@
     "zona": "Trujui (Haras Trujui)",
     "lat": -34.575992,
     "lng": -58.777864
+  },
+  {
+    "nombre": "Jacobo Watt y Portugal",
+    "zona": "Trujui (Haras Trujui)",
+    "lat": -34.578781,
+    "lng": -58.777001
+  },
+  {
+    "nombre": "Jacobo Watt y San Emilio",
+    "zona": "Trujui (Cerca de Almacén El Rubio)",
+    "lat": -34.578039,
+    "lng": -58.776478
+  },
+  {
+    "nombre": "Jacobo Watt y Namuncurá",
+    "zona": "Trujui",
+    "lat": -34.575923,
+    "lng": -58.774355
+  },
+  {
+    "nombre": "Jacobo Watt y Magdalena",
+    "zona": "Trujui",
+    "lat": -34.575059,
+    "lng": -58.773415
+  },
+  {
+    "nombre": "Jacobo Watt y Fray Luis León",
+    "zona": "Trujui",
+    "lat": -34.573728,
+    "lng": -58.771990
+  },
+  {
+    "nombre": "Jacobo Watt y Leprati",
+    "zona": "Trujui",
+    "lat": -34.573314,
+    "lng": -58.771436
+  },
+  {
+    "nombre": "Jacobo Watt y Gral. Oribe (Tramo 1)",
+    "zona": "Trujui",
+    "lat": -34.572984,
+    "lng": -58.771085
+  },
+  {
+    "nombre": "Jacobo Watt y Gral. Oribe (Tramo 2)",
+    "zona": "Trujui",
+    "lat": -34.572505,
+    "lng": -58.770581
   }
 ]
+
