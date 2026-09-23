@@ -1,14 +1,182 @@
 [
   {
-    "nombre": "Murillo y Paramo",
-    "zona": "Trujui",
-    "lat": -34.54200,
-    "lng": -58.71000
+    "nombre": "Pedro de Mendoza y San Emilio",
+    "zona": "Trujui (Santa Alicia / Villanueva)",
+    "lat": -34.576412,
+    "lng": -58.777352
   },
   {
-    "nombre": "Avenida Libertador y Cané",
-    "zona": "Centro",
-    "lat": -34.54500,
-    "lng": -58.71500
+    "nombre": "Solano López y San Emilio",
+    "zona": "Trujui (Cancha El Rubio / Almacén El Rubio)",
+    "lat": -34.576917,
+    "lng": -58.776662
+  },
+  {
+    "nombre": "Solano López y Namuncurá",
+    "zona": "Trujui",
+    "lat": -34.575357,
+    "lng": -58.774929
+  },
+  {
+    "nombre": "Solano López y Magdalena",
+    "zona": "Trujui",
+    "lat": -34.574562,
+    "lng": -58.773964
+  },
+  {
+    "nombre": "Solano López (Tramo Intermedio)",
+    "zona": "Trujui",
+    "lat": -34.574324,
+    "lng": -58.773677
+  },
+  {
+    "nombre": "Solano López y Fray Luis León (Giro Asfalto)",
+    "zona": "Trujui",
+    "lat": -34.573305,
+    "lng": -58.772579
+  },
+  {
+    "nombre": "Pedro de Mendoza y Fray Luis León",
+    "zona": "Trujui (Asfalto Segura)",
+    "lat": -34.572789,
+    "lng": -58.773195
+  },
+  {
+    "nombre": "Pedro de Mendoza y Murillo",
+    "zona": "Trujui (Cerca de Corralón Santa Brígida)",
+    "lat": -34.568256,
+    "lng": -58.768190
+  },
+  {
+    "nombre": "Murillo y Los Aromos",
+    "zona": "Trujui (Tortillería El Gato / Escuela)",
+    "lat": -34.564127,
+    "lng": -58.773751
+  },
+  {
+    "nombre": "Miguel Cané y Fray Antonio Marchena",
+    "zona": "San Miguel / Trujui (Límite Base)",
+    "lat": -34.561101,
+    "lng": -58.770527
+  },
+  {
+    "nombre": "Solano López y Leprati",
+    "zona": "Trujui (Cerca de Ferretería Diego P.)",
+    "lat": -34.572842,
+    "lng": -58.772093
+  },
+  {
+    "nombre": "Solano López y Oribe",
+    "zona": "Trujui (Cerca de Tienda Elena / Pulpitos)",
+    "lat": -34.572055,
+    "lng": -58.771243
+  },
+  {
+    "nombre": "Solano López y Puccini",
+    "zona": "Trujui",
+    "lat": -34.571279,
+    "lng": -58.770406
+  },
+  {
+    "nombre": "Jacobo Watt y Puccini",
+    "zona": "Trujui (Cerca de Taller de Costura / Barbería Braian)",
+    "lat": -34.571740,
+    "lng": -58.769744
+  },
+  {
+    "nombre": "Jacobo Watt y Aeronáutica Argentina",
+    "zona": "Trujui (Cerca de Gomería El Iaio)",
+    "lat": -34.571341,
+    "lng": -58.769343
+  },
+  {
+    "nombre": "Jacobo Watt (Zona Comercial)",
+    "zona": "Trujui",
+    "lat": -34.570957,
+    "lng": -58.768942
+  },
+  {
+    "nombre": "Jacobo Watt y Discépolo",
+    "zona": "Trujui (Cerca de Kiosko Córdova)",
+    "lat": -34.570189,
+    "lng": -58.768132
+  },
+  {
+    "nombre": "Jacobo Watt y La Amistad",
+    "zona": "Trujui (Centro Comercial / Vitaminas)",
+    "lat": -34.569710,
+    "lng": -58.767532
+  },
+  {
+    "nombre": "Jacobo Watt y Murillo",
+    "zona": "Trujui (Chino y Claudia / Tienda Lauti)",
+    "lat": -34.569185,
+    "lng": -58.766939
+  },
+  {
+    "nombre": "Jacobo Watt y República Argentina",
+    "zona": "Trujui (Escuela Primaria Nº 31 Dardo Rocha)",
+    "lat": -34.568670,
+    "lng": -58.766409
+  },
+  {
+    "nombre": "Jacobo Watt y Río de la Plata",
+    "zona": "Trujui (Escuela EP 22)",
+    "lat": -34.568123,
+    "lng": -58.765885
+  },
+  {
+    "nombre": "Jacobo Watt y Santander",
+    "zona": "Trujui",
+    "lat": -34.567634,
+    "lng": -58.765333
+  },
+  {
+    "nombre": "Jacobo Watt y Tomás A. Edison",
+    "zona": "Trujui (Punto de Transición)",
+    "lat": -34.567107,
+    "lng": -58.764749
+  },
+  {
+    "nombre": "Tomás A. Edison y Martín García",
+    "zona": "Trujui",
+    "lat": -34.567094,
+    "lng": -58.764754
+  },
+  {
+    "nombre": "Tomás A. Edison y Fray Antonio Marchena",
+    "zona": "Trujui",
+    "lat": -34.566194,
+    "lng": -58.763748
+  },
+  {
+    "nombre": "Tomás A. Edison y La Pinta",
+    "zona": "Trujui (Fretería A&A / Maxikiosco Lucía)",
+    "lat": -34.565634,
+    "lng": -58.763167
+  },
+  {
+    "nombre": "Tomás A. Edison y La Niña (Tramo 1)",
+    "zona": "Trujui",
+    "lat": -34.565365,
+    "lng": -58.762842
+  },
+  {
+    "nombre": "Tomás A. Edison y La Niña (Tramo 2)",
+    "zona": "Trujui",
+    "lat": -34.565128,
+    "lng": -58.762559
+  },
+  {
+    "nombre": "Pasaje Ricardo Güiraldes y Portugal",
+    "zona": "Trujui (Haras Trujui)",
+    "lat": -34.575774,
+    "lng": -58.778135
+  },
+  {
+    "nombre": "Astor Piazzola y Portugal",
+    "zona": "Trujui (Haras Trujui)",
+    "lat": -34.575992,
+    "lng": -58.777864
   }
 ]
