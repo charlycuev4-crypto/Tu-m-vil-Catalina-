@@ -1,0 +1,74 @@
+[
+  {
+    "id_punto": "san_emilio_guiraldes",
+    "nombre": "San Emilio y Pasaje Güiraldes",
+    "zona": "Haras Trujui - Cuartel V",
+    "lat": -34.575774,
+    "lng": -58.778135,
+    "tipo": "punto_encuentro"
+  },
+  {
+    "id_punto": "san_emilio_pedro_mendoza",
+    "nombre": "San Emilio y Pedro de Mendoza",
+    "zona": "Haras Trujui - Cuartel V",
+    "lat": -34.576412,
+    "lng": -58.777352,
+    "tipo": "punto_encuentro"
+  },
+  {
+    "id_punto": "san_emilio_solano_lopez",
+    "nombre": "San Emilio y Solano López",
+    "zona": "Haras Trujui - Cuartel V",
+    "lat": -34.576917,
+    "lng": -58.776662,
+    "tipo": "punto_encuentro"
+  },
+  {
+    "id_punto": "solano_lopez_namuncura",
+    "nombre": "Solano López y Namuncura",
+    "zona": "Haras Trujui - Cuartel V",
+    "lat": -34.575357,
+    "lng": -58.774929,
+    "tipo": "punto_encuentro"
+  },
+  {
+    "id_punto": "solano_lopez_magdalena",
+    "nombre": "Solano López y Magdalena",
+    "zona": "Haras Trujui - Cuartel V",
+    "lat": -34.574562,
+    "lng": -58.773964,
+    "tipo": "punto_encuentro"
+  },
+  {
+    "id_punto": "solano_lopez_fray_luis_leon",
+    "nombre": "Solano López y Fray Luis León",
+    "zona": "Haras Trujui - Cuartel V",
+    "lat": -34.573308,
+    "lng": -58.772601,
+    "tipo": "punto_encuentro"
+  },
+  {
+    "id_punto": "solano_lopez_leprati",
+    "nombre": "Solano López y Leprati",
+    "zona": "Haras Trujui - Cuartel V",
+    "lat": -34.572842,
+    "lng": -58.772093,
+    "tipo": "punto_encuentro"
+  },
+  {
+    "id_punto": "solano_lopez_oribe",
+    "nombre": "Solano López y Oribe",
+    "zona": "Haras Trujui - Cuartel V",
+    "lat": -34.572055,
+    "lng": -58.771243,
+    "tipo": "punto_encuentro"
+  },
+  {
+    "id_punto": "solano_lopez_puccini",
+    "nombre": "Solano López y Puccini",
+    "zona": "Haras Trujui - Cuartel V",
+    "lat": -34.571279,
+    "lng": -58.770406,
+    "tipo": "punto_encuentro"
+  }
+]
