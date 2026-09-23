@@ -546,25 +546,12 @@ function usarUbicacionDefault() {
     mapa.setView(UBICACION_DEFAULT, 16); 
 }
 
-// ==========================================
-// FUNCIÓN MODIFICADA CON CADENA DE WAYPOINTS 
-// PARA EVITAR EL CRUCE POR EL ARROYO
-// ==========================================
 async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
     let inicio = puntoOrigenPersonalizado || origenCoords;
     if (!inicio || !destinoCoords) return;
     
     try {
-        // Enlazamos los puntos intermedios clave sobre el asfalto seguro (Solano López ➔ Pedro de Mendoza ➔ Murillo)
-        let waypointsRuta = [
-            `${inicio.lng},${inicio.lat}`,                     // 1. Origen del pasajero
-            `-58.772579,-34.573305`,                           // 2. Solano López y Fray Luis León
-            `-58.773195,-34.572789`,                           // 3. Pedro de Mendoza y Fray Luis León
-            `-58.768190,-34.568256`,                           // 4. Pedro de Mendoza y Murillo
-            `${destinoCoords.lng},${destinoCoords.lat}`        // 5. Destino final
-        ].join(';');
-
-        const url = `https://router.project-osrm.org/route/v1/car/${waypointsRuta}?overview=full&geometries=geojson&steps=true&continue_straight=default`;
+        const url = `https://router.project-osrm.org/route/v1/car/${inicio.lng},${inicio.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true&continue_straight=default`;
         const res = await fetch(url); 
         const data = await res.json();
         
