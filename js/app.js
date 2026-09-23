@@ -551,7 +551,12 @@ async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
     if (!inicio || !destinoCoords) return;
     
     try {
-        const url = `https://router.project-osrm.org/route/v1/car/${inicio.lng},${inicio.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true&continue_straight=default`;
+        // WAYPOINT OBLIGATORIO DE ASFALTO SEGURO (Fray Luis León / Pedro de Mendoza)
+        // Forzamos al GPS a pasar por aquí para evitar el desvío incorrecto por el arroyo
+        let waypointSeguroLat = -34.573305;
+        let waypointSeguroLng = -58.772579;
+
+        const url = `https://router.project-osrm.org/route/v1/car/${inicio.lng},${inicio.lat};${waypointSeguroLng},${waypointSeguroLat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true&continue_straight=default`;
         const res = await fetch(url); 
         const data = await res.json();
         
