@@ -30,10 +30,34 @@
     "lng": -58.773677
   },
   {
-    "nombre": "Solano López y Fray Luis León",
+    "nombre": "Solano López y Fray Luis León (Giro Asfalto)",
     "zona": "Trujui",
-    "lat": -34.573308,
-    "lng": -58.772601
+    "lat": -34.573305,
+    "lng": -58.772579
+  },
+  {
+    "nombre": "Pedro de Mendoza y Fray Luis León",
+    "zona": "Trujui (Asfalto Segura)",
+    "lat": -34.572789,
+    "lng": -58.773195
+  },
+  {
+    "nombre": "Pedro de Mendoza y Murillo",
+    "zona": "Trujui (Cerca de Corralón Santa Brígida)",
+    "lat": -34.568256,
+    "lng": -58.768190
+  },
+  {
+    "nombre": "Murillo y Los Aromos",
+    "zona": "Trujui (Tortillería El Gato / Escuela)",
+    "lat": -34.564127,
+    "lng": -58.773751
+  },
+  {
+    "nombre": "Miguel Cané y Fray Antonio Marchena",
+    "zona": "San Miguel / Trujui (Límite Base)",
+    "lat": -34.561101,
+    "lng": -58.770527
   },
   {
     "nombre": "Solano López y Leprati",
