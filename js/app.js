@@ -546,12 +546,24 @@ function usarUbicacionDefault() {
     mapa.setView(UBICACION_DEFAULT, 16); 
 }
 
+// ==========================================================
+// FUNCIÓN DE RUTEO ACTUALIZADA CON WAYPOINTS PARA EVITAR EL ARROYO
+// ==========================================================
 async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
     let inicio = puntoOrigenPersonalizado || origenCoords;
     if (!inicio || !destinoCoords) return;
     
     try {
-        const url = `https://router.project-osrm.org/route/v1/car/${inicio.lng},${inicio.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true&continue_straight=default`;
+        // Forzamos al GPS a pasar por los puntos clave de asfalto seguro
+        let waypointsRuta = [
+            `${inicio.lng},${inicio.lat}`,
+            `-58.772579,-34.573305`, // Solano López y Fray Luis León
+            `-58.773195,-34.572789`, // Pedro de Mendoza y Fray Luis León
+            `-58.768190,-34.568256`, // Pedro de Mendoza y Murillo
+            `${destinoCoords.lng},${destinoCoords.lat}`
+        ].join(';');
+
+        const url = `https://router.project-osrm.org/route/v1/car/${waypointsRuta}?overview=full&geometries=geojson&steps=true&continue_straight=default`;
         const res = await fetch(url); 
         const data = await res.json();
         
@@ -598,6 +610,9 @@ function iniciarMonitoreoDinamicoRuta() {
     }, 10000);
 }
 
+// ==========================================================
+// BUSCADOR INTELIGENTE Y FLEXIBLE (SIN TILDES Y ORDEN LIBRE)
+// ==========================================================
 let timeoutBusqueda = null;
 function buscarDireccion(query) {
     clearTimeout(timeoutBusqueda);
@@ -610,10 +625,19 @@ function buscarDireccion(query) {
         let resultadosHtml = '';
 
         if (puntosLocalesCalles && puntosLocalesCalles.length > 0) {
-            let filtradosLocales = puntosLocalesCalles.filter(p => 
-                p.nombre.toLowerCase().includes(query.toLowerCase()) || 
-                (p.zona && p.zona.toLowerCase().includes(query.toLowerCase()))
-            ).slice(0, 4);
+            // Normalizamos texto: quitamos tildes y pasamos a minúsculas
+            const limpiarTexto = (txt) => txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const queryLimia = limpiarTexto(query);
+            const palabrasQuery = queryLimia.split(' ').filter(p => p.length > 0);
+
+            // Filtramos permitiendo que las palabras coincidan sin importar el orden ni los tildes
+            let filtradosLocales = puntosLocalesCalles.filter(p => {
+                let nombreLugar = limpiarTexto(p.nombre);
+                let zonaLugar = limpiarTexto(p.zona || '');
+                let textoCompleto = nombreLugar + ' ' + zonaLugar;
+
+                return palabrasQuery.every(palabra => textoCompleto.includes(palabra));
+            }).slice(0, 4);
 
             filtradosLocales.forEach(lugar => {
                 resultadosHtml += `
@@ -760,7 +784,7 @@ function mostrarPaso(id) {
         panel.classList.add('modo-compacto');
         panel.classList.remove('con-ruta');
     } else {
-        panel.classList.remove('modo-compacto');
+        panel.classList.remove('modo-compacto'>);
     }
 }
 
