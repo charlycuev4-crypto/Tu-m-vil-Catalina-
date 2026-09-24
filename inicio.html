@@ -20,7 +20,7 @@
             background: linear-gradient(135deg, #1b5e20, #2e7d32);
             color: white;
             text-align: center;
-            padding: 60px 20px;
+            padding: 50px 20px;
         }
         header h1 {
             font-size: 2.5rem;
@@ -52,12 +52,29 @@
             background-color: #e8f5e9;
             transform: translateY(-2px);
         }
+        .btn-web {
+            background-color: #1b5e20;
+            color: #fff;
+            border: 2px solid #fff;
+        }
+        .btn-web:hover {
+            background-color: #2e7d32;
+        }
         .btn-driver {
             background-color: #ffb300;
             color: #fff;
         }
         .btn-driver:hover {
             background-color: #ffa000;
+        }
+        .security-badge {
+            background: rgba(0, 0, 0, 0.2);
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 20px;
+            margin-top: 25px;
+            font-size: 0.95rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
         section {
             max-width: 900px;
@@ -120,9 +137,15 @@
     <header>
         <h1>🚗 TuMovil</h1>
         <p>Tu movilidad local, rápida, segura y 100% de confianza en tu barrio.</p>
+        
         <div class="btn-container">
             <a href="https://drive.google.com/uc?export=download&id=1JeK6Cmhd-Ll_GwU3ZjMogoPe0FnPGwwF" class="btn">📥 Descargar App Pasajero</a>
+            <a href="https://tu-m-vil-catalina.vercel.app/" class="btn btn-web" target="_blank">🌐 Usar Versión Web (Sin descargas)</a>
             <a href="https://drive.google.com/uc?export=download&id=1S7NJTrITmtEGENM7S3y9rerTFPa8bZ2f" class="btn btn-driver">🚕 Descargar App Chofer</a>
+        </div>
+
+        <div class="security-badge">
+            🛡️ <strong>100% Seguro:</strong> Descargas analizadas y verificadas, o si preferís, usá la plataforma directamente desde la web sin instalar nada.
         </div>
     </header>
 
