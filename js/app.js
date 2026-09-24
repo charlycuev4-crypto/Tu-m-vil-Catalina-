@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iOiJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let TARIFAS_ACTIVAS = {
@@ -24,7 +24,7 @@ let puntosLocalesCalles = [];
 let intervaloTimbreInsistente = null;
 let audioCtxPasajero = null;
 let intervaloAlertaChatPasajero = null;
-let watchIdPasajero = null; // Variable para controlar el seguimiento continuo del GPS
+let watchIdPasajero = null; // Control para el GPS continuo estable
 
 function reproducirPitidoAudio(frecuencia = 880, duracion = 0.3) {
     try {
@@ -374,8 +374,8 @@ function iniciarEscuchaRealtime(id) {
                 } else {
                     markerConductor.setLatLng(latLngCond);
                 }
-
-                // Centra la vista automáticamente acompañando al chofer en viaje
+                
+                // Centrado automático acompañando al chofer en viaje
                 if (de.estado === 'en_viaje') {
                     mapa.panTo(latLngCond);
                 }
@@ -525,7 +525,7 @@ function marcarDestinoManual(lat, lng) {
 async function marcarOrigen(lat, lng, labelPersonalizada = null) {
     origenCoords = { lat, lng }; 
     if (markerOrigen) {
-        markerOrigen.setLatLng([lat, lng]);
+        markerOrigen.setLatLng([lat, lng]); // Actualiza la posición sin parpadear
     } else {
         markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
     }
@@ -537,10 +537,12 @@ async function marcarOrigen(lat, lng, labelPersonalizada = null) {
     recalcularRutaYPrecio();
 }
 
-// GPS CONTINUO CON WATCHPOSITION (Actualiza ubicación en tiempo real)
+// GPS ESTABLE CON WATCHPOSITION (Elimina el bucle y parpadeo de "Buscando señal")
 function obtenerGPS() {
     if (!navigator.geolocation) { usarUbicacionDefault(); return; }
-    document.getElementById('gpsBtn').classList.add('buscando');
+    
+    const gpsBtn = document.getElementById('gpsBtn');
+    if (gpsBtn) gpsBtn.classList.add('buscando');
 
     if (watchIdPasajero !== null) {
         navigator.geolocation.clearWatch(watchIdPasajero);
@@ -548,21 +550,22 @@ function obtenerGPS() {
 
     watchIdPasajero = navigator.geolocation.watchPosition(
         (pos) => { 
-            document.getElementById('gpsBtn').classList.remove('buscando'); 
+            if (gpsBtn) gpsBtn.classList.remove('buscando'); // Apaga el aviso de búsqueda al tener éxito
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
             
-            marcarOrigen(lat, lng);
+            marcarOrigen(lat, lng); 
             
-            // Centra la vista al arrancar si no hay viaje ni destino seteado todavía
             if (!viajeId && !destinoCoords) {
-                mapa.setView([lat, lng], 16);
+                mapa.setView([lat, lng], 16); 
             }
         },
         (err) => { 
-            document.getElementById('gpsBtn').classList.remove('buscando'); 
-            console.warn("Aviso de GPS continuo:", err);
-            usarUbicacionDefault(); 
+            console.warn("Aviso GPS:", err);
+            if (err.code === err.PERMISSION_DENIED) {
+                if (gpsBtn) gpsBtn.classList.remove('buscando');
+                usarUbicacionDefault(); 
+            }
         },
         { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 }
     );
@@ -574,7 +577,7 @@ function usarUbicacionDefault() {
 }
 
 // ==========================================================
-// RUTEO NATURAL DE PUNTO A PUNTO
+// RUTEO NATURAL DE PUNTO A PUNTO (SIN PUNTOS FORZADOS)
 // ==========================================================
 async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
     let inicio = puntoOrigenPersonalizado || origenCoords;
@@ -629,7 +632,7 @@ function iniciarMonitoreoDinamicoRuta() {
 }
 
 // ==========================================================
-// BUSCADOR INTELIGENTE Y FLEXIBLE
+// BUSCADOR INTELIGENTE Y FLEXIBLE (SIN TILDES Y ORDEN LIBRE)
 // ==========================================================
 let timeoutBusqueda = null;
 function buscarDireccion(query) {
