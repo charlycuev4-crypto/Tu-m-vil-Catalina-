@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iOiJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let TARIFAS_ACTIVAS = {
@@ -24,6 +24,7 @@ let puntosLocalesCalles = [];
 let intervaloTimbreInsistente = null;
 let audioCtxPasajero = null;
 let intervaloAlertaChatPasajero = null;
+let watchIdPasajero = null; // Variable para controlar el seguimiento continuo del GPS
 
 function reproducirPitidoAudio(frecuencia = 880, duracion = 0.3) {
     try {
@@ -348,6 +349,10 @@ async function verificarViajeActivoPasajero() {
 function limpiarMemoriaPasajero() { 
     localStorage.removeItem('pasajero_viaje_id'); 
     if (intervaloActualizacionRuta) clearInterval(intervaloActualizacionRuta);
+    if (watchIdPasajero !== null) {
+        navigator.geolocation.clearWatch(watchIdPasajero);
+        watchIdPasajero = null;
+    }
     silenciarTimbreLlegada();
     detenerAlertaChatPasajero();
 }
@@ -368,6 +373,11 @@ function iniciarEscuchaRealtime(id) {
                     }).addTo(mapa);
                 } else {
                     markerConductor.setLatLng(latLngCond);
+                }
+
+                // Centra la vista automáticamente acompañando al chofer en viaje
+                if (de.estado === 'en_viaje') {
+                    mapa.panTo(latLngCond);
                 }
             }
 
@@ -514,8 +524,11 @@ function marcarDestinoManual(lat, lng) {
 
 async function marcarOrigen(lat, lng, labelPersonalizada = null) {
     origenCoords = { lat, lng }; 
-    if (markerOrigen) mapa.removeLayer(markerOrigen);
-    markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
+    if (markerOrigen) {
+        markerOrigen.setLatLng([lat, lng]);
+    } else {
+        markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
+    }
     
     document.getElementById('origenDisplay').value = "Buscando calle real...";
     const direccionReal = labelPersonalizada || await obtenerDireccionYBarrioPasajero(lat, lng);
@@ -524,20 +537,34 @@ async function marcarOrigen(lat, lng, labelPersonalizada = null) {
     recalcularRutaYPrecio();
 }
 
+// GPS CONTINUO CON WATCHPOSITION (Actualiza ubicación en tiempo real)
 function obtenerGPS() {
     if (!navigator.geolocation) { usarUbicacionDefault(); return; }
     document.getElementById('gpsBtn').classList.add('buscando');
-    navigator.geolocation.getCurrentPosition(
+
+    if (watchIdPasajero !== null) {
+        navigator.geolocation.clearWatch(watchIdPasajero);
+    }
+
+    watchIdPasajero = navigator.geolocation.watchPosition(
         (pos) => { 
             document.getElementById('gpsBtn').classList.remove('buscando'); 
-            marcarOrigen(pos.coords.latitude, pos.coords.longitude); 
-            mapa.setView([pos.coords.latitude, pos.coords.longitude], 16); 
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            
+            marcarOrigen(lat, lng);
+            
+            // Centra la vista al arrancar si no hay viaje ni destino seteado todavía
+            if (!viajeId && !destinoCoords) {
+                mapa.setView([lat, lng], 16);
+            }
         },
-        () => { 
+        (err) => { 
             document.getElementById('gpsBtn').classList.remove('buscando'); 
+            console.warn("Aviso de GPS continuo:", err);
             usarUbicacionDefault(); 
         },
-        { enableHighAccuracy: true, timeout: 7000 }
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 }
     );
 }
 
@@ -547,7 +574,7 @@ function usarUbicacionDefault() {
 }
 
 // ==========================================================
-// RUTEO NATURAL DE PUNTO A PUNTO (SIN PUNTOS FORZADOS)
+// RUTEO NATURAL DE PUNTO A PUNTO
 // ==========================================================
 async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
     let inicio = puntoOrigenPersonalizado || origenCoords;
@@ -602,7 +629,7 @@ function iniciarMonitoreoDinamicoRuta() {
 }
 
 // ==========================================================
-// BUSCADOR INTELIGENTE Y FLEXIBLE (SIN TILDES Y ORDEN LIBRE)
+// BUSCADOR INTELIGENTE Y FLEXIBLE
 // ==========================================================
 let timeoutBusqueda = null;
 function buscarDireccion(query) {
