@@ -525,19 +525,27 @@ function marcarDestinoManual(lat, lng) {
 async function marcarOrigen(lat, lng, labelPersonalizada = null) {
     origenCoords = { lat, lng }; 
     if (markerOrigen) {
-        markerOrigen.setLatLng([lat, lng]); // Mueve el marcador fluido en lugar de recrearlo
+        markerOrigen.setLatLng([lat, lng]);
     } else {
         markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
     }
     
-    document.getElementById('origenDisplay').value = "Buscando calle real...";
-    const direccionReal = labelPersonalizada || await obtenerDireccionYBarrioPasajero(lat, lng);
-    document.getElementById('origenDisplay').value = direccionReal;
+    const origenDisplay = document.getElementById('origenDisplay');
+    
+    // SOLUCIÓN: Solo busca la calle real si el campo está vacío o dice el texto de carga.
+    // Así evitamos por completo el bucle y el parpadeo infinito en movimiento.
+    if (origenDisplay && (!origenDisplay.value || origenDisplay.value.includes("Buscando") || origenDisplay.value === "")) {
+        origenDisplay.value = "Buscando calle real...";
+        const direccionReal = labelPersonalizada || await obtenerDireccionYBarrioPasajero(lat, lng);
+        if (origenDisplay.value.includes("Buscando") || !origenDisplay.value) {
+            origenDisplay.value = direccionReal;
+        }
+    }
 
     recalcularRutaYPrecio();
 }
 
-// GPS CONTINUO ESTABLE (Mantiene la solidez del botón y actualiza en tiempo real)
+// GPS CONTINUO ESTABLE (Mantiene la solidez del botón y actualiza en tiempo real sin bucles)
 function obtenerGPS() {
     if (!navigator.geolocation) { usarUbicacionDefault(); return; }
     document.getElementById('gpsBtn').classList.add('buscando');
