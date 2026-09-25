@@ -24,7 +24,8 @@ let puntosLocalesCalles = [];
 let intervaloTimbreInsistente = null;
 let audioCtxPasajero = null;
 let intervaloAlertaChatPasajero = null;
-let watchIdPasajero = null; // Control para el GPS continuo y fluido
+let watchIdPasajero = null; 
+let usuarioMoviendoMapa = false; // Bandera para liberar el zoom y el movimiento manual
 
 function reproducirPitidoAudio(frecuencia = 880, duracion = 0.3) {
     try {
@@ -185,6 +186,13 @@ function initMapa() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
     
     cargarPuntosLocales(); 
+
+    // Libera el mapa cuando el usuario lo mueve o hace zoom manualmente
+    mapa.on('movestart', () => {
+        if (!viajeId) {
+            usuarioMoviendoMapa = true;
+        }
+    });
 
     mapa.on('click', (e) => { 
         if (modoDestinoManual) {
@@ -375,7 +383,6 @@ function iniciarEscuchaRealtime(id) {
                     markerConductor.setLatLng(latLngCond);
                 }
 
-                // Centra automáticamente la vista siguiendo al chofer en viaje
                 if (de.estado === 'en_viaje') {
                     mapa.panTo(latLngCond);
                 }
@@ -503,6 +510,7 @@ function agregarMensajeAlDomPasajero(msg) {
 
 function activarModoManualDestino() { 
     modoDestinoManual = true; 
+    usuarioMoviendoMapa = true; 
     document.getElementById('manualBtn').classList.add('activo'); 
     document.getElementById('hintManual').classList.add('visible'); 
 }
@@ -532,8 +540,7 @@ async function marcarOrigen(lat, lng, labelPersonalizada = null) {
     
     const origenDisplay = document.getElementById('origenDisplay');
     
-    // SOLUCIÓN: Solo busca la calle real si el campo está vacío o dice el texto de carga.
-    // Así evitamos por completo el bucle y el parpadeo infinito en movimiento.
+    // Antibucle: Solo busca la calle real si el campo está vacío o dice el texto de carga
     if (origenDisplay && (!origenDisplay.value || origenDisplay.value.includes("Buscando") || origenDisplay.value === "")) {
         origenDisplay.value = "Buscando calle real...";
         const direccionReal = labelPersonalizada || await obtenerDireccionYBarrioPasajero(lat, lng);
@@ -545,10 +552,10 @@ async function marcarOrigen(lat, lng, labelPersonalizada = null) {
     recalcularRutaYPrecio();
 }
 
-// GPS CONTINUO ESTABLE (Mantiene la solidez del botón y actualiza en tiempo real sin bucles)
 function obtenerGPS() {
     if (!navigator.geolocation) { usarUbicacionDefault(); return; }
     document.getElementById('gpsBtn').classList.add('buscando');
+    usuarioMoviendoMapa = false; // Al tocar el botón centralizamos de nuevo si se desea
 
     if (watchIdPasajero !== null) {
         navigator.geolocation.clearWatch(watchIdPasajero);
@@ -562,7 +569,8 @@ function obtenerGPS() {
             
             marcarOrigen(lat, lng); 
             
-            if (!viajeId && !destinoCoords) {
+            // Solo centra automáticamente si el usuario no está navegando libremente el mapa
+            if (!viajeId && !destinoCoords && !usuarioMoviendoMapa) {
                 mapa.setView([lat, lng], 16); 
             }
         },
@@ -618,7 +626,7 @@ async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
                 document.getElementById('bottomPanel').classList.add('con-ruta');
             }
             
-            if (!puntoOrigenPersonalizado) {
+            if (!puntoOrigenPersonalizado && !usuarioMoviendoMapa) {
                 mapa.fitBounds(rutaTrazada.getBounds(), { padding: [35, 35], maxZoom: 16.5 });
             }
         }
