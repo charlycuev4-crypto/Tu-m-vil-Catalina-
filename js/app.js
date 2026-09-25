@@ -24,6 +24,7 @@ let puntosLocalesCalles = [];
 let intervaloTimbreInsistente = null;
 let audioCtxPasajero = null;
 let intervaloAlertaChatPasajero = null;
+let watchIdPasajero = null; // Control para el GPS continuo y fluido
 
 function reproducirPitidoAudio(frecuencia = 880, duracion = 0.3) {
     try {
@@ -348,6 +349,10 @@ async function verificarViajeActivoPasajero() {
 function limpiarMemoriaPasajero() { 
     localStorage.removeItem('pasajero_viaje_id'); 
     if (intervaloActualizacionRuta) clearInterval(intervaloActualizacionRuta);
+    if (watchIdPasajero !== null) {
+        navigator.geolocation.clearWatch(watchIdPasajero);
+        watchIdPasajero = null;
+    }
     silenciarTimbreLlegada();
     detenerAlertaChatPasajero();
 }
@@ -368,6 +373,11 @@ function iniciarEscuchaRealtime(id) {
                     }).addTo(mapa);
                 } else {
                     markerConductor.setLatLng(latLngCond);
+                }
+
+                // Centra automáticamente la vista siguiendo al chofer en viaje
+                if (de.estado === 'en_viaje') {
+                    mapa.panTo(latLngCond);
                 }
             }
 
@@ -514,8 +524,11 @@ function marcarDestinoManual(lat, lng) {
 
 async function marcarOrigen(lat, lng, labelPersonalizada = null) {
     origenCoords = { lat, lng }; 
-    if (markerOrigen) mapa.removeLayer(markerOrigen);
-    markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
+    if (markerOrigen) {
+        markerOrigen.setLatLng([lat, lng]); // Mueve el marcador fluido en lugar de recrearlo
+    } else {
+        markerOrigen = L.marker([lat, lng], { icon: L.divIcon({ className: 'pasajero-ping-icon' }) }).addTo(mapa);
+    }
     
     document.getElementById('origenDisplay').value = "Buscando calle real...";
     const direccionReal = labelPersonalizada || await obtenerDireccionYBarrioPasajero(lat, lng);
@@ -524,20 +537,33 @@ async function marcarOrigen(lat, lng, labelPersonalizada = null) {
     recalcularRutaYPrecio();
 }
 
+// GPS CONTINUO ESTABLE (Mantiene la solidez del botón y actualiza en tiempo real)
 function obtenerGPS() {
     if (!navigator.geolocation) { usarUbicacionDefault(); return; }
     document.getElementById('gpsBtn').classList.add('buscando');
-    navigator.geolocation.getCurrentPosition(
+
+    if (watchIdPasajero !== null) {
+        navigator.geolocation.clearWatch(watchIdPasajero);
+    }
+
+    watchIdPasajero = navigator.geolocation.watchPosition(
         (pos) => { 
             document.getElementById('gpsBtn').classList.remove('buscando'); 
-            marcarOrigen(pos.coords.latitude, pos.coords.longitude); 
-            mapa.setView([pos.coords.latitude, pos.coords.longitude], 16); 
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            
+            marcarOrigen(lat, lng); 
+            
+            if (!viajeId && !destinoCoords) {
+                mapa.setView([lat, lng], 16); 
+            }
         },
-        () => { 
+        (err) => { 
             document.getElementById('gpsBtn').classList.remove('buscando'); 
+            console.warn("Aviso GPS:", err);
             usarUbicacionDefault(); 
         },
-        { enableHighAccuracy: true, timeout: 7000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
     );
 }
 
@@ -547,7 +573,7 @@ function usarUbicacionDefault() {
 }
 
 // ==========================================================
-// RUTEO NATURAL DE PUNTO A PUNTO (SIN PUNTOS FORZADOS)
+// RUTEO NATURAL DE PUNTO A PUNTO
 // ==========================================================
 async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
     let inicio = puntoOrigenPersonalizado || origenCoords;
@@ -602,7 +628,7 @@ function iniciarMonitoreoDinamicoRuta() {
 }
 
 // ==========================================================
-// BUSCADOR INTELIGENTE Y FLEXIBLE (ORIGINAL)
+// BUSCADOR INTELIGENTE Y FLEXIBLE
 // ==========================================================
 let timeoutBusqueda = null;
 function buscarDireccion(query) {
