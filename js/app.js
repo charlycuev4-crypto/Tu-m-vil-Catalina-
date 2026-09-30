@@ -161,7 +161,7 @@ async function cargarTarifasDesdeSupabase() {
     } catch (e) {}
 
     document.getElementById('txtEstructuraTarifa').innerHTML = 
-        `Base $${TARIFAS_ACTIVAS.base.toLocaleString()} + $${TARIFAS_ACTIVAS.km.toLocaleString()} x Km`;
+        `Base $${TARIFAS_ACTIVAS.base.toLocaleString()} + $${TARIFAS_ACTIVAS.km.toLocaleString()} x Km (primeros 2 km incluidos)`;
 
     if (esHorarioNocturno()) {
         document.getElementById('badgeNocturnoAviso').classList.remove('hidden');
@@ -187,7 +187,6 @@ function initMapa() {
     
     cargarPuntosLocales(); 
 
-    // Libera el mapa cuando el usuario lo mueve o hace zoom manualmente
     mapa.on('movestart', () => {
         if (!viajeId) {
             usuarioMoviendoMapa = true;
@@ -540,7 +539,6 @@ async function marcarOrigen(lat, lng, labelPersonalizada = null) {
     
     const origenDisplay = document.getElementById('origenDisplay');
     
-    // Antibucle: Solo busca la calle real si el campo está vacío o dice el texto de carga
     if (origenDisplay && (!origenDisplay.value || origenDisplay.value.includes("Buscando") || origenDisplay.value === "")) {
         origenDisplay.value = "Buscando calle real...";
         const direccionReal = labelPersonalizada || await obtenerDireccionYBarrioPasajero(lat, lng);
@@ -555,7 +553,7 @@ async function marcarOrigen(lat, lng, labelPersonalizada = null) {
 function obtenerGPS() {
     if (!navigator.geolocation) { usarUbicacionDefault(); return; }
     document.getElementById('gpsBtn').classList.add('buscando');
-    usuarioMoviendoMapa = false; // Al tocar el botón centralizamos de nuevo si se desea
+    usuarioMoviendoMapa = false;
 
     if (watchIdPasajero !== null) {
         navigator.geolocation.clearWatch(watchIdPasajero);
@@ -569,7 +567,6 @@ function obtenerGPS() {
             
             marcarOrigen(lat, lng); 
             
-            // Solo centra automáticamente si el usuario no está navegando libremente el mapa
             if (!viajeId && !destinoCoords && !usuarioMoviendoMapa) {
                 mapa.setView([lat, lng], 16); 
             }
@@ -589,7 +586,7 @@ function usarUbicacionDefault() {
 }
 
 // ==========================================================
-// RUTEO NATURAL DE PUNTO A PUNTO
+// RUTEO NATURAL DE PUNTO A PUNTO (CON 2 KM INCLUIDOS EN BASE)
 // ==========================================================
 async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
     let inicio = puntoOrigenPersonalizado || origenCoords;
@@ -606,7 +603,14 @@ async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
             rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.85 }).addTo(mapa);
             distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
             
-            let baseCalculo = TARIFAS_ACTIVAS.base + (distanciaKm * TARIFAS_ACTIVAS.km);
+            // LÓGICA DE 2 KM INCLUIDOS EN LA TARIFA BASE
+            let baseCalculo = TARIFAS_ACTIVAS.base;
+            let distanciaIncluidaBase = 2; // Los primeros 2 km están cubiertos por la base
+
+            if (distanciaKm > distanciaIncluidaBase) {
+                let kmExcedentes = distanciaKm - distanciaIncluidaBase;
+                baseCalculo += (kmExcedentes * TARIFAS_ACTIVAS.km);
+            }
             
             if (esDiaDomingo() || esHorarioNocturno()) { 
                 baseCalculo = baseCalculo * TARIFAS_ACTIVAS.recargo; 
@@ -754,7 +758,7 @@ async function solicitarViaje() {
                         precioFinalACobrar = Math.round(precioCalculado / 2);
                         esDescuentoFidelidad = true;
                     } else {
-                        mostrarMsg('⚠️ Tu 6to viaje supera los 12 km permitidos para la promo. Se aplicará la tarifa normal.', 'error');
+                        mostrarMsg('⚠️️ Tu 6to viaje supera los 12 km permitidos para la promo. Se aplicará la tarifa normal.', 'error');
                     }
                 }
             }
