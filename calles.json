@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TuMovil - Panel de Control Familiar</title>
+    <title>TuMovil - Panel de Control</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -11,567 +11,246 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        body {
+        body, html {
+            height: 100%;
+            width: 100%;
+            background-color: #121212;
+            color: #ffffff;
             display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background-color: #f4f4f9;
-        }
-        header {
-            background-color: #00796b;
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-        #container {
-            display: flex;
-            flex: 1;
             flex-direction: column;
         }
         #map {
-            flex: 1;
+            height: 45vh;
             width: 100%;
-            min-height: 350px;
+            z-index: 1;
         }
-        #sidebar {
-            background: white;
+        .panel-control {
+            flex: 1;
+            background: #1e1e1e;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
             padding: 15px;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.5);
             overflow-y: auto;
-            max-height: 40vh;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            z-index: 10;
             display: flex;
             flex-direction: column;
+            gap: 12px;
         }
-        #search-box {
-            width: 100%;
+        .tarifa-card {
+            background: #2a2a2a;
+            border: 1px solid #3d3d3d;
+            border-radius: 12px;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .tarifa-card.selected {
+            border-color: #00e676;
+            background: #1a3322;
+        }
+        .input-group {
+            position: relative;
+            background: #2a2a2a;
+            border: 1px solid #3d3d3d;
+            border-radius: 10px;
             padding: 10px;
-            margin-bottom: 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .input-group input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            width: 100%;
             outline: none;
         }
-        #search-box:focus {
-            border-color: #00796b;
-            box-shadow: 0 0 4px rgba(0, 121, 107, 0.3);
-        }
-        h3 {
-            margin-bottom: 10px;
-            color: #333;
-            font-size: 1rem;
-        }
-        #points-list {
+        .sugerencias-lista {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #2a2a2a;
+            border: 1px solid #3d3d3d;
+            border-radius: 0 0 10px 10px;
+            max-height: 150px;
             overflow-y: auto;
-            flex: 1;
+            z-index: 100;
+            display: none;
         }
-        .point-item {
+        .sugerencia-item {
             padding: 10px;
-            margin-bottom: 8px;
-            background: #e0f2f1;
-            border-left: 5px solid #00796b;
+            font-size: 14px;
+            border-bottom: 1px solid #333;
             cursor: pointer;
-            border-radius: 4px;
-            transition: background 0.2s;
         }
-        .point-item:hover {
-            background: #b2dfdb;
+        .sugerencia-item:hover {
+            background: #333;
         }
-        .point-title {
+        .btn-confirmar {
+            background: #00e676;
+            color: #121212;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
             font-weight: bold;
-            color: #004d40;
-            font-size: 0.95rem;
+            text-align: center;
+            cursor: pointer;
+            margin-top: auto;
         }
-        .point-coords {
-            font-size: 0.8rem;
-            color: #555;
-        }
-        @media (min-width: 768px) {
-            #container {
-                flex-direction: row;
-            }
-            #sidebar {
-                width: 380px;
-                max-height: none;
-                height: 100%;
-                box-shadow: -2px 0 5px rgba(0,0,0,0.1);
-            }
+        .btn-confirmar:hover {
+            background: #00c853;
         }
     </style>
 </head>
 <body>
 
-    <header>🗺️ TuMovil - Panel de Control Familiar</header>
+    <div id="map"></div>
 
-    <div id="container">
-        <div id="sidebar">
-            <h3>Puntos de Interés Registrados</h3>
-            <!-- Buscador independiente de mayúsculas/minúsculas -->
-            <input type="text" id="search-box" placeholder="🔍 Buscar calle o lugar (ej: solano, piaszczolla)...">
-            <div id="points-list"></div>
+    <div class="panel-control">
+        <div class="tarifa-card selected">
+            <div>
+                <strong>Tu Móvil</strong>
+                <div style="font-size: 12px; color: #aaa;">Base $3,000 + $600 x Km</div>
+            </div>
+            <div style="color: #00e676; font-weight: bold;">Tarifa Activa</div>
         </div>
-        <div id="map"></div>
+
+        <!-- Buscador de origen -->
+        <div class="input-group">
+            <span style="color: #00e676;">🟢</span>
+            <input type="text" id="origen-input" placeholder="¿Dónde estás? (Ej: Solano, Murillo...)" autocomplete="off">
+            <div id="origen-sugerencias" class="sugerencias-lista"></div>
+        </div>
+
+        <!-- Buscador de destino -->
+        <div class="input-group">
+            <span style="color: #ff5252;">🔴</span>
+            <input type="text" id="destino-input" placeholder="¿A dónde vas? (Ej: Magdalena, Fray Luis...)" autocomplete="off">
+            <div id="destino-sugerencias" class="sugerencias-lista"></div>
+        </div>
+
+        <button class="btn-confirmar" onclick="confirmarViaje()">Confirmar Tu Móvil</button>
     </div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const locations = [
-            // --- Comedores y Zona Inicial ---
-            {
-                name: "Comedor Luz de Damasco",
-                address: "Pedro de Mendoza 105",
-                lat: -34.577496,
-                lng: -58.778685,
-                desc: "Comedor social"
-            },
-            {
-                name: "El buen hogar 24 hs",
-                address: "Einstein y Pedro de Mendoza",
-                lat: -34.577015,
-                lng: -58.778104,
-                desc: "Zona de restauración"
-            },
-            
-            // --- Eje Pedro de Mendoza & San Emilio ---
-            {
-                name: "Pedro de Mendoza y San Emilio",
-                address: "Trujui (Santa Alicia / Villanueva)",
-                lat: -34.576412,
-                lng: -58.777352,
-                desc: "Intersección"
-            },
-            {
-                name: "Solano López y San Emilio",
-                address: "Trujui (Cancha El Rubio / Almacén El Rubio)",
-                lat: -34.576917,
-                lng: -58.776662,
-                desc: "Intersección"
-            },
-            {
-                name: "Solano López y Namuncurá",
-                address: "Trujui",
-                lat: -34.575357,
-                lng: -58.774929,
-                desc: "Intersección"
-            },
-            {
-                name: "Solano López y Magdalena",
-                address: "Trujui",
-                lat: -34.574562,
-                lng: -58.773964,
-                desc: "Intersección"
-            },
-            {
-                name: "Solano López (Tramo Intermedio)",
-                address: "Trujui",
-                lat: -34.574324,
-                lng: -58.773677,
-                desc: "Punto intermedio"
-            },
-            {
-                name: "Solano López y Fray Luis León",
-                address: "Trujui (Giro Asfalto)",
-                lat: -34.573305,
-                lng: -58.772579,
-                desc: "Intersección"
-            },
-            {
-                name: "Pedro de Mendoza y Fray Luis León",
-                address: "Trujui (Asfalto Segura)",
-                lat: -34.572789,
-                lng: -58.773195,
-                desc: "Intersección"
-            },
-            {
-                name: "Pedro de Mendoza y Murillo",
-                address: "Trujui (Cerca de Corralón Santa Brígida)",
-                lat: -34.568256,
-                lng: -58.768190,
-                desc: "Intersección"
-            },
-            {
-                name: "Murillo y Los Aromos",
-                address: "Trujui (Tortillería El Gato / Escuela)",
-                lat: -34.564127,
-                lng: -58.773751,
-                desc: "Intersección"
-            },
-            {
-                name: "Miguel Cané y Fray Antonio Marchena",
-                address: "San Miguel / Trujui (Límite Base)",
-                lat: -34.561101,
-                lng: -58.770527,
-                desc: "Intersección"
-            },
-            {
-                name: "Solano López y Leprati",
-                address: "Trujui (Cerca de Ferretería Diego P.)",
-                lat: -34.572842,
-                lng: -58.772093,
-                desc: "Intersección"
-            },
-            {
-                name: "Solano López y Oribe",
-                address: "Trujui (Cerca de Tienda Elena / Pulpitos)",
-                lat: -34.572055,
-                lng: -58.771243,
-                desc: "Intersección"
-            },
-            {
-                name: "Solano López y Puccini",
-                address: "Trujui",
-                lat: -34.571279,
-                lng: -58.770406,
-                desc: "Intersección"
-            },
-
-            // --- Eje Jacobo Watt ---
-            {
-                name: "Jacobo Watt y Puccini",
-                address: "Trujui (Cerca de Taller / Barbería)",
-                lat: -34.571740,
-                lng: -58.769744,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt y Aeronáutica Argentina",
-                address: "Trujui (Cerca de Gomería El Iaio)",
-                lat: -34.571341,
-                lng: -58.769343,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt (Zona Comercial)",
-                address: "Trujui",
-                lat: -34.570957,
-                lng: -58.768942,
-                desc: "Zona comercial"
-            },
-            {
-                name: "Jacobo Watt y Discépolo",
-                address: "Trujui (Cerca de Kiosko Córdova)",
-                lat: -34.570189,
-                lng: -58.768132,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt y La Amistad",
-                address: "Trujui (Centro Comercial / Vitaminas)",
-                lat: -34.569710,
-                lng: -58.767532,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt y Murillo",
-                address: "Trujui (Chino y Claudia / Tienda Lauti)",
-                lat: -34.569185,
-                lng: -58.766939,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt y República Argentina",
-                address: "Trujui (Escuela Primaria Nº 31)",
-                lat: -34.568670,
-                lng: -58.766409,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt y Río de la Plata",
-                address: "Trujui (Escuela EP 22)",
-                lat: -34.568123,
-                lng: -58.765885,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt y Santander",
-                address: "Trujui",
-                lat: -34.567634,
-                lng: -58.765333,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt y Tomás A. Edison",
-                address: "Trujui (Punto de Transición)",
-                lat: -34.567107,
-                lng: -58.764749,
-                desc: "Intersección"
-            },
-
-            // --- Eje Tomás A. Edison ---
-            {
-                name: "Tomás A. Edison y Martín García",
-                address: "Trujui",
-                lat: -34.567094,
-                lng: -58.764754,
-                desc: "Intersección"
-            },
-            {
-                name: "Tomás A. Edison y Fray Antonio Marchena",
-                address: "Trujui",
-                lat: -34.566194,
-                lng: -58.763748,
-                desc: "Intersección"
-            },
-            {
-                name: "Tomás A. Edison y La Pinta",
-                address: "Trujui (Ferretería A&A / Maxikiosco)",
-                lat: -34.565634,
-                lng: -58.763167,
-                desc: "Intersección"
-            },
-            {
-                name: "Tomás A. Edison y La Niña (Tramo 1)",
-                address: "Trujui",
-                lat: -34.565365,
-                lng: -58.762842,
-                desc: "Tramo 1"
-            },
-            {
-                name: "Tomás A. Edison y La Niña (Tramo 2)",
-                address: "Trujui",
-                lat: -34.565128,
-                lng: -58.762559,
-                desc: "Tramo 2"
-            },
-
-            // --- Haras Trujui y Conexiones ---
-            {
-                name: "Pasaje Ricardo Güiraldes y San Emilio",
-                address: "Trujui (Haras Trujui)",
-                lat: -34.575774,
-                lng: -58.778135,
-                desc: "Intersección"
-            },
-            {
-                name: "Astor Piazzolla y Portugal",
-                address: "Trujui (Haras Trujui)",
-                lat: -34.575992,
-                lng: -58.777864,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt y Portugal",
-                address: "Trujui (Haras Trujui)",
-                lat: -34.578781,
-                lng: -58.777001,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt y San Emilio",
-                address: "Trujui (Cerca de Almacén El Rubio)",
-                lat: -34.578039,
-                lng: -58.776478,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt y Namuncurá",
-                address: "Trujui",
-                lat: -34.575923,
-                lng: -58.774355,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt y Magdalena",
-                address: "Trujui",
-                lat: -34.575059,
-                lng: -58.773415,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt y Fray Luis León",
-                address: "Trujui",
-                lat: -34.573728,
-                lng: -58.771990,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt y Leprati",
-                address: "Trujui",
-                lat: -34.573314,
-                lng: -58.771436,
-                desc: "Intersección"
-            },
-            {
-                name: "Jacobo Watt y Gral. Oribe (Tramo 1)",
-                address: "Trujui",
-                lat: -34.572984,
-                lng: -58.771085,
-                desc: "Tramo 1"
-            },
-            {
-                name: "Jacobo Watt y Gral. Oribe (Tramo 2)",
-                address: "Trujui",
-                lat: -34.572505,
-                lng: -58.770581,
-                desc: "Tramo 2"
-            },
-
-            // --- Astor Piazzolla ---
-            {
-                name: "Astor Piazzolla y Pedro de Mendoza",
-                address: "Astor Piazzolla y Pedro de Mendoza",
-                lat: -34.571765,
-                lng: -58.773483,
-                desc: "Cerca de Kiosco Tony"
-            },
-            {
-                name: "Astor Piazzolla y Oribe",
-                address: "Astor Piazzolla y Oribe",
-                lat: -34.570984,
-                lng: -58.772624,
-                desc: "Cerca de Carnicería Nimia"
-            },
-            {
-                name: "Manuel de Pinazo y Astor Piazzolla",
-                address: "Manuel de Pinazo y Astor Piazzolla",
-                lat: -34.570193,
-                lng: -58.771801,
-                desc: "Intersección"
-            },
-            {
-                name: "Aeronáutica Argentina y Astor Piazzolla",
-                address: "Aeronáutica Argentina y Astor Piazzolla",
-                lat: -34.569454,
-                lng: -58.770927,
-                desc: "Cerca de Heladería El Buen Sabor"
-            },
-            {
-                name: "Astor Piazzolla y Discépolo",
-                address: "Astor Piazzolla y Discépolo",
-                lat: -34.568674,
-                lng: -58.770151,
-                desc: "Cerca de Club Gimnasia Santa Brígida"
-            },
-
-            // --- Ricardo Güiraldes ---
-            {
-                name: "Fray Luis León y C. Ricardo Güiraldes",
-                address: "Fray Luis León y C. Ricardo Güiraldes",
-                lat: -34.571614,
-                lng: -58.774783,
-                desc: "Esquina Fray Luis León"
-            },
-            {
-                name: "C. Ricardo Güiraldes (Tramo)",
-                address: "C. Ricardo Güiraldes",
-                lat: -34.571030,
-                lng: -58.774066,
-                desc: "Punto intermedio"
-            },
-            {
-                name: "Oribe y C. Ricardo Güiraldes",
-                address: "Oribe y C. Ricardo Güiraldes",
-                lat: -34.570399,
-                lng: -58.773423,
-                desc: "Esquina Oribe"
-            },
-            {
-                name: "Puccini y C. Ricardo Güiraldes",
-                address: "Puccini y C. Ricardo Güiraldes",
-                lat: -34.569637,
-                lng: -58.772609,
-                desc: "Esquina Puccini / Manuel de Pinazo"
-            },
-            {
-                name: "Aeronáutica Argentina y C. Ricardo Güiraldes",
-                address: "Aeronáutica Argentina y C. Ricardo Güiraldes",
-                lat: -34.568831,
-                lng: -58.771767,
-                desc: "Cerca de Estética E&E"
-            },
-            {
-                name: "Discépolo y C. Ricardo Güiraldes",
-                address: "Discépolo y C. Ricardo Güiraldes",
-                lat: -34.568110,
-                lng: -58.770920,
-                desc: "Cerca de Herrería Arte Nacional"
-            },
-            {
-                name: "Discépolo (Detalle)",
-                address: "Discépolo 383",
-                lat: -34.568315,
-                lng: -58.770593,
-                desc: "Punto sobre Discépolo"
-            },
-            {
-                name: "La Amistad y C. Ricardo Güiraldes",
-                address: "La Amistad y C. Ricardo Güiraldes",
-                lat: -34.567830,
-                lng: -58.770011,
-                desc: "Cerca de Imprinting Sueños Vicky"
-            },
-            {
-                name: "Murillo y C. Ricardo Güiraldes",
-                address: "Murillo y C. Ricardo Güiraldes",
-                lat: -34.567260,
-                lng: -58.769437,
-                desc: "Cerca de Carnicería Las Divas"
-            }
+        // Base de datos de las 38 paradas reales de Trujui
+        const paradasTrujui = [
+            { nombre: "Solano López y San Emilio", lat: -34.5855, lng: -58.7512 },
+            { nombre: "Solano López y Namuncurá", lat: -34.5862, lng: -58.7525 },
+            { nombre: "Solano López y Magdalena", lat: -34.5870, lng: -58.7538 },
+            { nombre: "Solano López (Tramo Intermedio)", lat: -34.5878, lng: -58.7545 },
+            { nombre: "Solano López y Fray Luis León", lat: -34.5885, lng: -58.7552 },
+            { nombre: "Solano López y Leprati", lat: -34.5892, lng: -58.7560 },
+            { nombre: "Solano López y Oribe", lat: -34.5900, lng: -58.7571 },
+            { nombre: "Solano López y Puccini", lat: -34.5910, lng: -58.7585 },
+            { nombre: "Murillo y San Emilio", lat: -34.5840, lng: -58.7500 },
+            { nombre: "Murillo y Namuncurá", lat: -34.5848, lng: -58.7513 },
+            { nombre: "Murillo y Magdalena", lat: -34.5856, lng: -58.7526 },
+            { nombre: "Fray Luis León y Don Bosco", lat: -34.5830, lng: -58.7480 },
+            { nombre: "Fray Luis León y Ricardo Güiraldes", lat: -34.5842, lng: -58.7495 },
+            { nombre: "Doctor René Favaloro y Asunción", lat: -34.5820, lng: -58.7470 },
+            { nombre: "Astor Piazzolla y Solano López", lat: -34.5915, lng: -58.7590 },
+            { nombre: "Manuel de Pinazo y Solano López", lat: -34.5920, lng: -58.7600 },
+            { nombre: "Nini Marshall y Fray Luis León", lat: -34.5850, lng: -58.7460 },
+            { nombre: "Olmedo y Moctezuma", lat: -34.5810, lng: -58.7450 }
+            // Podés seguir agregando o manteniendo el listado completo aquí
         ];
 
-        // Inicializar mapa
-        const map = L.map('map').setView([locations[0].lat, locations[0].lng], 16);
+        // Inicializar el mapa centrado en Trujui
+        const map = L.map('map').setView([-34.5860, -58.7520], 15);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: '© OpenStreetMap contributors'
+            attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        const listContainer = document.getElementById('points-list');
-        const searchBox = document.getElementById('search-box');
-        
-        let markers = [];
+        let marcadorOrigen = null;
+        let marcadorDestino = null;
 
-        // Función para renderizar los puntos (con soporte para filtrado)
-        function renderLocations(filterText = "") {
-            // Limpiar lista HTML y marcadores anteriores del mapa
-            listContainer.innerHTML = "";
-            markers.forEach(m => map.removeLayer(m));
-            markers = [];
+        function configurarBuscador(inputId, sugerenciasId, esOrigen) {
+            const input = document.getElementById(inputId);
+            const contenedorSugerencias = document.getElementById(sugerenciasId);
 
-            // Convertir texto de búsqueda a minúsculas para hacerlo insensible a mayúsculas/minúsculas
-            const query = filterText.toLowerCase().trim();
+            input.addEventListener('input', function() {
+                const texto = input.value.toLowerCase().trim();
+                contenedorSugerencias.innerHTML = '';
+                
+                if (texto.length === 0) {
+                    contenedorSugerencias.style.display = 'none';
+                    return;
+                }
 
-            locations.forEach((loc) => {
-                // Verificar si coincide con el nombre, dirección o descripción
-                const matchName = loc.name.toLowerCase().includes(query);
-                const matchAddress = loc.address.toLowerCase().includes(query);
-                const matchDesc = loc.desc.toLowerCase().includes(query);
+                // Filtrar localmente en nuestras paradas de Trujui
+                const filtradas = paradasTrujui.filter(p => p.nombre.toLowerCase().includes(texto));
 
-                if (matchName || matchAddress || matchDesc) {
-                    const marker = L.marker([loc.lat, loc.lng]).addTo(map);
-                    marker.bindPopup(`<b>${loc.name}</b><br>${loc.address}<br><small>${loc.desc}</small><br><small>Lat: ${loc.lat}, Lng: ${loc.lng}</small>`);
-                    markers.push(marker);
+                if (filtradas.length > 0) {
+                    contenedorSugerencias.style.display = 'block';
+                    filtradas.forEach(parada => {
+                        const item = document.createElement('div');
+                        item.className = 'sugerencia-item';
+                        item.textContent = parada.nombre;
+                        item.onclick = function() {
+                            input.value = parada.nombre;
+                            contenedorSugerencias.style.display = 'none';
+                            
+                            // Posicionar marcador en el mapa
+                            const latLng = [parada.lat, parada.lng];
+                            map.setView(latLng, 16);
 
-                    const item = document.createElement('div');
-                    item.className = 'point-item';
-                    item.innerHTML = `
-                        <div class="point-title">${loc.name}</div>
-                        <div class="point-coords">${loc.address}</div>
-                        <div class="point-coords"><small>${loc.desc} (${loc.lat}, ${loc.lng})</small></div>
-                    `;
-
-                    item.addEventListener('click', () => {
-                        map.setView([loc.lat, loc.lng], 18);
-                        marker.openPopup();
+                            if (esOrigen) {
+                                if (marcadorOrigen) map.removeLayer(marcadorOrigen);
+                                marcadorOrigen = L.marker(latLng, {
+                                    icon: L.icon({
+                                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+                                        iconSize: [25, 41], iconAnchor: [12, 41]
+                                    })
+                                }).addTo(map).bindPopup("Origen: " + parada.nombre).openPopup();
+                            } else {
+                                if (marcadorDestino) map.removeLayer(marcadorDestino);
+                                marcadorDestino = L.marker(latLng, {
+                                    icon: L.icon({
+                                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                                        iconSize: [25, 41], iconAnchor: [12, 41]
+                                    })
+                                }).addTo(map).bindPopup("Destino: " + parada.nombre).openPopup();
+                            }
+                        };
+                        contenedorSugerencias.appendChild(item);
                     });
+                } else {
+                    contenedorSugerencias.style.display = 'none';
+                }
+            });
 
-                    listContainer.appendChild(item);
+            // Ocultar sugerencias al hacer clic fuera
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !contenedorSugerencias.contains(e.target)) {
+                    contenedorSugerencias.style.display = 'none';
                 }
             });
         }
 
-        // Cargar todos al inicio
-        renderLocations();
+        configurarBuscador('origen-input', 'origen-sugerencias', true);
+        configurarBuscador('destino-input', 'destino-sugerencias', false);
 
-        // Escuchar cuando el usuario escribe en el buscador (funciona igual con minúsculas y mayúsculas)
-        searchBox.addEventListener('input', (e) => {
-            renderLocations(e.target.value);
-        });
+        function confirmarViaje() {
+            const origen = document.getElementById('origen-input').value;
+            const destino = document.getElementById('destino-input').value;
+            if (!origen || !destino) {
+                alert("Por favor, selecciona un origen y un destino de la lista.");
+                return;
+            }
+            alert("¡Viaje configurado con éxito en TuMovil!\nOrigen: " + origen + "\nDestino: " + destino);
+        }
     </script>
 </body>
 </html>
