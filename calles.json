@@ -18,6 +18,18 @@
     "lng": -58.777352
   },
   {
+    "nombre": "Solano López y Einstein",
+    "zona": "Trujui (Cerca de Cancha El Rubio / Kiosco Principito)",
+    "lat": -34.577691,
+    "lng": -58.777087
+  },
+  {
+    "nombre": "Solano López y Portugal",
+    "zona": "Trujui (Cerca de Taller Víctor Tanferna)",
+    "lat": -34.578255,
+    "lng": -58.777672
+  },
+  {
     "nombre": "Solano López y San Emilio",
     "zona": "Trujui (Cancha El Rubio / Almacén El Rubio)",
     "lat": -34.576917,
@@ -303,7 +315,7 @@
     "nombre": "Discépolo y C. Ricardo Güiraldes",
     "zona": "Herrería Arte Nacional",
     "lat": -34.568110,
-    "lng": -58.770920
+    "lng": -58.70920
   },
   {
     "nombre": "Discépolo (Detalle)",
