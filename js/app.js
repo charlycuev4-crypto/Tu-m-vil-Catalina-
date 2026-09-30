@@ -140,20 +140,35 @@ function hablarAnuncioPasajero(texto) {
     }
 }
 
-// Función exclusiva para el saludo del conductor al iniciar viaje
+// Función de bienvenida con voz masculina grave y personalizada
 function saludarConductorBienvenida(nombrePasajero) {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
+        
         const texto = nombrePasajero 
-            ? `Hola ${nombrePasajero}, bienvenida a Tu Móvil. Pronto estaremos en su destino.` 
-            : `Hola, bienvenida a Tu Móvil. Pronto estaremos en su destino.`;
+            ? `Hola ${nombrePasajero}, bienvenido a Tu Móvil. Pronto estaremos en su destino.` 
+            : `Hola, bienvenido a Tu Móvil. Pronto estaremos en su destino.`;
 
         const enunciado = new SpeechSynthesisUtterance(texto);
         enunciado.lang = 'es-AR';
         enunciado.rate = 1.0;
-        enunciado.pitch = 1.0;
+        enunciado.pitch = 0.85; // Tono más grave/masculino
+
+        const voces = window.speechSynthesis.getVoices();
+        const vozMasculina = voces.find(v => v.lang.startsWith('es') && (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('pablo') || v.name.toLowerCase().includes('mateo') || v.name.toLowerCase().includes('diego') || v.name.toLowerCase().includes('google español')));
+        
+        if (vozMasculina) {
+            enunciado.voice = vozMasculina;
+        }
+
         window.speechSynthesis.speak(enunciado);
     }
+}
+
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+    };
 }
 
 async function cargarTarifasDesdeSupabase() {
@@ -425,7 +440,7 @@ function iniciarEscuchaRealtime(id) {
                 silenciarTimbreLlegada();
                 document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
                 
-                // Dispara el saludo por voz exclusivo del conductor con el nombre del pasajero
+                // Reproduce el saludo masculino personalizado
                 saludarConductorBienvenida(pasajeroNombre);
 
                 iniciarMonitoreoDinamicoRuta();
