@@ -1,5 +1,17 @@
 [
   {
+    "nombre": "Comedor Luz de Damasco",
+    "zona": "Pedro de Mendoza 105 - Comedor social",
+    "lat": -34.577496,
+    "lng": -58.778685
+  },
+  {
+    "nombre": "El buen hogar 24 hs",
+    "zona": "Einstein y Pedro de Mendoza",
+    "lat": -34.577015,
+    "lng": -58.778104
+  },
+  {
     "nombre": "Pedro de Mendoza y San Emilio",
     "zona": "Trujui (Santa Alicia / Villanueva)",
     "lat": -34.576412,
@@ -30,8 +42,8 @@
     "lng": -58.773677
   },
   {
-    "nombre": "Solano López y Fray Luis León (Giro Asfalto)",
-    "zona": "Trujui",
+    "nombre": "Solano López y Fray Luis León",
+    "zona": "Trujui (Giro Asfalto)",
     "lat": -34.573305,
     "lng": -58.772579
   },
@@ -79,7 +91,7 @@
   },
   {
     "nombre": "Jacobo Watt y Puccini",
-    "zona": "Trujui (Cerca de Taller de Costura / Barbería Braian)",
+    "zona": "Trujui (Cerca de Taller / Barbería)",
     "lat": -34.571740,
     "lng": -58.769744
   },
@@ -115,7 +127,7 @@
   },
   {
     "nombre": "Jacobo Watt y República Argentina",
-    "zona": "Trujui (Escuela Primaria Nº 31 Dardo Rocha)",
+    "zona": "Trujui (Escuela Primaria Nº 31)",
     "lat": -34.568670,
     "lng": -58.766409
   },
@@ -151,7 +163,7 @@
   },
   {
     "nombre": "Tomás A. Edison y La Pinta",
-    "zona": "Trujui (Fretería A&A / Maxikiosco Lucía)",
+    "zona": "Trujui (Ferretería A&A / Maxikiosco)",
     "lat": -34.565634,
     "lng": -58.763167
   },
@@ -174,7 +186,7 @@
     "lng": -58.778135
   },
   {
-    "nombre": "Astor Piazzola y Portugal",
+    "nombre": "Astor Piazzolla y Portugal",
     "zona": "Trujui (Haras Trujui)",
     "lat": -34.575992,
     "lng": -58.777864
@@ -226,4 +238,89 @@
     "zona": "Trujui",
     "lat": -34.572505,
     "lng": -58.770581
+  },
+  {
+    "nombre": "Astor Piazzolla y Pedro de Mendoza",
+    "zona": "Astor Piazzolla y Pedro de Mendoza (Kiosco Tony)",
+    "lat": -34.571765,
+    "lng": -58.773483
+  },
+  {
+    "nombre": "Astor Piazzolla y Oribe",
+    "zona": "Astor Piazzolla y Oribe (Carnicería Nimia)",
+    "lat": -34.570984,
+    "lng": -58.772624
+  },
+  {
+    "nombre": "Manuel de Pinazo y Astor Piazzolla",
+    "zona": "Trujui",
+    "lat": -34.570193,
+    "lng": -58.771801
+  },
+  {
+    "nombre": "Aeronáutica Argentina y Astor Piazzolla",
+    "zona": "Heladería El Buen Sabor",
+    "lat": -34.569454,
+    "lng": -58.770927
+  },
+  {
+    "nombre": "Astor Piazzolla y Discépolo",
+    "zona": "Club Gimnasia de Santa Brígida",
+    "lat": -34.568674,
+    "lng": -58.770151
+  },
+  {
+    "nombre": "Fray Luis León y C. Ricardo Güiraldes",
+    "zona": "Trujui",
+    "lat": -34.571614,
+    "lng": -58.774783
+  },
+  {
+    "nombre": "C. Ricardo Güiraldes (Tramo)",
+    "zona": "Trujui",
+    "lat": -34.571030,
+    "lng": -58.774066
+  },
+  {
+    "nombre": "Oribe y C. Ricardo Güiraldes",
+    "zona": "Trujui",
+    "lat": -34.570399,
+    "lng": -58.773423
+  },
+  {
+    "nombre": "Puccini y C. Ricardo Güiraldes",
+    "zona": "Esquina Puccini / Manuel de Pinazo",
+    "lat": -34.569637,
+    "lng": -58.772609
+  },
+  {
+    "nombre": "Aeronáutica Argentina y C. Ricardo Güiraldes",
+    "zona": "Cerca de Estética E&E",
+    "lat": -34.568831,
+    "lng": -58.771767
+  },
+  {
+    "nombre": "Discépolo y C. Ricardo Güiraldes",
+    "zona": "Herrería Arte Nacional",
+    "lat": -34.568110,
+    "lng": -58.770920
+  },
+  {
+    "nombre": "Discépolo (Detalle)",
+    "zona": "Discépolo 383",
+    "lat": -34.568315,
+    "lng": -58.770593
+  },
+  {
+    "nombre": "La Amistad y C. Ricardo Güiraldes",
+    "zona": "Imprinting Sueños Vicky",
+    "lat": -34.567830,
+    "lng": -58.770011
+  },
+  {
+    "nombre": "Murillo y C. Ricardo Güiraldes",
+    "zona": "Carnicería Las Divas",
+    "lat": -34.567260,
+    "lng": -58.769437
   }
+]
