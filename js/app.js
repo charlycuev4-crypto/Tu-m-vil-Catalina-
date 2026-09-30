@@ -25,7 +25,7 @@ let intervaloTimbreInsistente = null;
 let audioCtxPasajero = null;
 let intervaloAlertaChatPasajero = null;
 let watchIdPasajero = null; 
-let usuarioMoviendoMapa = false; // Bandera para liberar el zoom y el movimiento manual
+let usuarioMoviendoMapa = false;
 
 function reproducirPitidoAudio(frecuencia = 880, duracion = 0.3) {
     try {
@@ -92,11 +92,8 @@ async function cargarPuntosLocales() {
         let respuesta = await fetch('calles.json');
         if (respuesta.ok) {
             puntosLocalesCalles = await respuesta.json();
-            console.log("Calles y puntos locales cargados con éxito:", puntosLocalesCalles.length);
         }
-    } catch (e) {
-        console.error("No se pudo cargar calles.json:", e);
-    }
+    } catch (e) {}
 }
 
 async function obtenerDireccionYBarrioPasajero(lat, lon) {
@@ -138,6 +135,22 @@ function hablarAnuncioPasajero(texto) {
         const enunciado = new SpeechSynthesisUtterance(texto);
         enunciado.lang = 'es-AR';
         enunciado.rate = 0.9;
+        enunciado.pitch = 1.0;
+        window.speechSynthesis.speak(enunciado);
+    }
+}
+
+// Función exclusiva para el saludo del conductor al iniciar viaje
+function saludarConductorBienvenida(nombrePasajero) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const texto = nombrePasajero 
+            ? `Hola ${nombrePasajero}, bienvenida a Tu Móvil. Pronto estaremos en su destino.` 
+            : `Hola, bienvenida a Tu Móvil. Pronto estaremos en su destino.`;
+
+        const enunciado = new SpeechSynthesisUtterance(texto);
+        enunciado.lang = 'es-AR';
+        enunciado.rate = 1.0;
         enunciado.pitch = 1.0;
         window.speechSynthesis.speak(enunciado);
     }
@@ -411,6 +424,10 @@ function iniciarEscuchaRealtime(id) {
             if (de.estado === 'en_viaje') {
                 silenciarTimbreLlegada();
                 document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
+                
+                // Dispara el saludo por voz exclusivo del conductor con el nombre del pasajero
+                saludarConductorBienvenida(pasajeroNombre);
+
                 iniciarMonitoreoDinamicoRuta();
             }
             if (de.estado === 'cancelado') { 
@@ -758,7 +775,7 @@ async function solicitarViaje() {
                         precioFinalACobrar = Math.round(precioCalculado / 2);
                         esDescuentoFidelidad = true;
                     } else {
-                        mostrarMsg('⚠️️ Tu 6to viaje supera los 12 km permitidos para la promo. Se aplicará la tarifa normal.', 'error');
+                        mostrarMsg('⚠️ Tu 6to viaje supera los 12 km permitidos para la promo. Se aplicará la tarifa normal.', 'error');
                     }
                 }
             }
