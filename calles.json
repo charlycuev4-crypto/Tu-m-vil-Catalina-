@@ -1,6 +1,18 @@
 [
   {
-    "nombre": "Pedro de Mendoza y San Emilio",
+    "nombre": "Comedor Luz de Damasco",
+    "zona": "Pedro de Mendoza 105 - Comedor social",
+    "lat": -34.577496,
+    "lng": -58.778685
+  },
+  {
+    "nombre": "El buen hogar 24 hs",
+    "zona": "Einstein y Pedro de Mendoza",
+    "lat": -34.577015,
+    "lng": -58.778104
+  },
+  {
+    "nombre": "San Emilio y Pedro de Mendoza",
     "zona": "Trujui (Santa Alicia / Villanueva)",
     "lat": -34.576412,
     "lng": -58.777352
@@ -12,10 +24,22 @@
     "lng": -58.776662
   },
   {
+    "nombre": "Namuncurá y Pedro de Mendoza",
+    "zona": "Trujui",
+    "lat": -34.574900,
+    "lng": -58.775554
+  },
+  {
     "nombre": "Solano López y Namuncurá",
     "zona": "Trujui",
     "lat": -34.575357,
     "lng": -58.774929
+  },
+  {
+    "nombre": "Magdalena y Pedro de Mendoza",
+    "zona": "Trujui",
+    "lat": -34.573781,
+    "lng": -58.774173
   },
   {
     "nombre": "Solano López y Magdalena",
@@ -151,7 +175,7 @@
   },
   {
     "nombre": "Tomás A. Edison y La Pinta",
-    "zona": "Trujui (Fretería A&A / Maxikiosco Lucía)",
+    "zona": "Trujui (Ferretería A&A / Maxikiosco Lucía)",
     "lat": -34.565634,
     "lng": -58.763167
   },
@@ -226,5 +250,35 @@
     "zona": "Trujui",
     "lat": -34.572505,
     "lng": -58.770581
+  },
+  {
+    "nombre": "Astor Piazzolla y Oribe",
+    "zona": "Trujui (Cerca de Carnicería Nimia)",
+    "lat": -34.570984,
+    "lng": -58.772624
+  },
+  {
+    "nombre": "Manuel de Pinazo y Astor Piazzolla",
+    "zona": "Trujui",
+    "lat": -34.570193,
+    "lng": -58.771801
+  },
+  {
+    "nombre": "Aeronáutica Argentina y Astor Piazzolla",
+    "zona": "Trujui (Heladería El Buen Sabor)",
+    "lat": -34.569454,
+    "lng": -58.770927
+  },
+  {
+    "nombre": "Astor Piazzolla y Discépolo",
+    "zona": "Trujui (Club Gimnasia de Santa Brígida)",
+    "lat": -34.568674,
+    "lng": -58.770151
+  },
+  {
+    "nombre": "Fray Luis León y C. Ricardo Güiraldes",
+    "zona": "Trujui",
+    "lat": -34.571614,
+    "lng": -58.774783
   }
 ]
