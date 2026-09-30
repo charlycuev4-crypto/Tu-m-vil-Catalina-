@@ -140,37 +140,6 @@ function hablarAnuncioPasajero(texto) {
     }
 }
 
-// Función de bienvenida con voz masculina grave y personalizada
-function saludarConductorBienvenida(nombrePasajero) {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        
-        const texto = nombrePasajero 
-            ? `Hola ${nombrePasajero}, bienvenido a Tu Móvil. Pronto estaremos en su destino.` 
-            : `Hola, bienvenido a Tu Móvil. Pronto estaremos en su destino.`;
-
-        const enunciado = new SpeechSynthesisUtterance(texto);
-        enunciado.lang = 'es-AR';
-        enunciado.rate = 1.0;
-        enunciado.pitch = 0.85; // Tono más grave/masculino
-
-        const voces = window.speechSynthesis.getVoices();
-        const vozMasculina = voces.find(v => v.lang.startsWith('es') && (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('pablo') || v.name.toLowerCase().includes('mateo') || v.name.toLowerCase().includes('diego') || v.name.toLowerCase().includes('google español')));
-        
-        if (vozMasculina) {
-            enunciado.voice = vozMasculina;
-        }
-
-        window.speechSynthesis.speak(enunciado);
-    }
-}
-
-if ('speechSynthesis' in window) {
-    window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.getVoices();
-    };
-}
-
 async function cargarTarifasDesdeSupabase() {
     try {
         const { data, error } = await supabaseClient
@@ -439,10 +408,6 @@ function iniciarEscuchaRealtime(id) {
             if (de.estado === 'en_viaje') {
                 silenciarTimbreLlegada();
                 document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
-                
-                // Reproduce el saludo masculino personalizado
-                saludarConductorBienvenida(pasajeroNombre);
-
                 iniciarMonitoreoDinamicoRuta();
             }
             if (de.estado === 'cancelado') { 
@@ -635,9 +600,8 @@ async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
             rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.85 }).addTo(mapa);
             distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
             
-            // LÓGICA DE 2 KM INCLUIDOS EN LA TARIFA BASE
             let baseCalculo = TARIFAS_ACTIVAS.base;
-            let distanciaIncluidaBase = 2; // Los primeros 2 km están cubiertos por la base
+            let distanciaIncluidaBase = 2;
 
             if (distanciaKm > distanciaIncluidaBase) {
                 let kmExcedentes = distanciaKm - distanciaIncluidaBase;
