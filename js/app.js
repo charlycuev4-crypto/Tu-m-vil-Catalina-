@@ -4,7 +4,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let TARIFAS_ACTIVAS = {
     base: 3000,
-    km: 700,
+    km: 800,
     recargo: 1.30,
     horaInicio: 20,
     horaFin: 8
