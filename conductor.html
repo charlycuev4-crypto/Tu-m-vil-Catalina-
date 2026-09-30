@@ -483,7 +483,7 @@
             } catch(e) {}
         }
 
-        // SALUDO DE BIENVENIDA CON VOZ MASCULINA Y PERSONALIZADA
+        // FUNCIÓN DE VOZ SIMPLIFICADA Y CON TONO GRAVE ASEGURADO
         function saludarConductorBienvenida(nombrePasajero) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
@@ -494,24 +494,11 @@
 
                 const enunciado = new SpeechSynthesisUtterance(texto);
                 enunciado.lang = 'es-AR';
-                enunciado.rate = 1.0;
-                enunciado.pitch = 0.85; // Tono más grave / masculino
-
-                const voces = window.speechSynthesis.getVoices();
-                const vozMasculina = voces.find(v => v.lang.startsWith('es') && (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('pablo') || v.name.toLowerCase().includes('mateo') || v.name.toLowerCase().includes('diego') || v.name.toLowerCase().includes('google español')));
+                enunciado.rate = 0.95; 
+                enunciado.pitch = 0.6; // Tono grave garantizado sin depender de listas externas
                 
-                if (vozMasculina) {
-                    enunciado.voice = vozMasculina;
-                }
-
                 window.speechSynthesis.speak(enunciado);
             }
-        }
-
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.onvoiceschanged = () => {
-                window.speechSynthesis.getVoices();
-            };
         }
 
         function comenzarSirenaAlerta() {
@@ -902,7 +889,7 @@
             if (estadoFlujo === 'en_puerta') {
                 estadoFlujo = 'en_viaje'; localStorage.setItem('conductor_estado_flujo', 'en_viaje');
                 
-                // REPRODUCE EL SALUDO DE BIENVENIDA POR VOZ MASCULINA EXCLUSIVAMENTE AL INICIAR EL VIAJE
+                // DISPARA EL SALUDO POR VOZ CON TONO GRAVE AL INICIAR EL VIAJE
                 saludarConductorBienvenida(viajeActivo.pasajero_nombre);
 
                 btnEnCurso.className = "btn-action btn-finalizar"; 
@@ -1119,7 +1106,7 @@
             try {
                 let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
                 if (latDestinoExtra && lonDestinoExtra) {
-                    url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${lonDestinoExtra},${lonDestinoExtra}`;
+                    url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${latDestinoExtra},${lonDestinoExtra}`;
                 }
                 url += `?overview=full&geometries=geojson`;
 
