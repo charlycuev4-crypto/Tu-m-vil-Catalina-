@@ -1,5 +1,5 @@
-const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+Const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let TARIFAS_ACTIVAS = {
@@ -26,7 +26,6 @@ let audioCtxPasajero = null;
 let intervaloAlertaChatPasajero = null;
 let watchIdPasajero = null; 
 let usuarioMoviendoMapa = false;
-let origenManualSeleccionado = false; // Bandera para respetar el origen manual del usuario
 
 function reproducirPitidoAudio(frecuencia = 880, duracion = 0.3) {
     try {
@@ -549,7 +548,6 @@ async function marcarOrigen(lat, lng, labelPersonalizada = null) {
 }
 
 function obtenerGPS() {
-    if (origenManualSeleccionado) return; // Respeta si el usuario ya eligió manualmente su salida
     if (!navigator.geolocation) { usarUbicacionDefault(); return; }
     document.getElementById('gpsBtn').classList.add('buscando');
     usuarioMoviendoMapa = false;
@@ -560,7 +558,6 @@ function obtenerGPS() {
 
     watchIdPasajero = navigator.geolocation.watchPosition(
         (pos) => { 
-            if (origenManualSeleccionado) return; 
             document.getElementById('gpsBtn').classList.remove('buscando'); 
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
@@ -581,7 +578,6 @@ function obtenerGPS() {
 }
 
 function usarUbicacionDefault() { 
-    origenManualSeleccionado = false;
     marcarOrigen(UBICACION_DEFAULT[0], UBICACION_DEFAULT[1], "Ubicación predeterminada"); 
     mapa.setView(UBICACION_DEFAULT, 16); 
 }
@@ -648,7 +644,7 @@ function iniciarMonitoreoDinamicoRuta() {
 }
 
 // ==========================================================
-// BUSCADOR INTELIGENTE Y FLEXIBLE PARA DESTINO
+// BUSCADOR INTELIGENTE Y FLEXIBLE
 // ==========================================================
 let timeoutBusqueda = null;
 function buscarDireccion(query) {
@@ -729,100 +725,12 @@ function seleccionarDestino(direccion, lat, lng) {
     recalcularRutaYPrecio();
 }
 
-// ==========================================================
-// BUSCADOR INTELIGENTE PARA EL ORIGEN PERSONALIZADO
-// ==========================================================
-let timeoutBusquedaOrigen = null;
-function buscarOrigen(query) {
-    clearTimeout(timeoutBusquedaOrigen);
-    if (query.length < 2) { 
-        document.getElementById('sugerenciasOrigen').classList.remove('activo'); 
-        return; 
-    }
-
-    timeoutBusquedaOrigen = setTimeout(async () => {
-        let resultadosHtml = '';
-
-        if (puntosLocalesCalles && puntosLocalesCalles.length > 0) {
-            const limpiarTexto = (txt) => txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            const queryLimia = limpiarTexto(query);
-            const palabrasQuery = queryLimia.split(' ').filter(p => p.length > 0);
-
-            let filtradosLocales = puntosLocalesCalles.filter(p => {
-                let nombreLugar = limpiarTexto(p.nombre);
-                let zonaLugar = limpiarTexto(p.zona || '');
-                let textoCompleto = nombreLugar + ' ' + zonaLugar;
-                return palabrasQuery.every(palabra => textoCompleto.includes(palabra));
-            }).slice(0, 4);
-
-            filtradosLocales.forEach(lugar => {
-                resultadosHtml += `
-                    <div class="sugerencia-item" onclick="seleccionarOrigenLocal('${lugar.nombre.replace(/'/g, "")}', ${lugar.lat}, ${lugar.lng})">
-                        <strong>📍 ${lugar.nombre}</strong>
-                        <div style="font-size:0.7rem; color:var(--color-primario);">Zona: ${lugar.zona || 'Local'}</div>
-                    </div>
-                `;
-            });
-        }
-
-        try {
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Buenos Aires')}&limit=4`;
-            const res = await fetch(url); 
-            const datosGeo = await res.json();
-            
-            datosGeo.forEach(lugar => {
-                let nombreCorto = lugar.display_name.split(',')[0];
-                let resto = lugar.display_name.split(',').slice(1,3).join(',');
-                resultadosHtml += `
-                    <div class="sugerencia-item" onclick="seleccionarOrigen('${lugar.display_name.replace(/'/g, "")}', ${lugar.lat}, ${lugar.lon})">
-                        <strong>🎯 ${nombreCorto}</strong>
-                        <div style="font-size:0.7rem; color:var(--texto-secundario);">${resto}</div>
-                    </div>
-                `;
-            });
-        } catch (e) {}
-
-        const contenedorSugerencias = document.getElementById('sugerenciasOrigen');
-        if (resultadosHtml) {
-            contenedorSugerencias.innerHTML = resultadosHtml;
-            contenedorSugerencias.classList.add('activo');
-        } else {
-            contenedorSugerencias.classList.remove('activo');
-        }
-    }, 300);
-}
-
-function seleccionarOrigenLocal(nombre, lat, lng) {
-    origenManualSeleccionado = true;
-    if (watchIdPasajero !== null) {
-        navigator.geolocation.clearWatch(watchIdPasajero);
-        watchIdPasajero = null;
-    }
-    document.getElementById('origenDisplay').value = nombre;
-    document.getElementById('sugerenciasOrigen').classList.remove('activo');
-    marcarOrigen(parseFloat(lat), parseFloat(lng), nombre);
-    mapa.setView([lat, lng], 16);
-}
-
-function seleccionarOrigen(direccion, lat, lng) {
-    origenManualSeleccionado = true;
-    if (watchIdPasajero !== null) {
-        navigator.geolocation.clearWatch(watchIdPasajero);
-        watchIdPasajero = null;
-    }
-    let nombreCorto = direccion.split(',')[0];
-    document.getElementById('origenDisplay').value = nombreCorto;
-    document.getElementById('sugerenciasOrigen').classList.remove('activo');
-    marcarOrigen(parseFloat(lat), parseFloat(lng), nombreCorto);
-    mapa.setView([lat, lng], 16);
-}
-
 async function solicitarViaje() {
     const destinoTexto = document.getElementById('destino').value.trim();
     if (!destinoTexto || !origenCoords || !destinoCoords) { mostrarMsg('Seleccioná un destino válido.', 'error'); return; }
 
-    if (!origenManualSeleccionado && (origenCoords.lat === UBICACION_DEFAULT[0] && origenCoords.lng === UBICACION_DEFAULT[1])) {
-        mostrarMsg('Por favor presiona el botón de GPS (🎯) o escribe tu dirección de salida.', 'error');
+    if (origenCoords.lat === UBICACION_DEFAULT[0] && origenCoords.lng === UBICACION_DEFAULT[1]) {
+        mostrarMsg('Por favor presiona el botón de GPS (🎯) para obtener tu ubicación exacta antes de pedir.', 'error');
         return;
     }
 
