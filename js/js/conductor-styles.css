@@ -1,0 +1,185 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0b1b12; height: 100vh; height: 100dvh; overflow: hidden; color: #ffffff;
+}
+
+#mapaContainer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; height: 100vh; height: 100dvh; z-index: 1; }
+#mapaLeaflet { width: 100%; height: 100%; }
+
+.header-float { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 1000; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+.header-left-col { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; max-width: 55%; }
+
+.status-badge { background: #0f2e1b; color: #4ade80; padding: 8px 14px; border-radius: 30px; font-weight: 700; font-size: 0.8rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #166534; cursor: pointer; user-select: none; text-align: center; white-space: nowrap; }
+.status-badge.activo { background: #15803d; color: #ffffff; border-color: #22c55e; }
+.status-badge.inactivo { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
+
+.ganancias-scroll-container {
+    display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px 2px;
+    scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.ganancias-scroll-container::-webkit-scrollbar { display: none; }
+
+.burbuja-stat {
+    background: rgba(15, 46, 27, 0.95); backdrop-filter: blur(8px);
+    border: 1px solid #166534; padding: 6px 12px; border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4); flex: 0 0 auto; scroll-snap-align: start;
+    min-width: 130px; display: flex; flex-direction: column; justify-content: center;
+}
+.burbuja-label { font-size: 0.65rem; color: #86efac; text-transform: uppercase; font-weight: 700; }
+.burbuja-valor { font-size: 0.95rem; font-weight: 800; color: #4ade80; }
+.burbuja-valor.verde { color: #22c55e; }
+
+.header-right-col { display: flex; gap: 8px; pointer-events: auto; flex-direction: column; align-items: flex-end; }
+.gps-btn { width: 44px; height: 44px; border-radius: 50%; background: #0f2e1b; color: white; display: flex; align-items: center; justify-content: center; border: 1px solid #166534; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+.gps-btn.seguimiento-on { background: #15803d; border-color: #22c55e; animation: pulsoGps 2s infinite; }
+
+.google-maps-btn {
+    width: 44px; height: 44px; border-radius: 50%; background: #ffffff; color: #15803d;
+    display: flex; align-items: center; justify-content: center; border: 1px solid #166534;
+    font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+#btnAbrirChatFlotante {
+    pointer-events: auto;
+    width: 44px; height: 44px; background: #22c55e; color: #0b1b12;
+    border-radius: 50%; display: none; align-items: center; justify-content: center;
+    font-size: 1.3rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4); cursor: pointer;
+    border: 2px solid white; transition: transform 0.2s;
+}
+#btnAbrirChatFlotante:active { transform: scale(0.9); }
+
+@keyframes latidoChat {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+    50% { transform: scale(1.15); box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+.chat-alerta-activo {
+    animation: latidoChat 1s infinite ease-in-out;
+    background: #16a34a !important;
+    border-color: #ffffff !important;
+}
+
+.test-audio-btn {
+    background: #c2410c; color: white; border: none; padding: 6px 12px;
+    border-radius: 20px; font-weight: bold; font-size: 0.7rem; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; gap: 4px;
+    border: 1px solid #9a3412; width: fit-content;
+}
+
+@keyframes pulsoGps { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+
+#modalChatFlotante {
+    position: fixed; top: 155px; right: 16px; width: 300px; max-width: calc(100vw - 32px);
+    background: #0f2e1b; border: 2px solid #22c55e; border-radius: 16px;
+    padding: 12px; z-index: 600; display: none; flex-direction: column; gap: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); color: #f1f5f9;
+}
+#modalChatFlotante.activo { display: flex; }
+
+.chat-mensajes-lista {
+    max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
+    font-size: 0.78rem; padding: 8px; background: #08120d; border-radius: 10px; border: 1px solid #166534;
+}
+.chat-msg-item { padding: 5px 8px; border-radius: 8px; max-width: 85%; word-break: break-word; }
+.chat-msg-item.admin { background: #14532d; align-self: flex-start; color: #86efac; }
+.chat-msg-item.pasajero { background: #1e293b; align-self: flex-start; color: #f1f5f9; }
+.chat-msg-item.conductor { background: #15803d; align-self: flex-end; color: #ffffff; }
+
+.chat-input-row { display: flex; gap: 6px; }
+.chat-input-row input {
+    flex: 1; background: #08120d; border: 1px solid #166534; border-radius: 8px;
+    padding: 6px 10px; color: white; font-size: 0.8rem; outline: none;
+}
+.chat-input-row button {
+    background: #22c55e; color: #0b1b12; border: none; border-radius: 8px;
+    padding: 0 12px; font-weight: 700; font-size: 0.8rem; cursor: pointer;
+}
+
+.bottom-panel { 
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; 
+    background: #0f2e1b; border-radius: 24px 24px 0 0; border-top: 1px solid #166534; 
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.5); 
+    padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); 
+    height: 75px; 
+    overflow: hidden; transition: height 0.3s ease, background 0.3s ease; color: #f1f5f9; 
+}
+.bottom-panel.viaje-entrante, 
+.bottom-panel.viaje-activo-estado { 
+    height: auto; max-height: 80vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.bottom-panel.viaje-entrante { animation: alertaParpadeo 1s infinite alternate; }
+@keyframes alertaParpadeo { from { border-top-color: #166534; background: #0f2e1b; } to { border-top-color: #22c55e; background: #143621; } }
+
+.panel-handle { width: 40px; height: 4px; background: #166534; border-radius: 3px; margin: 0 auto 6px; }
+
+.viaje-info-box { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.viaje-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #166534; padding-bottom: 6px; }
+
+.pasajero-perfil-container { display: flex; align-items: center; gap: 10px; }
+.pasajero-foto-box { width: 42px; height: 42px; border-radius: 50%; background: #166534; overflow: hidden; border: 2px solid #22c55e; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.pasajero-foto-box img { width: 100%; height: 100%; object-fit: cover; }
+
+.viaje-pasajero { font-size: 0.95rem; font-weight: 700; color: #fff; }
+.viaje-precio { font-size: 1.15rem; font-weight: 800; color: #4ade80; }
+
+.input-group { background: #08120d; border-radius: 14px; padding: 8px 12px; margin-bottom: 8px; border: 1px solid #166534; }
+.input-row { display: flex; flex-direction: column; gap: 3px; font-size: 0.8rem; color: #86efac; }
+.input-row span { color: #f1f5f9; font-weight: 500; }
+
+.manifesto-box { background: rgba(34, 197, 94, 0.1); border-left: 3px solid #22c55e; padding: 4px 8px; border-radius: 0 6px 6px 0; font-size: 0.75rem; color: #e2e8f0; margin-top: 4px; }
+
+.btn-action { width: 100%; color: white; border: none; padding: 12px; border-radius: 50px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-bottom: 6px;}
+
+.btn-espera { 
+    background: #15803d; color: #ffffff; cursor: default; padding: 8px 16px; 
+    font-size: 0.85rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(21, 128, 61, 0.4);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border: 1px solid #22c55e;
+}
+.ruedita-radar {
+    width: 14px; height: 14px; border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff; border-radius: 50%; animation: girarRadar 0.8s linear infinite;
+}
+@keyframes girarRadar { to { transform: rotate(360deg); } }
+
+.btn-desconectado { background: #451a03; color: #f59e0b; cursor: not-allowed; padding: 8px 16px; font-size: 0.85rem; border-radius: 20px; }
+.btn-aceptar { background: #15803d; font-size: 1.05rem; border: 1px solid #22c55e; }
+.btn-llegué { background: #16a34a; }
+.btn-iniciar { background: #0d9488; }
+.btn-finalizar { background: #e11d48; }
+
+.chofer-auto-icon {
+    background: #0f2e1b; width: 38px !important; height: 38px !important;
+    border: 3px solid #22c55e; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 1.1rem;
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.6);
+}
+
+.pasajero-origen-icon { background: #22c55e; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
+.pasajero-destino-icon { background: #ef4444; width: 14px !important; height: 14px !important; border: 2px solid white; border-radius: 50%; }
+
+#modalConfigChofer {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(11, 27, 18, 0.95);
+    z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.config-card {
+    background: #0f2e1b; border: 1px solid #166534; border-radius: 20px; width: 100%; max-width: 400px;
+    padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); color: #f1f5f9; max-height: 90vh; overflow-y: auto;
+}
+.config-card h2 { font-size: 1.25rem; margin-bottom: 6px; color: #4ade80; text-align: center; }
+.config-card p { font-size: 0.85rem; color: #86efac; margin-bottom: 16px; text-align: center; }
+.config-field { margin-bottom: 12px; }
+.config-field label { display: block; font-size: 0.75rem; font-weight: 700; color: #86efac; margin-bottom: 4px; text-transform: uppercase; }
+.config-field input {
+    width: 100%; background: #08120d; border: 1px solid #166534; border-radius: 10px; padding: 10px 14px;
+    color: white; font-size: 0.95rem; outline: none;
+}
+.preview-selfie {
+    width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #22c55e;
+    margin: 0 auto 10px; display: block; background: #08120d;
+}
+
+.hidden { display: none !important; }
+.msg { padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.8rem; text-align: center; display: none; font-weight: 600; }
+.msg.show { display: block; }
