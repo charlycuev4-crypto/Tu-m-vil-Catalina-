@@ -209,9 +209,9 @@
             <form id="formConfigChofer" onsubmit="guardarConfigChofer(event)">
                 <div style="text-align: center; margin-bottom: 12px;">
                     <img id="imgPreview" class="preview-selfie" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Foto Perfil">
-                    <label style="font-size: 0.75rem; color: #4ade80; cursor: pointer; text-decoration: underline;">
-                        Subir Foto / Selfie 📷
-                        <input type="file" id="inpFotoFile" accept="image/*" style="display: none;" onchange="procesarYComprimirFoto(event)">
+                    <label style="font-size: 0.8rem; color: #ffffff; cursor: pointer; display: inline-block; padding: 8px 16px; background: #15803d; border: 1px solid #22c55e; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                        Tomar Selfie con Cámara 📷
+                        <input type="file" id="inpFotoFile" accept="image/*" capture="user" style="display: none;" onchange="procesarYComprimirFoto(event)">
                     </label>
                 </div>
                 <div class="config-field">
@@ -483,11 +483,9 @@
             } catch(e) {}
         }
 
-        // FUNCIÓN DE VOZ SIMPLIFICADA Y CON TONO GRAVE ASEGURADO
         function saludarConductorBienvenida(nombrePasajero) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                
                 const texto = nombrePasajero 
                     ? `Hola ${nombrePasajero}, bienvenido a Tu Móvil. Pronto estaremos en su destino.` 
                     : `Hola, bienvenido a Tu Móvil. Pronto estaremos en su destino.`;
@@ -495,8 +493,7 @@
                 const enunciado = new SpeechSynthesisUtterance(texto);
                 enunciado.lang = 'es-AR';
                 enunciado.rate = 0.95; 
-                enunciado.pitch = 0.6; // Tono grave garantizado sin depender de listas externas
-                
+                enunciado.pitch = 0.6; 
                 window.speechSynthesis.speak(enunciado);
             }
         }
@@ -889,7 +886,6 @@
             if (estadoFlujo === 'en_puerta') {
                 estadoFlujo = 'en_viaje'; localStorage.setItem('conductor_estado_flujo', 'en_viaje');
                 
-                // DISPARA EL SALUDO POR VOZ CON TONO GRAVE AL INICIAR EL VIAJE
                 saludarConductorBienvenida(viajeActivo.pasajero_nombre);
 
                 btnEnCurso.className = "btn-action btn-finalizar"; 
@@ -992,220 +988,4 @@
 
                 let origenInfo = await obtenerDireccionYBarrio(viaje.origen_lat, viaje.origen_lng);
                 let destinoInfo = await obtenerDireccionYBarrio(viaje.destino_lat, viaje.destino_lng);
-                let barrioOrigen = viaje.origen_barrio || origenInfo.barrio;
-                let calleOrigen = viaje.origen_direccion || origenInfo.calleCompleta;
-                let barrioDestino = viaje.destino_barrio || destinoInfo.barrio;
-                let calleDestino = viaje.destino_direccion || destinoInfo.calleCompleta;
-
-                let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
-                let manifiestoHtml = '';
-                if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
-                    manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
-                }
-
-                let avisoFidelidadHtml = '';
-                if (viaje.es_fidelidad === true) {
-                    avisoFidelidadHtml = `
-                        <div style="background: #143621; border: 2px solid #22c55e; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
-                            <h4 style="color: #4ade80; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
-                            <p style="color: #86efac; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
-                        </div>
-                    `;
-                }
-
-                markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
-                markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
-
-                const contenedorViaje = document.getElementById('contenedorViajeEntrante');
-                
-                if (estadoFlujo === 'aceptado') {
-                    contenedorViaje.innerHTML = `
-                        ${avisoFidelidadHtml}
-                        <div class="viaje-info-box">
-                            <div class="viaje-header">
-                                <div class="pasajero-perfil-container">
-                                    <div class="pasajero-foto-box">
-                                        <img id="imgPasajeroFoto" src="${viaje.pasajero_foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" alt="Pasajero">
-                                    </div>
-                                    <div>
-                                        <div class="viaje-pasajero">${viaje.pasajero_nombre || "Pasajero"}</div>
-                                    </div>
-                                </div>
-                                <div class="viaje-precio">$${viaje.precio}</div>
-                            </div>
-                            <div class="input-group">
-                                <div class="input-row">
-                                    <span>📍 <b>Recogida:</b> ${barrioOrigen} (${calleOrigen})</span>
-                                    <div style="border-top:1px solid #166534; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Calculando...</span></div>
-                                    ${manifiestoHtml}
-                                </div>
-                            </div>
-                        </div>
-                        <button class="btn-action btn-llegué" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
-                    `;
-                    await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
-                } else if (estadoFlujo === 'en_puerta') {
-                    contenedorViaje.innerHTML = `
-                        ${avisoFidelidadHtml}
-                        <div class="viaje-info-box">
-                            <div class="viaje-header">
-                                <div class="pasajero-perfil-container">
-                                    <div class="pasajero-foto-box">
-                                        <img id="imgPasajeroFoto" src="${viaje.pasajero_foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" alt="Pasajero">
-                                    </div>
-                                    <div>
-                                        <div class="viaje-pasajero">${viaje.pasajero_nombre || "Pasajero"}</div>
-                                    </div>
-                                </div>
-                                <div class="viaje-precio">$${viaje.precio}</div>
-                            </div>
-                            <div class="input-group">
-                                <div class="input-row">
-                                    <span>📍 <b>En puerta del pasajero</b> (${barrioOrigen})</span>
-                                    <div style="border-top:1px solid #166534; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Pasajero a bordo</span></div>
-                                    ${manifiestoHtml}
-                                </div>
-                            </div>
-                        </div>
-                        <button class="btn-action btn-iniciar" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Iniciar Viaje al Destino 🧭</button>
-                    `;
-                    await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
-                } else if (estadoFlujo === 'en_viaje') {
-                    contenedorViaje.innerHTML = `
-                        ${avisoFidelidadHtml}
-                        <div class="viaje-info-box">
-                            <div class="viaje-header">
-                                <div class="pasajero-perfil-container">
-                                    <div class="pasajero-foto-box">
-                                        <img id="imgPasajeroFoto" src="${viaje.pasajero_foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" alt="Pasajero">
-                                    </div>
-                                    <div>
-                                        <div class="viaje-pasajero">${viaje.pasajero_nombre || "Pasajero"}</div>
-                                    </div>
-                                </div>
-                                <div class="viaje-precio">$${viaje.precio}</div>
-                            </div>
-                            <div class="input-group">
-                                <div class="input-row">
-                                    <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino} (${calleDestino})</span>
-                                    <div style="border-top:1px solid #166534; margin-top:3px; padding-top:4px;" id="cajaMetricasRuta"><span>🕒 Calculando viaje...</span></div>
-                                    ${manifiestoHtml}
-                                </div>
-                            </div>
-                        </div>
-                        <button class="btn-action btn-finalizar" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Finalizar Viaje y Cobrar 💵</button>
-                    `;
-                    await trazarRutaCallesYCalcularMetricas(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng, null, null);
-                }
-            } catch (e) { limpiarMemoriaConductor(); }
-        }
-
-        function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id'); localStorage.removeItem('conductor_estado_flujo'); }
-
-        async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDestinoExtra = null, lonDestinoExtra = null) {
-            try {
-                let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
-                if (latDestinoExtra && lonDestinoExtra) {
-                    url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${latDestinoExtra},${lonDestinoExtra}`;
-                }
-                url += `?overview=full&geometries=geojson`;
-
-                const res = await fetch(url);
-                const data = await res.json();
-                
-                let distanciaKm = 0;
-                let minutosEstimados = 0;
-                let rutaValida = false;
-
-                if (data.code === 'Ok' && data.routes.length > 0) {
-                    let distanciaMetros = data.routes[0].distance;
-                    let duracionSegundos = data.routes[0].duration;
-
-                    distanciaKm = (distanciaMetros / 1000);
-                    minutosEstimados = Math.max(1, Math.round(duracionSegundos / 60));
-
-                    if (distanciaKm < 100) {
-                        rutaValida = true;
-                        if (rutaTrazada) mapa.removeLayer(rutaTrazada);
-                        rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#22c55e', weight: 6, opacity: 0.9 }).addTo(mapa);
-                    }
-                }
-
-                if (!rutaValida) {
-                    let distanciaLineaMetros = calcularDistanciaKm(lat1, lon1, lat2, lon2) * 1000;
-                    distanciaKm = (distanciaLineaMetros / 1000) * 1.3; 
-                    minutosEstimados = Math.max(1, Math.round((distanciaKm / 30) * 60));
-                }
-
-                let cajaMetricas = document.getElementById('cajaMetricasRuta');
-                if (cajaMetricas) {
-                    if (latDestinoExtra) {
-                        cajaMetricas.innerHTML = `<span>🕒 <b>${minutosEstimados} min</b> (${distanciaKm.toFixed(1)} km al pasajero)</span>`;
-                    } else {
-                        cajaMetricas.innerHTML = `<span>🕒 <b>${minutosEstimados} min</b> de viaje real (${distanciaKm.toFixed(1)} km)</span>`;
-                    }
-                }
-            } catch (e) {}
-        }
-
-        let ultimoCalculoRuta = 0;
-        let ultimaLatRuta = 0;
-        let ultimaLngRuta = 0;
-
-        function distanciaEnMetros(lat1, lon1, lat2, lon2) {
-            let dLat = (lat2 - lat1) * Math.PI / 180;
-            let dLon = (lon2 - lon1) * Math.PI / 180;
-            let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                    Math.sin(dLon/2) * Math.sin(dLon/2);
-            let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return 6371000 * c;
-        }
-
-        async function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
-            let ahora = Date.now();
-            let seDesvio = (ultimaLatRuta === 0) || (distanciaEnMetros(lat1, lon1, ultimaLatRuta, ultimaLngRuta) > 35);
-            
-            if ((ahora - ultimoCalculoRuta > 6000) || seDesvio) {
-                ultimaLatRuta = lat1;
-                ultimaLngRuta = lon1;
-                await trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, null, null);
-                ultimoCalculoRuta = ahora;
-            }
-        }
-
-        function mostrarMsg(texto, tipo) { const msg = document.getElementById('msgChofer'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
-
-        document.addEventListener('visibilitychange', async () => {
-            if (document.visibilityState === 'visible' && estaConectado) {
-                await solicitarWakeLock();
-                buscarViajesPendientesRecientes();
-            }
-        });
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('Service Worker registrado con éxito', reg))
-                    .catch(err => console.log('Error al registrar Service Worker', err));
-            });
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            verificarRegistroChofer();
-            verificarReseteoDiario();
-            actualizarUIEstadisticas();
-            initMapa(); 
-            escucharNuevosViajes(); 
-            solicitarWakeLock(); 
-            iniciarRastreoGpsContinuo(); 
-            mantenerActivoSegundoPlano();
-            
-            setTimeout(async () => { 
-                await verificarViajeActivoConductor(); 
-                await buscarViajesPendientesRecientes(); 
-            }, 1000);
-        });
-    </script>
-</body>
-</html>
+                let barrioOrigen = viaje
