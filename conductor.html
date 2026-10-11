@@ -209,8 +209,8 @@
             <form id="formConfigChofer" onsubmit="guardarConfigChofer(event)">
                 <div style="text-align: center; margin-bottom: 12px;">
                     <img id="imgPreview" class="preview-selfie" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Foto Perfil">
-                    <label style="font-size: 0.8rem; color: #ffffff; cursor: pointer; display: inline-block; padding: 8px 16px; background: #15803d; border: 1px solid #22c55e; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-                        Tomar Selfie con Cámara 📷
+                    <label style="font-size: 0.75rem; color: #4ade80; cursor: pointer; text-decoration: underline;">
+                        Subir Foto / Selfie 📷
                         <input type="file" id="inpFotoFile" accept="image/*" capture="user" style="display: none;" onchange="procesarYComprimirFoto(event)">
                     </label>
                 </div>
@@ -486,6 +486,7 @@
         function saludarConductorBienvenida(nombrePasajero) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
+                
                 const texto = nombrePasajero 
                     ? `Hola ${nombrePasajero}, bienvenido a Tu Móvil. Pronto estaremos en su destino.` 
                     : `Hola, bienvenido a Tu Móvil. Pronto estaremos en su destino.`;
@@ -494,6 +495,7 @@
                 enunciado.lang = 'es-AR';
                 enunciado.rate = 0.95; 
                 enunciado.pitch = 0.6; 
+                
                 window.speechSynthesis.speak(enunciado);
             }
         }
@@ -729,263 +731,4 @@
                 badge.textContent = "Fuera de Línea 🔴"; badge.className = "status-badge inactivo";
                 btnEspera.textContent = "Turno Pausado"; btnEspera.className = "btn-action btn-desconectado";
                 liberarWakeLock(); detenerRastreoGps(); 
-                if(silentAudioInterval) { clearInterval(silentAudioInterval); silentAudioInterval = null; }
-                if(canalSupabase) { supabaseClient.removeChannel(canalSupabase); canalSupabase = null; }
-            }
-        }
-
-        async function montarViajeEntrante(viaje) {
-            viajeActivo = viaje;
-            estadoFlujo = 'pendiente';
-            comenzarSirenaAlerta();
-
-            document.getElementById('vistaEspera').classList.add('hidden');
-            document.getElementById('vistaViaje').classList.remove('hidden');
-            
-            const panel = document.getElementById('panelConductor');
-            panel.classList.remove('viaje-activo-estado');
-            panel.classList.add('viaje-entrante');
-
-            let origenInfo = await obtenerDireccionYBarrio(viaje.origen_lat, viaje.origen_lng);
-            let destinoInfo = await obtenerDireccionYBarrio(viaje.destino_lat, viaje.destino_lng);
-
-            let barrioOrigen = viaje.origen_barrio || origenInfo.barrio;
-            let calleOrigen = viaje.origen_direccion || origenInfo.calleCompleta;
-            let barrioDestino = viaje.destino_barrio || destinoInfo.barrio;
-            let calleDestino = viaje.destino_direccion || destinoInfo.calleCompleta;
-            
-            let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
-            let manifiestoHtml = '';
-            if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
-                manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
-            }
-
-            let avisoFidelidadHtml = '';
-            if (viaje.es_fidelidad === true) {
-                avisoFidelidadHtml = `
-                    <div style="background: #143621; border: 2px solid #22c55e; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
-                        <h4 style="color: #4ade80; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
-                        <p style="color: #86efac; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
-                    </div>
-                `;
-            }
-
-            const contenedorViaje = document.getElementById('contenedorViajeEntrante');
-            contenedorViaje.innerHTML = `
-                ${avisoFidelidadHtml}
-                <div class="viaje-info-box">
-                    <div class="viaje-header">
-                        <div class="pasajero-perfil-container">
-                            <div class="pasajero-foto-box">
-                                <img id="imgPasajeroFoto" src="${viaje.pasajero_foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" alt="Pasajero">
-                            </div>
-                            <div>
-                                <div class="viaje-pasajero">${viaje.pasajero_nombre || "Pasajero"}</div>
-                            </div>
-                        </div>
-                        <div class="viaje-precio">$${viaje.precio}</div>
-                    </div>
-                    <div class="input-group">
-                        <div class="input-row">
-                            <span>📍 <b>Recogida:</b> ${barrioOrigen} (${calleOrigen})</span>
-                            <span style="color:#ef4444; margin-top:2px;">🏁 <b>Destino:</b> ${barrioDestino} (${calleDestino})</span>
-                            <div style="border-top:1px solid #166534; margin-top:3px; padding-top:4px; display:flex; justify-content:space-between;" id="cajaMetricasRuta">
-                                <span>🕒 Calculando ruta local...</span>
-                            </div>
-                            ${manifiestoHtml}
-                        </div>
-                    </div>
-                </div>
-                <div id="contenedorBotonesPendiente" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                    <button class="btn-action" style="background: #ef4444; flex: 1; margin-bottom: 0;" onclick="rechazarViajeEntrante()">Rechazar ❌</button>
-                    <button class="btn-action btn-aceptar" style="flex: 2; margin-bottom: 0;" id="btnAccionPrincipal" onclick="procesarLojicaViaje()">Aceptar Viaje ✅</button>
-                </div>
-                <button class="btn-action btn-aceptar hidden" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
-            `;
-
-            if (markerOrigen) mapa.removeLayer(markerOrigen);
-            if (markerDestino) mapa.removeLayer(markerDestino);
-
-            markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
-            markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
-
-            autocentrarMapa = true; 
-            await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
-        }
-
-        function rechazarViajeEntrante() {
-            detenerSirenaAlerta();
-            limpiarMemoriaConductor();
-
-            if (markerOrigen) { mapa.removeLayer(markerOrigen); markerOrigen = null; }
-            if (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
-            if (rutaTrazada) { mapa.removeLayer(rutaTrazada); rutaTrazada = null; }
-
-            viajeActivo = null; estadoFlujo = 'pendiente';
-            document.getElementById('vistaViaje').classList.add('hidden');
-            document.getElementById('vistaEspera').classList.remove('hidden');
-            
-            const panel = document.getElementById('panelConductor');
-            panel.classList.remove('viaje-entrante');
-            panel.classList.remove('viaje-activo-estado');
-            
-            if(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); canalChatSupabase = null; }
-            document.getElementById('btnAbrirChatFlotante').style.display = 'none';
-
-            mostrarMsg('Viaje rechazado. Buscando nuevos pasajeros...', 'success');
-        }
-
-        async function procesarLojicaViaje() {
-            const panel = document.getElementById('panelConductor');
-
-            if (estadoFlujo === 'pendiente') {
-                detenerSirenaAlerta();
-                try {
-                    const { error } = await supabaseClient.from('viajes').update({ 
-                        conductor_nombre: NOMBRE_CHOFER, 
-                        conductor_auto: AUTO_CHOFER,
-                        conductor_foto: FOTO_CHOFER 
-                    }).eq('id', viajeActivo.id);
-                    if (error) throw error;
-                    
-                    estadoFlujo = 'aceptado';
-                    localStorage.setItem('conductor_viaje_id', viajeActivo.id);
-                    localStorage.setItem('conductor_estado_flujo', 'aceptado');
-                    
-                    panel.classList.remove('viaje-entrante');
-                    panel.classList.add('viaje-activo-estado');
-                    
-                    const btnContenedorPendiente = document.getElementById('contenedorBotonesPendiente');
-                    if(btnContenedorPendiente) btnContenedorPendiente.classList.add('hidden');
-                    
-                    const btnEnCurso = document.getElementById('btnAccionEnCurso');
-                    btnEnCurso.classList.remove('hidden');
-                    btnEnCurso.className = "btn-action btn-llegué"; 
-                    btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
-
-                    document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
-
-                    iniciarChatViaje(viajeActivo.id);
-                    document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
-
-                    autocentrarMapa = true;
-                    document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
-                    mapa.setView([choferCoords.lat, choferCoords.lng], 17);
-                } catch (e) { location.reload(); }
-                return;
-            }
-
-            const btnEnCurso = document.getElementById('btnAccionEnCurso');
-            if (estadoFlujo === 'aceptado') {
-                estadoFlujo = 'en_puerta'; localStorage.setItem('conductor_estado_flujo', 'en_puerta');
-                btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Iniciar Viaje al Destino 🧭";
-                document.getElementById('txtEstadoChofer').textContent = "En la Puerta 📍";
-                await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeActivo.id);
-                return;
-            }
-            if (estadoFlujo === 'en_puerta') {
-                estadoFlujo = 'en_viaje'; localStorage.setItem('conductor_estado_flujo', 'en_viaje');
-                
-                saludarConductorBienvenida(viajeActivo.pasajero_nombre);
-
-                btnEnCurso.className = "btn-action btn-finalizar"; 
-                btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
-                document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
-                
-                await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
-                
-                let destinoInfo = await obtenerDireccionYBarrio(viajeActivo.destino_lat, viajeActivo.destino_lng);
-                let barrioDestino = viajeActivo.destino_barrio || destinoInfo.barrio;
-                let calleDestino = viajeActivo.destino_direccion || destinoInfo.calleCompleta;
-
-                let textoManifiesto = viajeActivo.manifiesto || viajeActivo.comentarios || viajeActivo.nota || "";
-                let manifiestoHtml = '';
-                if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
-                    manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
-                }
-
-                let avisoFidelidadHtml = '';
-                if (viajeActivo.es_fidelidad === true) {
-                    avisoFidelidadHtml = `
-                        <div style="background: #143621; border: 2px solid #22c55e; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
-                            <h4 style="color: #4ade80; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
-                            <p style="color: #86efac; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
-                        </div>
-                    `;
-                }
-
-                const contenedorViaje = document.getElementById('contenedorViajeEntrante');
-                contenedorViaje.innerHTML = `
-                    ${avisoFidelidadHtml}
-                    <div class="viaje-info-box">
-                        <div class="viaje-header">
-                            <div class="pasajero-perfil-container">
-                                <div class="pasajero-foto-box">
-                                    <img id="imgPasajeroFoto" src="${viajeActivo.pasajero_foto || 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg'}" alt="Pasajero">
-                                </div>
-                                <div>
-                                    <div class="viaje-pasajero">${viajeActivo.pasajero_nombre || "Pasajero"}</div>
-                                </div>
-                            </div>
-                            <div class="viaje-precio">$${viajeActivo.precio}</div>
-                        </div>
-                        <div class="input-group">
-                            <div class="input-row">
-                                <span style="color:#ef4444;">🏁 <b>Destino Final:</b> ${barrioDestino} (${calleDestino})</span>
-                                <div style="border-top:1px solid #166534; margin-top:3px; padding-top:3px;" id="cajaMetricasRuta">
-                                    <span>🕒 Calculando viaje...</span>
-                                </div>
-                                ${manifiestoHtml}
-                            </div>
-                        </div>
-                    </div>
-                    <button class="btn-action btn-finalizar" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Finalizar Viaje y Cobrar 💵</button>
-                `;
-
-                await trazarRutaCallesYCalcularMetricas(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng, null, null);
-                
-                autocentrarMapa = true;
-                document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
-                return;
-            }
-            if (estadoFlujo === 'en_viaje') {
-                let montoViaje = parseFloat(viajeActivo.precio || '0');
-                totalDia += montoViaje;
-                ultimoViajeMonto = montoViaje;
-                cantViajesCount += 1;
-
-                localStorage.setItem('chofer_total_dia', totalDia);
-                localStorage.setItem('chofer_ultimo_monto', ultimoViajeMonto);
-                localStorage.setItem('chofer_cant_viajes', cantViajesCount);
-                actualizarUIEstadisticas();
-
-                await supabaseClient.from('viajes').update({ estado: 'finalizado' }).eq('id', viajeActivo.id);
-                limpiarMemoriaConductor(); liberarWakeLock(); detenerRastreoGps();
-                if(silentAudioInterval) { clearInterval(silentAudioInterval); silentAudioInterval = null; }
-                if(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); }
-                setTimeout(() => location.reload(), 2000);
-            }
-        }
-
-        async function verificarViajeActivoConductor() {
-            const guardadoId = localStorage.getItem('conductor_viaje_id');
-            const guardadoEstado = localStorage.getItem('conductor_estado_flujo');
-            if (!guardadoId) return;
-            try {
-                const { data: viaje } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
-                if (!viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') { limpiarMemoriaConductor(); return; }
-                viajeActivo = viaje; estadoFlujo = guardadoEstado || 'aceptado';
-                
-                document.getElementById('vistaEspera').classList.add('hidden');
-                document.getElementById('vistaViaje').classList.remove('hidden');
-
-                const panel = document.getElementById('panelConductor');
-                panel.classList.remove('viaje-entrante');
-                panel.classList.add('viaje-activo-estado');
-
-                iniciarChatViaje(viaje.id);
-                document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
-
-                let origenInfo = await obtenerDireccionYBarrio(viaje.origen_lat, viaje.origen_lng);
-                let destinoInfo = await obtenerDireccionYBarrio(viaje.destino_lat, viaje.destino_lng);
-                let barrioOrigen = viaje
+                if(silentAudioInterval
