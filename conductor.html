@@ -438,7 +438,8 @@
             }
         }
 
-        function guardarConfigChofer(e) {
+        // GUARDADO Y SINCRONIZACIÓN AUTOMÁTICA CON EL ADMINISTRADOR (SUPABASE)
+        async function guardarConfigChofer(e) {
             e.preventDefault();
             const nombre = document.getElementById('inpNombre').value.trim();
             const telefono = document.getElementById('inpTelefono').value.trim();
@@ -447,12 +448,28 @@
             const patente = document.getElementById('inpPatente').value.trim();
             const fotoFinal = base64FotoTemp || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
 
+            // Guardado local en el dispositivo
             localStorage.setItem('cfg_auto_chofer', nombre);
             localStorage.setItem('cfg_auto_telefono', telefono);
             localStorage.setItem('cfg_auto_modelo', modelo);
             localStorage.setItem('cfg_auto_color', color);
             localStorage.setItem('cfg_auto_patente', patente);
             localStorage.setItem('cfg_auto_foto', fotoFinal);
+
+            // Sincronización con la base de datos para que el Administrador lo vea en tiempo real
+            try {
+                await supabaseClient.from('conductores').upsert({
+                    nombre: nombre,
+                    telefono: telefono,
+                    modelo: modelo,
+                    color: color,
+                    patente: patente,
+                    foto: fotoFinal,
+                    aprobado: false // Inicia pendiente de aprobación por el admin
+                }, { onConflict: 'patente' });
+            } catch (err) {
+                console.error("Error al sincronizar con el panel de administración:", err);
+            }
 
             document.getElementById('modalConfigChofer').classList.add('hidden');
             location.reload();
@@ -585,6 +602,14 @@
                             await supabaseClient.from('viajes').update({ conductor_lat: nuevaLat, conductor_lng: nuevaLng }).eq('id', viajeActivo.id);
                         } catch (err) {}
                     }
+
+                    // Actualizar también la ubicación en la tabla conductores para el mapa del Admin
+                    try {
+                        const patenteGuardada = localStorage.getItem('cfg_auto_patente');
+                        if (patenteGuardada) {
+                            await supabaseClient.from('conductores').update({ lat: nuevaLat, lng: nuevaLng }).eq('patente', patenteGuardada);
+                        }
+                    } catch (e) {}
 
                     if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
                         actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng);
