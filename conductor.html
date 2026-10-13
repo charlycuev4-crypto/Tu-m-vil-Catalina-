@@ -211,7 +211,7 @@
                     <img id="imgPreview" class="preview-selfie" src="https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg" alt="Foto Perfil">
                     <label style="font-size: 0.75rem; color: #4ade80; cursor: pointer; text-decoration: underline;">
                         Subir Foto / Selfie 📷
-                        <input type="file" id="inpFotoFile" accept="image/*" capture="user" style="display: none;" onchange="procesarYComprimirFoto(event)">
+                        <input type="file" id="inpFotoFile" accept="image/*" style="display: none;" onchange="procesarYComprimirFoto(event)">
                     </label>
                 </div>
                 <div class="config-field">
@@ -382,64 +382,37 @@
             }
         }
 
-        // FUNCIÓN DE SELFIE OPTIMIZADA CON CREATEIMAGEBITMAP (Evita memoria insuficiente)
-        async function procesarYComprimirFoto(event) {
+        function procesarYComprimirFoto(event) {
             const archivo = event.target.files[0];
             if (!archivo) return;
 
-            try {
-                const bitmap = await createImageBitmap(archivo);
-                const canvas = document.createElement('canvas');
-                const MAX_SIZE = 300;
-                let width = bitmap.width;
-                let height = bitmap.height;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 350; const MAX_HEIGHT = 350;
+                    let width = img.width; let height = img.height;
 
-                if (width > height) {
-                    if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
-                } else {
-                    if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(bitmap, 0, 0, width, height);
-
-                base64FotoTemp = canvas.toDataURL('image/jpeg', 0.6);
-                document.getElementById('imgPreview').src = base64FotoTemp;
-                
-                bitmap.close();
-            } catch (error) {
-                const lector = new FileReader();
-                lector.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const MAX_SIZE = 300;
-                        let width = img.width; let height = img.height;
-
-                        if (width > height) {
-                            if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
-                        } else {
-                            if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-
-                        base64FotoTemp = canvas.toDataURL('image/jpeg', 0.6);
-                        document.getElementById('imgPreview').src = base64FotoTemp;
+                    if (width > height) {
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    } else {
+                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
                     }
-                    img.src = e.target.result;
+
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    base64FotoTemp = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById('imgPreview').src = base64FotoTemp;
                 }
-                lector.readAsDataURL(archivo);
             }
+            lector.readAsDataURL(archivo);
         }
 
-        // GUARDADO Y SINCRONIZACIÓN AUTOMÁTICA CON EL ADMINISTRADOR (SUPABASE)
-        async function guardarConfigChofer(e) {
+        function guardarConfigChofer(e) {
             e.preventDefault();
             const nombre = document.getElementById('inpNombre').value.trim();
             const telefono = document.getElementById('inpTelefono').value.trim();
@@ -448,28 +421,12 @@
             const patente = document.getElementById('inpPatente').value.trim();
             const fotoFinal = base64FotoTemp || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
 
-            // Guardado local en el dispositivo
             localStorage.setItem('cfg_auto_chofer', nombre);
             localStorage.setItem('cfg_auto_telefono', telefono);
             localStorage.setItem('cfg_auto_modelo', modelo);
             localStorage.setItem('cfg_auto_color', color);
             localStorage.setItem('cfg_auto_patente', patente);
             localStorage.setItem('cfg_auto_foto', fotoFinal);
-
-            // Sincronización con la base de datos para que el Administrador lo vea en tiempo real
-            try {
-                await supabaseClient.from('conductores').upsert({
-                    nombre: nombre,
-                    telefono: telefono,
-                    modelo: modelo,
-                    color: color,
-                    patente: patente,
-                    foto: fotoFinal,
-                    aprobado: false // Inicia pendiente de aprobación por el admin
-                }, { onConflict: 'patente' });
-            } catch (err) {
-                console.error("Error al sincronizar con el panel de administración:", err);
-            }
 
             document.getElementById('modalConfigChofer').classList.add('hidden');
             location.reload();
@@ -526,6 +483,7 @@
             } catch(e) {}
         }
 
+        // FUNCIÓN DE VOZ SIMPLIFICADA Y CON TONO GRAVE ASEGURADO
         function saludarConductorBienvenida(nombrePasajero) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
@@ -537,7 +495,7 @@
                 const enunciado = new SpeechSynthesisUtterance(texto);
                 enunciado.lang = 'es-AR';
                 enunciado.rate = 0.95; 
-                enunciado.pitch = 0.6; 
+                enunciado.pitch = 0.6; // Tono grave garantizado sin depender de listas externas
                 
                 window.speechSynthesis.speak(enunciado);
             }
@@ -602,14 +560,6 @@
                             await supabaseClient.from('viajes').update({ conductor_lat: nuevaLat, conductor_lng: nuevaLng }).eq('id', viajeActivo.id);
                         } catch (err) {}
                     }
-
-                    // Actualizar también la ubicación en la tabla conductores para el mapa del Admin
-                    try {
-                        const patenteGuardada = localStorage.getItem('cfg_auto_patente');
-                        if (patenteGuardada) {
-                            await supabaseClient.from('conductores').update({ lat: nuevaLat, lng: nuevaLng }).eq('patente', patenteGuardada);
-                        }
-                    } catch (e) {}
 
                     if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
                         actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng);
@@ -939,6 +889,7 @@
             if (estadoFlujo === 'en_puerta') {
                 estadoFlujo = 'en_viaje'; localStorage.setItem('conductor_estado_flujo', 'en_viaje');
                 
+                // DISPARA EL SALUDO POR VOZ CON TONO GRAVE AL INICIAR EL VIAJE
                 saludarConductorBienvenida(viajeActivo.pasajero_nombre);
 
                 btnEnCurso.className = "btn-action btn-finalizar"; 
@@ -1153,9 +1104,9 @@
 
         async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDestinoExtra = null, lonDestinoExtra = null) {
             try {
-                let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lon2}`;
+                let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
                 if (latDestinoExtra && lonDestinoExtra) {
-                    url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lon2};${latDestinoExtra},${lonDestinoExtra}`;
+                    url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${latDestinoExtra},${lonDestinoExtra}`;
                 }
                 url += `?overview=full&geometries=geojson`;
 
@@ -1257,4 +1208,4 @@
         });
     </script>
 </body>
-</html>
+</html> 
