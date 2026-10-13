@@ -26,6 +26,7 @@ let audioCtxPasajero = null;
 let intervaloAlertaChatPasajero = null;
 let watchIdPasajero = null; 
 let usuarioMoviendoMapa = false;
+let streamCamaraPasajero = null; // Variable para controlar la cámara web
 
 function reproducirPitidoAudio(frecuencia = 880, duracion = 0.3) {
     try {
@@ -207,9 +208,6 @@ function toggleExpandirPanel() {
     }
 }
 
-// ==========================================================
-// SPLASH CORREGIDO (Funciona para registrados y nuevos sin trabarse)
-// ==========================================================
 async function procesarSplashDeBienvenida() {
     try {
         await cargarTarifasDesdeSupabase();
@@ -253,35 +251,63 @@ async function procesarSplashDeBienvenida() {
     }
 }
 
-function procesarFotoSelfie(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = 300;
-                canvas.height = 300;
-                ctx.drawImage(img, 0, 0, 300, 300);
-                
-                pasajeroBase64Foto = canvas.toDataURL('image/jpeg', 0.8);
-                
-                const imgPrev = document.getElementById('imgPreview');
-                imgPrev.src = pasajeroBase64Foto;
-                imgPrev.style.display = "block";
-                document.getElementById('siluetaOverlay').style.opacity = "0.2";
-            }
-            img.src = e.target.result;
-        }
-        reader.readAsDataURL(input.files[0]);
+// NUEVAS FUNCIONES DE CÁMARA EN VIVO (Evita errores de memoria y fallos de input)
+async function iniciarCamaraSelfie() {
+    const video = document.getElementById('videoCamara');
+    const contenedor = document.getElementById('contenedorCamara');
+    const imgPrev = document.getElementById('imgPreview');
+    const btnCapturar = document.getElementById('btnCapturar');
+
+    contenedor.classList.remove('hidden');
+    imgPrev.style.display = 'none';
+
+    try {
+        streamCamaraPasajero = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 400 }, height: { ideal: 400 } },
+            audio: false
+        });
+        video.srcObject = streamCamaraPasajero;
+        btnCapturar.classList.remove('hidden');
+    } catch (err) {
+        alert("No se pudo acceder a la cámara frontal. Revisa los permisos.");
     }
+}
+
+function tomarFotoCaptura() {
+    const video = document.getElementById('videoCamara');
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 300;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, 300, 300);
+
+    pasajeroBase64Foto = canvas.toDataURL('image/jpeg', 0.85);
+
+    const imgPrev = document.getElementById('imgPreview');
+    imgPrev.src = pasajeroBase64Foto;
+    imgPrev.style.display = "block";
+    
+    document.getElementById('contenedorCamara').classList.add('hidden');
+    document.getElementById('btnCapturar').classList.add('hidden');
+
+    if (streamCamaraPasajero) {
+        streamCamaraPasajero.getTracks().forEach(track => track.stop());
+        streamCamaraPasajero = null;
+    }
+
+    const silueta = document.getElementById('siluetaOverlay');
+    if (silueta) silueta.style.opacity = "0.2";
+
+    // Liberar memoria del canvas
+    canvas.width = 1;
+    canvas.height = 1;
 }
 
 async function guardarRegistroPerfil() {
     const nom = document.getElementById('regNombre').value.trim();
     const tel = document.getElementById('regTelefono').value.trim();
-    if (!pasajeroBase64Foto) { alert("Por favor toca el círculo para tomarte la selfie de seguridad."); return; }
+    if (!pasajeroBase64Foto) { alert("Por favor presiona 'Abrir Cámara' y tómate la selfie de seguridad."); return; }
     if (!nom || !tel) { alert("Por favor completa tu nombre y teléfono."); return; }
     
     try {
