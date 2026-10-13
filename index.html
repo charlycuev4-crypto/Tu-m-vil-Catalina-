@@ -52,16 +52,16 @@
         .splash-logo-box img { width: 60px; height: 45px; border-radius: 6px; margin-bottom: 2px; object-fit: cover; }
         .splash-logo-box span { font-size: 0.7rem; font-weight: 700; color: var(--color-primario); letter-spacing: 1px; }
         
-        .splash-form { width: 100%; max-width: 300px; display: none; flex-direction: column; gap: 10px; margin-top: 5px; }
+        .splash-form { width: 100%; max-width: 300px; display: none; flex-direction: column; gap: 8px; margin-top: 5px; }
         .splash-form input {
-            background: var(--fondo-tarjeta); border: 1px solid var(--borde-tarjeta); color: white; padding: 12px;
+            background: var(--fondo-tarjeta); border: 1px solid var(--borde-tarjeta); color: white; padding: 10px;
             border-radius: 14px; outline: none; font-size: 0.95rem; text-align: center;
         }
 
         .selfie-guia-container {
             width: 110px; height: 110px; border-radius: 50%; background: var(--fondo-tarjeta);
-            border: 3px dashed var(--color-primario); margin: 0 auto 5px; display: flex; align-items: center; 
-            justify-content: center; overflow: hidden; position: relative; cursor: pointer;
+            border: 3px dashed var(--color-primario); margin: 0 auto; display: flex; align-items: center; 
+            justify-content: center; overflow: hidden; position: relative;
             box-shadow: 0 0 15px rgba(44,212,74,0.3);
         }
         .selfie-guia-container img { width: 100%; height: 100%; object-fit: cover; }
@@ -240,18 +240,27 @@
             <span>TU MÓVIL</span>
         </div>
         <h2 id="splashTitulo" style="font-weight: 700; margin-bottom: 4px; font-size: 1.3rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Cargando...</h2>
-        <p id="splashSub" style="color: var(--texto-secundario); font-size: 0.85rem; margin-bottom: 25px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Identificación obligatoria para tu viaje</p>
+        <p id="splashSub" style="color: var(--texto-secundario); font-size: 0.85rem; margin-bottom: 20px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Identificación obligatoria para tu viaje</p>
         
         <div class="splash-form" id="splashForm">
-            <div class="selfie-guia-container" onclick="document.getElementById('inputFotoReal').click()">
-                <img id="imgPreview" src="" alt="Selfie" style="display:none;">
-                <div class="silueta-overlay" id="siluetaOverlay">
+            <!-- Contenedor para la captura directa por video -->
+            <div class="selfie-guia-container">
+                <div id="contenedorCamara" class="hidden" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3;">
+                    <video id="videoCamara" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                </div>
+                <img id="imgPreview" src="" alt="Selfie" style="display:none; position: relative; z-index: 2;">
+                <div class="silueta-overlay" id="siluetaOverlay" style="z-index: 4;">
                     <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
-                    <span>Toca para tu Selfie</span>
+                    <span>Selfie Segura</span>
                 </div>
             </div>
             
-            <input type="file" id="inputFotoReal" accept="image/*" capture="user" style="display:none" onchange="procesarFotoSelfie(this)">
+            <!-- Botones de control de cámara -->
+            <div style="display: flex; gap: 6px; margin-top: 4px;">
+                <button type="button" onclick="iniciarCamaraSelfie()" style="flex:1; background: #334155; color: white; border: none; padding: 7px; border-radius: 12px; font-weight: bold; font-size: 0.75rem; cursor: pointer;">Abrir Cámara 📷</button>
+                <button type="button" id="btnCapturar" onclick="tomarFotoCaptura()" class="hidden" style="flex:1; background: var(--color-primario); color: #0f172a; border: none; padding: 7px; border-radius: 12px; font-weight: bold; font-size: 0.75rem; cursor: pointer;">Capturar 📸</button>
+            </div>
+
             <input type="text" id="regNombre" placeholder="Ingresá tu nombre y apellido">
             <input type="tel" id="regTelefono" placeholder="Tu número de teléfono">
             <button class="btn-green-action" onclick="guardarRegistroPerfil()">Comenzar a Viajar</button>
