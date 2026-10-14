@@ -243,28 +243,73 @@ async function procesarSplashDeBienvenida() {
     }
 }
 
+// ==========================================================
+// FUNCIÓN DE SELFIE OPTimizada para dispositivos nuevos
+// ==========================================================
 function procesarFotoSelfie(input) {
     if (input.files && input.files[0]) {
+        const file = input.files[0];
+        
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor selecciona un archivo de imagen válido.');
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
             img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = 300;
-                canvas.height = 300;
-                ctx.drawImage(img, 0, 0, 300, 300);
-                
-                pasajeroBase64Foto = canvas.toDataURL('image/jpeg', 0.8);
-                
-                const imgPrev = document.getElementById('imgPreview');
-                imgPrev.src = pasajeroBase64Foto;
-                imgPrev.style.display = "block";
-                document.getElementById('siluetaOverlay').style.opacity = "0.2";
-            }
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    const MAX_SIZE = 400;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                        }
+                    } else {
+                        if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    pasajeroBase64Foto = canvas.toDataURL('image/jpeg', 0.75);
+                    
+                    const imgPrev = document.getElementById('imgPreview');
+                    if (imgPrev) {
+                        imgPrev.src = pasajeroBase64Foto;
+                        imgPrev.style.display = "block";
+                    }
+                    
+                    const silueta = document.getElementById('siluetaOverlay');
+                    if (silueta) {
+                        silueta.style.opacity = "0.2";
+                    }
+                } catch (err) {
+                    console.error("Error procesando imagen:", err);
+                    alert("Tu celular generó una imagen muy pesada. Por favor intenta tomar otra.");
+                }
+            };
+            img.onerror = function() {
+                alert("No se pudo leer la imagen de la cámara. Intenta nuevamente.");
+            };
             img.src = e.target.result;
-        }
-        reader.readAsDataURL(input.files[0]);
+        };
+        reader.onerror = function() {
+            alert("Error al leer el archivo de la cámara.");
+        };
+        reader.readAsDataURL(file);
     }
 }
 
@@ -582,9 +627,6 @@ function usarUbicacionDefault() {
     mapa.setView(UBICACION_DEFAULT, 16); 
 }
 
-// ==========================================================
-// RUTEO NATURAL DE PUNTO A PUNTO (CON 2 KM INCLUIDOS EN BASE)
-// ==========================================================
 async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
     let inicio = puntoOrigenPersonalizado || origenCoords;
     if (!inicio || !destinoCoords) return;
@@ -643,9 +685,6 @@ function iniciarMonitoreoDinamicoRuta() {
     }, 10000);
 }
 
-// ==========================================================
-// BUSCADOR INTELIGENTE Y FLEXIBLE
-// ==========================================================
 let timeoutBusqueda = null;
 function buscarDireccion(query) {
     clearTimeout(timeoutBusqueda);
