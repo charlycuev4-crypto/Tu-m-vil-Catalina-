@@ -119,7 +119,7 @@ function procesarYComprimirFoto(event) {
 }
 
 // ==========================================================
-// GUARDAR Y SINCRONIZAR CONFIGURACIÓN CON SUPABASE (APROBADO: FALSE)
+// GUARDAR Y SINCRONIZAR CONFIGURACIÓN (APROBADO: FALSE)
 // ==========================================================
 async function guardarConfigChofer(e) {
     e.preventDefault();
@@ -146,7 +146,7 @@ async function guardarConfigChofer(e) {
                 modelo: `${modelo} - ${color}`,
                 patente: patente,
                 foto: fotoFinal,
-                aprobado: false, // Ingresa como pendiente para revisión del administrador
+                aprobado: false, // Ingresa como pendiente de revisión por el Administrador
                 lat: choferCoords ? choferCoords.lat : null,
                 lng: choferCoords ? choferCoords.lng : null
             }, { onConflict: 'patente' });
@@ -211,9 +211,6 @@ function tocarUnRepiqueDeCampana() {
     } catch(e) {}
 }
 
-// ==========================================================
-// MOTOR DE VOZ MASCULINA DE GOOGLE (TONO NATURAL Y FLUIDO)
-// ==========================================================
 function saludarConductorBienvenida(nombrePasajero) {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -343,6 +340,9 @@ function abrirNavegacionGoogleMaps() {
 async function buscarViajesPendientesRecientes() {
     if (viajeActivo || !estaConectado) return;
     try {
+        const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('patente', localStorage.getItem('cfg_auto_patente')).single();
+        if (!chofer || chofer.aprobado !== true) return;
+
         const { data: viajes, error } = await supabaseClient
             .from('viajes').select('*').eq('estado', 'pendiente').is('conductor_nombre', null)
             .order('created_at', { ascending: false }).limit(1);
@@ -359,13 +359,24 @@ async function buscarViajesPendientesRecientes() {
     } catch (err) {}
 }
 
-function escucharNuevosViajes() {
+async function escucharNuevosViajes() {
+    let patenteLocal = localStorage.getItem('cfg_auto_patente');
+    if (patenteLocal) {
+        try {
+            const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('patente', patenteLocal).single();
+            if (!chofer || chofer.aprobado !== true) return;
+        } catch (e) { return; }
+    }
+
     if (canalSupabase) return;
     buscarViajesPendientesRecientes();
 
     canalSupabase = supabaseClient.channel('despacho-chofer');
     canalSupabase
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, (payload) => {
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, async (payload) => {
+            const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('patente', localStorage.getItem('cfg_auto_patente')).single();
+            if (!chofer || chofer.aprobado !== true) return;
+
             if (payload.new.estado === 'pendiente' && !viajeActivo && estaConectado) {
                 const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, payload.new.origen_lat, payload.new.origen_lng);
                 if (distanciaAlViaje > 5) return;
