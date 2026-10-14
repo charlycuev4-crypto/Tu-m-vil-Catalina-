@@ -119,7 +119,7 @@ function procesarYComprimirFoto(event) {
 }
 
 // ==========================================================
-// GUARDAR Y SINCRONIZAR CONFIGURACIÓN CON SUPABASE
+// GUARDAR Y SINCRONIZAR CONFIGURACIÓN CON SUPABASE (APROBADO: FALSE)
 // ==========================================================
 async function guardarConfigChofer(e) {
     e.preventDefault();
@@ -146,10 +146,12 @@ async function guardarConfigChofer(e) {
                 modelo: `${modelo} - ${color}`,
                 patente: patente,
                 foto: fotoFinal,
-                aprobado: true,
+                aprobado: false, // Ingresa como pendiente para revisión del administrador
                 lat: choferCoords ? choferCoords.lat : null,
                 lng: choferCoords ? choferCoords.lng : null
             }, { onConflict: 'patente' });
+            
+        alert("¡Registro exitoso! Tu cuenta ha sido enviada al Administrador para su aprobación. Podrás operar una vez que sea aprobada.");
     } catch (err) {
         console.error("Error al sincronizar con la tabla conductores:", err);
     }
@@ -305,7 +307,6 @@ function iniciarRastreoGpsContinuo() {
                 } catch (err) {}
             }
 
-            // Sincronización continua de GPS con la tabla conductores
             try {
                 let patenteLocal = localStorage.getItem('cfg_auto_patente');
                 if (patenteLocal) {
@@ -467,8 +468,31 @@ async function enviarMensajeChat() {
     } catch (e) {}
 }
 
-function conmutarEstadoConexion() {
+// ==========================================================
+// CONMUTAR ESTADO CONEXIÓN (VALIDA SI EL ADMIN YA APROBÓ)
+// ==========================================================
+async function conmutarEstadoConexion() {
     if (viajeActivo) return;
+
+    let patenteLocal = localStorage.getItem('cfg_auto_patente');
+    if (patenteLocal) {
+        try {
+            const { data: chofer, error } = await supabaseClient
+                .from('conductores')
+                .select('aprobado')
+                .eq('patente', patenteLocal)
+                .single();
+
+            if (error || !chofer || chofer.aprobado !== true) {
+                alert("⏳ Tu cuenta aún está pendiente de aprobación por el Administrador. Por favor espera a que te den el alta para empezar a operar.");
+                return;
+            }
+        } catch(e) {
+            alert("No se pudo verificar el estado de aprobación con el servidor.");
+            return;
+        }
+    }
+
     estaConectado = !estaConectado;
     const badge = document.getElementById('txtEstadoChofer');
     const btnEspera = document.getElementById('btnEstadoEsperaTexto');
@@ -857,7 +881,7 @@ async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDest
     try {
         let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
         if (latDestinoExtra && lonDestinoExtra) {
-            url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${lonDestinoExtra},${lonDestinoExtra}`;
+            url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${latDestinoExtra},${lonDestinoExtra}`;
         }
         url += `?overview=full&geometries=geojson`;
 
