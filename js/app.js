@@ -134,10 +134,29 @@ function hablarAnuncioPasajero(texto) {
         window.speechSynthesis.cancel();
         const enunciado = new SpeechSynthesisUtterance(texto);
         enunciado.lang = 'es-AR';
-        enunciado.rate = 0.9;
+        enunciado.rate = 0.95;
         enunciado.pitch = 1.0;
+        
+        const voces = window.speechSynthesis.getVoices();
+        const vozElegida = voces.find(v => 
+            v.lang.includes('es') && (
+                v.name.toLowerCase().includes('google') || 
+                v.name.toLowerCase().includes('female') ||
+                v.name.toLowerCase().includes('mujer') ||
+                v.name.toLowerCase().includes('es-')
+            )
+        ) || voces.find(v => v.lang.startsWith('es'));
+
+        if (vozElegida) {
+            enunciado.voice = vozElegida;
+        }
+
         window.speechSynthesis.speak(enunciado);
     }
+}
+
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 }
 
 async function cargarTarifasDesdeSupabase() {
@@ -243,9 +262,6 @@ async function procesarSplashDeBienvenida() {
     }
 }
 
-// ==========================================================
-// CONTROL DE CÁMARA Y SELFIE EXACTA 300x300 (Anti-desbordamiento)
-// ==========================================================
 function iniciarCamaraSelfie() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -279,18 +295,15 @@ function procesarArchivoSelfie(file) {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Forzamos el tamaño final exacto a 300x300 píxeles
                 canvas.width = 300;
                 canvas.height = 300;
                 
-                // Recorte cuadrado centrado automático para evitar deformaciones
                 let sourceSize = Math.min(img.width, img.height);
                 let sourceX = (img.width - sourceSize) / 2;
                 let sourceY = (img.height - sourceSize) / 2;
                 
                 ctx.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 300, 300);
                 
-                // Comprimimos a JPEG con calidad 0.8
                 pasajeroBase64Foto = canvas.toDataURL('image/jpeg', 0.8);
                 
                 const imgPrev = document.getElementById('imgPreview');
@@ -308,13 +321,7 @@ function procesarArchivoSelfie(file) {
                 alert("La foto es demasiado grande. Por favor intenta tomar otra.");
             }
         };
-        img.onerror = function() {
-            alert("No se pudo leer la imagen de la cámara. Intenta nuevamente.");
-        };
         img.src = e.target.result;
-    };
-    reader.onerror = function() {
-        alert("Error al leer el archivo de la cámara.");
     };
     reader.readAsDataURL(file);
 }
@@ -417,20 +424,25 @@ function iniciarEscuchaRealtime(id) {
     subViaje = supabaseClient
         .channel('viaje-' + id)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes', filter: 'id=eq.' + id }, 
-        (payload) => {
+        async (payload) => {
             const de = payload.new;
 
+            // ACTUALIZACIÓN DINÁMICA DE POSICIÓN Y RUTA OSRM EN TIEMPO REAL DESDE EL PASAJERO
             if (de.conductor_lat && de.conductor_lng) {
                 const latLngCond = [de.conductor_lat, de.conductor_lng];
                 if (!markerConductor) {
                     markerConductor = L.marker(latLngCond, { 
-                        icon: L.divIcon({ className: 'auto-conductor-ping', html: de.tipo_vehiculo === 'moto' ? '🏍️' : '🚗', iconSize: [30, 30] }) 
+                        icon: L.divIcon({ className: 'auto-conductor-ping', html: de.tipo_vehiculo === 'moto' ? '🏍️' : '🚗', iconSize: [38, 38], iconAnchor: [19, 19] }) 
                     }).addTo(mapa);
                 } else {
                     markerConductor.setLatLng(latLngCond);
                 }
 
-                if (de.estado === 'en_viaje') {
+                // Trazado de ruta real por calles adaptado al movimiento del chofer
+                if (de.estado === 'aceptado' && origenCoords) {
+                    await recalcularRutaYPrecio({ lat: de.conductor_lat, lng: de.conductor_lng });
+                } else if (de.estado === 'en_viaje' && destinoCoords) {
+                    await recalcularRutaYPrecio({ lat: de.conductor_lat, lng: de.conductor_lng });
                     mapa.panTo(latLngCond);
                 }
             }
@@ -635,16 +647,30 @@ function usarUbicacionDefault() {
 
 async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
     let inicio = puntoOrigenPersonalizado || origenCoords;
+    let fin = (viajeId && markerConductor && destinoCoords && viajeId) ? destinoCoords : destinoCoords;
+    
     if (!inicio || !destinoCoords) return;
     
+    // Si el viaje está activo y el chofer va en camino a buscarlo, trazamos desde el chofer al origen. Si va en viaje, desde el chofer al destino.
+    let puntoA = inicio;
+    let puntoB = destinoCoords;
+
+    if (viajeId && markerConductor) {
+        let posChofer = markerConductor.getLatLng();
+        puntoA = { lat: posChofer.lat, lng: posChofer.lng };
+        // Si el estado es aceptado, el destino de la ruta del chofer es el origen del pasajero
+        // Si el estado es en_viaje, el destino es el destino final
+    }
+
     try {
-        const url = `https://router.project-osrm.org/route/v1/car/${inicio.lng},${inicio.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true&continue_straight=default`;
+        const url = `https://router.project-osrm.org/route/v1/car/${puntoA.lng},${puntoA.lat};${destinoCoords.lng},${destinoCoords.lat}?overview=full&geometries=geojson&steps=true&continue_straight=default`;
         const res = await fetch(url); 
         const data = await res.json();
         
         if (data.code === 'Ok' && data.routes.length > 0) {
             if (rutaTrazada) mapa.removeLayer(rutaTrazada);
             
+            // Dibuja la ruta curva real de OSRM adaptada a las calles
             rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.85 }).addTo(mapa);
             distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
             
@@ -674,7 +700,7 @@ async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
                 document.getElementById('bottomPanel').classList.add('con-ruta');
             }
             
-            if (!puntoOrigenPersonalizado && !usuarioMoviendoMapa) {
+            if (!puntoOrigenPersonalizado && !usuarioMoviendoMapa && !viajeId) {
                 mapa.fitBounds(rutaTrazada.getBounds(), { padding: [35, 35], maxZoom: 16.5 });
             }
         }
