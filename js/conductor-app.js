@@ -78,7 +78,7 @@ function verificarRegistroChofer() {
 }
 
 // ==========================================================
-// COMPRESIÓN Y RECORTE EXACTO 300x300 (ANTI-DESBORDAMIENTO MÓVILES NUEVOS)
+// COMPRESIÓN Y RECORTE EXACTO 300x300 (CENTRADO AUTOMÁTICO)
 // ==========================================================
 function procesarYComprimirFoto(event) {
     const archivo = event.target.files[0];
@@ -98,10 +98,10 @@ function procesarYComprimirFoto(event) {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Forzamos tamaño exacto 300x300 píxeles
                 canvas.width = 300;
                 canvas.height = 300;
 
+                // Recorte cuadrado centrado perfecto para que la cara quede en el marco
                 let sourceSize = Math.min(img.width, img.height);
                 let sourceX = (img.width - sourceSize) / 2;
                 let sourceY = (img.height - sourceSize) / 2;
@@ -191,7 +191,7 @@ function tocarUnRepiqueDeCampana() {
 }
 
 // ==========================================================
-// MOTOR DE VOZ: LOCUTOR MASCULINO (TONO GRAVE REFORZADO)
+// MOTOR DE VOZ HUMANA: LOCUTOR MASCULINO PROFESIONAL Y GRAVE
 // ==========================================================
 function saludarConductorBienvenida(nombrePasajero) {
     if ('speechSynthesis' in window) {
@@ -203,18 +203,32 @@ function saludarConductorBienvenida(nombrePasajero) {
 
         const enunciado = new SpeechSynthesisUtterance(texto);
         enunciado.lang = 'es-AR';
-        enunciado.rate = 0.90; // Velocidad pausada y formal de locutor
-        enunciado.pitch = 0.5; // Tono grave garantizado (voz masculina profunda)
+        enunciado.rate = 0.88; // Ritmo pausado y natural de locutor
+        enunciado.pitch = 0.4; // Tono grave profundo (elimina completamente el efecto robot agudo)
         
-        // Intentar seleccionar una voz masculina en español si el navegador la soporta
+        // Búsqueda inteligente de voces humanas de alta calidad en el dispositivo
         const voces = window.speechSynthesis.getVoices();
-        const vozElegida = voces.find(v => v.lang.includes('es') && (v.name.toLowerCase().includes('google') || v.name.toLowerCase().includes('pablo') || v.name.toLowerCase().includes('raul') || v.name.toLowerCase().includes('mateo')));
+        const vozElegida = voces.find(v => 
+            v.lang.includes('es') && (
+                v.name.toLowerCase().includes('google español') || 
+                v.name.toLowerCase().includes('microsoft pablo') || 
+                v.name.toLowerCase().includes('raul') || 
+                v.name.toLowerCase().includes('mateo') ||
+                v.name.toLowerCase().includes('es-ar')
+            )
+        ) || voces.find(v => v.lang.startsWith('es'));
+
         if (vozElegida) {
             enunciado.voice = vozElegida;
         }
 
         window.speechSynthesis.speak(enunciado);
     }
+}
+
+// Carga inicial de voces para asegurar que el navegador las precargue
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 }
 
 function comenzarSirenaAlerta() {
@@ -605,7 +619,7 @@ async function procesarLojicaViaje() {
     if (estadoFlujo === 'en_puerta') {
         estadoFlujo = 'en_viaje'; localStorage.setItem('conductor_estado_flujo', 'en_viaje');
         
-        // DISPARA EL SALUDO CON TONO GRAVE MASCULINO AL INICIAR EL VIAJE
+        // DISPARA EL SALUDO PROFESIONAL CON TONO GRAVE AL INICIAR EL VIAJE
         saludarConductorBienvenida(viajeActivo.pasajero_nombre);
 
         btnEnCurso.className = "btn-action btn-finalizar"; 
@@ -822,7 +836,7 @@ async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDest
     try {
         let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
         if (latDestinoExtra && lonDestinoExtra) {
-            url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${lonDestinoExtra},${lonDestinoExtra}`;
+            url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${latDestinoExtra},${lonDestinoExtra}`;
         }
         url += `?overview=full&geometries=geojson`;
 
