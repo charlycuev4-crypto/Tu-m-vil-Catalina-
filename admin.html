@@ -268,7 +268,7 @@
             contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando lista de choferes...</p>`;
 
             try {
-                const { data: choferes, error } = await supabaseClient.from('conductores').select('*').order('created_at', { ascending: false });
+                const { data: choferes, error } = await supabaseClient.from('conductores').select('*').order('updated_at', { ascending: false });
                 if (error) throw error;
 
                 if (!choferes || choferes.length === 0) {
@@ -399,7 +399,6 @@
         }
         function cerrarPerfilChofer() { document.getElementById('modalPerfilChofer').classList.add('hidden'); }
 
-        // --- GESTIÓN DE PASAJEROS CONECTADA DIRECTAMENTE A LA TABLA VIAJES ---
         async function abrirModalPasajeros() {
             document.getElementById('modalPasajeros').classList.remove('hidden');
             const contenedor = document.getElementById('listaPasajerosContainer');
@@ -418,7 +417,6 @@
                     return;
                 }
 
-                // Agrupamos dinámicamente a los pasajeros únicos basados en su nombre
                 let pasajerosUnicos = {};
                 viajes.forEach(v => {
                     let nombre = v.pasajero_nombre || 'Pasajero sin nombre';
@@ -450,7 +448,6 @@
                 contenedor.innerHTML = html || `<p style="text-align: center; color: #f59e0b; padding: 20px;">No se encontraron pasajeros.</p>`;
 
             } catch (e) {
-                console.error("Error al cargar pasajeros:", e);
                 contenedor.innerHTML = `<p style="text-align: center; color: #ef4444; padding: 20px;">Error al conectar con la base de datos.</p>`;
             }
         }
