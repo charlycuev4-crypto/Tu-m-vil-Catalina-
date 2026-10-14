@@ -191,7 +191,7 @@ function tocarUnRepiqueDeCampana() {
 }
 
 // ==========================================================
-// MOTOR DE VOZ HUMANA: LOCUTOR MASCULINO PROFESIONAL Y GRAVE
+// MOTOR DE VOZ MASCULINA DE GOOGLE (TONO NATURAL Y FLUIDO)
 // ==========================================================
 function saludarConductorBienvenida(nombrePasajero) {
     if ('speechSynthesis' in window) {
@@ -203,18 +203,15 @@ function saludarConductorBienvenida(nombrePasajero) {
 
         const enunciado = new SpeechSynthesisUtterance(texto);
         enunciado.lang = 'es-AR';
-        enunciado.rate = 0.88; // Ritmo pausado y natural de locutor
-        enunciado.pitch = 0.4; // Tono grave profundo (elimina completamente el efecto robot agudo)
-        
-        // Búsqueda inteligente de voces humanas de alta calidad en el dispositivo
+        enunciado.rate = 0.95; // Velocidad natural y fluida de locución
+        enunciado.pitch = 1.0;  // Tono neutro original para que no se deforme la voz de Google
+
+        // Selecciona automáticamente la voz masculina que configuraste en tu celular
         const voces = window.speechSynthesis.getVoices();
         const vozElegida = voces.find(v => 
             v.lang.includes('es') && (
-                v.name.toLowerCase().includes('google español') || 
-                v.name.toLowerCase().includes('microsoft pablo') || 
-                v.name.toLowerCase().includes('raul') || 
-                v.name.toLowerCase().includes('mateo') ||
-                v.name.toLowerCase().includes('es-ar')
+                v.name.toLowerCase().includes('google') || 
+                v.name.toLowerCase().includes('es-')
             )
         ) || voces.find(v => v.lang.startsWith('es'));
 
@@ -226,7 +223,7 @@ function saludarConductorBienvenida(nombrePasajero) {
     }
 }
 
-// Carga inicial de voces para asegurar que el navegador las precargue
+// Precarga de voces al iniciar el navegador
 if ('speechSynthesis' in window) {
     window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 }
@@ -619,7 +616,7 @@ async function procesarLojicaViaje() {
     if (estadoFlujo === 'en_puerta') {
         estadoFlujo = 'en_viaje'; localStorage.setItem('conductor_estado_flujo', 'en_viaje');
         
-        // DISPARA EL SALUDO PROFESIONAL CON TONO GRAVE AL INICIAR EL VIAJE
+        // DISPARA EL SALUDO NATURAL CON LA VOZ MASCULINA SELECCIONADA EN EL CELULAR
         saludarConductorBienvenida(viajeActivo.pasajero_nombre);
 
         btnEnCurso.className = "btn-action btn-finalizar"; 
