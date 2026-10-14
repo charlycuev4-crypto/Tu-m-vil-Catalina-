@@ -268,7 +268,8 @@
             contenedor.innerHTML = `<p style="text-align: center; color: #94a3b8; padding: 20px;">Cargando lista de choferes...</p>`;
 
             try {
-                const { data: choferes, error } = await supabaseClient.from('conductores').select('*').order('updated_at', { ascending: false });
+                // Consulta limpia sin .order() para evitar errores si la columna no existe
+                const { data: choferes, error } = await supabaseClient.from('conductores').select('*');
                 if (error) throw error;
 
                 if (!choferes || choferes.length === 0) {
