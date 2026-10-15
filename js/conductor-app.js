@@ -149,7 +149,7 @@ async function guardarConfigChofer(e) {
                 aprobado: false, // Ingresa como pendiente de revisión por el Administrador
                 lat: choferCoords ? choferCoords.lat : null,
                 lng: choferCoords ? choferCoords.lng : null
-            }, { onConflict: 'patente' });
+            }, { onConflict: 'telefono' });
             
         alert("¡Registro exitoso! Tu cuenta ha sido enviada al Administrador para su aprobación. Podrás operar una vez que sea aprobada.");
     } catch (err) {
@@ -294,7 +294,7 @@ function initMapa() {
 }
 
 // ==========================================================
-// RASTREO GPS ESTABILIZADO (FILTRO DE SALTOS Y RUIDO)
+// RASTREO GPS ESTABILIZADO (FILTRO DE SALTOS + TELÉFONO)
 // ==========================================================
 function iniciarRastreoGpsContinuo() {
     if (idRastreadorGps) return;
@@ -304,10 +304,8 @@ function iniciarRastreoGpsContinuo() {
             const nuevaLng = pos.coords.longitude;
             const precision = pos.coords.accuracy;
 
-            // 1. Filtrar puntos con mala precisión de GPS (mayor a 40 metros de error)
             if (precision > 40) return;
 
-            // 2. Filtrar saltos falsos o teleportaciones (si se mueve más de 300 metros de golpe, es ruido de GPS)
             if (choferCoords.lat && choferCoords.lng) {
                 let distanciaSalto = distanciaEnMetros(choferCoords.lat, choferCoords.lng, nuevaLat, nuevaLng);
                 if (distanciaSalto > 300) return; 
@@ -365,7 +363,10 @@ function abrirNavegacionGoogleMaps() {
 async function buscarViajesPendientesRecientes() {
     if (viajeActivo || !estaConectado) return;
     try {
-        const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('telefono', localStorage.getItem('cfg_auto_telefono')).single();
+        let telefonoLocal = localStorage.getItem('cfg_auto_telefono');
+        if (!telefonoLocal) return;
+
+        const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('telefono', telefonoLocal).single();
         if (!chofer || chofer.aprobado !== true) return;
 
         const { data: viajes, error } = await supabaseClient
@@ -399,7 +400,8 @@ async function escucharNuevosViajes() {
     canalSupabase = supabaseClient.channel('despacho-chofer');
     canalSupabase
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, async (payload) => {
-            const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('telefono', localStorage.getItem('cfg_auto_telefono')).single();
+            if (!telefonoLocal) return;
+            const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('telefono', telefonoLocal).single();
             if (!chofer || chofer.aprobado !== true) return;
 
             if (payload.new.estado === 'pendiente' && !viajeActivo && estaConectado) {
