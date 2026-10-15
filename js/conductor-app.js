@@ -1040,4 +1040,4 @@ window.addEventListener('DOMContentLoaded', () => {
         await verificarViajeActivoConductor(); 
         await buscarViajesPendientesRecientes(); 
     }, 1000);
-});
+}); 
