@@ -1,576 +1,607 @@
-Const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
-Const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
-Const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-Let NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "";
-Let FOTO_CHOFER = localStorage.getItem('cfg_auto_foto') || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
-Let AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " - " + (localStorage.getItem('cfg_auto_color') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
+let NOMBRE_CHOFER = localStorage.getItem('cfg_auto_chofer') || "";
+let FOTO_CHOFER = localStorage.getItem('cfg_auto_foto') || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
+let AUTO_CHOFER = (localStorage.getItem('cfg_auto_modelo') || "") + " - " + (localStorage.getItem('cfg_auto_color') || "") + " (Patente: " + (localStorage.getItem('cfg_auto_patente') || "") + ")";
 
-Let totalDia = parseFloat(localStorage.getItem('chofer_total_dia') || '0');
-Let ultimoViajeMonto = parseFloat(localStorage.getItem('chofer_ultimo_monto') || '0');
-Let cantViajesCount = parseInt(localStorage.getItem('chofer_cant_viajes') || '0');
+let totalDia = parseFloat(localStorage.getItem('chofer_total_dia') || '0');
+let ultimoViajeMonto = parseFloat(localStorage.getItem('chofer_ultimo_monto') || '0');
+let cantViajesCount = parseInt(localStorage.getItem('chofer_cant_viajes') || '0');
 
-Function verificarReseteoDiario() {
-    Const hoy = new Date().toLocaleDateString();
-    Const ultimaFecha = localStorage.getItem('chofer_fecha_actual');
+function verificarReseteoDiario() {
+    const hoy = new Date().toLocaleDateString();
+    const ultimaFecha = localStorage.getItem('chofer_fecha_actual');
 
-    If (ultimaFecha !== hoy) {
-        TotalDia = 0;
-        CantViajesCount = 0;
-        LocalStorage.setItem('chofer_total_dia', '0');
-        LocalStorage.setItem('chofer_cant_viajes', '0');
-        LocalStorage.setItem('chofer_fecha_actual', hoy);
+    if (ultimaFecha !== hoy) {
+        totalDia = 0;
+        cantViajesCount = 0;
+        localStorage.setItem('chofer_total_dia', '0');
+        localStorage.setItem('chofer_cant_viajes', '0');
+        localStorage.setItem('chofer_fecha_actual', hoy);
     }
 }
 
-Function actualizarUIEstadisticas() {
-    Document.getElementById('lblTotalDia').textContent = '$' + totalDia.toLocaleString('es-AR');
-    Document.getElementById('lblUltimoViaje').textContent = '$' + ultimoViajeMonto.toLocaleString('es-AR');
-    Document.getElementById('lblCantViajes').textContent = cantViajesCount;
+function actualizarUIEstadisticas() {
+    document.getElementById('lblTotalDia').textContent = '$' + totalDia.toLocaleString('es-AR');
+    document.getElementById('lblUltimoViaje').textContent = '$' + ultimoViajeMonto.toLocaleString('es-AR');
+    document.getElementById('lblCantViajes').textContent = cantViajesCount;
 }
 
-Let canalSupabase = null;
-Let canalChatSupabase = null;
-Let estaConectado = true; 
-Let wakeLock = null; 
-Let idRastreadorGps = null; 
-Let autocentrarMapa = true;  
+let canalSupabase = null;
+let canalChatSupabase = null;
+let estaConectado = true; 
+let wakeLock = null; 
+let idRastreadorGps = null; 
+let autocentrarMapa = true;  
 
-Let audioCtx = null;
-Let intervaloCampana = null;
-Let base64FotoTemp = "";
-Let silentAudioInterval = null;
+let audioCtx = null;
+let intervaloCampana = null;
+let base64FotoTemp = "";
+let silentAudioInterval = null;
 
-Function mantenerActivoSegundoPlano() {
-    If (silentAudioInterval) return;
-    SilentAudioInterval = setInterval(() => {
-        If (!estaConectado) return;
-        ForzarHabilitacionAudio();
-        If (audioCtx) {
-            Try {
-                Let osc = audioCtx.createOscillator();
-                Let gain = audioCtx.createGain();
-                Gain.gain.setValueAtTime(0.00001, audioCtx.currentTime);
-                Osc.connect(gain);
-                Gain.connect(audioCtx.destination);
-                Osc.start();
-                Osc.stop(audioCtx.currentTime + 0.1);
+function mantenerActivoSegundoPlano() {
+    if (silentAudioInterval) return;
+    silentAudioInterval = setInterval(() => {
+        if (!estaConectado) return;
+        forzarHabilitacionAudio();
+        if (audioCtx) {
+            try {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.00001, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
             } catch(e){}
         }
-        BuscarViajesPendientesRecientes();
+        buscarViajesPendientesRecientes();
     }, 15000);
 }
 
-Function verificarRegistroChofer() {
-    If (!localStorage.getItem('cfg_auto_chofer') || !localStorage.getItem('cfg_auto_patente')) {
-        Document.getElementById('modalConfigChofer').classList.remove('hidden');
+function verificarRegistroChofer() {
+    if (!localStorage.getItem('cfg_auto_chofer') || !localStorage.getItem('cfg_auto_patente')) {
+        document.getElementById('modalConfigChofer').classList.remove('hidden');
     } else {
-        Document.getElementById('inpNombre').value = localStorage.getItem('cfg_auto_chofer') || '';
-        Document.getElementById('inpTelefono').value = localStorage.getItem('cfg_auto_telefono') || '';
-        Document.getElementById('inpModelo').value = localStorage.getItem('cfg_auto_modelo') || '';
-        Document.getElementById('inpColor').value = localStorage.getItem('cfg_auto_color') || '';
-        Document.getElementById('inpPatente').value = localStorage.getItem('cfg_auto_patente') || '';
-        If(localStorage.getItem('cfg_auto_foto')) {
-            Document.getElementById('imgPreview').src = localStorage.getItem('cfg_auto_foto');
-            Base64FotoTemp = localStorage.getItem('cfg_auto_foto');
+        document.getElementById('inpNombre').value = localStorage.getItem('cfg_auto_chofer') || '';
+        document.getElementById('inpTelefono').value = localStorage.getItem('cfg_auto_telefono') || '';
+        document.getElementById('inpModelo').value = localStorage.getItem('cfg_auto_modelo') || '';
+        document.getElementById('inpColor').value = localStorage.getItem('cfg_auto_color') || '';
+        document.getElementById('inpPatente').value = localStorage.getItem('cfg_auto_patente') || '';
+        if(localStorage.getItem('cfg_auto_foto')) {
+            document.getElementById('imgPreview').src = localStorage.getItem('cfg_auto_foto');
+            base64FotoTemp = localStorage.getItem('cfg_auto_foto');
         }
     }
 }
 
-Function procesarYComprimirFoto(event) {
-    Const archivo = event.target.files[0];
-    If (!archivo) return;
+// ==========================================================
+// COMPRESIÓN Y RECORTE EXACTO 300x300 (CENTRADO AUTOMÁTICO)
+// ==========================================================
+function procesarYComprimirFoto(event) {
+    const archivo = event.target.files[0];
+    if (!archivo) return;
 
-    If (!archivo.type.startsWith('image/')) {
-        Alert('Por favor selecciona un archivo de imagen válido.');
-        Return;
+    if (!archivo.type.startsWith('image/')) {
+        alert('Por favor selecciona un archivo de imagen válido.');
+        return;
     }
 
-    Const lector = new FileReader();
-    Lector.onload = function(e) {
-        Const img = new Image();
-        Img.src = e.target.result;
-        Img.onload = function() {
-            Try {
-                Const canvas = document.createElement('canvas');
-                Const ctx = canvas.getContext('2d');
+    const lector = new FileReader();
+    lector.onload = function(e) {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = function() {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
                 
-                Canvas.width = 300;
-                Canvas.height = 300;
+                canvas.width = 300;
+                canvas.height = 300;
 
-                Let sourceSize = Math.min(img.width, img.height);
-                Let sourceX = (img.width - sourceSize) / 2;
-                Let sourceY = (img.height - sourceSize) / 2;
+                let sourceSize = Math.min(img.width, img.height);
+                let sourceX = (img.width - sourceSize) / 2;
+                let sourceY = (img.height - sourceSize) / 2;
 
-                Ctx.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 300, 300);
+                ctx.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 300, 300);
 
-                Base64FotoTemp = canvas.toDataURL('image/jpeg', 0.8);
-                Document.getElementById('imgPreview').src = base64FotoTemp;
+                base64FotoTemp = canvas.toDataURL('image/jpeg', 0.8);
+                document.getElementById('imgPreview').src = base64FotoTemp;
             } catch (err) {
-                Console.error("Error procesando foto:", err);
-                Alert("La foto es demasiado grande. Intenta tomar otra.");
+                console.error("Error procesando foto:", err);
+                alert("La foto es demasiado grande. Intenta tomar otra.");
             }
         }
     }
-    Lector.readAsDataURL(archivo);
+    lector.readAsDataURL(archivo);
 }
 
-Async function guardarConfigChofer(e) {
-    E.preventDefault();
-    Const nombre = document.getElementById('inpNombre').value.trim();
-    Const telefono = document.getElementById('inpTelefono').value.trim();
-    Const modelo = document.getElementById('inpModelo').value.trim();
-    Const color = document.getElementById('inpColor').value.trim();
-    Const patente = document.getElementById('inpPatente').value.trim();
-    Const fotoFinal = base64FotoTemp || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
+// ==========================================================
+// GUARDAR Y SINCRONIZAR CONFIGURACIÓN (APROBADO: FALSE)
+// ==========================================================
+async function guardarConfigChofer(e) {
+    e.preventDefault();
+    const nombre = document.getElementById('inpNombre').value.trim();
+    const telefono = document.getElementById('inpTelefono').value.trim();
+    const modelo = document.getElementById('inpModelo').value.trim();
+    const color = document.getElementById('inpColor').value.trim();
+    const patente = document.getElementById('inpPatente').value.trim();
+    const fotoFinal = base64FotoTemp || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
 
-    LocalStorage.setItem('cfg_auto_chofer', nombre);
-    LocalStorage.setItem('cfg_auto_telefono', telefono);
-    LocalStorage.setItem('cfg_auto_modelo', modelo);
-    LocalStorage.setItem('cfg_auto_color', color);
-    LocalStorage.setItem('cfg_auto_patente', patente);
-    LocalStorage.setItem('cfg_auto_foto', fotoFinal);
+    localStorage.setItem('cfg_auto_chofer', nombre);
+    localStorage.setItem('cfg_auto_telefono', telefono);
+    localStorage.setItem('cfg_auto_modelo', modelo);
+    localStorage.setItem('cfg_auto_color', color);
+    localStorage.setItem('cfg_auto_patente', patente);
+    localStorage.setItem('cfg_auto_foto', fotoFinal);
 
-    Try {
-        Await supabaseClient
+    try {
+        await supabaseClient
             .from('conductores')
             .upsert({
-                Nombre: nombre,
-                Telefono: telefono,
-                Modelo: `${modelo} - ${color}`,
-                Patente: patente,
-                Foto: fotoFinal,
-                Aprobado: false, 
-                Lat: choferCoords ? choferCoords.lat : null,
-                Lng: choferCoords ? choferCoords.lng : null
+                nombre: nombre,
+                telefono: telefono,
+                modelo: `${modelo} - ${color}`,
+                patente: patente,
+                foto: fotoFinal,
+                aprobado: false, // Ingresa como pendiente de revisión por el Administrador
+                lat: choferCoords ? choferCoords.lat : null,
+                lng: choferCoords ? choferCoords.lng : null
             }, { onConflict: 'patente' });
             
-        Alert("¡Registro exitoso! Tu cuenta ha sido enviada al Administrador para su aprobación. Podrás operar una vez que sea aprobada.");
+        alert("¡Registro exitoso! Tu cuenta ha sido enviada al Administrador para su aprobación. Podrás operar una vez que sea aprobada.");
     } catch (err) {
-        Console.error("Error al sincronizar con la tabla conductores:", err);
+        console.error("Error al sincronizar con la tabla conductores:", err);
     }
 
-    Document.getElementById('modalConfigChofer').classList.add('hidden');
-    Location.reload();
+    document.getElementById('modalConfigChofer').classList.add('hidden');
+    location.reload();
 }
 
-Function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
-    Const R = 6371; 
-    Const dLat = (lat2 - lat1) * Math.PI / 180;
-    Const dLon = (lon2 - lon1) * Math.PI / 180;
-    Const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-    Return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
+    const R = 6371; 
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
 }
 
-Async function obtenerDireccionYBarrio(lat, lon) {
-    Try {
-        Let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
-            Headers: { 'Accept-Language': 'es' }
+async function obtenerDireccionYBarrio(lat, lon) {
+    try {
+        let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+            headers: { 'Accept-Language': 'es' }
         });
-        Let data = await res.json();
-        If (data && data.address) {
-            Let calle = data.address.road || data.address.pedestrian || data.address.suburb || "Calle sin nombre";
-            Let numero = data.address.house_number ? ` ${data.address.house_number}` : "";
-            Let barrio = data.address.neighbourhood || data.address.suburb || data.address.city_district || data.address.town || data.address.city || "Zona general";
-            Return {
-                CalleCompleta: `${calle}${numero}`.trim(),
-                Barrio: barrio
+        let data = await res.json();
+        if (data && data.address) {
+            let calle = data.address.road || data.address.pedestrian || data.address.suburb || "Calle sin nombre";
+            let numero = data.address.house_number ? ` ${data.address.house_number}` : "";
+            let barrio = data.address.neighbourhood || data.address.suburb || data.address.city_district || data.address.town || data.address.city || "Zona general";
+            return {
+                calleCompleta: `${calle}${numero}`.trim(),
+                barrio: barrio
             };
         }
     } catch (e) {}
-    Return { calleCompleta: "Punto exacto", barrio: "Zona general" };
+    return { calleCompleta: "Punto exacto", barrio: "Zona general" };
 }
 
-Async function solicitarWakeLock() {
-    If (!('wakeLock' in navigator)) return;
-    Try { if (!wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
+async function solicitarWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try { if (!wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
 }
-Function liberarWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; } }
+function liberarWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; } }
 
-Async function pedirPermisoNotificaciones() {
-    If ('Notification' in window) {
-        Let permiso = Notification.permission;
-        If (permiso === 'default') {
-            Permiso = await Notification.requestPermission();
+async function pedirPermisoNotificaciones() {
+    if ('Notification' in window) {
+        let permiso = Notification.permission;
+        if (permiso === 'default') {
+            permiso = await Notification.requestPermission();
         }
-        Return permiso === 'granted';
+        return permiso === 'granted';
     }
-    Return false;
+    return false;
 }
 
-Function forzarHabilitacionAudio() {
-    If (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function forzarHabilitacionAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     else if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-Function tocarUnRepiqueDeCampana() {
-    If (!audioCtx) return;
-    Try {
-        Let osc = audioCtx.createOscillator();
-        Let gainNode = audioCtx.createGain();
-        Osc.type = 'sine'; osc.frequency.setValueAtTime(1475, audioCtx.currentTime); 
-        GainNode.gain.setValueAtTime(0.9, audioCtx.currentTime);
-        GainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
-        Osc.connect(gainNode); gainNode.connect(audioCtx.destination);
-        Osc.start(); osc.stop(audioCtx.currentTime + 0.8);
+function tocarUnRepiqueDeCampana() {
+    if (!audioCtx) return;
+    try {
+        let osc = audioCtx.createOscillator();
+        let gainNode = audioCtx.createGain();
+        osc.type = 'sine'; osc.frequency.setValueAtTime(1475, audioCtx.currentTime); 
+        gainNode.gain.setValueAtTime(0.9, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+        osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.8);
     } catch(e) {}
 }
 
-Function saludarConductorBienvenida(nombrePasajero) {
-    If ('speechSynthesis' in window) {
-        Window.speechSynthesis.cancel();
+function saludarConductorBienvenida(nombrePasajero) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
         
-        Const texto = nombrePasajero 
+        const texto = nombrePasajero 
             ? `Hola ${nombrePasajero}, bienvenido a Tu Móvil. En camino hacia tu destino.` 
             : `Hola, bienvenido a Tu Móvil. En camino hacia tu destino.`;
 
-        Const enunciado = new SpeechSynthesisUtterance(texto);
-        Enunciado.lang = 'es-AR';
-        Enunciado.rate = 0.95; 
-        Enunciado.pitch = 1.0;  
+        const enunciado = new SpeechSynthesisUtterance(texto);
+        enunciado.lang = 'es-AR';
+        enunciado.rate = 0.95; 
+        enunciado.pitch = 1.0;  
 
-        Const voces = window.speechSynthesis.getVoices();
-        Const vozElegida = voces.find(v => 
-            V.lang.includes('es') && (
-                V.name.toLowerCase().includes('google') || 
-                V.name.toLowerCase().includes('es-')
+        const voces = window.speechSynthesis.getVoices();
+        const vozElegida = voces.find(v => 
+            v.lang.includes('es') && (
+                v.name.toLowerCase().includes('google') || 
+                v.name.toLowerCase().includes('es-')
             )
         ) || voces.find(v => v.lang.startsWith('es'));
 
-        If (vozElegida) {
-            Enunciado.voice = vozElegida;
+        if (vozElegida) {
+            enunciado.voice = vozElegida;
         }
 
-        Window.speechSynthesis.speak(enunciado);
+        window.speechSynthesis.speak(enunciado);
     }
 }
 
-If ('speechSynthesis' in window) {
-    Window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 }
 
-Function comenzarSirenaAlerta() {
-    If (intervaloCampana) return;
-    ForzarHabilitacionAudio();
-    IntervaloCampana = setInterval(() => { tocarUnRepiqueDeCampana(); }, 500);
+function comenzarSirenaAlerta() {
+    if (intervaloCampana) return;
+    forzarHabilitacionAudio();
+    intervaloCampana = setInterval(() => { tocarUnRepiqueDeCampana(); }, 500);
 }
-Function detenerSirenaAlerta() {
-    If (intervaloCampana) { clearInterval(intervaloCampana); intervaloCampana = null; }
+function detenerSirenaAlerta() {
+    if (intervaloCampana) { clearInterval(intervaloCampana); intervaloCampana = null; }
 }
 
-Function probarCampanaManual(e) {
-    E.stopPropagation();
-    ForzarHabilitacionAudio();
-    TocarUnRepiqueDeCampana();
-    Const btn = document.getElementById('btnTestSonido');
-    Btn.textContent = "🔔 ¡Sonando Ok!";
-    Btn.style.background = "#15803d";
+function probarCampanaManual(e) {
+    e.stopPropagation();
+    forzarHabilitacionAudio();
+    tocarUnRepiqueDeCampana();
+    const btn = document.getElementById('btnTestSonido');
+    btn.textContent = "🔔 ¡Sonando Ok!";
+    btn.style.background = "#15803d";
     setTimeout(() => { btn.textContent = "🔊 Probar Timbre"; btn.style.background = "#c2410c"; }, 2000);
 }
 
-Const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
-Let mapa = null, markerChofer = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
-Let choferCoords = { lat: -34.545, lng: -58.715 }; 
-Let viajeActivo = null;
-Let estadoFlujo = 'pendiente'; 
+const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
+let mapa = null, markerChofer = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
+let choferCoords = { lat: -34.545, lng: -58.715 }; 
+let viajeActivo = null;
+let estadoFlujo = 'pendiente'; 
 
-Function initMapa() {
-    Mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
+function initMapa() {
+    mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(ESTACION_SAN_MIGUEL, 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
     
-    Const iconoAuto = L.divIcon({ className: 'chofer-auto-icon', html: '🚗', iconSize: [38, 38], iconAnchor: [19, 19] });
-    MarkerChofer = L.marker([choferCoords.lat, choferCoords.lng], { icon: iconoAuto }).addTo(mapa);
+    const iconoAuto = L.divIcon({ className: 'chofer-auto-icon', html: '🚗', iconSize: [38, 38], iconAnchor: [19, 19] });
+    markerChofer = L.marker([choferCoords.lat, choferCoords.lng], { icon: iconoAuto }).addTo(mapa);
 
-    Mapa.on('dragstart', () => {
-        AutocentrarMapa = false;
-        Document.getElementById('btnGpsCentro').classList.remove('seguimiento-on');
+    mapa.on('dragstart', () => {
+        autocentrarMapa = false;
+        document.getElementById('btnGpsCentro').classList.remove('seguimiento-on');
     });
 }
 
-Function iniciarRastreoGpsContinuo() {
-    If (idRastreadorGps) return;
-    If (navigator.geolocation) {
-        IdRastreadorGps = navigator.geolocation.watchPosition(async (pos) => {
-            Const nuevaLat = pos.coords.latitude;
-            Const nuevaLng = pos.coords.longitude;
-            ChoferCoords = { lat: nuevaLat, lng: nuevaLng };
-            
-            If (markerChofer) markerChofer.setLatLng([nuevaLat, nuevaLng]);
+// ==========================================================
+// RASTREO GPS ESTABILIZADO (FILTRO DE SALTOS Y RUIDO)
+// ==========================================================
+function iniciarRastreoGpsContinuo() {
+    if (idRastreadorGps) return;
+    if (navigator.geolocation) {
+        idRastreadorGps = navigator.geolocation.watchPosition(async (pos) => {
+            const nuevaLat = pos.coords.latitude;
+            const nuevaLng = pos.coords.longitude;
+            const precision = pos.coords.accuracy;
 
-            If (autocentrarMapa) {
-                Let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
-                Mapa.setView([nuevaLat, nuevaLng], zoomActual);
-                Document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
+            // 1. Filtrar puntos con mala precisión de GPS (mayor a 40 metros de error)
+            if (precision > 40) return;
+
+            // 2. Filtrar saltos falsos o teleportaciones (si se mueve más de 300 metros de golpe, es ruido de GPS)
+            if (choferCoords.lat && choferCoords.lng) {
+                let distanciaSalto = distanciaEnMetros(choferCoords.lat, choferCoords.lng, nuevaLat, nuevaLng);
+                if (distanciaSalto > 300) return; 
             }
 
-            If (viajeActivo && viajeActivo.id) {
-                Try {
-                    Await supabaseClient.from('viajes').update({ conductor_lat: nuevaLat, conductor_lng: nuevaLng }).eq('id', viajeActivo.id);
+            choferCoords = { lat: nuevaLat, lng: nuevaLng };
+            
+            if (markerChofer) markerChofer.setLatLng([nuevaLat, nuevaLng]);
+
+            if (autocentrarMapa) {
+                let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
+                mapa.setView([nuevaLat, nuevaLng], zoomActual);
+                document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
+            }
+
+            if (viajeActivo && viajeActivo.id) {
+                try {
+                    await supabaseClient.from('viajes').update({ conductor_lat: nuevaLat, conductor_lng: nuevaLng }).eq('id', viajeActivo.id);
                 } catch (err) {}
             }
 
-            Try {
-                Let patenteLocal = localStorage.getItem('cfg_auto_patente');
-                If (patenteLocal) {
-                    Await supabaseClient.from('conductores').update({ lat: nuevaLat, lng: nuevaLng }).eq('patente', patenteLocal);
+            try {
+                let telefonoLocal = localStorage.getItem('cfg_auto_telefono');
+                if (telefonoLocal) {
+                    await supabaseClient.from('conductores').update({ lat: nuevaLat, lng: nuevaLng }).eq('telefono', telefonoLocal);
                 }
             } catch(e) {}
 
-            If (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
-                ActualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng);
+            if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
+                actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng);
             } else if (viajeActivo && estadoFlujo === 'en_viaje') {
-                ActualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.destino_lat, viajeActivo.destino_lng);
+                actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.destino_lat, viajeActivo.destino_lng);
             }
         }, (error) => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
     }
 }
 
-Function detenerRastreoGps() {
-    If (idRastreadorGps) { navigator.geolocation.clearWatch(idRastreadorGps); idRastreadorGps = null; }
+function detenerRastreoGps() {
+    if (idRastreadorGps) { navigator.geolocation.clearWatch(idRastreadorGps); idRastreadorGps = null; }
 }
 
-Function alternarSeguimientoManual() {
-    AutocentrarMapa = true;
-    Document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
-    Mapa.setView([choferCoords.lat, choferCoords.lng], (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15);
+function alternarSeguimientoManual() {
+    autocentrarMapa = true;
+    document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
+    mapa.setView([choferCoords.lat, choferCoords.lng], (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15);
 }
 
-Function abrirNavegacionGoogleMaps() {
-    If (!viajeActivo) { alert("Necesitás un viaje activo."); return; }
-    Let destLat = (estadoFlujo === 'en_viaje') ? viajeActivo.destino_lat : viajeActivo.origen_lat;
-    Let destLng = (estadoFlujo === 'en_viaje') ? viajeActivo.destino_lng : viajeActivo.origen_lng;
-    Window.open(`https://www.google.com/maps/dir/?api=1&origin=${choferCoords.lat},${choferCoords.lng}&destination=${destLat},${destLng}&travelmode=driving`, '_blank');
+function abrirNavegacionGoogleMaps() {
+    if (!viajeActivo) { alert("Necesitás un viaje activo."); return; }
+    let destLat = (estadoFlujo === 'en_viaje') ? viajeActivo.destino_lat : viajeActivo.origen_lat;
+    let destLng = (estadoFlujo === 'en_viaje') ? viajeActivo.destino_lng : viajeActivo.origen_lng;
+    window.open(`https://www.google.com/maps/dir/?api=1&origin=${choferCoords.lat},${choferCoords.lng}&destination=${destLat},${destLng}&travelmode=driving`, '_blank');
 }
 
-Async function buscarViajesPendientesRecientes() {
-    If (viajeActivo || !estaConectado) return;
-    Try {
-        Const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('patente', localStorage.getItem('cfg_auto_patente')).single();
-        If (!chofer || chofer.aprobado !== true) return;
+async function buscarViajesPendientesRecientes() {
+    if (viajeActivo || !estaConectado) return;
+    try {
+        const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('telefono', localStorage.getItem('cfg_auto_telefono')).single();
+        if (!chofer || chofer.aprobado !== true) return;
 
-        Const { data: viajes, error } = await supabaseClient
+        const { data: viajes, error } = await supabaseClient
             .from('viajes').select('*').eq('estado', 'pendiente').is('conductor_nombre', null)
             .order('created_at', { ascending: false }).limit(1);
 
-        If (!error && viajes && viajes.length > 0) {
-            Const viajeReciente = viajes[0];
-            Const tiempoCreacion = new Date(viajeReciente.created_at).getTime();
-            Const ahora = Date.now();
-            If ((ahora - tiempoCreacion) < 60000) { 
-                Const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, viajeReciente.origen_lat, viajeReciente.origen_lng);
-                If (distanciaAlViaje <= 5) { montarViajeEntrante(viajeReciente); }
+        if (!error && viajes && viajes.length > 0) {
+            const viajeReciente = viajes[0];
+            const tiempoCreacion = new Date(viajeReciente.created_at).getTime();
+            const ahora = Date.now();
+            if ((ahora - tiempoCreacion) < 60000) { 
+                const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, viajeReciente.origen_lat, viajeReciente.origen_lng);
+                if (distanciaAlViaje <= 5) { montarViajeEntrante(viajeReciente); }
             }
         }
     } catch (err) {}
 }
 
-Async function escucharNuevosViajes() {
-    Let patenteLocal = localStorage.getItem('cfg_auto_patente');
-    If (patenteLocal) {
-        Try {
-            Const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('patente', patenteLocal).single();
-            If (!chofer || chofer.aprobado !== true) return;
+async function escucharNuevosViajes() {
+    let telefonoLocal = localStorage.getItem('cfg_auto_telefono');
+    if (telefonoLocal) {
+        try {
+            const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('telefono', telefonoLocal).single();
+            if (!chofer || chofer.aprobado !== true) return;
         } catch (e) { return; }
     }
 
-    If (canalSupabase) return;
-    BuscarViajesPendientesRecientes();
+    if (canalSupabase) return;
+    buscarViajesPendientesRecientes();
 
-    CanalSupabase = supabaseClient.channel('despacho-chofer');
-    CanalSupabase
+    canalSupabase = supabaseClient.channel('despacho-chofer');
+    canalSupabase
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, async (payload) => {
-            Const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('patente', localStorage.getItem('cfg_auto_patente')).single();
-            If (!chofer || chofer.aprobado !== true) return;
+            const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('telefono', localStorage.getItem('cfg_auto_telefono')).single();
+            if (!chofer || chofer.aprobado !== true) return;
 
-            If (payload.new.estado === 'pendiente' && !viajeActivo && estaConectado) {
-                Const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, payload.new.origen_lat, payload.new.origen_lng);
-                If (distanciaAlViaje > 5) return;
-                MontarViajeEntrante(payload.new);
+            if (payload.new.estado === 'pendiente' && !viajeActivo && estaConectado) {
+                const distanciaAlViaje = calcularDistanciaKm(choferCoords.lat, choferCoords.lng, payload.new.origen_lat, payload.new.origen_lng);
+                if (distanciaAlViaje > 5) return;
+                montarViajeEntrante(payload.new);
             }
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes' }, (payload) => {
-            If (viajeActivo && payload.new.id === viajeActivo.id && payload.new.estado === 'cancelado') {
-                DetenerSirenaAlerta();
-                MostrarMsg('El pasajero canceló el viaje.', 'success');
-                LimpiarMemoriaConductor();
+            if (viajeActivo && payload.new.id === viajeActivo.id && payload.new.estado === 'cancelado') {
+                detenerSirenaAlerta();
+                mostrarMsg('El pasajero canceló el viaje.', 'success');
+                limpiarMemoriaConductor();
                 setTimeout(() => location.reload(), 3000);
             }
         })
         .subscribe();
 }
 
-Function toggleChatFlotante() {
-    Const modal = document.getElementById('modalChatFlotante');
-    Modal.classList.toggle('activo');
+function toggleChatFlotante() {
+    const modal = document.getElementById('modalChatFlotante');
+    modal.classList.toggle('activo');
 
-    If (modal.classList.contains('activo')) {
-        Const btnChat = document.getElementById('btnAbrirChatFlotante');
-        If (btnChat) btnChat.classList.remove('chat-alerta-activo');
+    if (modal.classList.contains('activo')) {
+        const btnChat = document.getElementById('btnAbrirChatFlotante');
+        if (btnChat) btnChat.classList.remove('chat-alerta-activo');
     }
 }
 
-Function iniciarChatViaje(viajeId) {
-    CargarHistorialMensajes(viajeId);
-    If (canalChatSupabase) supabaseClient.removeChannel(canalChatSupabase);
+function iniciarChatViaje(viajeId) {
+    cargarHistorialMensajes(viajeId);
+    if (canalChatSupabase) supabaseClient.removeChannel(canalChatSupabase);
 
-    CanalChatSupabase = supabaseClient.channel(`chat_viaje_${viajeId}`)
+    canalChatSupabase = supabaseClient.channel(`chat_viaje_${viajeId}`)
         .on('postgres_changes', {
-            Event: 'INSERT',
-            Schema: 'public',
-            Table: 'mensajes',
-            Filter: `viaje_id=eq.${viajeId}`
+            event: 'INSERT',
+            schema: 'public',
+            table: 'mensajes',
+            filter: `viaje_id=eq.${viajeId}`
         }, payload => {
-            AgregarMensajeAlDom(payload.new);
+            agregarMensajeAlDom(payload.new);
 
-            Const modalChat = document.getElementById('modalChatFlotante');
-            If (payload.new.emisor !== 'conductor' && !modalChat.classList.contains('activo')) {
-                TocarUnRepiqueDeCampana();
-                Const btnChat = document.getElementById('btnAbrirChatFlotante');
-                If (btnChat) btnChat.classList.add('chat-alerta-activo');
+            const modalChat = document.getElementById('modalChatFlotante');
+            if (payload.new.emisor !== 'conductor' && !modalChat.classList.contains('activo')) {
+                tocarUnRepiqueDeCampana();
+                const btnChat = document.getElementById('btnAbrirChatFlotante');
+                if (btnChat) btnChat.classList.add('chat-alerta-activo');
             }
         })
         .subscribe();
 }
 
-Async function cargarHistorialMensajes(viajeId) {
-    Try {
-        Const { data, error } = await supabaseClient
+async function cargarHistorialMensajes(viajeId) {
+    try {
+        const { data, error } = await supabaseClient
             .from('mensajes')
             .select('*')
             .eq('viaje_id', viajeId)
             .order('created_at', { ascending: true });
 
-        Const listaHtml = document.getElementById('listaMensajesChat');
-        If (!listaHtml) return;
-        ListaHtml.innerHTML = '';
-        If (data && data.length > 0) {
-            Data.forEach(msg => agregarMensajeAlDom(msg));
+        const listaHtml = document.getElementById('listaMensajesChat');
+        if (!listaHtml) return;
+        listaHtml.innerHTML = '';
+        if (data && data.length > 0) {
+            data.forEach(msg => agregarMensajeAlDom(msg));
         } else {
-            ListaHtml.innerHTML = '<div style="color: #86efac; text-align: center; font-size: 0.75rem;">No hay mensajes previos. Escribe algo...</div>';
+            listaHtml.innerHTML = '<div style="color: #86efac; text-align: center; font-size: 0.75rem;">No hay mensajes previos. Escribe algo...</div>';
         }
     } catch (e) {}
 }
 
-Function agregarMensajeAlDom(msg) {
-    Const listaHtml = document.getElementById('listaMensajesChat');
-    If (!listaHtml) return;
+function agregarMensajeAlDom(msg) {
+    const listaHtml = document.getElementById('listaMensajesChat');
+    if (!listaHtml) return;
 
-    If (listaHtml.innerHTML.includes('No hay mensajes previos')) {
-        ListaHtml.innerHTML = '';
+    if (listaHtml.innerHTML.includes('No hay mensajes previos')) {
+        listaHtml.innerHTML = '';
     }
-    Const div = document.createElement('div');
-    Let claseEmisor = 'pasajero';
-    If (msg.emisor === 'conductor') claseEmisor = 'conductor';
-    If (msg.emisor === 'admin') claseEmisor = 'admin';
+    const div = document.createElement('div');
+    let claseEmisor = 'pasajero';
+    if (msg.emisor === 'conductor') claseEmisor = 'conductor';
+    if (msg.emisor === 'admin') claseEmisor = 'admin';
 
-    Div.className = `chat-msg-item ${claseEmisor}`;
-    Div.innerHTML = `<span style="font-size:0.65rem; opacity:0.7; display:block;"><b>${msg.emisor}:</b></span> ${msg.mensaje}`;
-    ListaHtml.appendChild(div);
-    ListaHtml.scrollTop = listaHtml.scrollHeight;
+    div.className = `chat-msg-item ${claseEmisor}`;
+    div.innerHTML = `<span style="font-size:0.65rem; opacity:0.7; display:block;"><b>${msg.emisor}:</b></span> ${msg.mensaje}`;
+    listaHtml.appendChild(div);
+    listaHtml.scrollTop = listaHtml.scrollHeight;
 }
 
-Async function enviarMensajeChat() {
-    Const input = document.getElementById('inpMensajeChat');
-    Const texto = input.value.trim();
-    If (!texto || !viajeActivo) return;
+async function enviarMensajeChat() {
+    const input = document.getElementById('inpMensajeChat');
+    const texto = input.value.trim();
+    if (!texto || !viajeActivo) return;
 
-    Input.value = '';
-    Try {
-        Await supabaseClient.from('mensajes').insert([{
-            Viaje_id: viajeActivo.id,
-            Emisor: 'conductor',
-            Mensaje: texto
+    input.value = '';
+    try {
+        await supabaseClient.from('mensajes').insert([{
+            viaje_id: viajeActivo.id,
+            emisor: 'conductor',
+            mensaje: texto
         }]);
     } catch (e) {}
 }
 
-Async function conmutarEstadoConexion() {
-    If (viajeActivo) return;
+// ==========================================================
+// CONMUTAR ESTADO CONEXIÓN (ACTUALIZA EN_LINEA EN CONDUCTORES)
+// ==========================================================
+async function conmutarEstadoConexion() {
+    if (viajeActivo) return;
 
-    Let patenteLocal = localStorage.getItem('cfg_auto_patente');
-    If (patenteLocal) {
-        Try {
-            Const { data: chofer, error } = await supabaseClient
+    let telefonoLocal = localStorage.getItem('cfg_auto_telefono');
+    if (telefonoLocal) {
+        try {
+            const { data: chofer, error } = await supabaseClient
                 .from('conductores')
                 .select('aprobado')
-                .eq('patente', patenteLocal)
+                .eq('telefono', telefonoLocal)
                 .single();
 
-            If (error || !chofer || chofer.aprobado !== true) {
-                Alert("⏳ Tu cuenta aún está pendiente de aprobación por el Administrador. Por favor espera a que te den el alta para empezar a operar.");
-                Return;
+            if (error || !chofer || chofer.aprobado !== true) {
+                alert("⏳ Tu cuenta aún está pendiente de aprobación por el Administrador. Por favor espera a que te den el alta para empezar a operar.");
+                return;
             }
         } catch(e) {
-            Alert("No se pudo verificar el estado de aprobación con el servidor.");
-            Return;
+            alert("No se pudo verificar el estado de aprobación con el servidor.");
+            return;
         }
     }
 
-    EstaConectado = !estaConectado;
-    Const badge = document.getElementById('txtEstadoChofer');
-    Const btnEspera = document.getElementById('btnEstadoEsperaTexto');
+    estaConectado = !estaConectado;
+    const badge = document.getElementById('txtEstadoChofer');
+    const btnEspera = document.getElementById('btnEstadoEsperaTexto');
 
-    If (estaConectado) {
-        Badge.textContent = "Móvil en Línea 🟢"; badge.className = "status-badge activo";
-        BtnEspera.innerHTML = `<div class="ruedita-radar"></div>Buscando solicitudes (5 km)...`; 
-        BtnEspera.className = "btn-action btn-espera";
+    if (estaConectado) {
+        badge.textContent = "Móvil en Línea 🟢"; badge.className = "status-badge activo";
+        btnEspera.innerHTML = `<div class="ruedita-radar"></div>Buscando solicitudes (5 km)...`; 
+        btnEspera.className = "btn-action btn-espera";
         
-        PedirPermisoNotificaciones().then(tienePermiso => {
-            If (tienePermiso && navigator.serviceWorker.controller) {
-                Navigator.serviceWorker.controller.postMessage({ action: 'mostrarNotificacionFija' });
+        if (telefonoLocal) {
+            await supabaseClient.from('conductores').update({ en_linea: true }).eq('telefono', telefonoLocal);
+        }
+
+        pedirPermisoNotificaciones().then(tienePermiso => {
+            if (tienePermiso && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({ action: 'mostrarNotificacionFija' });
             }
         });
 
-        SolicitarWakeLock(); iniciarRastreoGpsContinuo(); escucharNuevosViajes();
-        MantenerActivoSegundoPlano();
-        BuscarViajesPendientesRecientes();
+        solicitarWakeLock(); iniciarRastreoGpsContinuo(); escucharNuevosViajes();
+        mantenerActivoSegundoPlano();
+        buscarViajesPendientesRecientes();
     } else {
-        Badge.textContent = "Fuera de Línea 🔴"; badge.className = "status-badge inactivo";
-        BtnEspera.textContent = "Turno Pausado"; btnEspera.className = "btn-action btn-desconectado";
+        badge.textContent = "Fuera de Línea 🔴"; badge.className = "status-badge inactivo";
+        btnEspera.textContent = "Turno Pausado"; btnEspera.className = "btn-action btn-desconectado";
         
-        If (navigator.serviceWorker.controller) {
-            Navigator.serviceWorker.controller.postMessage({ action: 'cerrarNotificacionFija' });
+        if (telefonoLocal) {
+            await supabaseClient.from('conductores').update({ en_linea: false }).eq('telefono', telefonoLocal);
         }
 
-        LiberarWakeLock(); detenerRastreoGps(); 
-        If(silentAudioInterval) { clearInterval(silentAudioInterval); silentAudioInterval = null; }
-        If(canalSupabase) { supabaseClient.removeChannel(canalSupabase); canalSupabase = null; }
+        if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ action: 'cerrarNotificacionFija' });
+        }
+
+        liberarWakeLock(); detenerRastreoGps(); 
+        if(silentAudioInterval) { clearInterval(silentAudioInterval); silentAudioInterval = null; }
+        if(canalSupabase) { supabaseClient.removeChannel(canalSupabase); canalSupabase = null; }
     }
 }
 
-Async function montarViajeEntrante(viaje) {
-    ViajeActivo = viaje;
-    EstadoFlujo = 'pendiente';
-    ComenzarSirenaAlerta();
+async function montarViajeEntrante(viaje) {
+    viajeActivo = viaje;
+    estadoFlujo = 'pendiente';
+    comenzarSirenaAlerta();
 
-    Document.getElementById('vistaEspera').classList.add('hidden');
-    Document.getElementById('vistaViaje').classList.remove('hidden');
+    document.getElementById('vistaEspera').classList.add('hidden');
+    document.getElementById('vistaViaje').classList.remove('hidden');
     
-    If (mapa) {
+    if (mapa) {
         setTimeout(() => { mapa.invalidateSize(); }, 200);
     }
 
-    Const panel = document.getElementById('panelConductor');
-    Panel.classList.remove('viaje-activo-estado');
-    Panel.classList.add('viaje-entrante');
+    const panel = document.getElementById('panelConductor');
+    panel.classList.remove('viaje-activo-estado');
+    panel.classList.add('viaje-entrante');
 
-    Let origenInfo = await obtenerDireccionYBarrio(viaje.origen_lat, viaje.origen_lng);
-    Let destinoInfo = await obtenerDireccionYBarrio(viaje.destino_lat, viaje.destino_lng);
+    let origenInfo = await obtenerDireccionYBarrio(viaje.origen_lat, viaje.origen_lng);
+    let destinoInfo = await obtenerDireccionYBarrio(viaje.destino_lat, viaje.destino_lng);
 
-    Let barrioOrigen = viaje.origen_barrio || origenInfo.barrio;
-    Let calleOrigen = viaje.origen_direccion || origenInfo.calleCompleta;
-    Let barrioDestino = viaje.destino_barrio || destinoInfo.barrio;
-    Let calleDestino = viaje.destino_direccion || destinoInfo.calleCompleta;
+    let barrioOrigen = viaje.origen_barrio || origenInfo.barrio;
+    let calleOrigen = viaje.origen_direccion || origenInfo.calleCompleta;
+    let barrioDestino = viaje.destino_barrio || destinoInfo.barrio;
+    let calleDestino = viaje.destino_direccion || destinoInfo.calleCompleta;
     
-    Let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
-    Let manifiestoHtml = '';
-    If (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
-        ManifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
+    let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
+    let manifiestoHtml = '';
+    if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
+        manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
     }
 
-    Let avisoFidelidadHtml = '';
-    If (viaje.es_fidelidad === true) {
-        AvisoFidelidadHtml = `
+    let avisoFidelidadHtml = '';
+    if (viaje.es_fidelidad === true) {
+        avisoFidelidadHtml = `
             <div style="background: #143621; border: 2px solid #22c55e; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
                 <h4 style="color: #4ade80; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
                 <p style="color: #86efac; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
@@ -578,8 +609,8 @@ Async function montarViajeEntrante(viaje) {
         `;
     }
 
-    Const contenedorViaje = document.getElementById('contenedorViajeEntrante');
-    ContenedorViaje.innerHTML = `
+    const contenedorViaje = document.getElementById('contenedorViajeEntrante');
+    contenedorViaje.innerHTML = `
         ${avisoFidelidadHtml}
         <div class="viaje-info-box">
             <div class="viaje-header">
@@ -611,110 +642,110 @@ Async function montarViajeEntrante(viaje) {
         <button class="btn-action btn-aceptar hidden" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
     `;
 
-    If (markerOrigen) mapa.removeLayer(markerOrigen);
-    If (markerDestino) mapa.removeLayer(markerDestino);
+    if (markerOrigen) mapa.removeLayer(markerOrigen);
+    if (markerDestino) mapa.removeLayer(markerDestino);
 
-    MarkerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
-    MarkerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
+    markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
+    markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
 
-    AutocentrarMapa = true; 
-    Await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+    autocentrarMapa = true; 
+    await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
 }
 
-Function rechazarViajeEntrante() {
-    DetenerSirenaAlerta();
-    LimpiarMemoriaConductor();
+function rechazarViajeEntrante() {
+    detenerSirenaAlerta();
+    limpiarMemoriaConductor();
 
-    If (markerOrigen) { mapa.removeLayer(markerOrigen); markerOrigen = null; }
-    If (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
-    If (rutaTrazada) { mapa.removeLayer(rutaTrazada); rutaTrazada = null; }
+    if (markerOrigen) { mapa.removeLayer(markerOrigen); markerOrigen = null; }
+    if (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
+    if (rutaTrazada) { mapa.removeLayer(rutaTrazada); rutaTrazada = null; }
 
-    ViajeActivo = null; estadoFlujo = 'pendiente';
-    Document.getElementById('vistaViaje').classList.add('hidden');
-    Document.getElementById('vistaEspera').classList.remove('hidden');
+    viajeActivo = null; estadoFlujo = 'pendiente';
+    document.getElementById('vistaViaje').classList.add('hidden');
+    document.getElementById('vistaEspera').classList.remove('hidden');
     
-    Const panel = document.getElementById('panelConductor');
-    Panel.classList.remove('viaje-entrante');
-    Panel.classList.remove('viaje-activo-estado');
+    const panel = document.getElementById('panelConductor');
+    panel.classList.remove('viaje-entrante');
+    panel.classList.remove('viaje-activo-estado');
     
-    If(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); canalChatSupabase = null; }
-    Document.getElementById('btnAbrirChatFlotante').style.display = 'none';
+    if(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); canalChatSupabase = null; }
+    document.getElementById('btnAbrirChatFlotante').style.display = 'none';
 
-    MostrarMsg('Viaje rechazado. Buscando nuevos pasajeros...', 'success');
+    mostrarMsg('Viaje rechazado. Buscando nuevos pasajeros...', 'success');
 }
 
-Async function procesarLojicaViaje() {
-    Const panel = document.getElementById('panelConductor');
+async function procesarLojicaViaje() {
+    const panel = document.getElementById('panelConductor');
 
-    If (estadoFlujo === 'pendiente') {
-        DetenerSirenaAlerta();
-        Try {
-            Const { error } = await supabaseClient.from('viajes').update({ 
-                Conductor_nombre: NOMBRE_CHOFER, 
-                Conductor_auto: AUTO_CHOFER,
-                Conductor_foto: FOTO_CHOFER 
+    if (estadoFlujo === 'pendiente') {
+        detenerSirenaAlerta();
+        try {
+            const { error } = await supabaseClient.from('viajes').update({ 
+                conductor_nombre: NOMBRE_CHOFER, 
+                conductor_auto: AUTO_CHOFER,
+                conductor_foto: FOTO_CHOFER 
             }).eq('id', viajeActivo.id);
-            If (error) throw error;
+            if (error) throw error;
             
-            EstadoFlujo = 'aceptado';
-            LocalStorage.setItem('conductor_viaje_id', viajeActivo.id);
-            LocalStorage.setItem('conductor_estado_flujo', 'aceptado');
+            estadoFlujo = 'aceptado';
+            localStorage.setItem('conductor_viaje_id', viajeActivo.id);
+            localStorage.setItem('conductor_estado_flujo', 'aceptado');
             
-            Panel.classList.remove('viaje-entrante');
-            Panel.classList.add('viaje-activo-estado');
+            panel.classList.remove('viaje-entrante');
+            panel.classList.add('viaje-activo-estado');
             
-            Const btnContenedorPendiente = document.getElementById('contenedorBotonesPendiente');
-            If(btnContenedorPendiente) btnContenedorPendiente.classList.add('hidden');
+            const btnContenedorPendiente = document.getElementById('contenedorBotonesPendiente');
+            if(btnContenedorPendiente) btnContenedorPendiente.classList.add('hidden');
             
-            Const btnEnCurso = document.getElementById('btnAccionEnCurso');
-            BtnEnCurso.classList.remove('hidden');
-            BtnEnCurso.className = "btn-action btn-llegué"; 
-            BtnEnCurso.textContent = "Ya llegué a la puerta 🔓";
+            const btnEnCurso = document.getElementById('btnAccionEnCurso');
+            btnEnCurso.classList.remove('hidden');
+            btnEnCurso.className = "btn-action btn-llegué"; 
+            btnEnCurso.textContent = "Ya llegué a la puerta 🔓";
 
-            Document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
+            document.getElementById('txtEstadoChofer').textContent = "Yendo al Pasajero 🚗";
 
-            IniciarChatViaje(viajeActivo.id);
-            Document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
+            iniciarChatViaje(viajeActivo.id);
+            document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
 
-            AutocentrarMapa = true;
-            Document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
-            Mapa.setView([choferCoords.lat, choferCoords.lng], 17);
+            autocentrarMapa = true;
+            document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
+            mapa.setView([choferCoords.lat, choferCoords.lng], 17);
         } catch (e) { location.reload(); }
         return;
     }
 
-    Const btnEnCurso = document.getElementById('btnAccionEnCurso');
-    If (estadoFlujo === 'aceptado') {
-        EstadoFlujo = 'en_puerta'; localStorage.setItem('conductor_estado_flujo', 'en_puerta');
-        BtnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Iniciar Viaje al Destino 🧭";
-        Document.getElementById('txtEstadoChofer').textContent = "En la Puerta 📍";
-        Await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeActivo.id);
-        Return;
+    const btnEnCurso = document.getElementById('btnAccionEnCurso');
+    if (estadoFlujo === 'aceptado') {
+        estadoFlujo = 'en_puerta'; localStorage.setItem('conductor_estado_flujo', 'en_puerta');
+        btnEnCurso.className = "btn-action btn-iniciar"; btnEnCurso.textContent = "Iniciar Viaje al Destino 🧭";
+        document.getElementById('txtEstadoChofer').textContent = "En la Puerta 📍";
+        await supabaseClient.from('viajes').update({ estado: 'aceptado' }).eq('id', viajeActivo.id);
+        return;
     }
-    If (estadoFlujo === 'en_puerta') {
-        EstadoFlujo = 'en_viaje'; localStorage.setItem('conductor_estado_flujo', 'en_viaje');
+    if (estadoFlujo === 'en_puerta') {
+        estadoFlujo = 'en_viaje'; localStorage.setItem('conductor_estado_flujo', 'en_viaje');
         
-        SaludarConductorBienvenida(viajeActivo.pasajero_nombre);
+        saludarConductorBienvenida(viajeActivo.pasajero_nombre);
 
-        BtnEnCurso.className = "btn-action btn-finalizar"; 
-        BtnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
-        Document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
+        btnEnCurso.className = "btn-action btn-finalizar"; 
+        btnEnCurso.textContent = "Finalizar Viaje y Cobrar 💵";
+        document.getElementById('txtEstadoChofer').textContent = "Viajando al Destino 🧭";
         
-        Await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
+        await supabaseClient.from('viajes').update({ estado: 'en_viaje' }).eq('id', viajeActivo.id);
         
-        Let destinoInfo = await obtenerDireccionYBarrio(viajeActivo.destino_lat, viajeActivo.destino_lng);
-        Let barrioDestino = viajeActivo.destino_barrio || destinoInfo.barrio;
-        Let calleDestino = viajeActivo.destino_direccion || destinoInfo.calleCompleta;
+        let destinoInfo = await obtenerDireccionYBarrio(viajeActivo.destino_lat, viajeActivo.destino_lng);
+        let barrioDestino = viajeActivo.destino_barrio || destinoInfo.barrio;
+        let calleDestino = viajeActivo.destino_direccion || destinoInfo.calleCompleta;
 
-        Let textoManifiesto = viajeActivo.manifiesto || viajeActivo.comentarios || viajeActivo.nota || "";
-        Let manifiestoHtml = '';
-        If (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
-            ManifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
+        let textoManifiesto = viajeActivo.manifiesto || viajeActivo.comentarios || viajeActivo.nota || "";
+        let manifiestoHtml = '';
+        if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
+            manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
         }
 
-        Let avisoFidelidadHtml = '';
-        If (viajeActivo.es_fidelidad === true) {
-            AvisoFidelidadHtml = `
+        let avisoFidelidadHtml = '';
+        if (viajeActivo.es_fidelidad === true) {
+            avisoFidelidadHtml = `
                 <div style="background: #143621; border: 2px solid #22c55e; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
                     <h4 style="color: #4ade80; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
                     <p style="color: #86efac; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
@@ -722,8 +753,8 @@ Async function procesarLojicaViaje() {
             `;
         }
 
-        Const contenedorViaje = document.getElementById('contenedorViajeEntrante');
-        ContenedorViaje.innerHTML = `
+        const contenedorViaje = document.getElementById('contenedorViajeEntrante');
+        contenedorViaje.innerHTML = `
             ${avisoFidelidadHtml}
             <div class="viaje-info-box">
                 <div class="viaje-header">
@@ -750,71 +781,71 @@ Async function procesarLojicaViaje() {
             <button class="btn-action btn-finalizar" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Finalizar Viaje y Cobrar 💵</button>
         `;
 
-        Await trazarRutaCallesYCalcularMetricas(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng, null, null);
+        await trazarRutaCallesYCalcularMetricas(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng, null, null);
         
-        AutocentrarMapa = true;
-        Document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
-        Return;
+        autocentrarMapa = true;
+        document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
+        return;
     }
-    If (estadoFlujo === 'en_viaje') {
-        Let montoViaje = parseFloat(viajeActivo.precio || '0');
-        TotalDia += montoViaje;
-        UltimoViajeMonto = montoViaje;
-        CantViajesCount += 1;
+    if (estadoFlujo === 'en_viaje') {
+        let montoViaje = parseFloat(viajeActivo.precio || '0');
+        totalDia += montoViaje;
+        ultimoViajeMonto = montoViaje;
+        cantViajesCount += 1;
 
-        LocalStorage.setItem('chofer_total_dia', totalDia);
-        LocalStorage.setItem('chofer_ultimo_monto', ultimoViajeMonto);
-        LocalStorage.setItem('chofer_cant_viajes', cantViajesCount);
-        ActualizarUIEstadisticas();
+        localStorage.setItem('chofer_total_dia', totalDia);
+        localStorage.setItem('chofer_ultimo_monto', ultimoViajeMonto);
+        localStorage.setItem('chofer_cant_viajes', cantViajesCount);
+        actualizarUIEstadisticas();
 
-        Await supabaseClient.from('viajes').update({ estado: 'finalizado' }).eq('id', viajeActivo.id);
-        LimpiarMemoriaConductor(); liberarWakeLock(); detenerRastreoGps();
-        If(silentAudioInterval) { clearInterval(silentAudioInterval); silentAudioInterval = null; }
-        If(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); }
+        await supabaseClient.from('viajes').update({ estado: 'finalizado' }).eq('id', viajeActivo.id);
+        limpiarMemoriaConductor(); liberarWakeLock(); detenerRastreoGps();
+        if(silentAudioInterval) { clearInterval(silentAudioInterval); silentAudioInterval = null; }
+        if(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); }
         
-        If (navigator.serviceWorker.controller) {
-            Navigator.serviceWorker.controller.postMessage({ action: 'cerrarNotificacionFija' });
+        if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ action: 'cerrarNotificacionFija' });
         }
 
         setTimeout(() => location.reload(), 2000);
     }
 }
 
-Async function verificarViajeActivoConductor() {
-    Const guardadoId = localStorage.getItem('conductor_viaje_id');
-    Const guardadoEstado = localStorage.getItem('conductor_estado_flujo');
-    If (!guardadoId) return;
-    Try {
-        Const { data: viaje } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
-        If (!viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') { limpiarMemoriaConductor(); return; }
-        ViajeActivo = viaje; estadoFlujo = guardadoEstado || 'aceptado';
+async function verificarViajeActivoConductor() {
+    const guardadoId = localStorage.getItem('conductor_viaje_id');
+    const guardadoEstado = localStorage.getItem('conductor_estado_flujo');
+    if (!guardadoId) return;
+    try {
+        const { data: viaje } = await supabaseClient.from('viajes').select('*').eq('id', guardadoId).single();
+        if (!viaje || viaje.estado === 'finalizado' || viaje.estado === 'cancelado') { limpiarMemoriaConductor(); return; }
+        viajeActivo = viaje; estadoFlujo = guardadoEstado || 'aceptado';
         
-        Document.getElementById('vistaEspera').classList.add('hidden');
-        Document.getElementById('vistaViaje').classList.remove('hidden');
+        document.getElementById('vistaEspera').classList.add('hidden');
+        document.getElementById('vistaViaje').classList.remove('hidden');
 
-        Const panel = document.getElementById('panelConductor');
-        Panel.classList.remove('viaje-entrante');
-        Panel.classList.add('viaje-activo-estado');
+        const panel = document.getElementById('panelConductor');
+        panel.classList.remove('viaje-entrante');
+        panel.classList.add('viaje-activo-estado');
 
-        IniciarChatViaje(viaje.id);
-        Document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
+        iniciarChatViaje(viaje.id);
+        document.getElementById('btnAbrirChatFlotante').style.display = 'flex';
 
-        Let origenInfo = await obtenerDireccionYBarrio(viaje.origen_lat, viaje.origen_lng);
-        Let destinoInfo = await obtenerDireccionYBarrio(viaje.destino_lat, viaje.destino_lng);
-        Let barrioOrigen = viaje.origen_barrio || origenInfo.barrio;
-        Let calleOrigen = viaje.origen_direccion || origenInfo.calleCompleta;
-        Let barrioDestino = viaje.destino_barrio || destinoInfo.barrio;
-        Let calleDestino = viaje.destino_direccion || destinoInfo.calleCompleta;
+        let origenInfo = await obtenerDireccionYBarrio(viaje.origen_lat, viaje.origen_lng);
+        let destinoInfo = await obtenerDireccionYBarrio(viaje.destino_lat, viaje.destino_lng);
+        let barrioOrigen = viaje.origen_barrio || origenInfo.barrio;
+        let calleOrigen = viaje.origen_direccion || origenInfo.calleCompleta;
+        let barrioDestino = viaje.destino_barrio || destinoInfo.barrio;
+        let calleDestino = viaje.destino_direccion || destinoInfo.calleCompleta;
 
-        Let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
-        Let manifiestoHtml = '';
-        If (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
-            ManifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
+        let textoManifiesto = viaje.manifiesto || viaje.comentarios || viaje.nota || "";
+        let manifiestoHtml = '';
+        if (textoManifiesto && textoManifiesto.trim() !== "" && textoManifiesto !== "Sin especificaciones adicionales de carga") {
+            manifiestoHtml = `<div class="manifesto-box">📋 <b>Manifiesto / Info:</b> ${textoManifiesto}</div>`;
         }
 
-        Let avisoFidelidadHtml = '';
-        If (viaje.es_fidelidad === true) {
-            AvisoFidelidadHtml = `
+        let avisoFidelidadHtml = '';
+        if (viaje.es_fidelidad === true) {
+            avisoFidelidadHtml = `
                 <div style="background: #143621; border: 2px solid #22c55e; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
                     <h4 style="color: #4ade80; margin: 0 0 4px 0; font-size: 0.9rem;">🎁 ¡Viaje Promocional / Cupón Solidario!</h4>
                     <p style="color: #86efac; font-size: 0.8rem; margin: 0;">50% de descuento aplicado (Fidelidad).</p>
@@ -822,13 +853,13 @@ Async function verificarViajeActivoConductor() {
             `;
         }
 
-        MarkerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
-        MarkerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
+        markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
+        markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
 
-        Const contenedorViaje = document.getElementById('contenedorViajeEntrante');
+        const contenedorViaje = document.getElementById('contenedorViajeEntrante');
         
-        If (estadoFlujo === 'aceptado') {
-            ContenedorViaje.innerHTML = `
+        if (estadoFlujo === 'aceptado') {
+            contenedorViaje.innerHTML = `
                 ${avisoFidelidadHtml}
                 <div class="viaje-info-box">
                     <div class="viaje-header">
@@ -852,9 +883,9 @@ Async function verificarViajeActivoConductor() {
                 </div>
                 <button class="btn-action btn-llegué" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
             `;
-            Await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+            await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
         } else if (estadoFlujo === 'en_puerta') {
-            ContenedorViaje.innerHTML = `
+            contenedorViaje.innerHTML = `
                 ${avisoFidelidadHtml}
                 <div class="viaje-info-box">
                     <div class="viaje-header">
@@ -878,9 +909,9 @@ Async function verificarViajeActivoConductor() {
                 </div>
                 <button class="btn-action btn-iniciar" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Iniciar Viaje al Destino 🧭</button>
             `;
-            Await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+            await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
         } else if (estadoFlujo === 'en_viaje') {
-            ContenedorViaje.innerHTML = `
+            contenedorViaje.innerHTML = `
                 ${avisoFidelidadHtml}
                 <div class="viaje-info-box">
                     <div class="viaje-header">
@@ -904,132 +935,131 @@ Async function verificarViajeActivoConductor() {
                 </div>
                 <button class="btn-action btn-finalizar" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Finalizar Viaje y Cobrar 💵</button>
             `;
-            Await trazarRutaCallesYCalcularMetricas(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng, null, null);
+            await trazarRutaCallesYCalcularMetricas(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng, null, null);
         }
     } catch (e) { limpiarMemoriaConductor(); }
 }
 
-Function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id'); localStorage.removeItem('conductor_estado_flujo'); }
+function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id'); localStorage.removeItem('conductor_estado_flujo'); }
 
-Async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDestinoExtra = null, lonDestinoExtra = null) {
-    Try {
-        Let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
-        If (latDestinoExtra && lonDestinoExtra) {
-            Url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${lonDestinoExtra},${lonDestinoExtra}`;
+async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDestinoExtra = null, lonDestinoExtra = null) {
+    try {
+        let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
+        if (latDestinoExtra && lonDestinoExtra) {
+            url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${lonDestinoExtra},${lonDestinoExtra}`;
         }
-        Url += `?overview=full&geometries=geojson`;
+        url += `?overview=full&geometries=geojson`;
 
-        Const res = await fetch(url);
-        Const data = await res.json();
+        const res = await fetch(url);
+        const data = await res.json();
         
-        Let distanciaKm = 0;
-        Let minutosEstimados = 0;
-        Let rutaValida = false;
+        let distanciaKm = 0;
+        let minutosEstimados = 0;
+        let rutaValida = false;
 
-        If (data.code === 'Ok' && data.routes && data.routes.length > 0) {
-            Let distanciaMetros = data.routes[0].distance;
-            Let duracionSegundos = data.routes[0].duration;
+        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+            let distanciaMetros = data.routes[0].distance;
+            let duracionSegundos = data.routes[0].duration;
 
-            DistanciaKm = (distanciaMetros / 1000);
-            MinutosEstimados = Math.max(1, Math.round(duracionSegundos / 60));
+            distanciaKm = (distanciaMetros / 1000);
+            minutosEstimados = Math.max(1, Math.round(duracionSegundos / 60));
 
-            If (distanciaKm >= 0) {
-                RutaValida = true;
-                If (rutaTrazada) mapa.removeLayer(rutaTrazada);
-                RutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#22c55e', weight: 6, opacity: 0.9 }).addTo(mapa);
+            if (distanciaKm >= 0) {
+                rutaValida = true;
+                if (rutaTrazada) mapa.removeLayer(rutaTrazada);
+                rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#22c55e', weight: 6, opacity: 0.9 }).addTo(mapa);
             }
         }
 
-        If (!rutaValida) {
-            If (rutaTrazada) mapa.removeLayer(rutaTrazada);
-            Let puntosLinea = [[lat1, lon1], [lat2, lon2]];
-            If (latDestinoExtra && lonDestinoExtra) {
-                PuntosLinea = [[lat1, lon1], [lat2, lon2], [latDestinoExtra, lonDestinoExtra]];
+        if (!rutaValida) {
+            if (rutaTrazada) mapa.removeLayer(rutaTrazada);
+            let puntosLinea = [[lat1, lon1], [lat2, lon2]];
+            if (latDestinoExtra && lonDestinoExtra) {
+                puntosLinea = [[lat1, lon1], [lat2, lon2], [latDestinoExtra, lonDestinoExtra]];
             }
-            RutaTrazada = L.polyline(puntosLinea, { color: '#22c55e', weight: 6, dashArray: '5, 5', opacity: 0.9 }).addTo(mapa);
+            rutaTrazada = L.polyline(puntosLinea, { color: '#22c55e', weight: 6, dashArray: '5, 5', opacity: 0.9 }).addTo(mapa);
 
-            Let distanciaLineaMetros = calcularDistanciaKm(lat1, lon1, lat2, lon2) * 1000;
-            DistanciaKm = (distanciaLineaMetros / 1000);
-            MinutosEstimados = Math.max(1, Math.round((distanciaKm / 30) * 60));
+            let distanciaLineaMetros = calcularDistanciaKm(lat1, lon1, lat2, lon2) * 1000;
+            distanciaKm = (distanciaLineaMetros / 1000);
+            minutosEstimados = Math.max(1, Math.round((distanciaKm / 30) * 60));
         }
 
-        Let cajaMetricas = document.getElementById('cajaMetricasRuta');
-        If (cajaMetricas) {
-            If (latDestinoExtra) {
-                CajaMetricas.innerHTML = `<span>🕒 <b>${minutosEstimados} min</b> (${distanciaKm.toFixed(1)} km al pasajero)</span>`;
+        let cajaMetricas = document.getElementById('cajaMetricasRuta');
+        if (cajaMetricas) {
+            if (latDestinoExtra) {
+                cajaMetricas.innerHTML = `<span>🕒 <b>${minutosEstimados} min</b> (${distanciaKm.toFixed(1)} km al pasajero)</span>`;
             } else {
-                CajaMetricas.innerHTML = `<span>🕒 <b>${minutosEstimados} min</b> de viaje real (${distanciaKm.toFixed(1)} km)</span>`;
+                cajaMetricas.innerHTML = `<span>🕒 <b>${minutosEstimados} min</b> de viaje real (${distanciaKm.toFixed(1)} km)</span>`;
             }
         }
     } catch (e) {
-        If (rutaTrazada) mapa.removeLayer(rutaTrazada);
-        Let puntosError = [[lat1, lon1], [lat2, lon2]];
-        If (latDestinoExtra && lonDestinoExtra) {
-            PuntosError = [[lat1, lon1], [lat2, lon2], [latDestinoExtra, lonDestinoExtra]];
+        if (rutaTrazada) mapa.removeLayer(rutaTrazada);
+        let puntosError = [[lat1, lon1], [lat2, lon2]];
+        if (latDestinoExtra && lonDestinoExtra) {
+            puntosError = [[lat1, lon1], [lat2, lon2], [latDestinoExtra, lonDestinoExtra]];
         }
-        RutaTrazada = L.polyline(puntosError, { color: '#22c55e', weight: 6, dashArray: '5, 5', opacity: 0.9 }).addTo(mapa);
+        rutaTrazada = L.polyline(puntosError, { color: '#22c55e', weight: 6, dashArray: '5, 5', opacity: 0.9 }).addTo(mapa);
     }
 }
 
-Let ultimoCalculoRuta = 0;
-Let ultimaLatRuta = 0;
-Let ultimaLngRuta = 0;
+let ultimoCalculoRuta = 0;
+let ultimaLatRuta = 0;
+let ultimaLngRuta = 0;
 
-Function distanciaEnMetros(lat1, lon1, lat2, lon2) {
-    Let dLat = (lat2 - lat1) * Math.PI / 180;
-    Let dLon = (lon2 - lon1) * Math.PI / 180;
-    Let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+function distanciaEnMetros(lat1, lon1, lat2, lon2) {
+    let dLat = (lat2 - lat1) * Math.PI / 180;
+    let dLon = (lon2 - lon1) * Math.PI / 180;
+    let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
             Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
             Math.sin(dLon/2) * Math.sin(dLon/2);
-    Let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    Return 6371000 * c;
+    let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return 6371000 * c;
 }
 
 // ==========================================================
-// ESTABILIZACIÓN DE RUTA EN MOVIMIENTO (EVITA SALTOS EN MAPA)
+// CONTROL DE ACTUALIZACIÓN DE RUTA EN MOVIMIENTO
 // ==========================================================
 async function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
-    Let ahora = Date.now();
-    // Exigimos que se mueva al menos 35 metros o pasen 12 segundos para actualizar la ruta de calles
-    Let seDesvio = (ultimaLatRuta === 0) || (distanciaEnMetros(lat1, lon1, ultimaLatRuta, ultimaLngRuta) > 35);
+    let ahora = Date.now();
+    let seDesvio = (ultimaLatRuta === 0) || (distanciaEnMetros(lat1, lon1, ultimaLatRuta, ultimaLngRuta) > 35);
     
-    If ((ahora - ultimoCalculoRuta > 12000) || seDesvio) {
-        UltimaLatRuta = lat1;
-        UltimaLngRuta = lon1;
-        Await trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, null, null);
-        UltimoCalculoRuta = ahora;
+    if ((ahora - ultimoCalculoRuta > 12000) || seDesvio) {
+        ultimaLatRuta = lat1;
+        ultimaLngRuta = lon1;
+        await trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, null, null);
+        ultimoCalculoRuta = ahora;
     }
 }
 
-Function mostrarMsg(texto, tipo) { const msg = document.getElementById('msgChofer'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
+function mostrarMsg(texto, tipo) { const msg = document.getElementById('msgChofer'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
 
-Document.addEventListener('visibilitychange', async () => {
-    If (document.visibilityState === 'visible' && estaConectado) {
-        Await solicitarWakeLock();
-        BuscarViajesPendientesRecientes();
+document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible' && estaConectado) {
+        await solicitarWakeLock();
+        buscarViajesPendientesRecientes();
     }
 });
 
-If ('serviceWorker' in navigator) {
-    Window.addEventListener('load', () => {
-        Navigator.serviceWorker.register('/sw.js')
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
             .then(reg => console.log('Service Worker registrado con éxito', reg))
             .catch(err => console.log('Error al registrar Service Worker', err));
     });
 }
 
-Window.addEventListener('DOMContentLoaded', () => {
-    VerificarRegistroChofer();
-    VerificarReseteoDiario();
-    ActualizarUIEstadisticas();
-    InitMapa(); 
-    EscucharNuevosViajes(); 
-    SolicitarWakeLock(); 
-    IniciarRastreoGpsContinuo(); 
-    MantenerActivoSegundoPlano();
+window.addEventListener('DOMContentLoaded', () => {
+    verificarRegistroChofer();
+    verificarReseteoDiario();
+    actualizarUIEstadisticas();
+    initMapa(); 
+    escucharNuevosViajes(); 
+    solicitarWakeLock(); 
+    iniciarRastreoGpsContinuo(); 
+    mantenerActivoSegundoPlano();
     
     setTimeout(async () => { 
-        Await verificarViajeActivoConductor(); 
-        Await buscarViajesPendientesRecientes(); 
+        await verificarViajeActivoConductor(); 
+        await buscarViajesPendientesRecientes(); 
     }, 1000);
 });
