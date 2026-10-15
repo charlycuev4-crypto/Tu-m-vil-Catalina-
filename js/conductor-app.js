@@ -77,9 +77,6 @@ function verificarRegistroChofer() {
     }
 }
 
-// ==========================================================
-// COMPRESIÓN Y RECORTE EXACTO 300x300 (CENTRADO AUTOMÁTICO)
-// ==========================================================
 function procesarYComprimirFoto(event) {
     const archivo = event.target.files[0];
     if (!archivo) return;
@@ -118,9 +115,6 @@ function procesarYComprimirFoto(event) {
     lector.readAsDataURL(archivo);
 }
 
-// ==========================================================
-// GUARDAR Y SINCRONIZAR CONFIGURACIÓN (APROBADO: FALSE)
-// ==========================================================
 async function guardarConfigChofer(e) {
     e.preventDefault();
     const nombre = document.getElementById('inpNombre').value.trim();
@@ -146,7 +140,7 @@ async function guardarConfigChofer(e) {
                 modelo: `${modelo} - ${color}`,
                 patente: patente,
                 foto: fotoFinal,
-                aprobado: false, // Ingresa como pendiente de revisión por el Administrador
+                aprobado: false,
                 lat: choferCoords ? choferCoords.lat : null,
                 lng: choferCoords ? choferCoords.lng : null
             }, { onConflict: 'patente' });
@@ -479,9 +473,6 @@ async function enviarMensajeChat() {
     } catch (e) {}
 }
 
-// ==========================================================
-// CONMUTAR ESTADO CONEXIÓN (VALIDA SI EL ADMIN YA APROBÓ)
-// ==========================================================
 async function conmutarEstadoConexion() {
     if (viajeActivo) return;
 
