@@ -211,44 +211,63 @@ function esDiaDomingo() {
     return diaActual === 0;
 }
 
-// --- FUNCIÓN DE ESCUCHA DE CHOFERES CERCANOS EN TIEMPO REAL ---
-function iniciarEscuchaChoferesCercanos() {
+// --- FUNCIÓN AUXILIAR PARA PINTAR O ACTUALIZAR EL MARCADOR DEL CHOFER ---
+function actualizarMarcadorChofer(registro) {
+    if (!registro || !registro.en_linea || !registro.lat || !registro.lng) {
+        if (registro && marcadoresChoferesDisponibles[registro.id]) {
+            mapa.removeLayer(marcadoresChoferesDisponibles[registro.id]);
+            delete marcadoresChoferesDisponibles[registro.id];
+        }
+        return;
+    }
+
+    const latLngChofer = [registro.lat, registro.lng];
+    const iconoEmoji = '🚗'; 
+
+    if (marcadoresChoferesDisponibles[registro.id]) {
+        marcadoresChoferesDisponibles[registro.id].setLatLng(latLngChofer);
+    } else {
+        const iconoPersonalizado = L.divIcon({
+            className: 'auto-conductor-ping',
+            html: `<div style="font-size: 22px; background: white; border-radius: 50%; padding: 3px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-align: center; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;">${iconoEmoji}</div>`,
+            iconSize: [34, 34],
+            iconAnchor: [17, 17]
+        });
+
+        marcadoresChoferesDisponibles[registro.id] = L.marker(latLngChofer, { 
+            icon: iconoPersonalizado 
+        }).addTo(mapa);
+    }
+}
+
+// --- CARGA INICIAL Y ESCUCHA EN TIEMPO REAL DE LA TABLA 'conductores' ---
+async function iniciarEscuchaChoferesCercanos() {
+    // 1. Traer los choferes que YA están en línea al abrir la app
+    try {
+        const { data: choferesActivos, error } = await supabaseClient
+            .from('conductores')
+            .select('*')
+            .eq('en_linea', true);
+
+        if (!error && choferesActivos) {
+            choferesActivos.forEach(chofer => {
+                actualizarMarcadorChofer(chofer);
+            });
+        }
+    } catch (e) {}
+
+    // 2. Suscribirse a cambios futuros en tiempo real
     if (canalChoferesCercanos) supabaseClient.removeChannel(canalChoferesCercanos);
 
     canalChoferesCercanos = supabaseClient
-        .channel('public:choferes_activos')
+        .channel('public:conductores')
         .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
-            table: 'choferes_activos' 
+            table: 'conductores' 
         }, payload => {
             const registro = payload.new;
-            
-            if (!registro || registro.estado !== 'disponible') {
-                if (registro && marcadoresChoferesDisponibles[registro.chofer_id]) {
-                    mapa.removeLayer(marcadoresChoferesDisponibles[registro.chofer_id]);
-                    delete marcadoresChoferesDisponibles[registro.chofer_id];
-                }
-                return;
-            }
-
-            const latLngChofer = [registro.latitud, registro.longitud];
-            const iconoEmoji = registro.tipo_vehiculo === 'moto' ? '🏍️' : '🚗';
-
-            if (marcadoresChoferesDisponibles[registro.chofer_id]) {
-                marcadoresChoferesDisponibles[registro.chofer_id].setLatLng(latLngChofer);
-            } else {
-                const iconoPersonalizado = L.divIcon({
-                    className: 'auto-conductor-ping',
-                    html: `<div style="font-size: 22px; background: white; border-radius: 50%; padding: 3px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-align: center; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;">${iconoEmoji}</div>`,
-                    iconSize: [34, 34],
-                    iconAnchor: [17, 17]
-                });
-
-                marcadoresChoferesDisponibles[registro.chofer_id] = L.marker(latLngChofer, { 
-                    icon: iconoPersonalizado 
-                }).addTo(mapa);
-            }
+            actualizarMarcadorChofer(registro);
         })
         .subscribe();
 }
@@ -259,7 +278,7 @@ function initMapa() {
     
     cargarPuntosLocales(); 
 
-    // Aquí activamos la escucha de choferes en el mapa
+    // Activamos la carga inicial y escucha en tiempo real de los choferes
     iniciarEscuchaChoferesCercanos();
 
     mapa.on('movestart', () => {
