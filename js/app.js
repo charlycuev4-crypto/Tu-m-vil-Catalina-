@@ -27,6 +27,10 @@ let intervaloAlertaChatPasajero = null;
 let watchIdPasajero = null; 
 let usuarioMoviendoMapa = false;
 
+// Variables para mostrar los choferes cercanos en tiempo real
+let marcadoresChoferesDisponibles = {};
+let canalChoferesCercanos = null;
+
 // Bandera para controlar que el aviso de llegada se inicie al cambiar de estado
 let audioLlegadaReproducido = false;
 
@@ -62,7 +66,6 @@ function iniciarTimbreInsistente() {
     }, 1000);
 }
 
-// Modificamos esta función para que también detenga la voz al presionar el botón de silenciar
 function silenciarTimbreLlegada() {
     if (intervaloTimbreInsistente) {
         clearInterval(intervaloTimbreInsistente);
@@ -71,7 +74,6 @@ function silenciarTimbreLlegada() {
     const alertaDiv = document.getElementById('alertaTimbreLlegada');
     if (alertaDiv) alertaDiv.classList.remove('activo');
 
-    // Cancela cualquier locución de voz que esté sonando en ese momento
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
     }
@@ -209,11 +211,56 @@ function esDiaDomingo() {
     return diaActual === 0;
 }
 
+// --- FUNCIÓN DE ESCUCHA DE CHOFERES CERCANOS EN TIEMPO REAL ---
+function iniciarEscuchaChoferesCercanos() {
+    if (canalChoferesCercanos) supabaseClient.removeChannel(canalChoferesCercanos);
+
+    canalChoferesCercanos = supabaseClient
+        .channel('public:choferes_activos')
+        .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'choferes_activos' 
+        }, payload => {
+            const registro = payload.new;
+            
+            if (!registro || registro.estado !== 'disponible') {
+                if (registro && marcadoresChoferesDisponibles[registro.chofer_id]) {
+                    mapa.removeLayer(marcadoresChoferesDisponibles[registro.chofer_id]);
+                    delete marcadoresChoferesDisponibles[registro.chofer_id];
+                }
+                return;
+            }
+
+            const latLngChofer = [registro.latitud, registro.longitud];
+            const iconoEmoji = registro.tipo_vehiculo === 'moto' ? '🏍️' : '🚗';
+
+            if (marcadoresChoferesDisponibles[registro.chofer_id]) {
+                marcadoresChoferesDisponibles[registro.chofer_id].setLatLng(latLngChofer);
+            } else {
+                const iconoPersonalizado = L.divIcon({
+                    className: 'auto-conductor-ping',
+                    html: `<div style="font-size: 22px; background: white; border-radius: 50%; padding: 3px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-align: center; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;">${iconoEmoji}</div>`,
+                    iconSize: [34, 34],
+                    iconAnchor: [17, 17]
+                });
+
+                marcadoresChoferesDisponibles[registro.chofer_id] = L.marker(latLngChofer, { 
+                    icon: iconoPersonalizado 
+                }).addTo(mapa);
+            }
+        })
+        .subscribe();
+}
+
 function initMapa() {
     mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView(UBICACION_DEFAULT, 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
     
     cargarPuntosLocales(); 
+
+    // Aquí activamos la escucha de choferes en el mapa
+    iniciarEscuchaChoferesCercanos();
 
     mapa.on('movestart', () => {
         if (!viajeId) {
@@ -479,7 +526,6 @@ function iniciarEscuchaRealtime(id) {
             if (de.estado === 'aceptado') {
                 document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
                 
-                // Inicia la alarma y la voz de llegada una sola vez, hasta que el pasajero presione silenciar
                 if (!audioLlegadaReproducido) {
                     audioLlegadaReproducido = true;
                     mostrarMsg('¡Tu móvil está en la puerta!', 'success');
