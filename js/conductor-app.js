@@ -1,4 +1,4 @@
-const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
+Const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -149,7 +149,7 @@ async function guardarConfigChofer(e) {
                 aprobado: false, // Ingresa como pendiente de revisión por el Administrador
                 lat: choferCoords ? choferCoords.lat : null,
                 lng: choferCoords ? choferCoords.lng : null
-            }, { onConflict: 'telefono' });
+            }, { onConflict: 'patente' });
             
         alert("¡Registro exitoso! Tu cuenta ha sido enviada al Administrador para su aprobación. Podrás operar una vez que sea aprobada.");
     } catch (err) {
@@ -293,24 +293,12 @@ function initMapa() {
     });
 }
 
-// ==========================================================
-// RASTREO GPS ESTABILIZADO (FILTRO DE SALTOS + TELÉFONO)
-// ==========================================================
 function iniciarRastreoGpsContinuo() {
     if (idRastreadorGps) return;
     if (navigator.geolocation) {
         idRastreadorGps = navigator.geolocation.watchPosition(async (pos) => {
             const nuevaLat = pos.coords.latitude;
             const nuevaLng = pos.coords.longitude;
-            const precision = pos.coords.accuracy;
-
-            if (precision > 40) return;
-
-            if (choferCoords.lat && choferCoords.lng) {
-                let distanciaSalto = distanciaEnMetros(choferCoords.lat, choferCoords.lng, nuevaLat, nuevaLng);
-                if (distanciaSalto > 300) return; 
-            }
-
             choferCoords = { lat: nuevaLat, lng: nuevaLng };
             
             if (markerChofer) markerChofer.setLatLng([nuevaLat, nuevaLng]);
@@ -328,9 +316,9 @@ function iniciarRastreoGpsContinuo() {
             }
 
             try {
-                let telefonoLocal = localStorage.getItem('cfg_auto_telefono');
-                if (telefonoLocal) {
-                    await supabaseClient.from('conductores').update({ lat: nuevaLat, lng: nuevaLng }).eq('telefono', telefonoLocal);
+                let patenteLocal = localStorage.getItem('cfg_auto_patente');
+                if (patenteLocal) {
+                    await supabaseClient.from('conductores').update({ lat: nuevaLat, lng: nuevaLng }).eq('patente', patenteLocal);
                 }
             } catch(e) {}
 
@@ -363,10 +351,7 @@ function abrirNavegacionGoogleMaps() {
 async function buscarViajesPendientesRecientes() {
     if (viajeActivo || !estaConectado) return;
     try {
-        let telefonoLocal = localStorage.getItem('cfg_auto_telefono');
-        if (!telefonoLocal) return;
-
-        const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('telefono', telefonoLocal).single();
+        const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('patente', localStorage.getItem('cfg_auto_patente')).single();
         if (!chofer || chofer.aprobado !== true) return;
 
         const { data: viajes, error } = await supabaseClient
@@ -386,10 +371,10 @@ async function buscarViajesPendientesRecientes() {
 }
 
 async function escucharNuevosViajes() {
-    let telefonoLocal = localStorage.getItem('cfg_auto_telefono');
-    if (telefonoLocal) {
+    let patenteLocal = localStorage.getItem('cfg_auto_patente');
+    if (patenteLocal) {
         try {
-            const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('telefono', telefonoLocal).single();
+            const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('patente', patenteLocal).single();
             if (!chofer || chofer.aprobado !== true) return;
         } catch (e) { return; }
     }
@@ -400,8 +385,7 @@ async function escucharNuevosViajes() {
     canalSupabase = supabaseClient.channel('despacho-chofer');
     canalSupabase
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, async (payload) => {
-            if (!telefonoLocal) return;
-            const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('telefono', telefonoLocal).single();
+            const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('patente', localStorage.getItem('cfg_auto_patente')).single();
             if (!chofer || chofer.aprobado !== true) return;
 
             if (payload.new.estado === 'pendiente' && !viajeActivo && estaConectado) {
@@ -507,18 +491,18 @@ async function enviarMensajeChat() {
 }
 
 // ==========================================================
-// CONMUTAR ESTADO CONEXIÓN (ACTUALIZA EN_LINEA EN CONDUCTORES)
+// CONMUTAR ESTADO CONEXIÓN (VALIDA ADMIN + ICONO FIJO ANDROID)
 // ==========================================================
 async function conmutarEstadoConexion() {
     if (viajeActivo) return;
 
-    let telefonoLocal = localStorage.getItem('cfg_auto_telefono');
-    if (telefonoLocal) {
+    let patenteLocal = localStorage.getItem('cfg_auto_patente');
+    if (patenteLocal) {
         try {
             const { data: chofer, error } = await supabaseClient
                 .from('conductores')
                 .select('aprobado')
-                .eq('telefono', telefonoLocal)
+                .eq('patente', patenteLocal)
                 .single();
 
             if (error || !chofer || chofer.aprobado !== true) {
@@ -540,10 +524,7 @@ async function conmutarEstadoConexion() {
         btnEspera.innerHTML = `<div class="ruedita-radar"></div>Buscando solicitudes (5 km)...`; 
         btnEspera.className = "btn-action btn-espera";
         
-        if (telefonoLocal) {
-            await supabaseClient.from('conductores').update({ en_linea: true }).eq('telefono', telefonoLocal);
-        }
-
+        // Activa la notificación fija en la barra superior de Android
         pedirPermisoNotificaciones().then(tienePermiso => {
             if (tienePermiso && navigator.serviceWorker.controller) {
                 navigator.serviceWorker.controller.postMessage({ action: 'mostrarNotificacionFija' });
@@ -557,10 +538,7 @@ async function conmutarEstadoConexion() {
         badge.textContent = "Fuera de Línea 🔴"; badge.className = "status-badge inactivo";
         btnEspera.textContent = "Turno Pausado"; btnEspera.className = "btn-action btn-desconectado";
         
-        if (telefonoLocal) {
-            await supabaseClient.from('conductores').update({ en_linea: false }).eq('telefono', telefonoLocal);
-        }
-
+        // Cierra la notificación fija al pausar
         if (navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({ action: 'cerrarNotificacionFija' });
         }
@@ -579,6 +557,7 @@ async function montarViajeEntrante(viaje) {
     document.getElementById('vistaEspera').classList.add('hidden');
     document.getElementById('vistaViaje').classList.remove('hidden');
     
+    // Asegurar redibujado correcto del mapa al mostrar la vista
     if (mapa) {
         setTimeout(() => { mapa.invalidateSize(); }, 200);
     }
@@ -1018,14 +997,11 @@ function distanciaEnMetros(lat1, lon1, lat2, lon2) {
     return 6371000 * c;
 }
 
-// ==========================================================
-// CONTROL DE ACTUALIZACIÓN DE RUTA EN MOVIMIENTO
-// ==========================================================
 async function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
     let ahora = Date.now();
     let seDesvio = (ultimaLatRuta === 0) || (distanciaEnMetros(lat1, lon1, ultimaLatRuta, ultimaLngRuta) > 35);
     
-    if ((ahora - ultimoCalculoRuta > 12000) || seDesvio) {
+    if ((ahora - ultimoCalculoRuta > 6000) || seDesvio) {
         ultimaLatRuta = lat1;
         ultimaLngRuta = lon1;
         await trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, null, null);
