@@ -1,4 +1,4 @@
-Const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
+const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -77,9 +77,6 @@ function verificarRegistroChofer() {
     }
 }
 
-// ==========================================================
-// COMPRESIÓN Y RECORTE EXACTO 300x300 (CENTRADO AUTOMÁTICO)
-// ==========================================================
 function procesarYComprimirFoto(event) {
     const archivo = event.target.files[0];
     if (!archivo) return;
@@ -118,9 +115,6 @@ function procesarYComprimirFoto(event) {
     lector.readAsDataURL(archivo);
 }
 
-// ==========================================================
-// GUARDAR Y SINCRONIZAR CONFIGURACIÓN (APROBADO: FALSE)
-// ==========================================================
 async function guardarConfigChofer(e) {
     e.preventDefault();
     const nombre = document.getElementById('inpNombre').value.trim();
@@ -146,7 +140,7 @@ async function guardarConfigChofer(e) {
                 modelo: `${modelo} - ${color}`,
                 patente: patente,
                 foto: fotoFinal,
-                aprobado: false, // Ingresa como pendiente de revisión por el Administrador
+                aprobado: false,
                 lat: choferCoords ? choferCoords.lat : null,
                 lng: choferCoords ? choferCoords.lng : null
             }, { onConflict: 'patente' });
@@ -192,17 +186,6 @@ async function solicitarWakeLock() {
     try { if (!wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
 }
 function liberarWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; } }
-
-async function pedirPermisoNotificaciones() {
-    if ('Notification' in window) {
-        let permiso = Notification.permission;
-        if (permiso === 'default') {
-            permiso = await Notification.requestPermission();
-        }
-        return permiso === 'granted';
-    }
-    return false;
-}
 
 function forzarHabilitacionAudio() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -490,9 +473,6 @@ async function enviarMensajeChat() {
     } catch (e) {}
 }
 
-// ==========================================================
-// CONMUTAR ESTADO CONEXIÓN (VALIDA ADMIN + ICONO FIJO ANDROID)
-// ==========================================================
 async function conmutarEstadoConexion() {
     if (viajeActivo) return;
 
@@ -523,26 +503,12 @@ async function conmutarEstadoConexion() {
         badge.textContent = "Móvil en Línea 🟢"; badge.className = "status-badge activo";
         btnEspera.innerHTML = `<div class="ruedita-radar"></div>Buscando solicitudes (5 km)...`; 
         btnEspera.className = "btn-action btn-espera";
-        
-        // Activa la notificación fija en la barra superior de Android
-        pedirPermisoNotificaciones().then(tienePermiso => {
-            if (tienePermiso && navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({ action: 'mostrarNotificacionFija' });
-            }
-        });
-
         solicitarWakeLock(); iniciarRastreoGpsContinuo(); escucharNuevosViajes();
         mantenerActivoSegundoPlano();
         buscarViajesPendientesRecientes();
     } else {
         badge.textContent = "Fuera de Línea 🔴"; badge.className = "status-badge inactivo";
         btnEspera.textContent = "Turno Pausado"; btnEspera.className = "btn-action btn-desconectado";
-        
-        // Cierra la notificación fija al pausar
-        if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({ action: 'cerrarNotificacionFija' });
-        }
-
         liberarWakeLock(); detenerRastreoGps(); 
         if(silentAudioInterval) { clearInterval(silentAudioInterval); silentAudioInterval = null; }
         if(canalSupabase) { supabaseClient.removeChannel(canalSupabase); canalSupabase = null; }
@@ -557,11 +523,6 @@ async function montarViajeEntrante(viaje) {
     document.getElementById('vistaEspera').classList.add('hidden');
     document.getElementById('vistaViaje').classList.remove('hidden');
     
-    // Asegurar redibujado correcto del mapa al mostrar la vista
-    if (mapa) {
-        setTimeout(() => { mapa.invalidateSize(); }, 200);
-    }
-
     const panel = document.getElementById('panelConductor');
     panel.classList.remove('viaje-activo-estado');
     panel.classList.add('viaje-entrante');
@@ -783,11 +744,6 @@ async function procesarLojicaViaje() {
         limpiarMemoriaConductor(); liberarWakeLock(); detenerRastreoGps();
         if(silentAudioInterval) { clearInterval(silentAudioInterval); silentAudioInterval = null; }
         if(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); }
-        
-        if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({ action: 'cerrarNotificacionFija' });
-        }
-
         setTimeout(() => location.reload(), 2000);
     }
 }
@@ -927,7 +883,7 @@ async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDest
     try {
         let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
         if (latDestinoExtra && lonDestinoExtra) {
-            url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${lonDestinoExtra},${lonDestinoExtra}`;
+            url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${latDestinoExtra},${lonDestinoExtra}`;
         }
         url += `?overview=full&geometries=geojson`;
 
@@ -938,14 +894,14 @@ async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDest
         let minutosEstimados = 0;
         let rutaValida = false;
 
-        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+        if (data.code === 'Ok' && data.routes.length > 0) {
             let distanciaMetros = data.routes[0].distance;
             let duracionSegundos = data.routes[0].duration;
 
             distanciaKm = (distanciaMetros / 1000);
             minutosEstimados = Math.max(1, Math.round(duracionSegundos / 60));
 
-            if (distanciaKm >= 0) {
+            if (distanciaKm < 100) {
                 rutaValida = true;
                 if (rutaTrazada) mapa.removeLayer(rutaTrazada);
                 rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#22c55e', weight: 6, opacity: 0.9 }).addTo(mapa);
@@ -953,15 +909,8 @@ async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDest
         }
 
         if (!rutaValida) {
-            if (rutaTrazada) mapa.removeLayer(rutaTrazada);
-            let puntosLinea = [[lat1, lon1], [lat2, lon2]];
-            if (latDestinoExtra && lonDestinoExtra) {
-                puntosLinea = [[lat1, lon1], [lat2, lon2], [latDestinoExtra, lonDestinoExtra]];
-            }
-            rutaTrazada = L.polyline(puntosLinea, { color: '#22c55e', weight: 6, dashArray: '5, 5', opacity: 0.9 }).addTo(mapa);
-
             let distanciaLineaMetros = calcularDistanciaKm(lat1, lon1, lat2, lon2) * 1000;
-            distanciaKm = (distanciaLineaMetros / 1000);
+            distanciaKm = (distanciaLineaMetros / 1000) * 1.3; 
             minutosEstimados = Math.max(1, Math.round((distanciaKm / 30) * 60));
         }
 
@@ -973,14 +922,7 @@ async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDest
                 cajaMetricas.innerHTML = `<span>🕒 <b>${minutosEstimados} min</b> de viaje real (${distanciaKm.toFixed(1)} km)</span>`;
             }
         }
-    } catch (e) {
-        if (rutaTrazada) mapa.removeLayer(rutaTrazada);
-        let puntosError = [[lat1, lon1], [lat2, lon2]];
-        if (latDestinoExtra && lonDestinoExtra) {
-            puntosError = [[lat1, lon1], [lat2, lon2], [latDestinoExtra, lonDestinoExtra]];
-        }
-        rutaTrazada = L.polyline(puntosError, { color: '#22c55e', weight: 6, dashArray: '5, 5', opacity: 0.9 }).addTo(mapa);
-    }
+    } catch (e) {}
 }
 
 let ultimoCalculoRuta = 0;
@@ -1040,4 +982,4 @@ window.addEventListener('DOMContentLoaded', () => {
         await verificarViajeActivoConductor(); 
         await buscarViajesPendientesRecientes(); 
     }, 1000);
-}); 
+});
