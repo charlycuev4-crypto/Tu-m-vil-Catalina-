@@ -12,9 +12,10 @@ self.addEventListener('message', (event) => {
     if (event.data && event.data.action === 'mostrarNotificacionFija') {
         self.registration.showNotification('Tu Móvil Chofer', {
             body: '🟢 Conectado y buscando nuevos viajes en tu zona...',
-            icon: 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg', // Puedes cambiarlo por el ícono de tu app
+            icon: 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg',
+            badge: 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg', // Muestra el ícono en la barra superior al lado de la hora
             tag: 'servicio-conductor-activo',
-            ongoing: true, // Hace que la notificación sea persistente en Android
+            ongoing: true, // Notificación persistente en Android
             requireInteraction: true,
             silent: true
         });
