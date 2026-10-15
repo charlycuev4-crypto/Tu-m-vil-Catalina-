@@ -25,3 +25,25 @@ self.addEventListener('message', (event) => {
         });
     }
 });
+
+// ==========================================
+// EVENTO: AL HACER CLIC EN LA NOTIFICACIÓN
+// ==========================================
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            // Si la aplicación ya está abierta en segundo plano, la enfoca y trae al frente
+            for (const client of clientList) {
+                if ('focus' in client) {
+                    return client.focus();
+                }
+            }
+            // Si estaba completamente cerrada, la abre de nuevo
+            if (clients.openWindow) {
+                return clients.openWindow('/');
+            }
+        })
+    );
+});
