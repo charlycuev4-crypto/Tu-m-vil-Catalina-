@@ -13,7 +13,7 @@ self.addEventListener('message', (event) => {
         self.registration.showNotification('Tu Móvil Chofer', {
             body: '🟢 Conectado y buscando nuevos viajes en tu zona...',
             icon: 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg',
-            badge: 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg', // Muestra el ícono en la barra superior al lado de la hora
+            badge: 'https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg',
             tag: 'servicio-conductor-activo',
             ongoing: true, // Notificación persistente en Android
             requireInteraction: true,
