@@ -58,7 +58,7 @@ function mantenerActivoSegundoPlano() {
             } catch(e){}
         }
         buscarViajesPendientesRecientes();
-    }, 15000);
+    }, 10000); // Intervalo optimizado a 10 segundos para mayor velocidad en segundo plano
 }
 
 function verificarRegistroChofer() {
@@ -515,7 +515,6 @@ async function conmutarEstadoConexion() {
         btnEspera.innerHTML = `<div class="ruedita-radar"></div>Buscando solicitudes (5 km)...`; 
         btnEspera.className = "btn-action btn-espera";
         
-        // Pide permiso y activa la notificación fija en la barra superior de Android
         pedirPermisoNotificaciones().then(tienePermiso => {
             if (tienePermiso && navigator.serviceWorker.controller) {
                 navigator.serviceWorker.controller.postMessage({ action: 'mostrarNotificacionFija' });
