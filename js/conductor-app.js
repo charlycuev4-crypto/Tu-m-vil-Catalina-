@@ -515,7 +515,7 @@ async function conmutarEstadoConexion() {
         btnEspera.innerHTML = `<div class="ruedita-radar"></div>Buscando solicitudes (5 km)...`; 
         btnEspera.className = "btn-action btn-espera";
         
-        // Activa la notificación fija en la barra superior de Android
+        // Pide permiso y activa la notificación fija en la barra superior de Android
         pedirPermisoNotificaciones().then(tienePermiso => {
             if (tienePermiso && navigator.serviceWorker.controller) {
                 navigator.serviceWorker.controller.postMessage({ action: 'mostrarNotificacionFija' });
@@ -529,7 +529,6 @@ async function conmutarEstadoConexion() {
         badge.textContent = "Fuera de Línea 🔴"; badge.className = "status-badge inactivo";
         btnEspera.textContent = "Turno Pausado"; btnEspera.className = "btn-action btn-desconectado";
         
-        // Cierra la notificación fija al pausar
         if (navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({ action: 'cerrarNotificacionFija' });
         }
