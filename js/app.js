@@ -27,6 +27,9 @@ let intervaloAlertaChatPasajero = null;
 let watchIdPasajero = null; 
 let usuarioMoviendoMapa = false;
 
+// Bandera para controlar que el aviso de llegada se inicie al cambiar de estado
+let audioLlegadaReproducido = false;
+
 function reproducirPitidoAudio(frecuencia = 880, duracion = 0.3) {
     try {
         if (!audioCtxPasajero) {
@@ -50,19 +53,28 @@ function reproducirPitidoAudio(frecuencia = 880, duracion = 0.3) {
 
 function iniciarTimbreInsistente() {
     if (intervaloTimbreInsistente) return;
-    document.getElementById('alertaTimbreLlegada').classList.add('activo');
+    const alertaDiv = document.getElementById('alertaTimbreLlegada');
+    if (alertaDiv) alertaDiv.classList.add('activo');
+    
     reproducirPitidoAudio(880, 0.3);
     intervaloTimbreInsistente = setInterval(() => {
         reproducirPitidoAudio(880, 0.3);
     }, 1000);
 }
 
+// Modificamos esta función para que también detenga la voz al presionar el botón de silenciar
 function silenciarTimbreLlegada() {
     if (intervaloTimbreInsistente) {
         clearInterval(intervaloTimbreInsistente);
         intervaloTimbreInsistente = null;
     }
-    document.getElementById('alertaTimbreLlegada').classList.remove('activo');
+    const alertaDiv = document.getElementById('alertaTimbreLlegada');
+    if (alertaDiv) alertaDiv.classList.remove('activo');
+
+    // Cancela cualquier locución de voz que esté sonando en ese momento
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+    }
 }
 
 function activarAlertaChatPasajero() {
@@ -395,7 +407,10 @@ async function verificarViajeActivoPasajero() {
             
             if(viaje.estado === 'aceptado') {
                 document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
-                iniciarTimbreInsistente();
+                if (!audioLlegadaReproducido) {
+                    audioLlegadaReproducido = true;
+                    iniciarTimbreInsistente();
+                }
             } else if (viaje.estado === 'en_viaje') {
                 document.getElementById('estadoViajePasajero').innerHTML = "🧭 Viajando seguro hacia tu destino...";
                 iniciarMonitoreoDinamicoRuta();
@@ -410,6 +425,7 @@ async function verificarViajeActivoPasajero() {
 
 function limpiarMemoriaPasajero() { 
     localStorage.removeItem('pasajero_viaje_id'); 
+    audioLlegadaReproducido = false; 
     if (intervaloActualizacionRuta) clearInterval(intervaloActualizacionRuta);
     if (watchIdPasajero !== null) {
         navigator.geolocation.clearWatch(watchIdPasajero);
@@ -427,7 +443,6 @@ function iniciarEscuchaRealtime(id) {
         async (payload) => {
             const de = payload.new;
 
-            // ACTUALIZACIÓN DINÁMICA DE POSICIÓN Y RUTA OSRM EN TIEMPO REAL DESDE EL PASAJERO
             if (de.conductor_lat && de.conductor_lng) {
                 const latLngCond = [de.conductor_lat, de.conductor_lng];
                 if (!markerConductor) {
@@ -438,7 +453,6 @@ function iniciarEscuchaRealtime(id) {
                     markerConductor.setLatLng(latLngCond);
                 }
 
-                // Trazado de ruta real por calles adaptado al movimiento del chofer
                 if (de.estado === 'aceptado' && origenCoords) {
                     await recalcularRutaYPrecio({ lat: de.conductor_lat, lng: de.conductor_lng });
                 } else if (de.estado === 'en_viaje' && destinoCoords) {
@@ -464,9 +478,14 @@ function iniciarEscuchaRealtime(id) {
             }
             if (de.estado === 'aceptado') {
                 document.getElementById('estadoViajePasajero').innerHTML = "🔔 ¡EL MÓVIL YA LLEGÓ A LA PUERTA! 🔔";
-                mostrarMsg('¡Tu móvil está en la puerta!', 'success');
-                hablarAnuncioPasajero("Tu móvil ya llegó a la puerta.");
-                iniciarTimbreInsistente();
+                
+                // Inicia la alarma y la voz de llegada una sola vez, hasta que el pasajero presione silenciar
+                if (!audioLlegadaReproducido) {
+                    audioLlegadaReproducido = true;
+                    mostrarMsg('¡Tu móvil está en la puerta!', 'success');
+                    hablarAnuncioPasajero("Tu móvil ya llegó a la puerta.");
+                    iniciarTimbreInsistente();
+                }
             }
             if (de.estado === 'en_viaje') {
                 silenciarTimbreLlegada();
@@ -651,15 +670,12 @@ async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
     
     if (!inicio || !destinoCoords) return;
     
-    // Si el viaje está activo y el chofer va en camino a buscarlo, trazamos desde el chofer al origen. Si va en viaje, desde el chofer al destino.
     let puntoA = inicio;
     let puntoB = destinoCoords;
 
     if (viajeId && markerConductor) {
         let posChofer = markerConductor.getLatLng();
         puntoA = { lat: posChofer.lat, lng: posChofer.lng };
-        // Si el estado es aceptado, el destino de la ruta del chofer es el origen del pasajero
-        // Si el estado es en_viaje, el destino es el destino final
     }
 
     try {
@@ -670,7 +686,6 @@ async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
         if (data.code === 'Ok' && data.routes.length > 0) {
             if (rutaTrazada) mapa.removeLayer(rutaTrazada);
             
-            // Dibuja la ruta curva real de OSRM adaptada a las calles
             rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#2cd44a', weight: 4.5, opacity: 0.85 }).addTo(mapa);
             distanciaKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
             
