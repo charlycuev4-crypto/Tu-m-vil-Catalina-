@@ -77,6 +77,9 @@ function verificarRegistroChofer() {
     }
 }
 
+// ==========================================================
+// COMPRESIÓN Y RECORTE EXACTO 300x300 (CENTRADO AUTOMÁTICO)
+// ==========================================================
 function procesarYComprimirFoto(event) {
     const archivo = event.target.files[0];
     if (!archivo) return;
@@ -115,6 +118,9 @@ function procesarYComprimirFoto(event) {
     lector.readAsDataURL(archivo);
 }
 
+// ==========================================================
+// GUARDAR Y SINCRONIZAR CONFIGURACIÓN (APROBADO: FALSE)
+// ==========================================================
 async function guardarConfigChofer(e) {
     e.preventDefault();
     const nombre = document.getElementById('inpNombre').value.trim();
@@ -140,7 +146,7 @@ async function guardarConfigChofer(e) {
                 modelo: `${modelo} - ${color}`,
                 patente: patente,
                 foto: fotoFinal,
-                aprobado: false,
+                aprobado: false, // Ingresa como pendiente de revisión por el Administrador
                 lat: choferCoords ? choferCoords.lat : null,
                 lng: choferCoords ? choferCoords.lng : null
             }, { onConflict: 'patente' });
@@ -484,6 +490,9 @@ async function enviarMensajeChat() {
     } catch (e) {}
 }
 
+// ==========================================================
+// CONMUTAR ESTADO CONEXIÓN (VALIDA ADMIN + ICONO FIJO ANDROID)
+// ==========================================================
 async function conmutarEstadoConexion() {
     if (viajeActivo) return;
 
@@ -548,6 +557,11 @@ async function montarViajeEntrante(viaje) {
     document.getElementById('vistaEspera').classList.add('hidden');
     document.getElementById('vistaViaje').classList.remove('hidden');
     
+    // Asegurar redibujado correcto del mapa al mostrar la vista
+    if (mapa) {
+        setTimeout(() => { mapa.invalidateSize(); }, 200);
+    }
+
     const panel = document.getElementById('panelConductor');
     panel.classList.remove('viaje-activo-estado');
     panel.classList.add('viaje-entrante');
@@ -911,9 +925,9 @@ function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id
 
 async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDestinoExtra = null, lonDestinoExtra = null) {
     try {
-        let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lon2}`;
+        let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
         if (latDestinoExtra && lonDestinoExtra) {
-            url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lon2};${latDestinoExtra},${lonDestinoExtra}`;
+            url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${lonDestinoExtra},${lonDestinoExtra}`;
         }
         url += `?overview=full&geometries=geojson`;
 
@@ -924,14 +938,14 @@ async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDest
         let minutosEstimados = 0;
         let rutaValida = false;
 
-        if (data.code === 'Ok' && data.routes.length > 0) {
+        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
             let distanciaMetros = data.routes[0].distance;
             let duracionSegundos = data.routes[0].duration;
 
             distanciaKm = (distanciaMetros / 1000);
             minutosEstimados = Math.max(1, Math.round(duracionSegundos / 60));
 
-            if (distanciaKm < 100) {
+            if (distanciaKm >= 0) {
                 rutaValida = true;
                 if (rutaTrazada) mapa.removeLayer(rutaTrazada);
                 rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#22c55e', weight: 6, opacity: 0.9 }).addTo(mapa);
@@ -939,8 +953,15 @@ async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDest
         }
 
         if (!rutaValida) {
+            if (rutaTrazada) mapa.removeLayer(rutaTrazada);
+            let puntosLinea = [[lat1, lon1], [lat2, lon2]];
+            if (latDestinoExtra && lonDestinoExtra) {
+                puntosLinea = [[lat1, lon1], [lat2, lon2], [latDestinoExtra, lonDestinoExtra]];
+            }
+            rutaTrazada = L.polyline(puntosLinea, { color: '#22c55e', weight: 6, dashArray: '5, 5', opacity: 0.9 }).addTo(mapa);
+
             let distanciaLineaMetros = calcularDistanciaKm(lat1, lon1, lat2, lon2) * 1000;
-            distanciaKm = (distanciaLineaMetros / 1000) * 1.3; 
+            distanciaKm = (distanciaLineaMetros / 1000);
             minutosEstimados = Math.max(1, Math.round((distanciaKm / 30) * 60));
         }
 
@@ -952,7 +973,14 @@ async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDest
                 cajaMetricas.innerHTML = `<span>🕒 <b>${minutosEstimados} min</b> de viaje real (${distanciaKm.toFixed(1)} km)</span>`;
             }
         }
-    } catch (e) {}
+    } catch (e) {
+        if (rutaTrazada) mapa.removeLayer(rutaTrazada);
+        let puntosError = [[lat1, lon1], [lat2, lon2]];
+        if (latDestinoExtra && lonDestinoExtra) {
+            puntosError = [[lat1, lon1], [lat2, lon2], [latDestinoExtra, lonDestinoExtra]];
+        }
+        rutaTrazada = L.polyline(puntosError, { color: '#22c55e', weight: 6, dashArray: '5, 5', opacity: 0.9 }).addTo(mapa);
+    }
 }
 
 let ultimoCalculoRuta = 0;
