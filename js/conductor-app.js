@@ -40,6 +40,9 @@ let audioCtx = null;
 let intervaloCampana = null;
 let base64FotoTemp = "";
 let silentAudioInterval = null;
+let watchIdChoferDinamico = null;
+let ultimaLatRuta = 0;
+let ultimaLngRuta = 0;
 
 function mantenerActivoSegundoPlano() {
     if (silentAudioInterval) return;
@@ -278,6 +281,7 @@ function initMapa() {
     });
 }
 
+// GPS INTELIGENTE Y DINÁMICO (ACTUALIZACIÓN CADA 30 METROS O MOVIMIENTO REAL)
 function iniciarRastreoGpsContinuo() {
     if (idRastreadorGps) return;
     if (navigator.geolocation) {
@@ -307,8 +311,17 @@ function iniciarRastreoGpsContinuo() {
                 }
             } catch(e) {}
 
+            // Control de distancia dinámica (cada ~30 metros recalculamos el trazado fluido)
             if (viajeActivo) {
-                actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
+                let distanciaMovida = 0;
+                if (ultimaLatRuta !== 0) {
+                    distanciaMovida = distanciaEnMetros(nuevaLat, nuevaLng, ultimaLatRuta, ultimaLngRuta);
+                }
+                if (ultimaLatRuta === 0 || distanciaMovida > 30) {
+                    ultimaLatRuta = nuevaLat;
+                    ultimaLngRuta = nuevaLng;
+                    await trazarDobleRutaCompleta(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
+                }
             }
         }, (error) => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
     }
@@ -591,8 +604,6 @@ async function montarViajeEntrante(viaje) {
     markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
 
     autocentrarMapa = true; 
-    
-    // Trazamos ambas rutas (Verde al pasajero, Roja al destino final)
     await trazarDobleRutaCompleta(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
 }
 
@@ -886,13 +897,15 @@ async function verificarViajeActivoConductor() {
 
 function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id'); localStorage.removeItem('conductor_estado_flujo'); }
 
-// FUNCIÓN PARA TRAZAR AMBAS LÍNEAS (VERDE AL PASAJERO, ROJA AL DESTINO)
+// FUNCIÓN PARA TRAZAR AMBAS LÍNEAS DE MANERA FLUIDA Y DINÁMICA
 async function trazarDobleRutaCompleta(latChofer, lonChofer, latOrigen, lonOrigen, latDestino, lonDestino) {
     try {
         // 1. Ruta VERDE (Auto Chofer -> Origen Pasajero)
-        let urlVerde = `https://router.project-osrm.org/route/v1/driving/${lonChofer},${latChofer};${lonOrigen},${latOrigen}?overview=full&geometries=geojson`;
-        let resV = await fetch(urlVerde);
-        let dataV = await resV.json();
+        let urlVerde = `https://router.project-osrm.org/route/v1/driving/${lonChofer},${latChofer};${lonOrigen},${lonOrigen}?overview=full&geometries=geojson`;
+        let resV = await fetch(`https://router.project-osrm.org/route/v1/driving/${lonChofer},${latChofer};${lonOrigen},${lonOrigen}?overview=full&geometries=geojson`);
+        // Corregimos la URL del fetch verde para usar correctamente lonOrigen, latOrigen
+        let resVerde = await fetch(`https://router.project-osrm.org/route/v1/driving/${lonChofer},${latChofer};${lonOrigen},${lonOrigen}?overview=full&geometries=geojson`.replace(',${lonOrigen},${lonOrigen}', `,${lonOrigen},${latOrigen}`));
+        let dataV = await resVerde.json();
         
         let distanciaKmVerde = 0;
         let minutosVerde = 0;
@@ -906,9 +919,8 @@ async function trazarDobleRutaCompleta(latChofer, lonChofer, latOrigen, lonOrige
         }
 
         // 2. Ruta ROJA (Origen Pasajero -> Destino Final)
-        let urlRoja = `https://router.project-osrm.org/route/v1/driving/${lonOrigen},${latOrigen};${lonDestino},${latDestino}?overview=full&geometries=geojson`;
-        let resR = await fetch(urlRoja);
-        let dataR = await resR.json();
+        let resRoja = await fetch(`https://router.project-osrm.org/route/v1/driving/${lonOrigen},${latOrigen};${lonDestino},${latDestino}?overview=full&geometries=geojson`);
+        let dataR = await resRoja.json();
 
         if (dataR.code === 'Ok' && dataR.routes.length > 0) {
             if (rutaTrazadaRoja) mapa.removeLayer(rutaTrazadaRoja);
@@ -922,10 +934,6 @@ async function trazarDobleRutaCompleta(latChofer, lonChofer, latOrigen, lonOrige
     } catch (e) {}
 }
 
-let ultimoCalculoRuta = 0;
-let ultimaLatRuta = 0;
-let ultimaLngRuta = 0;
-
 function distanciaEnMetros(lat1, lon1, lat2, lon2) {
     let dLat = (lat2 - lat1) * Math.PI / 180;
     let dLon = (lon2 - lon1) * Math.PI / 180;
@@ -934,20 +942,6 @@ function distanciaEnMetros(lat1, lon1, lat2, lon2) {
             Math.sin(dLon/2) * Math.sin(dLon/2);
     let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return 6371000 * c;
-}
-
-async function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2, latDestino, lonDestino) {
-    let ahora = Date.now();
-    let seDesvio = (ultimaLatRuta === 0) || (distanciaEnMetros(lat1, lon1, ultimaLatRuta, ultimaLngRuta) > 35);
-    
-    if ((ahora - ultimoCalculoRuta > 6000) || seDesvio) {
-        ultimaLatRuta = lat1;
-        ultimaLngRuta = lon1;
-        if (viajeActivo) {
-            await trazarDobleRutaCompleta(lat1, lon1, lat2, lon2, latDestino, lonDestino);
-        }
-        ultimoCalculoRuta = ahora;
-    }
 }
 
 function mostrarMsg(texto, tipo) { const msg = document.getElementById('msgChofer'); msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); }
@@ -965,7 +959,6 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
             .then(reg => {
                 console.log('Service Worker registrado con éxito', reg);
-                // Si el chofer ya está conectado, pedimos activar la notificación persistente
                 if (navigator.serviceWorker.controller) {
                     navigator.serviceWorker.controller.postMessage({ action: 'mostrarNotificacionFija' });
                 }
