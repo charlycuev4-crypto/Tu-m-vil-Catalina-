@@ -308,11 +308,7 @@ function iniciarRastreoGpsContinuo() {
             } catch(e) {}
 
             if (viajeActivo) {
-                if (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta') {
-                    actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng, 'verde');
-                } else if (estadoFlujo === 'en_viaje') {
-                    actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.destino_lat, viajeActivo.destino_lng, 'roja');
-                }
+                actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
             }
         }, (error) => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
     }
@@ -596,7 +592,7 @@ async function montarViajeEntrante(viaje) {
 
     autocentrarMapa = true; 
     
-    // Al entrar la solicitud, trazamos AMBAS LÍNEAS (Verde al origen, Roja al destino final)
+    // Trazamos ambas rutas (Verde al pasajero, Roja al destino final)
     await trazarDobleRutaCompleta(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
 }
 
@@ -890,10 +886,10 @@ async function verificarViajeActivoConductor() {
 
 function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id'); localStorage.removeItem('conductor_estado_flujo'); }
 
-// FUNCIÓN PARA TRAZAR AMBAS LÍNEAS (VERDE: Auto a Pasajero | ROJA: Pasajero a Destino)
+// FUNCIÓN PARA TRAZAR AMBAS LÍNEAS (VERDE AL PASAJERO, ROJA AL DESTINO)
 async function trazarDobleRutaCompleta(latChofer, lonChofer, latOrigen, lonOrigen, latDestino, lonDestino) {
     try {
-        // 1. Trazar ruta VERDE (Chofer -> Origen Pasajero)
+        // 1. Ruta VERDE (Auto Chofer -> Origen Pasajero)
         let urlVerde = `https://router.project-osrm.org/route/v1/driving/${lonChofer},${latChofer};${lonOrigen},${latOrigen}?overview=full&geometries=geojson`;
         let resV = await fetch(urlVerde);
         let dataV = await resV.json();
@@ -909,7 +905,7 @@ async function trazarDobleRutaCompleta(latChofer, lonChofer, latOrigen, lonOrige
             rutaTrazadaVerde = L.polyline(dataV.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#22c55e', weight: 6, opacity: 0.9 }).addTo(mapa);
         }
 
-        // 2. Trazar ruta ROJA (Origen Pasajero -> Destino Final)
+        // 2. Ruta ROJA (Origen Pasajero -> Destino Final)
         let urlRoja = `https://router.project-osrm.org/route/v1/driving/${lonOrigen},${latOrigen};${lonDestino},${latDestino}?overview=full&geometries=geojson`;
         let resR = await fetch(urlRoja);
         let dataR = await resR.json();
@@ -940,7 +936,7 @@ function distanciaEnMetros(lat1, lon1, lat2, lon2) {
     return 6371000 * c;
 }
 
-async function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2, tipoRuta) {
+async function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2, latDestino, lonDestino) {
     let ahora = Date.now();
     let seDesvio = (ultimaLatRuta === 0) || (distanciaEnMetros(lat1, lon1, ultimaLatRuta, ultimaLngRuta) > 35);
     
@@ -948,7 +944,7 @@ async function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2, tipoRuta) {
         ultimaLatRuta = lat1;
         ultimaLngRuta = lon1;
         if (viajeActivo) {
-            await trazarDobleRutaCompleta(lat1, lon1, viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
+            await trazarDobleRutaCompleta(lat1, lon1, lat2, lon2, latDestino, lonDestino);
         }
         ultimoCalculoRuta = ahora;
     }
@@ -963,11 +959,17 @@ document.addEventListener('visibilitychange', async () => {
     }
 });
 
-// SERVICE WORKER (sw.js) REGISTRO ESTABLE
+// REGISTRO DEL SERVICE WORKER (WALKER)
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('Service Worker registrado con éxito', reg))
+            .then(reg => {
+                console.log('Service Worker registrado con éxito', reg);
+                // Si el chofer ya está conectado, pedimos activar la notificación persistente
+                if (navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({ action: 'mostrarNotificacionFija' });
+                }
+            })
             .catch(err => console.log('Error al registrar Service Worker', err));
     });
 }
