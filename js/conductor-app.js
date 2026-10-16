@@ -40,7 +40,6 @@ let audioCtx = null;
 let intervaloCampana = null;
 let base64FotoTemp = "";
 let silentAudioInterval = null;
-let watchIdChoferDinamico = null;
 let ultimaLatRuta = 0;
 let ultimaLngRuta = 0;
 
@@ -262,8 +261,7 @@ function probarCampanaManual(e) {
 
 const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
 let mapa = null, markerChofer = null, markerOrigen = null, markerDestino = null;
-let rutaTrazadaVerde = null; // Línea verde hacia el pasajero
-let rutaTrazadaRoja = null;   // Línea roja hacia el destino final
+let rutaTrazadaUnica = null; // Línea general única y limpia para el GPS
 let choferCoords = { lat: -34.545, lng: -58.715 }; 
 let viajeActivo = null;
 let estadoFlujo = 'pendiente'; 
@@ -281,7 +279,7 @@ function initMapa() {
     });
 }
 
-// GPS INTELIGENTE Y DINÁMICO (ACTUALIZACIÓN CADA 30 METROS O MOVIMIENTO REAL)
+// GPS INTELIGENTE Y DINÁMICO CON LÍNEA GENERAL ÚNICA
 function iniciarRastreoGpsContinuo() {
     if (idRastreadorGps) return;
     if (navigator.geolocation) {
@@ -311,16 +309,16 @@ function iniciarRastreoGpsContinuo() {
                 }
             } catch(e) {}
 
-            // Control de distancia dinámica (cada ~30 metros recalculamos el trazado fluido)
+            // Control de distancia dinámica (cada ~25-30 metros recalculamos el trazado fluido)
             if (viajeActivo) {
                 let distanciaMovida = 0;
                 if (ultimaLatRuta !== 0) {
                     distanciaMovida = distanciaEnMetros(nuevaLat, nuevaLng, ultimaLatRuta, ultimaLngRuta);
                 }
-                if (ultimaLatRuta === 0 || distanciaMovida > 30) {
+                if (ultimaLatRuta === 0 || distanciaMovida > 25) {
                     ultimaLatRuta = nuevaLat;
                     ultimaLngRuta = nuevaLng;
-                    await trazarDobleRutaCompleta(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
+                    await actualizarRutaInteligenteChofer();
                 }
             }
         }, (error) => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
@@ -604,7 +602,7 @@ async function montarViajeEntrante(viaje) {
     markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
 
     autocentrarMapa = true; 
-    await trazarDobleRutaCompleta(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+    await actualizarRutaInteligenteChofer();
 }
 
 function rechazarViajeEntrante() {
@@ -613,8 +611,7 @@ function rechazarViajeEntrante() {
 
     if (markerOrigen) { mapa.removeLayer(markerOrigen); markerOrigen = null; }
     if (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
-    if (rutaTrazadaVerde) { mapa.removeLayer(rutaTrazadaVerde); rutaTrazadaVerde = null; }
-    if (rutaTrazadaRoja) { mapa.removeLayer(rutaTrazadaRoja); rutaTrazadaRoja = null; }
+    if (rutaTrazadaUnica) { mapa.removeLayer(rutaTrazadaUnica); rutaTrazadaUnica = null; }
 
     viajeActivo = null; estadoFlujo = 'pendiente';
     document.getElementById('vistaViaje').classList.add('hidden');
@@ -667,7 +664,7 @@ async function procesarLojicaViaje() {
             document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
             mapa.setView([choferCoords.lat, choferCoords.lng], 17);
 
-            await trazarDobleRutaCompleta(choferCoords.lat, choferCoords.lng, viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
+            await actualizarRutaInteligenteChofer();
         } catch (e) { location.reload(); }
         return;
     }
@@ -739,7 +736,7 @@ async function procesarLojicaViaje() {
             <button class="btn-action btn-finalizar" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Finalizar Viaje y Cobrar 💵</button>
         `;
 
-        await trazarDobleRutaCompleta(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
+        await actualizarRutaInteligenteChofer();
         
         autocentrarMapa = true;
         document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
@@ -838,7 +835,7 @@ async function verificarViajeActivoConductor() {
                 </div>
                 <button class="btn-action btn-llegué" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
             `;
-            await trazarDobleRutaCompleta(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+            await actualizarRutaInteligenteChofer();
         } else if (estadoFlujo === 'en_puerta') {
             contenedorViaje.innerHTML = `
                 ${avisoFidelidadHtml}
@@ -864,7 +861,7 @@ async function verificarViajeActivoConductor() {
                 </div>
                 <button class="btn-action btn-iniciar" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Iniciar Viaje al Destino 🧭</button>
             `;
-            await trazarDobleRutaCompleta(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+            await actualizarRutaInteligenteChofer();
         } else if (estadoFlujo === 'en_viaje') {
             contenedorViaje.innerHTML = `
                 ${avisoFidelidadHtml}
@@ -890,46 +887,54 @@ async function verificarViajeActivoConductor() {
                 </div>
                 <button class="btn-action btn-finalizar" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Finalizar Viaje y Cobrar 💵</button>
             `;
-            await trazarDobleRutaCompleta(viaje.origen_lat, viaje.origen_lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+            await actualizarRutaInteligenteChofer();
         }
     } catch (e) { limpiarMemoriaConductor(); }
 }
 
 function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id'); localStorage.removeItem('conductor_estado_flujo'); }
 
-// FUNCIÓN PARA TRAZAR AMBAS LÍNEAS DE MANERA FLUIDA Y DINÁMICA
-async function trazarDobleRutaCompleta(latChofer, lonChofer, latOrigen, lonOrigen, latDestino, lonDestino) {
+// --- RUTA ÚNICA GENERAL (Limpia, sin líneas cruzadas ni puntos raros) ---
+async function actualizarRutaInteligenteChofer() {
+    if (!viajeActivo || !choferCoords) return;
+
+    let destinoLat, destinoLng;
+    let etiquetaTexto = "";
+
+    // Si vamos al pasajero (pendiente, aceptado, en_puerta)
+    if (estadoFlujo === 'pendiente' || estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta') {
+        destinoLat = viajeActivo.origen_lat;
+        destinoLng = viajeActivo.origen_lng;
+        etiquetaTexto = "al pasajero";
+    } else {
+        // Si estamos viajando al destino final
+        destinoLat = viajeActivo.destino_lat;
+        destinoLng = viajeActivo.destino_lng;
+        etiquetaTexto = "al destino";
+    }
+
     try {
-        // 1. Ruta VERDE (Auto Chofer -> Origen Pasajero)
-        let urlVerde = `https://router.project-osrm.org/route/v1/driving/${lonChofer},${latChofer};${lonOrigen},${lonOrigen}?overview=full&geometries=geojson`;
-        let resV = await fetch(`https://router.project-osrm.org/route/v1/driving/${lonChofer},${latChofer};${lonOrigen},${lonOrigen}?overview=full&geometries=geojson`);
-        // Corregimos la URL del fetch verde para usar correctamente lonOrigen, latOrigen
-        let resVerde = await fetch(`https://router.project-osrm.org/route/v1/driving/${lonChofer},${latChofer};${lonOrigen},${lonOrigen}?overview=full&geometries=geojson`.replace(',${lonOrigen},${lonOrigen}', `,${lonOrigen},${latOrigen}`));
-        let dataV = await resVerde.json();
-        
-        let distanciaKmVerde = 0;
-        let minutosVerde = 0;
+        const url = `https://router.project-osrm.org/route/v1/driving/${choferCoords.lng},${choferCoords.lat};${destinoLng},${destinoLat}?overview=full&geometries=geojson`;
+        const res = await fetch(url);
+        const data = await res.json();
 
-        if (dataV.code === 'Ok' && dataV.routes.length > 0) {
-            distanciaKmVerde = dataV.routes[0].distance / 1000;
-            minutosVerde = Math.max(1, Math.round(dataV.routes[0].duration / 60));
+        if (data.code === 'Ok' && data.routes.length > 0) {
+            let distanciaKm = data.routes[0].distance / 1000;
+            let minutos = Math.max(1, Math.round(data.routes[0].duration / 60));
 
-            if (rutaTrazadaVerde) mapa.removeLayer(rutaTrazadaVerde);
-            rutaTrazadaVerde = L.polyline(dataV.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#22c55e', weight: 6, opacity: 0.9 }).addTo(mapa);
-        }
+            if (rutaTrazadaUnica) mapa.removeLayer(rutaTrazadaUnica);
 
-        // 2. Ruta ROJA (Origen Pasajero -> Destino Final)
-        let resRoja = await fetch(`https://router.project-osrm.org/route/v1/driving/${lonOrigen},${latOrigen};${lonDestino},${latDestino}?overview=full&geometries=geojson`);
-        let dataR = await resRoja.json();
+            // Una única línea limpia color verde institucional (estilo app de movilidad)
+            rutaTrazadaUnica = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { 
+                color: '#22c55e', 
+                weight: 6, 
+                opacity: 0.9 
+            }).addTo(mapa);
 
-        if (dataR.code === 'Ok' && dataR.routes.length > 0) {
-            if (rutaTrazadaRoja) mapa.removeLayer(rutaTrazadaRoja);
-            rutaTrazadaRoja = L.polyline(dataR.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#ef4444', weight: 5, opacity: 0.8, dashArray: '8, 8' }).addTo(mapa);
-        }
-
-        let cajaMetricas = document.getElementById('cajaMetricasRuta');
-        if (cajaMetricas) {
-            cajaMetricas.innerHTML = `<span>🕒 <b>${minutosVerde} min</b> (${distanciaKmVerde.toFixed(1)} km al pasajero) con destino marcado 🏁</span>`;
+            let cajaMetricas = document.getElementById('cajaMetricasRuta');
+            if (cajaMetricas) {
+                cajaMetricas.innerHTML = `<span>🕒 <b>${minutos} min</b> (${distanciaKm.toFixed(1)} km ${etiquetaTexto}) 🧭</span>`;
+            }
         }
     } catch (e) {}
 }
