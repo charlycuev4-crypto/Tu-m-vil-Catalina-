@@ -258,7 +258,9 @@ function probarCampanaManual(e) {
 }
 
 const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
-let mapa = null, markerChofer = null, markerOrigen = null, markerDestino = null, rutaTrazada = null;
+let mapa = null, markerChofer = null, markerOrigen = null, markerDestino = null;
+let rutaTrazadaVerde = null; // Línea verde hacia el pasajero
+let rutaTrazadaRoja = null;   // Línea roja hacia el destino final
 let choferCoords = { lat: -34.545, lng: -58.715 }; 
 let viajeActivo = null;
 let estadoFlujo = 'pendiente'; 
@@ -305,10 +307,12 @@ function iniciarRastreoGpsContinuo() {
                 }
             } catch(e) {}
 
-            if (viajeActivo && (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta')) {
-                actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng);
-            } else if (viajeActivo && estadoFlujo === 'en_viaje') {
-                actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.destino_lat, viajeActivo.destino_lng);
+            if (viajeActivo) {
+                if (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta') {
+                    actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.origen_lat, viajeActivo.origen_lng, 'verde');
+                } else if (estadoFlujo === 'en_viaje') {
+                    actualizarRutaEnMovimiento(nuevaLat, nuevaLng, viajeActivo.destino_lat, viajeActivo.destino_lng, 'roja');
+                }
             }
         }, (error) => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
     }
@@ -591,7 +595,9 @@ async function montarViajeEntrante(viaje) {
     markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
 
     autocentrarMapa = true; 
-    await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+    
+    // Al entrar la solicitud, trazamos AMBAS LÍNEAS (Verde al origen, Roja al destino final)
+    await trazarDobleRutaCompleta(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
 }
 
 function rechazarViajeEntrante() {
@@ -600,7 +606,8 @@ function rechazarViajeEntrante() {
 
     if (markerOrigen) { mapa.removeLayer(markerOrigen); markerOrigen = null; }
     if (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
-    if (rutaTrazada) { mapa.removeLayer(rutaTrazada); rutaTrazada = null; }
+    if (rutaTrazadaVerde) { mapa.removeLayer(rutaTrazadaVerde); rutaTrazadaVerde = null; }
+    if (rutaTrazadaRoja) { mapa.removeLayer(rutaTrazadaRoja); rutaTrazadaRoja = null; }
 
     viajeActivo = null; estadoFlujo = 'pendiente';
     document.getElementById('vistaViaje').classList.add('hidden');
@@ -652,6 +659,8 @@ async function procesarLojicaViaje() {
             autocentrarMapa = true;
             document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
             mapa.setView([choferCoords.lat, choferCoords.lng], 17);
+
+            await trazarDobleRutaCompleta(choferCoords.lat, choferCoords.lng, viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
         } catch (e) { location.reload(); }
         return;
     }
@@ -723,7 +732,7 @@ async function procesarLojicaViaje() {
             <button class="btn-action btn-finalizar" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Finalizar Viaje y Cobrar 💵</button>
         `;
 
-        await trazarRutaCallesYCalcularMetricas(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng, null, null);
+        await trazarDobleRutaCompleta(viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
         
         autocentrarMapa = true;
         document.getElementById('btnGpsCentro').classList.add('seguimiento-on');
@@ -790,6 +799,8 @@ async function verificarViajeActivoConductor() {
             `;
         }
 
+        if (markerOrigen) mapa.removeLayer(markerOrigen);
+        if (markerDestino) mapa.removeLayer(markerDestino);
         markerOrigen = L.marker([viaje.origen_lat, viaje.origen_lng], { icon: L.divIcon({ className: 'pasajero-origen-icon' }) }).addTo(mapa);
         markerDestino = L.marker([viaje.destino_lat, viaje.destino_lng], { icon: L.divIcon({ className: 'pasajero-destino-icon' }) }).addTo(mapa);
 
@@ -820,7 +831,7 @@ async function verificarViajeActivoConductor() {
                 </div>
                 <button class="btn-action btn-llegué" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Ya llegué a la puerta 🔓</button>
             `;
-            await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+            await trazarDobleRutaCompleta(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
         } else if (estadoFlujo === 'en_puerta') {
             contenedorViaje.innerHTML = `
                 ${avisoFidelidadHtml}
@@ -846,7 +857,7 @@ async function verificarViajeActivoConductor() {
                 </div>
                 <button class="btn-action btn-iniciar" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Iniciar Viaje al Destino 🧭</button>
             `;
-            await trazarRutaCallesYCalcularMetricas(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
+            await trazarDobleRutaCompleta(choferCoords.lat, choferCoords.lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
         } else if (estadoFlujo === 'en_viaje') {
             contenedorViaje.innerHTML = `
                 ${avisoFidelidadHtml}
@@ -872,55 +883,45 @@ async function verificarViajeActivoConductor() {
                 </div>
                 <button class="btn-action btn-finalizar" id="btnAccionEnCurso" onclick="procesarLojicaViaje()">Finalizar Viaje y Cobrar 💵</button>
             `;
-            await trazarRutaCallesYCalcularMetricas(viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng, null, null);
+            await trazarDobleRutaCompleta(viaje.origen_lat, viaje.origen_lng, viaje.origen_lat, viaje.origen_lng, viaje.destino_lat, viaje.destino_lng);
         }
     } catch (e) { limpiarMemoriaConductor(); }
 }
 
 function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id'); localStorage.removeItem('conductor_estado_flujo'); }
 
-async function trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, latDestinoExtra = null, lonDestinoExtra = null) {
+// FUNCIÓN PARA TRAZAR AMBAS LÍNEAS (VERDE: Auto a Pasajero | ROJA: Pasajero a Destino)
+async function trazarDobleRutaCompleta(latChofer, lonChofer, latOrigen, lonOrigen, latDestino, lonDestino) {
     try {
-        let url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}`;
-        if (latDestinoExtra && lonDestinoExtra) {
-            url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2};${latDestinoExtra},${lonDestinoExtra}`;
-        }
-        url += `?overview=full&geometries=geojson`;
-
-        const res = await fetch(url);
-        const data = await res.json();
+        // 1. Trazar ruta VERDE (Chofer -> Origen Pasajero)
+        let urlVerde = `https://router.project-osrm.org/route/v1/driving/${lonChofer},${latChofer};${lonOrigen},${latOrigen}?overview=full&geometries=geojson`;
+        let resV = await fetch(urlVerde);
+        let dataV = await resV.json();
         
-        let distanciaKm = 0;
-        let minutosEstimados = 0;
-        let rutaValida = false;
+        let distanciaKmVerde = 0;
+        let minutosVerde = 0;
 
-        if (data.code === 'Ok' && data.routes.length > 0) {
-            let distanciaMetros = data.routes[0].distance;
-            let duracionSegundos = data.routes[0].duration;
+        if (dataV.code === 'Ok' && dataV.routes.length > 0) {
+            distanciaKmVerde = dataV.routes[0].distance / 1000;
+            minutosVerde = Math.max(1, Math.round(dataV.routes[0].duration / 60));
 
-            distanciaKm = (distanciaMetros / 1000);
-            minutosEstimados = Math.max(1, Math.round(duracionSegundos / 60));
-
-            if (distanciaKm < 100) {
-                rutaValida = true;
-                if (rutaTrazada) mapa.removeLayer(rutaTrazada);
-                rutaTrazada = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#22c55e', weight: 6, opacity: 0.9 }).addTo(mapa);
-            }
+            if (rutaTrazadaVerde) mapa.removeLayer(rutaTrazadaVerde);
+            rutaTrazadaVerde = L.polyline(dataV.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#22c55e', weight: 6, opacity: 0.9 }).addTo(mapa);
         }
 
-        if (!rutaValida) {
-            let distanciaLineaMetros = calcularDistanciaKm(lat1, lon1, lat2, lon2) * 1000;
-            distanciaKm = (distanciaLineaMetros / 1000) * 1.3; 
-            minutosEstimados = Math.max(1, Math.round((distanciaKm / 30) * 60));
+        // 2. Trazar ruta ROJA (Origen Pasajero -> Destino Final)
+        let urlRoja = `https://router.project-osrm.org/route/v1/driving/${lonOrigen},${latOrigen};${lonDestino},${latDestino}?overview=full&geometries=geojson`;
+        let resR = await fetch(urlRoja);
+        let dataR = await resR.json();
+
+        if (dataR.code === 'Ok' && dataR.routes.length > 0) {
+            if (rutaTrazadaRoja) mapa.removeLayer(rutaTrazadaRoja);
+            rutaTrazadaRoja = L.polyline(dataR.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { color: '#ef4444', weight: 5, opacity: 0.8, dashArray: '8, 8' }).addTo(mapa);
         }
 
         let cajaMetricas = document.getElementById('cajaMetricasRuta');
         if (cajaMetricas) {
-            if (latDestinoExtra) {
-                cajaMetricas.innerHTML = `<span>🕒 <b>${minutosEstimados} min</b> (${distanciaKm.toFixed(1)} km al pasajero)</span>`;
-            } else {
-                cajaMetricas.innerHTML = `<span>🕒 <b>${minutosEstimados} min</b> de viaje real (${distanciaKm.toFixed(1)} km)</span>`;
-            }
+            cajaMetricas.innerHTML = `<span>🕒 <b>${minutosVerde} min</b> (${distanciaKmVerde.toFixed(1)} km al pasajero) con destino marcado 🏁</span>`;
         }
     } catch (e) {}
 }
@@ -939,14 +940,16 @@ function distanciaEnMetros(lat1, lon1, lat2, lon2) {
     return 6371000 * c;
 }
 
-async function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2) {
+async function actualizarRutaEnMovimiento(lat1, lon1, lat2, lon2, tipoRuta) {
     let ahora = Date.now();
     let seDesvio = (ultimaLatRuta === 0) || (distanciaEnMetros(lat1, lon1, ultimaLatRuta, ultimaLngRuta) > 35);
     
     if ((ahora - ultimoCalculoRuta > 6000) || seDesvio) {
         ultimaLatRuta = lat1;
         ultimaLngRuta = lon1;
-        await trazarRutaCallesYCalcularMetricas(lat1, lon1, lat2, lon2, null, null);
+        if (viajeActivo) {
+            await trazarDobleRutaCompleta(lat1, lon1, viajeActivo.origen_lat, viajeActivo.origen_lng, viajeActivo.destino_lat, viajeActivo.destino_lng);
+        }
         ultimoCalculoRuta = ahora;
     }
 }
@@ -960,6 +963,7 @@ document.addEventListener('visibilitychange', async () => {
     }
 });
 
+// SERVICE WORKER (sw.js) REGISTRO ESTABLE
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
