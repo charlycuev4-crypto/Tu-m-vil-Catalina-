@@ -301,7 +301,7 @@ function toggleExpandirPanel() {
 }
 
 // ==========================================================
-// REGISTRO Y BIENVENIDA CON VERIFICACIÓN INTELIGENTE
+// REGISTRO Y BIENVENIDA CON VERIFICACIÓN DIRECTA EN SUPABASE
 // ==========================================================
 async function procesarSplashDeBienvenida() {
     try {
@@ -431,7 +431,7 @@ async function guardarRegistroPerfil() {
     
     let nom = nomElem ? nomElem.value.trim() : "";
     let telBruto = telElem ? telElem.value.trim() : "";
-    let tel = telBruto.replace(/\D/g, ''); // Limpiamos espacios y guiones del teléfono
+    let tel = telBruto.replace(/\D/g, ''); // Limpiamos espacios y guiones
     
     if (!tel) { 
         alert("Por favor ingresá tu número de WhatsApp para comenzar."); 
@@ -439,30 +439,30 @@ async function guardarRegistroPerfil() {
     }
 
     try {
-        // 1. Buscamos si ya existe en Supabase mediante coincidencia parcial del teléfono
-        const { data: perfilExistente, error: errBusqueda } = await supabaseClient
+        // 1. CONSULTA DIRECTA A SUPABASE (El servidor manda)
+        const { data: usuarioEnSupabase, error } = await supabaseClient
             .from('perfiles_usuarios')
             .select('*')
-            .ilike('telefono', `%${tel}%`)
+            .eq('telefono', tel)
             .maybeSingle();
 
-        if (perfilExistente) {
-            // 2. Si ya existe, restauramos los datos de la nube automáticamente
-            pasajeroNombre = perfilExistente.nombre;
-            pasajeroTelefono = perfilExistente.telefono;
-            pasajeroBase64Foto = perfilExistente.foto || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
+        if (usuarioEnSupabase) {
+            // 2. ¡Supabase dio el OK! El usuario ya existe en la nube
+            pasajeroNombre = usuarioEnSupabase.nombre;
+            pasajeroTelefono = usuarioEnSupabase.telefono;
+            pasajeroBase64Foto = usuarioEnSupabase.foto || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
 
             localStorage.setItem('perfil_nombre', pasajeroNombre); 
             localStorage.setItem('perfil_telefono', pasajeroTelefono);
             localStorage.setItem('perfil_foto', pasajeroBase64Foto);
 
-            mostrarMsg(`¡Bienvenido de nuevo, ${pasajeroNombre}!`, 'success');
+            mostrarMsg(`¡Hola de nuevo, ${pasajeroNombre}!`, 'success');
             cerrarSplash(); 
             obtenerGPS();
             return;
         }
 
-        // 3. Si no existe, requerimos el nombre obligatoriamente
+        // 3. Si Supabase dice que NO existe, es un usuario nuevo de verdad
         if (!nom) {
             alert("Es tu primera vez usando la app. Por favor ingresá tu nombre y apellido.");
             if (nomElem) nomElem.focus();
@@ -471,27 +471,15 @@ async function guardarRegistroPerfil() {
 
         const fotoFinal = pasajeroBase64Foto || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
 
-        // 4. Guardamos el nuevo usuario en Supabase
-        const { error: errInsert } = await supabaseClient
+        // 4. Lo registramos por primera vez en Supabase
+        await supabaseClient
             .from('perfiles_usuarios')
-            .upsert({
+            .insert({
                 telefono: tel,
                 nombre: nom,
                 foto: fotoFinal,
-                tipo: 'pasajero',
-                updated_at: new Date()
-            }, { onConflict: 'telefono' });
-
-        if (errInsert) {
-            await supabaseClient
-                .from('perfiles_usuarios')
-                .insert({
-                    telefono: tel,
-                    nombre: nom,
-                    foto: fotoFinal,
-                    tipo: 'pasajero'
-                });
-        }
+                tipo: 'pasajero'
+            });
 
         pasajeroNombre = nom; 
         pasajeroTelefono = tel;
@@ -505,15 +493,8 @@ async function guardarRegistroPerfil() {
         obtenerGPS();
 
     } catch(e) {
-        console.error("Error al registrar/verificar:", e);
-        if (nom) {
-            localStorage.setItem('perfil_nombre', nom); 
-            localStorage.setItem('perfil_telefono', tel);
-            cerrarSplash(); 
-            obtenerGPS();
-        } else {
-            alert("Ocurrió un error al conectar con el servidor. Intenta de nuevo.");
-        }
+        console.error("Error al conectar con Supabase:", e);
+        alert("No se pudo verificar con el servidor. Comprobá tu conexión a internet.");
     }
 }
 
