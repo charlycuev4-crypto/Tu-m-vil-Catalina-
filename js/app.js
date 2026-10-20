@@ -242,7 +242,6 @@ function actualizarMarcadorChofer(registro) {
 
 // --- CARGA INICIAL Y ESCUCHA EN TIEMPO REAL DE LA TABLA 'conductores' ---
 async function iniciarEscuchaChoferesCercanos() {
-    // 1. Traer los choferes que YA están en línea al abrir la app
     try {
         const { data: choferesActivos, error } = await supabaseClient
             .from('conductores')
@@ -256,7 +255,6 @@ async function iniciarEscuchaChoferesCercanos() {
         }
     } catch (e) {}
 
-    // 2. Suscribirse a cambios futuros en tiempo real
     if (canalChoferesCercanos) supabaseClient.removeChannel(canalChoferesCercanos);
 
     canalChoferesCercanos = supabaseClient
@@ -277,8 +275,6 @@ function initMapa() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
     
     cargarPuntosLocales(); 
-
-    // Activamos la carga inicial y escucha en tiempo real de los choferes
     iniciarEscuchaChoferesCercanos();
 
     mapa.on('movestart', () => {
@@ -304,6 +300,9 @@ function toggleExpandirPanel() {
     }
 }
 
+// ==========================================================
+// REGISTRO Y BIENVENIDA SIN FRICCIÓN (FOTO OPCIONAL Y AMIGABLE)
+// ==========================================================
 async function procesarSplashDeBienvenida() {
     try {
         await cargarTarifasDesdeSupabase();
@@ -318,25 +317,34 @@ async function procesarSplashDeBienvenida() {
             if(imgPrev) {
                 imgPrev.src = fotoGuardada;
                 imgPrev.style.display = "block";
-                document.getElementById('siluetaOverlay').style.opacity = "0";
+                const silueta = document.getElementById('siluetaOverlay');
+                if (silueta) silueta.style.opacity = "0";
             }
         }
 
-        if (pasajeroNombre && pasajeroTelefono && pasajeroBase64Foto) {
-            document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
+        // Si ya ingresó su nombre y teléfono, entra directo
+        if (pasajeroNombre && pasajeroTelefono) {
+            document.getElementById('splashTitulo').textContent = `¡Hola, ${pasajeroNombre}!`;
             await verificarViajeActivoPasajero();
             
             setTimeout(() => {
                 cerrarSplash(); 
                 if (!viajeId) obtenerGPS();
-            }, 2000);
+            }, 1500);
         } else {
-            document.getElementById('splashTitulo').textContent = "¡Foto y Datos!";
-            document.getElementById('splashForm').style.display = "flex";
+            // Título amigable sin exigencias
+            const tituloSplash = document.getElementById('splashTitulo');
+            if (tituloSplash) tituloSplash.textContent = "¡Para tu seguridad! 🛡️";
+            
+            const formSplash = document.getElementById('splashForm');
+            if (formSplash) formSplash.style.display = "flex";
         }
     } catch (err) {
-        document.getElementById('splashTitulo').textContent = "¡Bienvenido!";
-        document.getElementById('splashForm').style.display = "flex";
+        const tituloSplash = document.getElementById('splashTitulo');
+        if (tituloSplash) tituloSplash.textContent = "¡Bienvenido!";
+        
+        const formSplash = document.getElementById('splashForm');
+        if (formSplash) formSplash.style.display = "flex";
     }
 }
 
@@ -405,22 +413,31 @@ function procesarArchivoSelfie(file) {
 }
 
 async function guardarRegistroPerfil() {
-    const nom = document.getElementById('regNombre').value.trim();
-    const tel = document.getElementById('regTelefono').value.trim();
-    if (!pasajeroBase64Foto) { alert("Por favor toca el círculo para tomarte la selfie de seguridad."); return; }
-    if (!nom || !tel) { alert("Por favor completa tu nombre y teléfono."); return; }
+    const nomElem = document.getElementById('regNombre');
+    const telElem = document.getElementById('regTelefono');
+    const nom = nomElem ? nomElem.value.trim() : "";
+    const tel = telElem ? telElem.value.trim() : "";
+    
+    // Solo validamos nombre y teléfono para no asustar al usuario
+    if (!nom || !tel) { 
+        alert("Por favor completa tu nombre y número de teléfono para comenzar."); 
+        return; 
+    }
+
+    // Si no se tomó una foto, asignamos la foto de perfil por defecto
+    const fotoFinal = pasajeroBase64Foto || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
     
     try {
         localStorage.setItem('perfil_nombre', nom); 
         localStorage.setItem('perfil_telefono', tel);
-        localStorage.setItem('perfil_foto', pasajeroBase64Foto);
+        localStorage.setItem('perfil_foto', fotoFinal);
 
         await supabaseClient
             .from('perfiles_usuarios')
             .upsert({
                 telefono: tel,
                 nombre: nom,
-                foto: pasajeroBase64Foto,
+                foto: fotoFinal,
                 tipo: 'pasajero',
                 updated_at: new Date()
             }, { onConflict: 'telefono' });
@@ -428,6 +445,8 @@ async function guardarRegistroPerfil() {
     
     pasajeroNombre = nom; 
     pasajeroTelefono = tel;
+    pasajeroBase64Foto = fotoFinal;
+    
     cerrarSplash(); 
     obtenerGPS();
 }
