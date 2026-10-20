@@ -1,4 +1,4 @@
-const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
+Const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
