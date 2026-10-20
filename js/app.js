@@ -334,10 +334,22 @@ async function procesarSplashDeBienvenida() {
         } else {
             // Título amigable sin exigencias
             const tituloSplash = document.getElementById('splashTitulo');
-            if (tituloSplash) tituloSplash.textContent = "¡Para tu seguridad! 🛡️";
+            if (tituloSplash) tituloSplash.textContent = "¡Viajá con Seguridad! 🛡️";
             
+            // Subtítulo aclarando que la foto es opcional para que reconozca el chofer
             const formSplash = document.getElementById('splashForm');
-            if (formSplash) formSplash.style.display = "flex";
+            if (formSplash) {
+                formSplash.style.display = "flex";
+                // Insertar o actualizar aviso amigable si no existe
+                let avisoOp = document.getElementById('avisoFotoOpcional');
+                if (!avisoOp) {
+                    avisoOp = document.createElement('div');
+                    avisoOp.id = 'avisoFotoOpcional';
+                    avisoOp.style.cssText = "font-size:0.8rem; color:#cbd5e1; text-align:center; margin-bottom:10px;";
+                    avisoOp.textContent = "Foto opcional (ayuda a que el chófer te reconozca al llegar)";
+                    formSplash.insertBefore(avisoOp, formSplash.firstChild);
+                }
+            }
         }
     } catch (err) {
         const tituloSplash = document.getElementById('splashTitulo');
