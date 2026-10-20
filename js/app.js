@@ -301,7 +301,7 @@ function toggleExpandirPanel() {
 }
 
 // ==========================================================
-// REGISTRO Y BIENVENIDA CON VERIFICACIÓN AUTOMÁTICA EN SUPABASE
+// REGISTRO Y BIENVENIDA CON VERIFICACIÓN INTELIGENTE
 // ==========================================================
 async function procesarSplashDeBienvenida() {
     try {
@@ -322,7 +322,6 @@ async function procesarSplashDeBienvenida() {
             }
         }
 
-        // Si ya ingresó su nombre y teléfono en localStorage, entra directo
         if (pasajeroNombre && pasajeroTelefono) {
             document.getElementById('splashTitulo').textContent = `¡Hola, ${pasajeroNombre}!`;
             await verificarViajeActivoPasajero();
@@ -332,15 +331,12 @@ async function procesarSplashDeBienvenida() {
                 if (!viajeId) obtenerGPS();
             }, 1500);
         } else {
-            // Título amigable sin exigencias
             const tituloSplash = document.getElementById('splashTitulo');
             if (tituloSplash) tituloSplash.textContent = "¡Viajá con Seguridad! 🛡️";
             
-            // Ocultar subtítulos viejos
             const subtitulosViejos = document.querySelectorAll('#splashScreen p, .splash-subtitle');
             subtitulosViejos.forEach(p => p.style.display = 'none');
 
-            // Formulario Splash
             const formSplash = document.getElementById('splashForm');
             if (formSplash) {
                 formSplash.style.display = "flex";
@@ -353,7 +349,7 @@ async function procesarSplashDeBienvenida() {
                 }
                 
                 avisoOp.style.cssText = "font-size: 0.9rem; font-weight: bold; color: #ffffff; text-align: center; margin: 8px 0 14px 0; text-shadow: 0px 2px 4px rgba(0,0,0,0.8); background: rgba(0,0,0,0.35); padding: 6px 12px; border-radius: 8px;";
-                avisoOp.textContent = "Ingresá tu WhatsApp para identificarte al instante";
+                avisoOp.textContent = "Foto opcional (ayuda a que el chófer te reconozca al llegar)";
             }
         }
     } catch (err) {
@@ -429,14 +425,13 @@ function procesarArchivoSelfie(file) {
     reader.readAsDataURL(file);
 }
 
-// -------------------------------------------------------------------------
-// VERIFICACIÓN INTELIGENTE: BUSCA EN SUPABASE POR TELÉFONO PARA EVITAR DUPLICADOS
-// -------------------------------------------------------------------------
 async function guardarRegistroPerfil() {
     const nomElem = document.getElementById('regNombre');
     const telElem = document.getElementById('regTelefono');
-    const nom = nomElem ? nomElem.value.trim() : "";
-    const tel = telElem ? telElem.value.trim() : "";
+    
+    let nom = nomElem ? nomElem.value.trim() : "";
+    let telBruto = telElem ? telElem.value.trim() : "";
+    let tel = telBruto.replace(/\D/g, ''); // Limpiamos espacios y guiones del teléfono
     
     if (!tel) { 
         alert("Por favor ingresá tu número de WhatsApp para comenzar."); 
@@ -444,15 +439,15 @@ async function guardarRegistroPerfil() {
     }
 
     try {
-        // 1. Consultar en Supabase si este teléfono ya existe
-        const { data: perfilExistente, error } = await supabaseClient
+        // 1. Buscamos si ya existe en Supabase mediante coincidencia parcial del teléfono
+        const { data: perfilExistente, error: errBusqueda } = await supabaseClient
             .from('perfiles_usuarios')
             .select('*')
-            .eq('telefono', tel)
+            .ilike('telefono', `%${tel}%`)
             .maybeSingle();
 
         if (perfilExistente) {
-            // 2. ¡Usuario encontrado en la nube! Restauramos sus datos al instante sin duplicar
+            // 2. Si ya existe, restauramos los datos de la nube automáticamente
             pasajeroNombre = perfilExistente.nombre;
             pasajeroTelefono = perfilExistente.telefono;
             pasajeroBase64Foto = perfilExistente.foto || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
@@ -462,47 +457,62 @@ async function guardarRegistroPerfil() {
             localStorage.setItem('perfil_foto', pasajeroBase64Foto);
 
             mostrarMsg(`¡Bienvenido de nuevo, ${pasajeroNombre}!`, 'success');
-        } else {
-            // 3. Usuario nuevo: exigimos nombre ya que no existe en el sistema
-            if (!nom) {
-                alert("Es tu primera vez usando la app. Por favor ingresá tu nombre y apellido.");
-                return;
-            }
+            cerrarSplash(); 
+            obtenerGPS();
+            return;
+        }
 
-            const fotoFinal = pasajeroBase64Foto || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
+        // 3. Si no existe, requerimos el nombre obligatoriamente
+        if (!nom) {
+            alert("Es tu primera vez usando la app. Por favor ingresá tu nombre y apellido.");
+            if (nomElem) nomElem.focus();
+            return;
+        }
 
+        const fotoFinal = pasajeroBase64Foto || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
+
+        // 4. Guardamos el nuevo usuario en Supabase
+        const { error: errInsert } = await supabaseClient
+            .from('perfiles_usuarios')
+            .upsert({
+                telefono: tel,
+                nombre: nom,
+                foto: fotoFinal,
+                tipo: 'pasajero',
+                updated_at: new Date()
+            }, { onConflict: 'telefono' });
+
+        if (errInsert) {
             await supabaseClient
                 .from('perfiles_usuarios')
-                .upsert({
+                .insert({
                     telefono: tel,
                     nombre: nom,
                     foto: fotoFinal,
-                    tipo: 'pasajero',
-                    updated_at: new Date()
-                }, { onConflict: 'telefono' });
-
-            pasajeroNombre = nom; 
-            pasajeroTelefono = tel;
-            pasajeroBase64Foto = fotoFinal;
-
-            localStorage.setItem('perfil_nombre', nom); 
-            localStorage.setItem('perfil_telefono', tel);
-            localStorage.setItem('perfil_foto', fotoFinal);
+                    tipo: 'pasajero'
+                });
         }
+
+        pasajeroNombre = nom; 
+        pasajeroTelefono = tel;
+        pasajeroBase64Foto = fotoFinal;
+
+        localStorage.setItem('perfil_nombre', nom); 
+        localStorage.setItem('perfil_telefono', tel);
+        localStorage.setItem('perfil_foto', fotoFinal);
         
         cerrarSplash(); 
         obtenerGPS();
 
     } catch(e) {
-        console.error("Error al verificar perfil en Supabase:", e);
-        // Resguardo local si falla la red momentáneamente
+        console.error("Error al registrar/verificar:", e);
         if (nom) {
             localStorage.setItem('perfil_nombre', nom); 
             localStorage.setItem('perfil_telefono', tel);
             cerrarSplash(); 
             obtenerGPS();
         } else {
-            alert("No se pudo verificar el número. Comprobá tu conexión.");
+            alert("Ocurrió un error al conectar con el servidor. Intenta de nuevo.");
         }
     }
 }
