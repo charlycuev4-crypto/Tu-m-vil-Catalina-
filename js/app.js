@@ -322,7 +322,7 @@ async function procesarSplashDeBienvenida() {
             }
         }
 
-        if (pasajeroNombre && pasajeroTelefono) {
+        if (pasajeroNombre && pasajeroTelefono && pasajeroBase64Foto) {
             document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
             await verificarViajeActivoPasajero();
             
@@ -331,7 +331,7 @@ async function procesarSplashDeBienvenida() {
                 if (!viajeId) obtenerGPS();
             }, 2000);
         } else {
-            document.getElementById('splashTitulo').textContent = "¡Viajá con Seguridad! 🛡️";
+            document.getElementById('splashTitulo').textContent = "¡Foto y Datos!";
             document.getElementById('splashForm').style.display = "flex";
         }
     } catch (err) {
@@ -404,58 +404,30 @@ function procesarArchivoSelfie(file) {
     reader.readAsDataURL(file);
 }
 
-// -------------------------------------------------------------------------
-// FUNCIÓN CORREGIDA: FOTO OPCIONAL + CONEXIÓN DIRECTA CON SUPABASE Y EL ADMIN
-// -------------------------------------------------------------------------
 async function guardarRegistroPerfil() {
     const nom = document.getElementById('regNombre').value.trim();
     const tel = document.getElementById('regTelefono').value.trim();
+    if (!pasajeroBase64Foto) { alert("Por favor toca el círculo para tomarte la selfie de seguridad."); return; }
+    if (!nom || !tel) { alert("Por favor completa tu nombre y teléfono."); return; }
     
-    if (!nom || !tel) { 
-        alert("Por favor completa tu nombre y número de teléfono."); 
-        return; 
-    }
-    
-    const fotoFinal = pasajeroBase64Foto || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
-
     try {
-        // 1. Verificamos primero en Supabase si el número ya existe para evitar duplicados
-        const { data: usuarioExistente } = await supabaseClient
-            .from('perfiles_usuarios')
-            .select('*')
-            .eq('telefono', tel)
-            .maybeSingle();
-
-        if (usuarioExistente) {
-            pasajeroNombre = usuarioExistente.nombre;
-            pasajeroTelefono = usuarioExistente.telefono;
-            pasajeroBase64Foto = usuarioExistente.foto || fotoFinal;
-        } else {
-            pasajeroNombre = nom;
-            pasajeroTelefono = tel;
-            pasajeroBase64Foto = fotoFinal;
-        }
-
-        // 2. Guardamos en el almacenamiento local del teléfono
-        localStorage.setItem('perfil_nombre', pasajeroNombre); 
-        localStorage.setItem('perfil_telefono', pasajeroTelefono);
+        localStorage.setItem('perfil_nombre', nom); 
+        localStorage.setItem('perfil_telefono', tel);
         localStorage.setItem('perfil_foto', pasajeroBase64Foto);
 
-        // 3. Sincronizamos de forma segura con Supabase para que el panel de administración lo vea al instante
         await supabaseClient
             .from('perfiles_usuarios')
             .upsert({
-                telefono: pasajeroTelefono,
-                nombre: pasajeroNombre,
+                telefono: tel,
+                nombre: nom,
                 foto: pasajeroBase64Foto,
                 tipo: 'pasajero',
                 updated_at: new Date()
             }, { onConflict: 'telefono' });
-
-    } catch(e) {
-        console.error("Error al sincronizar con Supabase:", e);
-    }
+    } catch(e) {}
     
+    pasajeroNombre = nom; 
+    pasajeroTelefono = tel;
     cerrarSplash(); 
     obtenerGPS();
 }
