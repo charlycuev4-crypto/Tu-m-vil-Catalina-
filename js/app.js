@@ -336,19 +336,26 @@ async function procesarSplashDeBienvenida() {
             const tituloSplash = document.getElementById('splashTitulo');
             if (tituloSplash) tituloSplash.textContent = "¡Viajá con Seguridad! 🛡️";
             
-            // Subtítulo aclarando que la foto es opcional para que reconozca el chofer
+            // Ocultar o reemplazar el subtítulo viejo ("Identificación obligatoria...")
+            const subtitulosViejos = document.querySelectorAll('#splashScreen p, .splash-subtitle');
+            subtitulosViejos.forEach(p => p.style.display = 'none');
+
+            // Formulario Splash
             const formSplash = document.getElementById('splashForm');
             if (formSplash) {
                 formSplash.style.display = "flex";
-                // Insertar o actualizar aviso amigable si no existe
+                
+                // Crear / Actualizar el aviso bien visible y blanco
                 let avisoOp = document.getElementById('avisoFotoOpcional');
                 if (!avisoOp) {
                     avisoOp = document.createElement('div');
                     avisoOp.id = 'avisoFotoOpcional';
-                    avisoOp.style.cssText = "font-size:0.8rem; color:#cbd5e1; text-align:center; margin-bottom:10px;";
-                    avisoOp.textContent = "Foto opcional (ayuda a que el chófer te reconozca al llegar)";
                     formSplash.insertBefore(avisoOp, formSplash.firstChild);
                 }
+                
+                // Estilos para que resalte súper blanco y legible contra el mapa
+                avisoOp.style.cssText = "font-size: 0.9rem; font-weight: bold; color: #ffffff; text-align: center; margin: 8px 0 14px 0; text-shadow: 0px 2px 4px rgba(0,0,0,0.8); background: rgba(0,0,0,0.35); padding: 6px 12px; border-radius: 8px;";
+                avisoOp.textContent = "Foto opcional (ayuda a que el chófer te reconozca al llegar)";
             }
         }
     } catch (err) {
