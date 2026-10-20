@@ -242,6 +242,7 @@ function actualizarMarcadorChofer(registro) {
 
 // --- CARGA INICIAL Y ESCUCHA EN TIEMPO REAL DE LA TABLA 'conductores' ---
 async function iniciarEscuchaChoferesCercanos() {
+    // 1. Traer los choferes que YA están en línea al abrir la app
     try {
         const { data: choferesActivos, error } = await supabaseClient
             .from('conductores')
@@ -255,6 +256,7 @@ async function iniciarEscuchaChoferesCercanos() {
         }
     } catch (e) {}
 
+    // 2. Suscribirse a cambios futuros en tiempo real
     if (canalChoferesCercanos) supabaseClient.removeChannel(canalChoferesCercanos);
 
     canalChoferesCercanos = supabaseClient
@@ -275,6 +277,8 @@ function initMapa() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
     
     cargarPuntosLocales(); 
+
+    // Activamos la carga inicial y escucha en tiempo real de los choferes
     iniciarEscuchaChoferesCercanos();
 
     mapa.on('movestart', () => {
@@ -300,9 +304,6 @@ function toggleExpandirPanel() {
     }
 }
 
-// ==========================================================
-// REGISTRO Y BIENVENIDA CON VERIFICACIÓN DIRECTA EN SUPABASE
-// ==========================================================
 async function procesarSplashDeBienvenida() {
     try {
         await cargarTarifasDesdeSupabase();
@@ -317,47 +318,25 @@ async function procesarSplashDeBienvenida() {
             if(imgPrev) {
                 imgPrev.src = fotoGuardada;
                 imgPrev.style.display = "block";
-                const silueta = document.getElementById('siluetaOverlay');
-                if (silueta) silueta.style.opacity = "0";
+                document.getElementById('siluetaOverlay').style.opacity = "0";
             }
         }
 
         if (pasajeroNombre && pasajeroTelefono) {
-            document.getElementById('splashTitulo').textContent = `¡Hola, ${pasajeroNombre}!`;
+            document.getElementById('splashTitulo').textContent = `Hola, ${pasajeroNombre}`;
             await verificarViajeActivoPasajero();
             
             setTimeout(() => {
                 cerrarSplash(); 
                 if (!viajeId) obtenerGPS();
-            }, 1500);
+            }, 2000);
         } else {
-            const tituloSplash = document.getElementById('splashTitulo');
-            if (tituloSplash) tituloSplash.textContent = "¡Viajá con Seguridad! 🛡️";
-            
-            const subtitulosViejos = document.querySelectorAll('#splashScreen p, .splash-subtitle');
-            subtitulosViejos.forEach(p => p.style.display = 'none');
-
-            const formSplash = document.getElementById('splashForm');
-            if (formSplash) {
-                formSplash.style.display = "flex";
-                
-                let avisoOp = document.getElementById('avisoFotoOpcional');
-                if (!avisoOp) {
-                    avisoOp = document.createElement('div');
-                    avisoOp.id = 'avisoFotoOpcional';
-                    formSplash.insertBefore(avisoOp, formSplash.firstChild);
-                }
-                
-                avisoOp.style.cssText = "font-size: 0.9rem; font-weight: bold; color: #ffffff; text-align: center; margin: 8px 0 14px 0; text-shadow: 0px 2px 4px rgba(0,0,0,0.8); background: rgba(0,0,0,0.35); padding: 6px 12px; border-radius: 8px;";
-                avisoOp.textContent = "Foto opcional (ayuda a que el chófer te reconozca al llegar)";
-            }
+            document.getElementById('splashTitulo').textContent = "¡Viajá con Seguridad! 🛡️";
+            document.getElementById('splashForm').style.display = "flex";
         }
     } catch (err) {
-        const tituloSplash = document.getElementById('splashTitulo');
-        if (tituloSplash) tituloSplash.textContent = "¡Bienvenido!";
-        
-        const formSplash = document.getElementById('splashForm');
-        if (formSplash) formSplash.style.display = "flex";
+        document.getElementById('splashTitulo').textContent = "¡Bienvenido!";
+        document.getElementById('splashForm').style.display = "flex";
     }
 }
 
@@ -425,77 +404,60 @@ function procesarArchivoSelfie(file) {
     reader.readAsDataURL(file);
 }
 
+// -------------------------------------------------------------------------
+// FUNCIÓN CORREGIDA: FOTO OPCIONAL + CONEXIÓN DIRECTA CON SUPABASE Y EL ADMIN
+// -------------------------------------------------------------------------
 async function guardarRegistroPerfil() {
-    const nomElem = document.getElementById('regNombre');
-    const telElem = document.getElementById('regTelefono');
+    const nom = document.getElementById('regNombre').value.trim();
+    const tel = document.getElementById('regTelefono').value.trim();
     
-    let nom = nomElem ? nomElem.value.trim() : "";
-    let telBruto = telElem ? telElem.value.trim() : "";
-    let tel = telBruto.replace(/\D/g, ''); // Limpiamos espacios y guiones
-    
-    if (!tel) { 
-        alert("Por favor ingresá tu número de WhatsApp para comenzar."); 
+    if (!nom || !tel) { 
+        alert("Por favor completa tu nombre y número de teléfono."); 
         return; 
     }
+    
+    const fotoFinal = pasajeroBase64Foto || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
 
     try {
-        // 1. CONSULTA DIRECTA A SUPABASE (El servidor manda)
-        const { data: usuarioEnSupabase, error } = await supabaseClient
+        // 1. Verificamos primero en Supabase si el número ya existe para evitar duplicados
+        const { data: usuarioExistente } = await supabaseClient
             .from('perfiles_usuarios')
             .select('*')
             .eq('telefono', tel)
             .maybeSingle();
 
-        if (usuarioEnSupabase) {
-            // 2. ¡Supabase dio el OK! El usuario ya existe en la nube
-            pasajeroNombre = usuarioEnSupabase.nombre;
-            pasajeroTelefono = usuarioEnSupabase.telefono;
-            pasajeroBase64Foto = usuarioEnSupabase.foto || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
-
-            localStorage.setItem('perfil_nombre', pasajeroNombre); 
-            localStorage.setItem('perfil_telefono', pasajeroTelefono);
-            localStorage.setItem('perfil_foto', pasajeroBase64Foto);
-
-            mostrarMsg(`¡Hola de nuevo, ${pasajeroNombre}!`, 'success');
-            cerrarSplash(); 
-            obtenerGPS();
-            return;
+        if (usuarioExistente) {
+            pasajeroNombre = usuarioExistente.nombre;
+            pasajeroTelefono = usuarioExistente.telefono;
+            pasajeroBase64Foto = usuarioExistente.foto || fotoFinal;
+        } else {
+            pasajeroNombre = nom;
+            pasajeroTelefono = tel;
+            pasajeroBase64Foto = fotoFinal;
         }
 
-        // 3. Si Supabase dice que NO existe, es un usuario nuevo de verdad
-        if (!nom) {
-            alert("Es tu primera vez usando la app. Por favor ingresá tu nombre y apellido.");
-            if (nomElem) nomElem.focus();
-            return;
-        }
+        // 2. Guardamos en el almacenamiento local del teléfono
+        localStorage.setItem('perfil_nombre', pasajeroNombre); 
+        localStorage.setItem('perfil_telefono', pasajeroTelefono);
+        localStorage.setItem('perfil_foto', pasajeroBase64Foto);
 
-        const fotoFinal = pasajeroBase64Foto || "https://images2.imgbox.com/39/3a/V39LpB1X_o.jpg";
-
-        // 4. Lo registramos por primera vez en Supabase
+        // 3. Sincronizamos de forma segura con Supabase para que el panel de administración lo vea al instante
         await supabaseClient
             .from('perfiles_usuarios')
-            .insert({
-                telefono: tel,
-                nombre: nom,
-                foto: fotoFinal,
-                tipo: 'pasajero'
-            });
-
-        pasajeroNombre = nom; 
-        pasajeroTelefono = tel;
-        pasajeroBase64Foto = fotoFinal;
-
-        localStorage.setItem('perfil_nombre', nom); 
-        localStorage.setItem('perfil_telefono', tel);
-        localStorage.setItem('perfil_foto', fotoFinal);
-        
-        cerrarSplash(); 
-        obtenerGPS();
+            .upsert({
+                telefono: pasajeroTelefono,
+                nombre: pasajeroNombre,
+                foto: pasajeroBase64Foto,
+                tipo: 'pasajero',
+                updated_at: new Date()
+            }, { onConflict: 'telefono' });
 
     } catch(e) {
-        console.error("Error al conectar con Supabase:", e);
-        alert("No se pudo verificar con el servidor. Comprobá tu conexión a internet.");
+        console.error("Error al sincronizar con Supabase:", e);
     }
+    
+    cerrarSplash(); 
+    obtenerGPS();
 }
 
 function cerrarSplash() { 
