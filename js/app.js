@@ -307,7 +307,8 @@ async function procesarSplashDeBienvenida() {
             }
         }
 
-        if (pasajeroNombre && pasajeroTelefono && pasajeroBase64Foto) {
+        // Si ya tiene nombre y teléfono guardados, avanza directo
+        if (pasajeroNombre && pasajeroTelefono) {
             const splashTitulo = document.getElementById('splashTitulo');
             if (splashTitulo) splashTitulo.textContent = `Hola, ${pasajeroNombre}`;
             
@@ -319,7 +320,18 @@ async function procesarSplashDeBienvenida() {
             }, 2000);
         } else {
             const splashTitulo = document.getElementById('splashTitulo');
-            if (splashTitulo) splashTitulo.textContent = "¡Foto y Datos!";
+            if (splashTitulo) splashTitulo.textContent = "¡Tus Datos y Seguridad!";
+            
+            // Texto claro, en blanco puro, negrita y con sombra para alta visibilidad
+            const subtituloSplash = document.getElementById('splashSubtitulo'); 
+            if (subtituloSplash) {
+                subtituloSplash.textContent = "Sube tu foto opcional para que el chofer te reconozca al instante.";
+                subtituloSplash.style.color = "#ffffff";
+                subtituloSplash.style.fontWeight = "bold";
+                subtituloSplash.style.opacity = "1";
+                subtituloSplash.style.textShadow = "0px 1px 3px rgba(0, 0, 0, 0.8)";
+            }
+
             const splashForm = document.getElementById('splashForm');
             if (splashForm) splashForm.style.display = "flex";
         }
@@ -391,20 +403,24 @@ function procesarArchivoSelfie(file) {
 async function guardarRegistroPerfil() {
     const nom = document.getElementById('regNombre')?.value.trim();
     const tel = document.getElementById('regTelefono')?.value.trim();
-    if (!pasajeroBase64Foto) { alert("Por favor toca el círculo para tomarte la selfie de seguridad."); return; }
-    if (!nom || !tel) { alert("Por favor completa tu nombre y teléfono."); return; }
+    
+    // Validamos únicamente que complete nombre y teléfono; la foto ya no es obligatoria
+    if (!nom || !tel) { 
+        alert("Por favor completa tu nombre y teléfono para continuar."); 
+        return; 
+    }
     
     try {
         localStorage.setItem('perfil_nombre', nom); 
         localStorage.setItem('perfil_telefono', tel);
-        localStorage.setItem('perfil_foto', pasajeroBase64Foto);
+        localStorage.setItem('perfil_foto', pasajeroBase64Foto || "");
 
         await supabaseClient
             .from('perfiles_usuarios')
             .upsert({
                 telefono: tel,
                 nombre: nom,
-                foto: pasajeroBase64Foto,
+                foto: pasajeroBase64Foto || "",
                 tipo: 'pasajero',
                 updated_at: new Date()
             }, { onConflict: 'telefono' });
@@ -425,6 +441,7 @@ function cerrarSplash() {
         setTimeout(() => splash.style.display = "none", 500); 
     }
 }
+
 /* ==========================================================================
  * MÓDULO DE VIAJES, SEGUIMIENTO EN TIEMPO REAL Y RUTAS
  * ========================================================================== */
