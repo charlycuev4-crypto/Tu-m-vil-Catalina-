@@ -1,5 +1,5 @@
 /* ==========================================================================
- * CONFIGURACIÓN & ESTADO GLOBAL (PASAJERO)
+ * CONFIGURACIÓN & ESTADO GLOBAL (PASAJERO) - SIN AUTO ESTÁTICO
  * ========================================================================== */
 const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbnFpdXZid3lncWhiYWJ2eHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODIyMzIsImV4cCI6MjA5NTA1ODIzMn0.wdnO33BVRtJ9-va3iqiAdWCttkAzpL5K1-b4vtyDvJA';
@@ -49,6 +49,7 @@ let marcadoresChoferesDisponibles = {};
 let canalChoferesCercanos = null;
 let audioLlegadaReproducido = false;
 let timeoutBusqueda = null;
+
 /* ==========================================================================
  * MÓDULO DE AUDIO, ALERTAS Y SÍNTESIS DE VOZ
  * ========================================================================== */
@@ -144,7 +145,9 @@ function hablarAnuncioPasajero(texto) {
 
 if ('speechSynthesis' in window) {
     window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
-}/* ==========================================================================
+}
+
+/* ==========================================================================
  * MÓDULO DE UTILIDADES, MAPA Y GEOLOCALIZACIÓN
  * ========================================================================== */
 async function cargarPuntosLocales() {
@@ -188,8 +191,10 @@ function esDiaDomingo() {
 }
 
 function actualizarMarcadorChofer(registro) {
-    if (!registro || !registro.en_linea || !registro.lat || !registro.lng) {
-        if (registro && marcadoresChoferesDisponibles[registro.id]) {
+    if (!registro || !registro.lat || !registro.lng) return;
+
+    if (registro.aprobado === false || registro.en_linea === false) {
+        if (marcadoresChoferesDisponibles[registro.id]) {
             mapa.removeLayer(marcadoresChoferesDisponibles[registro.id]);
             delete marcadoresChoferesDisponibles[registro.id];
         }
@@ -197,16 +202,18 @@ function actualizarMarcadorChofer(registro) {
     }
 
     const latLngChofer = [registro.lat, registro.lng];
-    const iconoEmoji = '🚗'; 
+    const tipoVehiculoChofer = registro.modelo && registro.modelo.toLowerCase().includes('moto') ? '🏍️' : '🚗';
 
     if (marcadoresChoferesDisponibles[registro.id]) {
         marcadoresChoferesDisponibles[registro.id].setLatLng(latLngChofer);
     } else {
         const iconoPersonalizado = L.divIcon({
             className: 'auto-conductor-ping',
-            html: `<div style="font-size: 22px; background: white; border-radius: 50%; padding: 3px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-align: center; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;">${iconoEmoji}</div>`,
-            iconSize: [34, 34],
-            iconAnchor: [17, 17]
+            html: `<div style="font-size: 18px; background: #1e293b; border: 2px solid #2cd44a; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.5);">
+                    ${tipoVehiculoChofer}
+                   </div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
         });
 
         marcadoresChoferesDisponibles[registro.id] = L.marker(latLngChofer, { 
@@ -220,7 +227,9 @@ async function iniciarEscuchaChoferesCercanos() {
         const { data: choferesActivos, error } = await supabaseClient
             .from('conductores')
             .select('*')
-            .eq('en_linea', true);
+            .eq('aprobado', true)
+            .not('lat', 'is', null)
+            .not('lng', 'is', null);
 
         if (!error && choferesActivos) {
             choferesActivos.forEach(chofer => actualizarMarcadorChofer(chofer));
@@ -238,7 +247,9 @@ async function iniciarEscuchaChoferesCercanos() {
             schema: 'public', 
             table: 'conductores' 
         }, payload => {
-            actualizarMarcadorChofer(payload.new);
+            if (payload.new) {
+                actualizarMarcadorChofer(payload.new);
+            }
         })
         .subscribe();
 }
@@ -258,6 +269,7 @@ function initMapa() {
         if (modoDestinoManual) marcarDestinoManual(e.latlng.lat, e.latlng.lng); 
     });
 }
+
 /* ==========================================================================
  * MÓDULO DE TARIFAS, PERFIL Y SPLASH SCREEN
  * ========================================================================== */
@@ -307,7 +319,6 @@ async function procesarSplashDeBienvenida() {
             }
         }
 
-        // Si ya tiene nombre y teléfono guardados, avanza directo
         if (pasajeroNombre && pasajeroTelefono) {
             const splashTitulo = document.getElementById('splashTitulo');
             if (splashTitulo) splashTitulo.textContent = `Hola, ${pasajeroNombre}`;
@@ -322,7 +333,6 @@ async function procesarSplashDeBienvenida() {
             const splashTitulo = document.getElementById('splashTitulo');
             if (splashTitulo) splashTitulo.textContent = "¡Tus Datos y Seguridad!";
             
-            // Texto claro, en blanco puro, negrita y con sombra para alta visibilidad
             const subtituloSplash = document.getElementById('splashSubtitulo'); 
             if (subtituloSplash) {
                 subtituloSplash.textContent = "Sube tu foto opcional para que el chofer te reconozca al instante.";
@@ -404,7 +414,6 @@ async function guardarRegistroPerfil() {
     const nom = document.getElementById('regNombre')?.value.trim();
     const tel = document.getElementById('regTelefono')?.value.trim();
     
-    // Validamos únicamente que complete nombre y teléfono; la foto ya no es obligatoria
     if (!nom || !tel) { 
         alert("Por favor completa tu nombre y teléfono para continuar."); 
         return; 
@@ -686,8 +695,11 @@ function obtenerGPS() {
 }
 
 function usarUbicacionDefault() { 
-    marcarOrigen(UBICACION_DEFAULT[0], UBICACION_DEFAULT[1], "Ubicación predeterminada"); 
-    mapa.setView(UBICACION_DEFAULT, 16); 
+    // Ajustado para posicionar la vista por defecto SIN fijar un auto estático
+    origenCoords = { lat: UBICACION_DEFAULT[0], lng: UBICACION_DEFAULT[1] }; 
+    mapa.setView(UBICACION_DEFAULT, 15); 
+    const origenDisplay = document.getElementById('origenDisplay');
+    if (origenDisplay) origenDisplay.value = "San Miguel (Presioná 🎯 para tu ubicación)";
 }
 
 async function recalcularRutaYPrecio(puntoOrigenPersonalizado = null) {
@@ -766,11 +778,6 @@ async function solicitarViaje() {
         return; 
     }
 
-    if (origenCoords.lat === UBICACION_DEFAULT[0] && origenCoords.lng === UBICACION_DEFAULT[1]) {
-        mostrarMsg('Por favor presiona el botón de GPS (🎯) para obtener tu ubicación exacta antes de pedir.', 'error');
-        return;
-    }
-
     try {
         let precioFinalACobrar = precioCalculado;
         let esDescuentoFidelidad = false;
@@ -846,6 +853,7 @@ async function cancelarViaje() {
 function volverAtras() { 
     cancelarViaje(); 
 }
+
 /* ==========================================================================
  * MÓDULO DE CHAT, AUTOCOMPLETADO E INICIALIZACIÓN
  * ========================================================================== */
@@ -1048,4 +1056,3 @@ window.addEventListener('DOMContentLoaded', () => {
     initMapa(); 
     procesarSplashDeBienvenida(); 
 });
-
