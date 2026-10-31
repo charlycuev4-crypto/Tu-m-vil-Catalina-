@@ -52,8 +52,9 @@ let ultimaLngRuta = 0;
 
 const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
 let mapa = null, markerChofer = null, markerOrigen = null, markerDestino = null;
-let rutaTrazadaUnica = null; 
-let choferCoords = null; // Iniciamos dinámico para no clavar coordenadas viejas
+let rutaTramoConductor = null; // Línea verde: Conductor -> Recogida
+let rutaTramoViaje = null;     // Línea naranja/azul: Recogida -> Destino
+let choferCoords = null; 
 let viajeActivo = null;
 let estadoFlujo = 'pendiente'; 
 
@@ -646,7 +647,8 @@ function rechazarViajeEntrante() {
 
     if (markerOrigen) { mapa.removeLayer(markerOrigen); markerOrigen = null; }
     if (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
-    if (rutaTrazadaUnica) { mapa.removeLayer(rutaTrazadaUnica); rutaTrazadaUnica = null; }
+    if (rutaTramoConductor) { mapa.removeLayer(rutaTramoConductor); rutaTramoConductor = null; }
+    if (rutaTramoViaje) { mapa.removeLayer(rutaTramoViaje); rutaTramoViaje = null; }
 
     viajeActivo = null; estadoFlujo = 'pendiente';
     document.getElementById('vistaViaje')?.classList.add('hidden');
@@ -954,36 +956,87 @@ async function actualizarRutaInteligenteChofer() {
     let destinoLat, destinoLng;
     let etiquetaTexto = "";
 
-    if (estadoFlujo === 'pendiente' || estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta') {
+    if (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta') {
         destinoLat = viajeActivo.origen_lat;
         destinoLng = viajeActivo.origen_lng;
         etiquetaTexto = "al pasajero";
-    } else {
+    } else if (estadoFlujo === 'en_viaje') {
         destinoLat = viajeActivo.destino_lat;
         destinoLng = viajeActivo.destino_lng;
         etiquetaTexto = "al destino";
     }
 
     try {
-        const url = `https://router.project-osrm.org/route/v1/driving/${choferCoords.lng},${choferCoords.lat};${destinoLng},${destinoLat}?overview=full&geometries=geojson`;
-        const res = await fetch(url);
-        const data = await res.json();
+        // Limpiar tramos anteriores
+        if (rutaTramoConductor) { mapa.removeLayer(rutaTramoConductor); rutaTramoConductor = null; }
+        if (rutaTramoViaje) { mapa.removeLayer(rutaTramoViaje); rutaTramoViaje = null; }
 
-        if (data.code === 'Ok' && data.routes.length > 0) {
-            let distanciaKm = data.routes[0].distance / 1000;
-            let minutos = Math.max(1, Math.round(data.routes[0].duration / 60));
+        if (estadoFlujo === 'pendiente') {
+            // === MODO OFERTA: TRAZAR DOBLE TRAYECTO (Conductor -> Recogida -> Destino) ===
+            
+            // 1. Tramo Conductor -> Recogida (Línea verde punteada)
+            const urlConductorAPickup = `https://router.project-osrm.org/route/v1/driving/${choferCoords.lng},${choferCoords.lat};${viajeActivo.origen_lng},${viajeActivo.origen_lat}?overview=full&geometries=geojson`;
+            const res1 = await fetch(urlConductorAPickup);
+            const data1 = await res1.json();
 
-            if (rutaTrazadaUnica) mapa.removeLayer(rutaTrazadaUnica);
+            if (data1.code === 'Ok' && data1.routes.length > 0) {
+                rutaTramoConductor = L.polyline(data1.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { 
+                    color: '#22c55e', 
+                    weight: 5, 
+                    dashArray: '6, 6', 
+                    opacity: 0.8 
+                }).addTo(mapa);
+            }
 
-            rutaTrazadaUnica = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { 
-                color: '#22c55e', 
-                weight: 6, 
-                opacity: 0.9 
-            }).addTo(mapa);
+            // 2. Tramo Recogida -> Destino Final (Línea naranja sólida)
+            const urlPickupADestino = `https://router.project-osrm.org/route/v1/driving/${viajeActivo.origen_lng},${viajeActivo.origen_lat};${viajeActivo.destino_lng},${viajeActivo.destino_lat}?overview=full&geometries=geojson`;
+            const res2 = await fetch(urlPickupADestino);
+            const data2 = await res2.json();
 
-            let cajaMetricas = document.getElementById('cajaMetricasRuta');
-            if (cajaMetricas) {
-                cajaMetricas.innerHTML = `<span>🕒 <b>${minutos} min</b> (${distanciaKm.toFixed(1)} km ${etiquetaTexto}) 🧭</span>`;
+            if (data2.code === 'Ok' && data2.routes.length > 0) {
+                let distanciaKm = (data2.routes[0].distance / 1000);
+                let minutos = Math.max(1, Math.round(data2.routes[0].duration / 60));
+
+                rutaTramoViaje = L.polyline(data2.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { 
+                    color: '#ff5722', 
+                    weight: 6, 
+                    opacity: 0.9 
+                }).addTo(mapa);
+
+                let cajaMetricas = document.getElementById('cajaMetricasRuta');
+                if (cajaMetricas) {
+                    cajaMetricas.innerHTML = `<span>🕒 <b>Viaje: ${minutos} min</b> (${distanciaKm.toFixed(1)} km) 🧭</span>`;
+                }
+
+                // Ajustar zoom para mostrar los 3 puntos a la vez (Chofer, Recogida, Destino)
+                const bounds = L.latLngBounds([
+                    [choferCoords.lat, choferCoords.lng],
+                    [viajeActivo.origen_lat, viajeActivo.origen_lng],
+                    [viajeActivo.destino_lat, viajeActivo.destino_lng]
+                ]);
+                mapa.fitBounds(bounds, { padding: [60, 60] });
+            }
+
+        } else {
+            // === MODO EN CURSO (Una vez aceptado el viaje) ===
+            const url = `https://router.project-osrm.org/route/v1/driving/${choferCoords.lng},${choferCoords.lat};${destinoLng},${destinoLat}?overview=full&geometries=geojson`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.code === 'Ok' && data.routes.length > 0) {
+                let distanciaKm = data.routes[0].distance / 1000;
+                let minutos = Math.max(1, Math.round(data.routes[0].duration / 60));
+
+                rutaTramoViaje = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { 
+                    color: '#22c55e', 
+                    weight: 6, 
+                    opacity: 0.9 
+                }).addTo(mapa);
+
+                let cajaMetricas = document.getElementById('cajaMetricasRuta');
+                if (cajaMetricas) {
+                    cajaMetricas.innerHTML = `<span>🕒 <b>${minutos} min</b> (${distanciaKm.toFixed(1)} km ${etiquetaTexto}) 🧭</span>`;
+                }
             }
         }
     } catch (e) {}
