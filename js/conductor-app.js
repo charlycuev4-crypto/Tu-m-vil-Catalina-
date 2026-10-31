@@ -52,8 +52,8 @@ let ultimaLngRuta = 0;
 
 const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
 let mapa = null, markerChofer = null, markerOrigen = null, markerDestino = null;
-let rutaTramoConductor = null; // Línea verde: Conductor -> Recogida
-let rutaTramoViaje = null;     // Línea naranja: Recogida -> Destino
+let rutaTramoConductor = null; 
+let rutaTramoViaje = null;     
 let choferCoords = null; 
 let viajeActivo = null;
 let estadoFlujo = 'pendiente'; 
@@ -303,7 +303,6 @@ function initMapa(latInicial = ESTACION_SAN_MIGUEL[0], lngInicial = ESTACION_SAN
     });
 }
 
-// GPS DINÁMICO EN TIEMPO REAL CON ACTUALIZACIÓN CONSTANTE EN SUPABASE
 function iniciarRastreoGpsContinuo() {
     if (idRastreadorGps) return;
     if (navigator.geolocation) {
@@ -399,10 +398,14 @@ async function escucharNuevosViajes() {
         } catch (e) { return; }
     }
 
-    if (canalSupabase) return;
+    if (canalSupabase) {
+        supabaseClient.removeChannel(canalSupabase);
+        canalSupabase = null;
+    }
+    
     buscarViajesPendientesRecientes();
 
-    canalSupabase = supabaseClient.channel('despacho-chofer');
+    canalSupabase = supabaseClient.channel('despacho-chofer-' + Math.random());
     canalSupabase
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viajes' }, async (payload) => {
             const { data: chofer } = await supabaseClient.from('conductores').select('aprobado').eq('patente', localStorage.getItem('cfg_auto_patente')).single();
@@ -424,7 +427,11 @@ async function escucharNuevosViajes() {
                 setTimeout(() => location.reload(), 3000);
             }
         })
-        .subscribe();
+        .subscribe((status) => {
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                setTimeout(() => { if (estaConectado) escucharNuevosViajes(); }, 3000);
+            }
+        });
 }
 
 function toggleChatFlotante() {
@@ -546,15 +553,28 @@ async function conmutarEstadoConexion() {
             btnEspera.innerHTML = `<div class="ruedita-radar"></div>Buscando solicitudes (5 km)...`; 
             btnEspera.className = "btn-action btn-espera";
         }
-        solicitarWakeLock(); iniciarRastreoGpsContinuo(); escucharNuevosViajes();
+        solicitarWakeLock(); 
+        iniciarRastreoGpsContinuo(); 
+        escucharNuevosViajes();
         mantenerActivoSegundoPlano();
         buscarViajesPendientesRecientes();
+        
+        // Activar notificación fija en la barra de estado de Android
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ action: 'mostrarNotificacionFija' });
+        }
     } else {
         if (badge) { badge.textContent = "Fuera de Línea 🔴"; badge.className = "status-badge inactivo"; }
         if (btnEspera) { btnEspera.textContent = "Turno Pausado"; btnEspera.className = "btn-action btn-desconectado"; }
-        liberarWakeLock(); detenerRastreoGps(); 
+        liberarWakeLock(); 
+        detenerRastreoGps(); 
         if(silentAudioInterval) { clearInterval(silentAudioInterval); silentAudioInterval = null; }
         if(canalSupabase) { supabaseClient.removeChannel(canalSupabase); canalSupabase = null; }
+        
+        // Cerrar notificación fija de la barra de estado
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ action: 'cerrarNotificacionFija' });
+        }
     }
 }
 
@@ -789,7 +809,6 @@ async function procesarLojicaViaje() {
         }
 
         await actualizarRutaInteligenteChofer();
-        
         autocentrarMapa = true;
         document.getElementById('btnGpsCentro')?.classList.add('seguimiento-on');
         return;
@@ -809,6 +828,11 @@ async function procesarLojicaViaje() {
         limpiarMemoriaConductor(); liberarWakeLock(); detenerRastreoGps();
         if(silentAudioInterval) { clearInterval(silentAudioInterval); silentAudioInterval = null; }
         if(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); }
+        
+        // Cerrar notificación fija
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ action: 'cerrarNotificacionFija' });
+        }
         setTimeout(() => location.reload(), 2000);
     }
 }
@@ -967,14 +991,10 @@ async function actualizarRutaInteligenteChofer() {
     }
 
     try {
-        // Limpiar tramos anteriores
         if (rutaTramoConductor) { mapa.removeLayer(rutaTramoConductor); rutaTramoConductor = null; }
         if (rutaTramoViaje) { mapa.removeLayer(rutaTramoViaje); rutaTramoViaje = null; }
 
         if (estadoFlujo === 'pendiente') {
-            // === MODO OFERTA: TRAZAR DOBLE TRAYECTO (Conductor -> Recogida -> Destino) ===
-            
-            // 1. Tramo Conductor -> Recogida (Línea verde punteada)
             const urlConductorAPickup = `https://router.project-osrm.org/route/v1/driving/${choferCoords.lng},${choferCoords.lat};${viajeActivo.origen_lng},${viajeActivo.origen_lat}?overview=full&geometries=geojson`;
             const res1 = await fetch(urlConductorAPickup);
             const data1 = await res1.json();
@@ -988,7 +1008,6 @@ async function actualizarRutaInteligenteChofer() {
                 }).addTo(mapa);
             }
 
-            // 2. Tramo Recogida -> Destino Final (Línea naranja sólida)
             const urlPickupADestino = `https://router.project-osrm.org/route/v1/driving/${viajeActivo.origen_lng},${viajeActivo.origen_lat};${viajeActivo.destino_lng},${viajeActivo.destino_lat}?overview=full&geometries=geojson`;
             const res2 = await fetch(urlPickupADestino);
             const data2 = await res2.json();
@@ -1008,7 +1027,6 @@ async function actualizarRutaInteligenteChofer() {
                     cajaMetricas.innerHTML = `<span>🕒 <b>Viaje: ${minutos} min</b> (${distanciaKm.toFixed(1)} km) 🧭</span>`;
                 }
 
-                // Ajustar zoom para mostrar los 3 puntos a la vez (Chofer, Recogida, Destino)
                 const bounds = L.latLngBounds([
                     [choferCoords.lat, choferCoords.lng],
                     [viajeActivo.origen_lat, viajeActivo.origen_lng],
@@ -1018,7 +1036,6 @@ async function actualizarRutaInteligenteChofer() {
             }
 
         } else {
-            // === MODO EN CURSO (Una vez aceptado el viaje) ===
             const url = `https://router.project-osrm.org/route/v1/driving/${choferCoords.lng},${choferCoords.lat};${destinoLng},${destinoLat}?overview=full&geometries=geojson`;
             const res = await fetch(url);
             const data = await res.json();
@@ -1054,10 +1071,14 @@ function distanciaEnMetros(lat1, lon1, lat2, lon2) {
 
 function mostrarMsg(texto, tipo) { const msg = document.getElementById('msgChofer'); if(msg) { msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); } }
 
+// RECONEXIÓN AUTOMÁTICA AL VOLVER A PRIMER PLANO
 document.addEventListener('visibilitychange', async () => {
-    if (document.visibilityState === 'visible' && estaConectado) {
+    if (document.visibilityState === 'visible') {
         await solicitarWakeLock();
-        buscarViajesPendientesRecientes();
+        if (estaConectado) {
+            escucharNuevosViajes();
+            buscarViajesPendientesRecientes();
+        }
     }
 });
 
@@ -1065,9 +1086,7 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
             .then(reg => {
-                if (navigator.serviceWorker.controller) {
-                    navigator.serviceWorker.controller.postMessage({ action: 'mostrarNotificacionFija' });
-                }
+                console.log('Service Worker registrado correctamente.');
             })
             .catch(err => console.log('Error SW:', err));
     });
