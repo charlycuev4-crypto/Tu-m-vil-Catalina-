@@ -53,7 +53,7 @@ let ultimaLngRuta = 0;
 const ESTACION_SAN_MIGUEL = [-34.54291, -58.71212];
 let mapa = null, markerChofer = null, markerOrigen = null, markerDestino = null;
 let rutaTramoConductor = null; // Línea verde: Conductor -> Recogida
-let rutaTramoViaje = null;     // Línea naranja/azul: Recogida -> Destino
+let rutaTramoViaje = null;     // Línea naranja: Recogida -> Destino
 let choferCoords = null; 
 let viajeActivo = null;
 let estadoFlujo = 'pendiente'; 
