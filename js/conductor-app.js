@@ -559,7 +559,6 @@ async function conmutarEstadoConexion() {
         mantenerActivoSegundoPlano();
         buscarViajesPendientesRecientes();
         
-        // Activar notificación fija en la barra de estado de Android
         if (navigator.serviceWorker && navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({ action: 'mostrarNotificacionFija' });
         }
@@ -571,7 +570,6 @@ async function conmutarEstadoConexion() {
         if(silentAudioInterval) { clearInterval(silentAudioInterval); silentAudioInterval = null; }
         if(canalSupabase) { supabaseClient.removeChannel(canalSupabase); canalSupabase = null; }
         
-        // Cerrar notificación fija de la barra de estado
         if (navigator.serviceWorker && navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({ action: 'cerrarNotificacionFija' });
         }
@@ -829,7 +827,6 @@ async function procesarLojicaViaje() {
         if(silentAudioInterval) { clearInterval(silentAudioInterval); silentAudioInterval = null; }
         if(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); }
         
-        // Cerrar notificación fija
         if (navigator.serviceWorker && navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({ action: 'cerrarNotificacionFija' });
         }
@@ -991,6 +988,7 @@ async function actualizarRutaInteligenteChofer() {
     }
 
     try {
+        // Limpiar siempre las rutas anteriores para evitar que se acumulen líneas fantasmas
         if (rutaTramoConductor) { mapa.removeLayer(rutaTramoConductor); rutaTramoConductor = null; }
         if (rutaTramoViaje) { mapa.removeLayer(rutaTramoViaje); rutaTramoViaje = null; }
 
@@ -1055,6 +1053,11 @@ async function actualizarRutaInteligenteChofer() {
                     cajaMetricas.innerHTML = `<span>🕒 <b>${minutos} min</b> (${distanciaKm.toFixed(1)} km ${etiquetaTexto}) 🧭</span>`;
                 }
             }
+
+            // === CENTRADO ESTRICTO Y ZOOM 17 EN EL AUTO EN MODO ACTIVO ===
+            if (autocentrarMapa && mapa) {
+                mapa.setView([choferCoords.lat, choferCoords.lng], 17);
+            }
         }
     } catch (e) {}
 }
@@ -1071,7 +1074,6 @@ function distanciaEnMetros(lat1, lon1, lat2, lon2) {
 
 function mostrarMsg(texto, tipo) { const msg = document.getElementById('msgChofer'); if(msg) { msg.textContent = texto; msg.className = 'msg msg-' + tipo + ' show'; setTimeout(() => msg.classList.remove('show'), 4000); } }
 
-// RECONEXIÓN AUTOMÁTICA AL VOLVER A PRIMER PLANO
 document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'visible') {
         await solicitarWakeLock();
