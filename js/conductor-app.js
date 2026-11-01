@@ -420,11 +420,19 @@ async function escucharNuevosViajes() {
             }
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viajes' }, (payload) => {
+            // 1. Si el viaje activo fue cancelado
             if (viajeActivo && payload.new.id === viajeActivo.id && payload.new.estado === 'cancelado') {
                 detenerSirenaAlerta();
                 mostrarMsg('El pasajero canceló el viaje.', 'success');
                 limpiarMemoriaConductor();
                 setTimeout(() => location.reload(), 3000);
+            }
+
+            // 2. NUEVO: Si otro chofer aceptó el viaje que estaba sonando en mi pantalla como pendiente
+            if (!viajeActivo && estadoFlujo === 'pendiente' && payload.new.id && payload.new.conductor_nombre && payload.new.conductor_nombre !== NOMBRE_CHOFER) {
+                detenerSirenaAlerta();
+                mostrarMsg('El viaje ya fue tomado por otro colega.', 'success');
+                rechazarViajeEntrante(); // Limpia la pantalla y vuelve al radar
             }
         })
         .subscribe((status) => {
@@ -682,7 +690,7 @@ function rechazarViajeEntrante() {
     const btnChat = document.getElementById('btnAbrirChatFlotante');
     if (btnChat) btnChat.style.display = 'none';
 
-    mostrarMsg('Viaje rechazado. Buscando nuevos pasajeros...', 'success');
+    mostrarMsg('Buscando nuevos pasajeros...', 'success');
 }
 
 async function procesarLojicaViaje() {
@@ -988,7 +996,6 @@ async function actualizarRutaInteligenteChofer() {
     }
 
     try {
-        // Limpiar siempre las rutas anteriores para evitar que se acumulen líneas fantasmas
         if (rutaTramoConductor) { mapa.removeLayer(rutaTramoConductor); rutaTramoConductor = null; }
         if (rutaTramoViaje) { mapa.removeLayer(rutaTramoViaje); rutaTramoViaje = null; }
 
@@ -1054,7 +1061,6 @@ async function actualizarRutaInteligenteChofer() {
                 }
             }
 
-            // === CENTRADO ESTRICTO Y ZOOM 17 EN EL AUTO EN MODO ACTIVO ===
             if (autocentrarMapa && mapa) {
                 mapa.setView([choferCoords.lat, choferCoords.lng], 17);
             }
