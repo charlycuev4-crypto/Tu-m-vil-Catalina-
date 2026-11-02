@@ -1,5 +1,5 @@
 /* ==========================================================================
- * PLATAFORMA DE MOVILIDAD - CONDUCTOR APP (BASE ORIGINAL + BLOQUEO SEGURO)
+ * PLATAFORMA DE MOVILIDAD - CONDUCTOR APP (OPTIMIZADO Y SINCRONIZADO)
  * ========================================================================== */
 
 const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
@@ -428,11 +428,11 @@ async function escucharNuevosViajes() {
                 setTimeout(() => location.reload(), 3000);
             }
 
-            // 2. CORRECCIÓN CLAVE: Si otro chofer aceptó el viaje que estaba sonando en mi pantalla como pendiente
+            // 2. Si otro chofer aceptó el viaje que estaba sonando en mi pantalla como pendiente
             if (!viajeActivo && estadoFlujo === 'pendiente' && payload.new.id && payload.new.conductor_nombre && payload.new.conductor_nombre !== NOMBRE_CHOFER) {
                 detenerSirenaAlerta();
                 mostrarMsg('Este viaje ya fue tomado por otro colega.', 'success');
-                rechazarViajeEntrante(); // Limpia la pantalla y regresa al radar automáticamente
+                rechazarViajeEntrante(); // Limpia la pantalla, los marcadores y las líneas del mapa automáticamente
             }
         })
         .subscribe((status) => {
@@ -671,12 +671,15 @@ function rechazarViajeEntrante() {
     detenerSirenaAlerta();
     limpiarMemoriaConductor();
 
+    // LIMPIEZA TOTAL DE MAPA (Elimina marcadores y líneas de ruta anteriores)
     if (markerOrigen) { mapa.removeLayer(markerOrigen); markerOrigen = null; }
     if (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
     if (rutaTramoConductor) { mapa.removeLayer(rutaTramoConductor); rutaTramoConductor = null; }
     if (rutaTramoViaje) { mapa.removeLayer(rutaTramoViaje); rutaTramoViaje = null; }
 
-    viajeActivo = null; estadoFlujo = 'pendiente';
+    viajeActivo = null; 
+    estadoFlujo = 'pendiente';
+    
     document.getElementById('vistaViaje')?.classList.add('hidden');
     document.getElementById('vistaEspera')?.classList.remove('hidden');
     
@@ -686,7 +689,11 @@ function rechazarViajeEntrante() {
         panel.classList.remove('viaje-activo-estado');
     }
     
-    if(canalChatSupabase) { supabaseClient.removeChannel(canalChatSupabase); canalChatSupabase = null; }
+    if (canalChatSupabase) { 
+        supabaseClient.removeChannel(canalChatSupabase); 
+        canalChatSupabase = null; 
+    }
+    
     const btnChat = document.getElementById('btnAbrirChatFlotante');
     if (btnChat) btnChat.style.display = 'none';
 
@@ -699,7 +706,7 @@ async function procesarLojicaViaje() {
     if (estadoFlujo === 'pendiente') {
         detenerSirenaAlerta();
         try {
-            // CORRECCIÓN CLAVE: Validación atómica segura para que solo el primero que acepte se lo quede
+            // BLOQUEO ATÓMICO: Solo permite asignar si nadie más lo tomó antes
             const { data, error } = await supabaseClient
                 .from('viajes')
                 .update({ 
@@ -717,7 +724,7 @@ async function procesarLojicaViaje() {
             if (!data || data.length === 0) {
                 detenerSirenaAlerta();
                 alert("⚠️ Este viaje ya fue tomado por otro colega.");
-                rechazarViajeEntrante(); // Limpia la pantalla y lo devuelve al radar
+                rechazarViajeEntrante(); // Limpia la pantalla y elimina las líneas del mapa
                 return;
             }
             
