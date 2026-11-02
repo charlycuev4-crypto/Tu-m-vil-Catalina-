@@ -428,10 +428,10 @@ async function escucharNuevosViajes() {
                 setTimeout(() => location.reload(), 3000);
             }
 
-            // 2. Si otro chofer aceptó el viaje que estaba sonando en mi pantalla como pendiente
+            // 2. NUEVO Y SEGURO: Si otro chofer aceptó el viaje que estaba sonando en mi pantalla
             if (!viajeActivo && estadoFlujo === 'pendiente' && payload.new.id && payload.new.conductor_nombre && payload.new.conductor_nombre !== NOMBRE_CHOFER) {
                 detenerSirenaAlerta();
-                mostrarMsg('Este viaje ya fue tomado por otro conductor.', 'success');
+                mostrarMsg('El viaje ya fue tomado por otro colega.', 'success');
                 rechazarViajeEntrante(); // Limpia la pantalla y vuelve al radar automáticamente
             }
         })
@@ -699,7 +699,7 @@ async function procesarLojicaViaje() {
     if (estadoFlujo === 'pendiente') {
         detenerSirenaAlerta();
         try {
-            // ACTUALIZACIÓN ATÓMICA: Solo asigna si 'conductor_nombre' es nulo
+            // BLOQUEO ATÓMICO: Solo actualiza si nadie más lo tomó antes (.is('conductor_nombre', null))
             const { data, error } = await supabaseClient
                 .from('viajes')
                 .update({ 
@@ -714,11 +714,11 @@ async function procesarLojicaViaje() {
 
             if (error) throw error;
 
-            // Si data está vacío, significa que otro colega se te adelantó por milisegundos
+            // Si data está vacío, significa que otro colega se adelantó
             if (!data || data.length === 0) {
                 detenerSirenaAlerta();
-                alert("⚠️ Este viaje ya fue tomado por otro conductor.");
-                rechazarViajeEntrante(); // Limpia la pantalla y vuelve al radar
+                alert("⚠️ Este viaje ya fue tomado por otro colega.");
+                rechazarViajeEntrante();
                 return;
             }
             
@@ -753,10 +753,7 @@ async function procesarLojicaViaje() {
             if (choferCoords && mapa) mapa.setView([choferCoords.lat, choferCoords.lng], 17);
 
             await actualizarRutaInteligenteChofer();
-        } catch (e) { 
-            console.error(e);
-            location.reload(); 
-        }
+        } catch (e) { location.reload(); }
         return;
     }
 
