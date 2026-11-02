@@ -1,5 +1,5 @@
 /* ==========================================================================
- * PLATAFORMA DE MOVILIDAD - CONDUCTOR APP (OPTIMIZADO Y SINCRONIZADO)
+ * PLATAFORMA DE MOVILIDAD - CONDUCTOR APP (BASE ORIGINAL + BLOQUEO SEGURO)
  * ========================================================================== */
 
 const SUPABASE_URL = 'https://hinqiuvbwygqhbabvxrc.supabase.co';
@@ -428,11 +428,11 @@ async function escucharNuevosViajes() {
                 setTimeout(() => location.reload(), 3000);
             }
 
-            // 2. NUEVO: Si otro chofer aceptó el viaje que estaba sonando en mi pantalla como pendiente
+            // 2. CORRECCIÓN CLAVE: Si otro chofer aceptó el viaje que estaba sonando en mi pantalla como pendiente
             if (!viajeActivo && estadoFlujo === 'pendiente' && payload.new.id && payload.new.conductor_nombre && payload.new.conductor_nombre !== NOMBRE_CHOFER) {
                 detenerSirenaAlerta();
-                mostrarMsg('El viaje ya fue tomado por otro colega.', 'success');
-                rechazarViajeEntrante(); // Limpia la pantalla y vuelve al radar
+                mostrarMsg('Este viaje ya fue tomado por otro colega.', 'success');
+                rechazarViajeEntrante(); // Limpia la pantalla y regresa al radar automáticamente
             }
         })
         .subscribe((status) => {
@@ -699,12 +699,27 @@ async function procesarLojicaViaje() {
     if (estadoFlujo === 'pendiente') {
         detenerSirenaAlerta();
         try {
-            const { error } = await supabaseClient.from('viajes').update({ 
-                conductor_nombre: NOMBRE_CHOFER, 
-                conductor_auto: AUTO_CHOFER,
-                conductor_foto: FOTO_CHOFER 
-            }).eq('id', viajeActivo.id);
+            // CORRECCIÓN CLAVE: Validación atómica segura para que solo el primero que acepte se lo quede
+            const { data, error } = await supabaseClient
+                .from('viajes')
+                .update({ 
+                    conductor_nombre: NOMBRE_CHOFER, 
+                    conductor_auto: AUTO_CHOFER,
+                    conductor_foto: FOTO_CHOFER 
+                })
+                .eq('id', viajeActivo.id)
+                .is('conductor_nombre', null)
+                .select();
+
             if (error) throw error;
+
+            // Si data está vacío, significa que otro colega se te adelantó por milisegundos
+            if (!data || data.length === 0) {
+                detenerSirenaAlerta();
+                alert("⚠️ Este viaje ya fue tomado por otro colega.");
+                rechazarViajeEntrante(); // Limpia la pantalla y lo devuelve al radar
+                return;
+            }
             
             estadoFlujo = 'aceptado';
             localStorage.setItem('conductor_viaje_id', viajeActivo.id);
