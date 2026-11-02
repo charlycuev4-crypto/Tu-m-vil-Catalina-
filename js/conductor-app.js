@@ -1127,4 +1127,4 @@ window.addEventListener('DOMContentLoaded', () => {
         await verificarViajeActivoConductor(); 
         await buscarViajesPendientesRecientes(); 
     }, 1000);
-} Bueno, este es el código original. Cuando hicimos las actualizaciones ya el código pasajero, pasajero, ya no, etcétera, etcétera, etcétera, que se solicitó ya poco.
+});
