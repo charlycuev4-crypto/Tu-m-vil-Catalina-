@@ -428,11 +428,11 @@ async function escucharNuevosViajes() {
                 setTimeout(() => location.reload(), 3000);
             }
 
-            // 2. NUEVO Y SEGURO: Si otro chofer aceptó el viaje que estaba sonando en mi pantalla
+            // 2. NUEVO: Si otro chofer aceptó el viaje que estaba sonando en mi pantalla como pendiente
             if (!viajeActivo && estadoFlujo === 'pendiente' && payload.new.id && payload.new.conductor_nombre && payload.new.conductor_nombre !== NOMBRE_CHOFER) {
                 detenerSirenaAlerta();
                 mostrarMsg('El viaje ya fue tomado por otro colega.', 'success');
-                rechazarViajeEntrante(); // Limpia la pantalla y vuelve al radar automáticamente
+                rechazarViajeEntrante(); // Limpia la pantalla y vuelve al radar
             }
         })
         .subscribe((status) => {
@@ -699,28 +699,12 @@ async function procesarLojicaViaje() {
     if (estadoFlujo === 'pendiente') {
         detenerSirenaAlerta();
         try {
-            // BLOQUEO ATÓMICO: Solo actualiza si nadie más lo tomó antes (.is('conductor_nombre', null))
-            const { data, error } = await supabaseClient
-                .from('viajes')
-                .update({ 
-                    conductor_nombre: NOMBRE_CHOFER, 
-                    conductor_auto: AUTO_CHOFER,
-                    conductor_foto: FOTO_CHOFER,
-                    estado: 'aceptado'
-                })
-                .eq('id', viajeActivo.id)
-                .is('conductor_nombre', null)
-                .select();
-
+            const { error } = await supabaseClient.from('viajes').update({ 
+                conductor_nombre: NOMBRE_CHOFER, 
+                conductor_auto: AUTO_CHOFER,
+                conductor_foto: FOTO_CHOFER 
+            }).eq('id', viajeActivo.id);
             if (error) throw error;
-
-            // Si data está vacío, significa que otro colega se adelantó
-            if (!data || data.length === 0) {
-                detenerSirenaAlerta();
-                alert("⚠️ Este viaje ya fue tomado por otro colega.");
-                rechazarViajeEntrante();
-                return;
-            }
             
             estadoFlujo = 'aceptado';
             localStorage.setItem('conductor_viaje_id', viajeActivo.id);
@@ -1143,4 +1127,4 @@ window.addEventListener('DOMContentLoaded', () => {
         await verificarViajeActivoConductor(); 
         await buscarViajesPendientesRecientes(); 
     }, 1000);
-});
+} Bueno, este es el código original. Cuando hicimos las actualizaciones ya el código pasajero, pasajero, ya no, etcétera, etcétera, etcétera, que se solicitó ya poco.
