@@ -309,12 +309,27 @@ function iniciarRastreoGpsContinuo() {
         idRastreadorGps = navigator.geolocation.watchPosition(async (pos) => {
             const nuevaLat = pos.coords.latitude;
             const nuevaLng = pos.coords.longitude;
+            const rumbo = pos.coords.heading; // Dirección de marcha en grados (0 a 360)
+            
             choferCoords = { lat: nuevaLat, lng: nuevaLng };
             
-            if (markerChofer) markerChofer.setLatLng([nuevaLat, nuevaLng]);
+            if (markerChofer) {
+                markerChofer.setLatLng([nuevaLat, nuevaLng]);
+                
+                // Rotar el ícono del auto según hacia dónde apunta el GPS
+                if (rumbo !== null && !isNaN(rumbo)) {
+                    const elementoIcono = markerChofer.getElement();
+                    if (elementoIcono) {
+                        // Aplicamos rotación manteniendo el centrado del icono
+                        const innerIcon = elementoIcono.querySelector('div') || elementoIcono;
+                        innerIcon.style.transform = `rotate(${rumbo}deg)`;
+                        innerIcon.style.transformOrigin = 'center center';
+                    }
+                }
+            }
 
             if (autocentrarMapa && mapa) {
-                let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
+                let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 17;
                 mapa.setView([nuevaLat, nuevaLng], zoomActual);
                 document.getElementById('btnGpsCentro')?.classList.add('seguimiento-on');
             }
@@ -348,6 +363,7 @@ function iniciarRastreoGpsContinuo() {
         }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
     }
 }
+
 
 function detenerRastreoGps() {
     if (idRastreadorGps) { navigator.geolocation.clearWatch(idRastreadorGps); idRastreadorGps = null; }
