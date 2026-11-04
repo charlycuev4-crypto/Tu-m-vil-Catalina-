@@ -725,7 +725,7 @@ function rechazarViajeEntrante() {
     detenerSirenaAlerta();
     limpiarMemoriaConductor();
 
-    // LIMPIEZA TOTAL DE MAPA (Elimina marcadores y líneas de ruta anteriores)
+    // LIMPIEZA TOTAL DEL MAPA (Elimina marcadores y rutas anteriores)
     if (markerOrigen) { mapa.removeLayer(markerOrigen); markerOrigen = null; }
     if (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
     if (rutaTramoConductor) { mapa.removeLayer(rutaTramoConductor); rutaTramoConductor = null; }
@@ -753,6 +753,7 @@ function rechazarViajeEntrante() {
 
     mostrarMsg('Buscando nuevos pasajeros...', 'success');
 }
+
 
 async function procesarLojicaViaje() {
     const panel = document.getElementById('panelConductor');
