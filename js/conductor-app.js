@@ -291,7 +291,7 @@ function initMapa(latInicial = ESTACION_SAN_MIGUEL[0], lngInicial = ESTACION_SAN
         return;
     }
 
-    mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView([latInicial, lngInicial], 15);
+    mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView([latInicial, lngInicial], 20);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
     
     const iconoAuto = L.divIcon({ className: 'chofer-auto-icon', html: '🚗', iconSize: [38, 38], iconAnchor: [19, 19] });
@@ -309,31 +309,13 @@ function iniciarRastreoGpsContinuo() {
         idRastreadorGps = navigator.geolocation.watchPosition(async (pos) => {
             const nuevaLat = pos.coords.latitude;
             const nuevaLng = pos.coords.longitude;
-            const rumbo = pos.coords.heading; // Dirección de marcha en grados (0 a 360)
-            
             choferCoords = { lat: nuevaLat, lng: nuevaLng };
             
-            if (markerChofer) {
-                markerChofer.setLatLng([nuevaLat, nuevaLng]);
-                
-                // Rotar el ícono del auto suavemente según hacia dónde apunta el GPS
-                if (rumbo !== null && !isNaN(rumbo)) {
-                    const elementoIcono = markerChofer.getElement();
-                    if (elementoIcono) {
-                        const innerIcon = elementoIcono.querySelector('div') || elementoIcono;
-                        innerIcon.style.transform = `rotate(${rumbo}deg)`;
-                        innerIcon.style.transformOrigin = 'center center';
-                    }
-                }
-            }
+            if (markerChofer) markerChofer.setLatLng([nuevaLat, nuevaLng]);
 
-            // CORRECCIÓN DE SALTOS: Usamos panTo con animación fluida en lugar de setView brusco
             if (autocentrarMapa && mapa) {
-                let zoomDeseado = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 17;
-                
-                // Si el mapa ya está inicializado, movemos suavemente sin dar saltos molestos
-                mapa.panTo([nuevaLat, nuevaLng], { animate: true, duration: 0.5 });
-                
+                let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
+                mapa.setView([nuevaLat, nuevaLng], zoomActual);
                 document.getElementById('btnGpsCentro')?.classList.add('seguimiento-on');
             }
 
@@ -366,8 +348,6 @@ function iniciarRastreoGpsContinuo() {
         }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
     }
 }
-
-
 
 function detenerRastreoGps() {
     if (idRastreadorGps) { navigator.geolocation.clearWatch(idRastreadorGps); idRastreadorGps = null; }
