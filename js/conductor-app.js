@@ -303,6 +303,60 @@ function initMapa(latInicial = ESTACION_SAN_MIGUEL[0], lngInicial = ESTACION_SAN
     });
 }
 
+async function actualizarRutaInteligenteChofer() {
+    if (!viajeActivo || !choferCoords) return;
+
+    let destinoLat, destinoLng;
+    let etiquetaTexto = "";
+
+    if (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta') {
+        destinoLat = viajeActivo.origen_lat;
+        destinoLng = viajeActivo.origen_lng;
+        etiquetaTexto = "al pasajero";
+    } else if (estadoFlujo === 'en_viaje') {
+        destinoLat = viajeActivo.destino_lat;
+        destinoLng = viajeActivo.destino_lng;
+        etiquetaTexto = "al destino";
+    }
+
+    try {
+        // Limpiamos siempre las líneas anteriores para evitar que se encimen rojo y verde
+        if (rutaTramoConductor) { mapa.removeLayer(rutaTramoConductor); rutaTramoConductor = null; }
+        if (rutaTramoViaje) { mapa.removeLayer(rutaTramoViaje); rutaTramoViaje = null; }
+
+        if (estadoFlujo === 'pendiente') {
+            // Opcional para pendiente...
+        } else {
+            // Dibujamos una sola línea clara y limpia hacia el objetivo actual
+            const url = `https://router.project-osrm.org/route/v1/driving/${choferCoords.lng},${choferCoords.lat};${destinoLng},${destinoLat}?overview=full&geometries=geojson`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.code === 'Ok' && data.routes.length > 0) {
+                let distanciaKm = data.routes[0].distance / 1000;
+                let minutos = Math.max(1, Math.round(data.routes[0].duration / 60));
+
+                // Usamos un color único bien visible (ej: verde esmeralda o azul) para evitar confusiones de doble línea
+                rutaTramoViaje = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { 
+                    color: '#22c55e', 
+                    weight: 6, 
+                    opacity: 0.9 
+                }).addTo(mapa);
+
+                let cajaMetricas = document.getElementById('cajaMetricasRuta');
+                if (cajaMetricas) {
+                    cajaMetricas.innerHTML = `<span>🕒 <b>${minutos} min</b> (${distanciaKm.toFixed(1)} km ${etiquetaTexto}) 🧭</span>`;
+                }
+            }
+
+            // Mantiene el mapa siempre centrado en el auto automáticamente
+            if (autocentrarMapa && mapa) {
+                mapa.setView([choferCoords.lat, choferCoords.lng], 17);
+            }
+        }
+    } catch (e) {}
+}
+
 function iniciarRastreoGpsContinuo() {
     if (idRastreadorGps) return;
     if (navigator.geolocation) {
@@ -313,10 +367,9 @@ function iniciarRastreoGpsContinuo() {
             
             if (markerChofer) markerChofer.setLatLng([nuevaLat, nuevaLng]);
 
-            if (autocentrarMapa && mapa) {
-                let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 15;
-                mapa.setView([nuevaLat, nuevaLng], zoomActual);
-                document.getElementById('btnGpsCentro')?.classList.add('seguimiento-on');
+            // CENTRADO OBLIGATORIO: Evita que el auto se salga de la pantalla
+            if (mapa) {
+                mapa.setView([nuevaLat, nuevaLng], 17);
             }
 
             if (viajeActivo && viajeActivo.id) {
@@ -348,6 +401,7 @@ function iniciarRastreoGpsContinuo() {
         }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
     }
 }
+
 
 function detenerRastreoGps() {
     if (idRastreadorGps) { navigator.geolocation.clearWatch(idRastreadorGps); idRastreadorGps = null; }
