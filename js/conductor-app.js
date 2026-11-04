@@ -291,7 +291,7 @@ function initMapa(latInicial = ESTACION_SAN_MIGUEL[0], lngInicial = ESTACION_SAN
         return;
     }
 
-    mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView([latInicial, lngInicial], 20);
+    mapa = L.map('mapaLeaflet', { zoomControl: false, attributionControl: false }).setView([latInicial, lngInicial], 15);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
     
     const iconoAuto = L.divIcon({ className: 'chofer-auto-icon', html: '🚗', iconSize: [38, 38], iconAnchor: [19, 19] });
