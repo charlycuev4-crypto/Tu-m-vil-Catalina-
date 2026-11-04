@@ -316,11 +316,10 @@ function iniciarRastreoGpsContinuo() {
             if (markerChofer) {
                 markerChofer.setLatLng([nuevaLat, nuevaLng]);
                 
-                // Rotar el ícono del auto según hacia dónde apunta el GPS
+                // Rotar el ícono del auto suavemente según hacia dónde apunta el GPS
                 if (rumbo !== null && !isNaN(rumbo)) {
                     const elementoIcono = markerChofer.getElement();
                     if (elementoIcono) {
-                        // Aplicamos rotación manteniendo el centrado del icono
                         const innerIcon = elementoIcono.querySelector('div') || elementoIcono;
                         innerIcon.style.transform = `rotate(${rumbo}deg)`;
                         innerIcon.style.transformOrigin = 'center center';
@@ -328,9 +327,13 @@ function iniciarRastreoGpsContinuo() {
                 }
             }
 
+            // CORRECCIÓN DE SALTOS: Usamos panTo con animación fluida en lugar de setView brusco
             if (autocentrarMapa && mapa) {
-                let zoomActual = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 17;
-                mapa.setView([nuevaLat, nuevaLng], zoomActual);
+                let zoomDeseado = (estadoFlujo !== 'pendiente' && viajeActivo) ? 17 : 17;
+                
+                // Si el mapa ya está inicializado, movemos suavemente sin dar saltos molestos
+                mapa.panTo([nuevaLat, nuevaLng], { animate: true, duration: 0.5 });
+                
                 document.getElementById('btnGpsCentro')?.classList.add('seguimiento-on');
             }
 
@@ -363,6 +366,7 @@ function iniciarRastreoGpsContinuo() {
         }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
     }
 }
+
 
 
 function detenerRastreoGps() {
