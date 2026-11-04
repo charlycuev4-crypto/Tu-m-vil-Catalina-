@@ -61,7 +61,7 @@ let estadoFlujo = 'pendiente';
 function mantenerActivoSegundoPlano() {
     if (silentAudioInterval) return;
     silentAudioInterval = setInterval(() => {
-        if (!estaConectado) return;
+        if (!estaConectado || viajeActivo) return; // Pausa sondeos si ya está en viaje
         forzarHabilitacionAudio();
         if (audioCtx) {
             try {
@@ -320,14 +320,51 @@ async function actualizarRutaInteligenteChofer() {
     }
 
     try {
-        // Limpiamos siempre las líneas anteriores para evitar que se encimen rojo y verde
         if (rutaTramoConductor) { mapa.removeLayer(rutaTramoConductor); rutaTramoConductor = null; }
         if (rutaTramoViaje) { mapa.removeLayer(rutaTramoViaje); rutaTramoViaje = null; }
 
         if (estadoFlujo === 'pendiente') {
-            // Opcional para pendiente...
+            const urlConductorAPickup = `https://router.project-osrm.org/route/v1/driving/${choferCoords.lng},${choferCoords.lat};${viajeActivo.origen_lng},${viajeActivo.origen_lat}?overview=full&geometries=geojson`;
+            const res1 = await fetch(urlConductorAPickup);
+            const data1 = await res1.json();
+
+            if (data1.code === 'Ok' && data1.routes.length > 0) {
+                rutaTramoConductor = L.polyline(data1.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { 
+                    color: '#22c55e', 
+                    weight: 5, 
+                    dashArray: '6, 6', 
+                    opacity: 0.8 
+                }).addTo(mapa);
+            }
+
+            const urlPickupADestino = `https://router.project-osrm.org/route/v1/driving/${viajeActivo.origen_lng},${viajeActivo.origen_lat};${viajeActivo.destino_lng},${viajeActivo.destino_lat}?overview=full&geometries=geojson`;
+            const res2 = await fetch(urlPickupADestino);
+            const data2 = await res2.json();
+
+            if (data2.code === 'Ok' && data2.routes.length > 0) {
+                let distanciaKm = (data2.routes[0].distance / 1000);
+                let minutos = Math.max(1, Math.round(data2.routes[0].duration / 60));
+
+                rutaTramoViaje = L.polyline(data2.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { 
+                    color: '#ff5722', 
+                    weight: 6, 
+                    opacity: 0.9 
+                }).addTo(mapa);
+
+                let cajaMetricas = document.getElementById('cajaMetricasRuta');
+                if (cajaMetricas) {
+                    cajaMetricas.innerHTML = `<span>🕒 <b>Viaje: ${minutos} min</b> (${distanciaKm.toFixed(1)} km) 🧭</span>`;
+                }
+
+                const bounds = L.latLngBounds([
+                    [choferCoords.lat, choferCoords.lng],
+                    [viajeActivo.origen_lat, viajeActivo.origen_lng],
+                    [viajeActivo.destino_lat, viajeActivo.destino_lng]
+                ]);
+                mapa.fitBounds(bounds, { padding: [60, 60] });
+            }
+
         } else {
-            // Dibujamos una sola línea clara y limpia hacia el objetivo actual
             const url = `https://router.project-osrm.org/route/v1/driving/${choferCoords.lng},${choferCoords.lat};${destinoLng},${destinoLat}?overview=full&geometries=geojson`;
             const res = await fetch(url);
             const data = await res.json();
@@ -336,7 +373,6 @@ async function actualizarRutaInteligenteChofer() {
                 let distanciaKm = data.routes[0].distance / 1000;
                 let minutos = Math.max(1, Math.round(data.routes[0].duration / 60));
 
-                // Usamos un color único bien visible (ej: verde esmeralda o azul) para evitar confusiones de doble línea
                 rutaTramoViaje = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { 
                     color: '#22c55e', 
                     weight: 6, 
@@ -349,7 +385,6 @@ async function actualizarRutaInteligenteChofer() {
                 }
             }
 
-            // Mantiene el mapa siempre centrado en el auto automáticamente
             if (autocentrarMapa && mapa) {
                 mapa.setView([choferCoords.lat, choferCoords.lng], 17);
             }
@@ -367,7 +402,6 @@ function iniciarRastreoGpsContinuo() {
             
             if (markerChofer) markerChofer.setLatLng([nuevaLat, nuevaLng]);
 
-            // CENTRADO OBLIGATORIO: Evita que el auto se salga de la pantalla
             if (mapa) {
                 mapa.setView([nuevaLat, nuevaLng], 17);
             }
@@ -401,7 +435,6 @@ function iniciarRastreoGpsContinuo() {
         }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
     }
 }
-
 
 function detenerRastreoGps() {
     if (idRastreadorGps) { navigator.geolocation.clearWatch(idRastreadorGps); idRastreadorGps = null; }
@@ -482,11 +515,14 @@ async function escucharNuevosViajes() {
                 setTimeout(() => location.reload(), 3000);
             }
 
-            // 2. Si otro chofer aceptó el viaje que estaba sonando en mi pantalla como pendiente
-            if (!viajeActivo && estadoFlujo === 'pendiente' && payload.new.id && payload.new.conductor_nombre && payload.new.conductor_nombre !== NOMBRE_CHOFER) {
-                detenerSirenaAlerta();
-                mostrarMsg('Este viaje ya fue tomado por otro colega.', 'success');
-                rechazarViajeEntrante(); // Limpia la pantalla, los marcadores y las líneas del mapa automáticamente
+            // 2. CORRECCIÓN CLAVE: Si otro chofer aceptó el viaje que estaba sonando en mi pantalla o pendiente
+            if (payload.new.conductor_nombre && payload.new.conductor_nombre !== NOMBRE_CHOFER) {
+                // Si el ID coincide con el que tengo sonando O si estoy en modo pendiente sin viaje propio
+                if ((viajeActivo && viajeActivo.id === payload.new.id) || (estadoFlujo === 'pendiente' && !viajeActivo)) {
+                    detenerSirenaAlerta();
+                    mostrarMsg('Este viaje ya fue tomado por otro colega.', 'success');
+                    rechazarViajeEntrante(); // Apaga la alerta, limpia la línea roja/verde y los marcadores de inmediato
+                }
             }
         })
         .subscribe((status) => {
@@ -754,14 +790,12 @@ function rechazarViajeEntrante() {
     mostrarMsg('Buscando nuevos pasajeros...', 'success');
 }
 
-
 async function procesarLojicaViaje() {
     const panel = document.getElementById('panelConductor');
 
     if (estadoFlujo === 'pendiente') {
         detenerSirenaAlerta();
         try {
-            // BLOQUEO ATÓMICO: Solo permite asignar si nadie más lo tomó antes
             const { data, error } = await supabaseClient
                 .from('viajes')
                 .update({ 
@@ -775,11 +809,10 @@ async function procesarLojicaViaje() {
 
             if (error) throw error;
 
-            // Si data está vacío, significa que otro colega se te adelantó por milisegundos
             if (!data || data.length === 0) {
                 detenerSirenaAlerta();
                 alert("⚠️ Este viaje ya fue tomado por otro colega.");
-                rechazarViajeEntrante(); // Limpia la pantalla y elimina las líneas del mapa
+                rechazarViajeEntrante();
                 return;
             }
             
@@ -1055,95 +1088,6 @@ async function verificarViajeActivoConductor() {
 }
 
 function limpiarMemoriaConductor() { localStorage.removeItem('conductor_viaje_id'); localStorage.removeItem('conductor_estado_flujo'); }
-
-async function actualizarRutaInteligenteChofer() {
-    if (!viajeActivo || !choferCoords) return;
-
-    let destinoLat, destinoLng;
-    let etiquetaTexto = "";
-
-    if (estadoFlujo === 'aceptado' || estadoFlujo === 'en_puerta') {
-        destinoLat = viajeActivo.origen_lat;
-        destinoLng = viajeActivo.origen_lng;
-        etiquetaTexto = "al pasajero";
-    } else if (estadoFlujo === 'en_viaje') {
-        destinoLat = viajeActivo.destino_lat;
-        destinoLng = viajeActivo.destino_lng;
-        etiquetaTexto = "al destino";
-    }
-
-    try {
-        if (rutaTramoConductor) { mapa.removeLayer(rutaTramoConductor); rutaTramoConductor = null; }
-        if (rutaTramoViaje) { mapa.removeLayer(rutaTramoViaje); rutaTramoViaje = null; }
-
-        if (estadoFlujo === 'pendiente') {
-            const urlConductorAPickup = `https://router.project-osrm.org/route/v1/driving/${choferCoords.lng},${choferCoords.lat};${viajeActivo.origen_lng},${viajeActivo.origen_lat}?overview=full&geometries=geojson`;
-            const res1 = await fetch(urlConductorAPickup);
-            const data1 = await res1.json();
-
-            if (data1.code === 'Ok' && data1.routes.length > 0) {
-                rutaTramoConductor = L.polyline(data1.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { 
-                    color: '#22c55e', 
-                    weight: 5, 
-                    dashArray: '6, 6', 
-                    opacity: 0.8 
-                }).addTo(mapa);
-            }
-
-            const urlPickupADestino = `https://router.project-osrm.org/route/v1/driving/${viajeActivo.origen_lng},${viajeActivo.origen_lat};${viajeActivo.destino_lng},${viajeActivo.destino_lat}?overview=full&geometries=geojson`;
-            const res2 = await fetch(urlPickupADestino);
-            const data2 = await res2.json();
-
-            if (data2.code === 'Ok' && data2.routes.length > 0) {
-                let distanciaKm = (data2.routes[0].distance / 1000);
-                let minutos = Math.max(1, Math.round(data2.routes[0].duration / 60));
-
-                rutaTramoViaje = L.polyline(data2.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { 
-                    color: '#ff5722', 
-                    weight: 6, 
-                    opacity: 0.9 
-                }).addTo(mapa);
-
-                let cajaMetricas = document.getElementById('cajaMetricasRuta');
-                if (cajaMetricas) {
-                    cajaMetricas.innerHTML = `<span>🕒 <b>Viaje: ${minutos} min</b> (${distanciaKm.toFixed(1)} km) 🧭</span>`;
-                }
-
-                const bounds = L.latLngBounds([
-                    [choferCoords.lat, choferCoords.lng],
-                    [viajeActivo.origen_lat, viajeActivo.origen_lng],
-                    [viajeActivo.destino_lat, viajeActivo.destino_lng]
-                ]);
-                mapa.fitBounds(bounds, { padding: [60, 60] });
-            }
-
-        } else {
-            const url = `https://router.project-osrm.org/route/v1/driving/${choferCoords.lng},${choferCoords.lat};${destinoLng},${destinoLat}?overview=full&geometries=geojson`;
-            const res = await fetch(url);
-            const data = await res.json();
-
-            if (data.code === 'Ok' && data.routes.length > 0) {
-                let distanciaKm = data.routes[0].distance / 1000;
-                let minutos = Math.max(1, Math.round(data.routes[0].duration / 60));
-
-                rutaTramoViaje = L.polyline(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), { 
-                    color: '#22c55e', 
-                    weight: 6, 
-                    opacity: 0.9 
-                }).addTo(mapa);
-
-                let cajaMetricas = document.getElementById('cajaMetricasRuta');
-                if (cajaMetricas) {
-                    cajaMetricas.innerHTML = `<span>🕒 <b>${minutos} min</b> (${distanciaKm.toFixed(1)} km ${etiquetaTexto}) 🧭</span>`;
-                }
-            }
-
-            if (autocentrarMapa && mapa) {
-                mapa.setView([choferCoords.lat, choferCoords.lng], 17);
-            }
-        }
-    } catch (e) {}
-}
 
 function distanciaEnMetros(lat1, lon1, lat2, lon2) {
     let dLat = (lat2 - lat1) * Math.PI / 180;
