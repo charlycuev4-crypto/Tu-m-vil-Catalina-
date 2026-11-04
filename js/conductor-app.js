@@ -61,7 +61,7 @@ let estadoFlujo = 'pendiente';
 function mantenerActivoSegundoPlano() {
     if (silentAudioInterval) return;
     silentAudioInterval = setInterval(() => {
-        if (!estaConectado || viajeActivo) return; // Pausa sondeos si ya está en viaje
+        if (!estaConectado || viajeActivo) return; 
         forzarHabilitacionAudio();
         if (audioCtx) {
             try {
@@ -515,13 +515,12 @@ async function escucharNuevosViajes() {
                 setTimeout(() => location.reload(), 3000);
             }
 
-            // 2. CORRECCIÓN CLAVE: Si otro chofer aceptó el viaje que estaba sonando en mi pantalla o pendiente
+            // 2. SOLUCIÓN LÍNEA ROJA: Si cualquier viaje pendiente fue tomado por otro colega, limpiamos de inmediato la pantalla
             if (payload.new.conductor_nombre && payload.new.conductor_nombre !== NOMBRE_CHOFER) {
-                // Si el ID coincide con el que tengo sonando O si estoy en modo pendiente sin viaje propio
-                if ((viajeActivo && viajeActivo.id === payload.new.id) || (estadoFlujo === 'pendiente' && !viajeActivo)) {
+                if (estadoFlujo === 'pendiente' || (viajeActivo && viajeActivo.id === payload.new.id)) {
                     detenerSirenaAlerta();
                     mostrarMsg('Este viaje ya fue tomado por otro colega.', 'success');
-                    rechazarViajeEntrante(); // Apaga la alerta, limpia la línea roja/verde y los marcadores de inmediato
+                    rechazarViajeEntrante(); // Borra líneas rojas, verdes y marcadores sin importar el ID exacto en memoria
                 }
             }
         })
@@ -647,12 +646,14 @@ async function conmutarEstadoConexion() {
 
     if (estaConectado) {
         if (badge) { badge.textContent = "Móvil en Línea 🟢"; badge.className = "status-badge activo"; }
-            if (btnEspera) {
-        if (!btnEspera.innerHTML.includes('ruedita-radar')) {
-            btnEspera.innerHTML = `<div class="ruedita-radar"></div>Buscando solicitudes (5 km)...`; 
-            btnEspera.className = "btn-action btn-espera";
+        
+        // SOLUCIÓN PARPADEO: Evita que se redibuje el texto del radar si ya está activo
+        if (btnEspera) {
+            if (!btnEspera.innerHTML.includes('ruedita-radar')) {
+                btnEspera.innerHTML = `<div class="ruedita-radar"></div>Buscando solicitudes (5 km)...`; 
+                btnEspera.className = "btn-action btn-espera";
+            }
         }
-    }
 
         solicitarWakeLock(); 
         iniciarRastreoGpsContinuo(); 
@@ -764,7 +765,6 @@ function rechazarViajeEntrante() {
     detenerSirenaAlerta();
     limpiarMemoriaConductor();
 
-    // LIMPIEZA TOTAL DEL MAPA (Elimina marcadores y rutas anteriores)
     if (markerOrigen) { mapa.removeLayer(markerOrigen); markerOrigen = null; }
     if (markerDestino) { mapa.removeLayer(markerDestino); markerDestino = null; }
     if (rutaTramoConductor) { mapa.removeLayer(rutaTramoConductor); rutaTramoConductor = null; }
