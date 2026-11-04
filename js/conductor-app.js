@@ -647,10 +647,13 @@ async function conmutarEstadoConexion() {
 
     if (estaConectado) {
         if (badge) { badge.textContent = "Móvil en Línea 🟢"; badge.className = "status-badge activo"; }
-        if (btnEspera) {
+            if (btnEspera) {
+        if (!btnEspera.innerHTML.includes('ruedita-radar')) {
             btnEspera.innerHTML = `<div class="ruedita-radar"></div>Buscando solicitudes (5 km)...`; 
             btnEspera.className = "btn-action btn-espera";
         }
+    }
+
         solicitarWakeLock(); 
         iniciarRastreoGpsContinuo(); 
         escucharNuevosViajes();
